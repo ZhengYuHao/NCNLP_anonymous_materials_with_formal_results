@@ -1,0 +1,118 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-092",
+  "source_id": "n8n:3693",
+  "workflow_sha256": "0cbfd441d6add0b66eea9b010dee46eabf46bd04932c7701871ec3d9875de082",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "a7a176255dbd9ff31fbf008c4f31a4236368c966592b34fd44f8ea63c426cf4e",
+  "requirement": {
+    "requirement_text": "按每 12 小时的定时计划或手动触发，自动生成并发布 Instagram 轮播帖。处理过程为：将主题起始点、焦点与卖点三类随机向量组合为主题输入，由语言模型生成唯一的轮播主题，并为轮播中的每一页生成标题、说明文字、话题标签与行动号召；将新主题与向量数据库中已存储的历史主题做语义相似度比对，以确保内容不重复，若相似度超过阈值则重新生成主题；对生成内容做结构解析与校验，校验不通过的内容不会进入发布环节，以避免发布失败；由图像生成服务为每一页生成一张 1024x1024 的配图，并将配图上传至图片托管服务以获取公开访问链接；将轮播帖的元数据（标题、说明文字、话题标签、页数、计划发布日期）写入 Google Sheets，用于追踪、分析与审计；最后通过 Instagram Graph API 创建媒体容器，并连同说明文字发布该轮播帖。",
+    "source_spans": [
+      {
+        "start": 159,
+        "end": 419,
+        "text": "An intelligent and modular workflow that automatically generates, manages, and publishes Instagram carousel posts, using AI for both content and images. It includes semantic memory to ensure uniqueness across posts and a scalable architecture for brand growth."
+      },
+      {
+        "start": 2432,
+        "end": 2523,
+        "text": "Combines random vectors (topic starter + focus + benefit) to create unique carousel themes."
+      },
+      {
+        "start": 2567,
+        "end": 2671,
+        "text": "Sends themed prompts to OpenAI, generating slide-by-slide titles, captions, and CTAs in structured JSON."
+      },
+      {
+        "start": 2724,
+        "end": 2875,
+        "text": "Runs embeddings against past themes stored in a Postgres vector database (pgvector) to ensure novelty.\nIf similarity &gt; threshold, regenerates theme."
+      },
+      {
+        "start": 2926,
+        "end": 3028,
+        "text": "Parses AI response, validates JSON schema, and handles errors gracefully to prevent workflow failures."
+      },
+      {
+        "start": 3071,
+        "end": 3185,
+        "text": "Writes carousel metadata (titles, captions, hashtags, slide count, scheduled date) to a Google Sheets spreadsheet."
+      },
+      {
+        "start": 3239,
+        "end": 3295,
+        "text": "Generates one graphic per slide at 1024×1024 resolution."
+      },
+      {
+        "start": 3348,
+        "end": 3448,
+        "text": "Uses an HTTP Request node with Imgur credential field to upload each image and retrieve public URLs."
+      },
+      {
+        "start": 3503,
+        "end": 3653,
+        "text": "Create Media Containers**: Sends batch media creation request.\nPublish Carousel**: Publishes the carousel using the list of container IDs and caption."
+      },
+      {
+        "start": 3681,
+        "end": 3794,
+        "text": "Manual Trigger**: For testing and one‑off posts.\nCron Trigger**: Scheduled trigger every 12 hours (configurable)."
+      },
+      {
+        "start": 5136,
+        "end": 5207,
+        "text": "Error handling ensures invalid JSON never reaches the publishing nodes."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "每 12 小时一次的定时触发或手动触发",
+        "生成轮播主题所用的随机向量（主题起始点、焦点、卖点）",
+        "向量数据库中已存储的历史轮播主题"
+      ],
+      "conditions": [
+        "新主题与历史主题的相似度超过阈值时，重新生成主题",
+        "生成内容结构校验不通过时，不进入发布环节"
+      ],
+      "allowed_actions": [
+        "组合随机向量形成主题输入，并由语言模型生成唯一的轮播主题",
+        "由语言模型为轮播中的每一页生成标题、说明文字、话题标签与行动号召",
+        "将新主题与历史主题做语义相似度比对",
+        "由图像生成服务为每一页生成 1024x1024 的配图，并上传至图片托管服务获取公开链接",
+        "将轮播元数据写入 Google Sheets",
+        "通过 Instagram Graph API 创建媒体容器并发布轮播帖与说明文字"
+      ],
+      "visible_outcomes": [
+        "Instagram 上发布出包含多页配图与说明文字的轮播帖",
+        "Google Sheets 中记录该轮播帖的标题、说明文字、话题标签、页数与计划发布日期"
+      ],
+      "failure_behavior": [
+        "生成内容结构校验不通过时不进入发布环节，以避免发布失败"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-092.packet.json",
+    "packet_sha256": "4a55810fbfc4f1f7b792605c45c4e89275a5a3b785b983050ace3f78e8e01f06",
+    "public_description_sha256": "fd8cba1f432f54bbcf6790c5e81daa242a4373bed00ef7096cb228e0053375a2"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-092.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-092.revision.json",
+    "revision_record_sha256": "7913bc5fca97b62a2a5a3fb7c67cfc175ddcb42a13ce0d7cb5d2656bdcc016ab",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-08/responses/N8F-092.response.json",
+    "final_confirmation_sha256": "f74a28960d5bb661d28534cbe734b34e7b8b74151e46cc5e859d71a133fb9e2e",
+    "decision": "accept"
+  },
+  "formal_index": 103
+}

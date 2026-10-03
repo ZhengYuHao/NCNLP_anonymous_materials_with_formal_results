@@ -1,0 +1,350 @@
+{
+  "task_id": "N8F-077",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "7890da3a90dd5b4f0d791afcbfa88c3752f3b7b3fb71714e986a4814cadaf86d",
+  "fixtures": [
+    {
+      "fixture_id": "F-DB-FIRST-QUESTION",
+      "purpose": "正常用例：用户在 Slack 频道 @提及机器人并提出问题，应获取表结构、由语言模型生成 SQL、执行查询、解读结果并回复到 Slack 会话",
+      "input_data": {
+        "slack_thread_ts": "1700000000.000100",
+        "channel": "C123456",
+        "question": "What was the total revenue in Q3?",
+        "target_table": "sales",
+        "warehouse_id": "wh-main"
+      }
+    },
+    {
+      "fixture_id": "F-DB-FOLLOWUP",
+      "purpose": "正常用例：用户在同一线程追问（如“现在只显示前 5 条”），应利用线程历史理解指代，无需重复完整上下文直接执行新查询",
+      "input_data": {
+        "slack_thread_ts": "1700000000.000100",
+        "channel": "C123456",
+        "question": "Now show me only the top 5",
+        "target_table": "sales",
+        "warehouse_id": "wh-main",
+        "thread_history": [
+          {
+            "role": "user",
+            "content": "What was the total revenue in Q3?"
+          },
+          {
+            "role": "assistant",
+            "content": "The total revenue for Q3 was $4.2M."
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-DB-ERROR",
+      "purpose": "安全拒绝用例：SQL 执行失败导致无法产出可发送的回复，应向用户发送错误提示消息，避免用户空等",
+      "input_data": {
+        "slack_thread_ts": "1700000001.000200",
+        "channel": "C123457",
+        "question": "How many stores in Texas?",
+        "target_table": "stores",
+        "warehouse_id": "wh-main"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DB-DESCRIBE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "describe_table",
+      "request_contract": {
+        "table": "sales"
+      },
+      "response_contract": {
+        "columns": [
+          {
+            "name": "price",
+            "type": "decimal"
+          },
+          {
+            "name": "date",
+            "type": "date"
+          },
+          {
+            "name": "store_id",
+            "type": "string"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-PLAN",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "plan_sql",
+      "request_contract": {
+        "question": "What was the total revenue in Q3?",
+        "schema_present": true
+      },
+      "response_contract": {
+        "sql": "SELECT SUM(price) AS total_revenue FROM sales WHERE date BETWEEN '2026-07-01' AND '2026-09-30'"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-EXECUTE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "execute_sql",
+      "request_contract": {
+        "sql": "SELECT SUM(price) AS total_revenue FROM sales WHERE date BETWEEN '2026-07-01' AND '2026-09-30'"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "total_revenue": 4200000
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-INTERPRET",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "interpret_results",
+      "request_contract": {
+        "question": "What was the total revenue in Q3?"
+      },
+      "response_contract": {
+        "reply": "The total revenue for Q3 was $4.2M."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-MEMORY-LOAD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "operation": "load_thread_history",
+      "request_contract": {
+        "thread_ts": "1700000000.000100"
+      },
+      "response_contract": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What was the total revenue in Q3?"
+          },
+          {
+            "role": "assistant",
+            "content": "The total revenue for Q3 was $4.2M."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-SLACK-REPLY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_reply",
+      "request_contract": {
+        "channel": "C123456",
+        "thread_ts": "1700000000.000100",
+        "text": "The total revenue for Q3 was $4.2M."
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1700000100.000300"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-PLAN-ERROR",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "plan_sql",
+      "request_contract": {
+        "question": "How many stores in Texas?",
+        "schema_present": true
+      },
+      "response_contract": {
+        "sql": "SELECT COUNT(*) AS store_count FROM stores WHERE state = 'Texas'"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-EXECUTE-FAIL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "execute_sql",
+      "request_contract": {
+        "sql_present": true
+      },
+      "response_contract": {
+        "error": "syntax_error",
+        "status": "failed"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-SLACK-ERROR",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_error_message",
+      "request_contract": {
+        "channel": "C123457"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1700000200.000400"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-FIRST-QUESTION-ANSWERED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-DB-FIRST-QUESTION"
+      ],
+      "mock_ids": [
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN",
+        "M-DB-EXECUTE",
+        "M-DB-LLM-INTERPRET",
+        "M-DB-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FQ-1",
+          "target": "exec_log.httpRequest.describe_table.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须先向数据仓库发送描述命令获取目标表字段结构"
+        },
+        {
+          "assertion_id": "A-FQ-2",
+          "target": "exec_log.httpRequest.describe_table.request.table",
+          "operator": "equals",
+          "expected": "sales",
+          "rationale": "描述命令必须针对配置的目标表"
+        },
+        {
+          "assertion_id": "A-FQ-3",
+          "target": "exec_log.lmChatGoogleGemini.plan_sql.request.schema_present",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "语言模型生成 SQL 时必须结合表结构信息"
+        },
+        {
+          "assertion_id": "A-FQ-4",
+          "target": "exec_log.httpRequest.execute_sql.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须在数据仓库上执行语言模型生成的 SQL"
+        },
+        {
+          "assertion_id": "A-FQ-5",
+          "target": "exec_log.httpRequest.execute_sql.request.sql",
+          "operator": "equals",
+          "expected": "SELECT SUM(price) AS total_revenue FROM sales WHERE date BETWEEN '2026-07-01' AND '2026-09-30'",
+          "rationale": "执行的 SQL 必须是语言模型生成的查询语句"
+        },
+        {
+          "assertion_id": "A-FQ-6",
+          "target": "exec_log.lmChatGoogleGemini.interpret_results.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "查询结果必须由语言模型解读并生成会话式回复"
+        },
+        {
+          "assertion_id": "A-FQ-7",
+          "target": "exec_log.slack.post_reply.request.text",
+          "operator": "equals",
+          "expected": "The total revenue for Q3 was $4.2M.",
+          "rationale": "最终答案必须回复到用户所在的 Slack 会话"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FOLLOWUP-THREAD",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-DB-FOLLOWUP"
+      ],
+      "mock_ids": [
+        "M-DB-MEMORY-LOAD",
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN",
+        "M-DB-EXECUTE",
+        "M-DB-LLM-INTERPRET",
+        "M-DB-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FU-1",
+          "target": "exec_log.memoryRedisChat.load_thread_history.request.thread_ts",
+          "operator": "equals",
+          "expected": "1700000000.000100",
+          "rationale": "必须按线程标识加载历史消息以支持追问"
+        },
+        {
+          "assertion_id": "A-FU-2",
+          "target": "exec_log.memoryRedisChat.load_thread_history.response.messages.length",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "线程历史必须包含前文问答，使指代性追问能够衔接"
+        },
+        {
+          "assertion_id": "A-FU-3",
+          "target": "exec_log.httpRequest.execute_sql.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "追问应直接基于线程上下文生成并执行新查询"
+        },
+        {
+          "assertion_id": "A-FU-4",
+          "target": "exec_log.slack.post_reply.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "追问的回答必须回复到同一 Slack 会话"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ERROR-NOTIFY",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-DB-ERROR"
+      ],
+      "mock_ids": [
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN-ERROR",
+        "M-DB-EXECUTE-FAIL",
+        "M-DB-SLACK-ERROR"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-ER-1",
+          "target": "exec_log.slack.post_error_message.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "SQL 执行失败无法产出回复时必须发送错误提示消息"
+        },
+        {
+          "assertion_id": "A-ER-2",
+          "target": "exec_log.slack.post_reply.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "失败时不得发送正常答案消息"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 DESCRIBE 获取表结构、LLM 生成 SQL、数据仓库执行、LLM 解读结果、线程历史支持追问、成功回复与失败错误提示两条输出路径。外部依赖（Databricks 描述/执行、Gemini LLM、Redis 会话记忆、Slack 发送）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、请求字段相等、长度与存在性检查。"
+}

@@ -1,0 +1,422 @@
+{
+  "task_id": "N8F-062",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "d84cb171fbc7b41193178c534f0b6f810ac735afd0b4252578facc12af3a3d97",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每工作日 07:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Weekday 7 AM Trigger"
+      ],
+      "requirement_evidence": [
+        "系统在每个工作日早上 7 点按计划自动运行"
+      ],
+      "rationale": "按计划在每个工作日 07:00 触发执行，为确定性定时触发操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取五个标签页最新数据",
+      "node_type": "code",
+      "operation_family": "sheet_data_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "sheet_data",
+          "type": "object",
+          "description": "从现金流、收入、薪酬、订阅、费用五个标签页读取的最新数据行"
+        },
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "数据读取环节产生的错误信息（可选）"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Cash Flow Data",
+        "Fetch Revenue Data",
+        "Fetch Payroll Data",
+        "Fetch Subscriptions Data",
+        "Fetch Expenses Data"
+      ],
+      "requirement_evidence": [
+        "系统从 Google Sheets 的五个标签页（现金流、收入、薪酬、订阅、费用）中读取最新数据行"
+      ],
+      "rationale": "从五个标签页读取最新数据行，为确定性的外部读取操作，判定为 code 节点；读取失败时走错误告警分支。"
+    },
+    {
+      "node_id": "n3",
+      "label": "合并数据并计算关键指标",
+      "node_type": "code",
+      "operation_family": "kpi_calculation",
+      "inputs": [
+        {
+          "name": "sheet_data",
+          "type": "object",
+          "description": "五个标签页的最新数据行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "合并数据后计算的各项合计、百分比变化、现金可支撑时长与状态标签"
+        }
+      ],
+      "native_evidence": [
+        "Merge All Sheet Data",
+        "Calculate KPIs & Status Labels"
+      ],
+      "requirement_evidence": [
+        "将这些数据合并后计算关键指标，包括各项合计、百分比变化、现金可支撑时长（cash runway）以及状态标签"
+      ],
+      "rationale": "合并五表数据并计算合计、百分比变化、现金可支撑时长与状态标签，为确定性的聚合与计算操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成高管财务简报",
+      "node_type": "semantic",
+      "operation_family": "briefing_generation",
+      "inputs": [
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "计算得到的关键指标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "briefing",
+          "type": "string",
+          "description": "按 Telegram 展示格式排版的高管财务简报"
+        },
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "简报生成环节产生的错误信息（可选）"
+        }
+      ],
+      "native_evidence": [
+        "Generate AI Outreach Message1",
+        "OpenAI GPT-4o-mini"
+      ],
+      "requirement_evidence": [
+        "系统把指标汇总交给语言模型，生成一份按 Telegram 展示格式排版的高管财务简报"
+      ],
+      "rationale": "需求声明由语言模型依据指标生成按 Telegram 展示格式排版的高管简报，需要开放文本理解与生成，判定为 semantic 节点；生成失败时走错误告警分支。"
+    },
+    {
+      "node_id": "n5",
+      "label": "保存简报到 Notion 数据库页面",
+      "node_type": "code",
+      "operation_family": "notion_persistence",
+      "inputs": [
+        {
+          "name": "briefing",
+          "type": "string",
+          "description": "生成的高管财务简报"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Save CFO Report to Notion"
+      ],
+      "requirement_evidence": [
+        "该简报一方面被保存为 Notion 数据库中的一个页面"
+      ],
+      "rationale": "将简报保存为 Notion 数据库页面，为确定性的外部写入操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "发送简报到 Telegram 会话",
+      "node_type": "code",
+      "operation_family": "briefing_delivery",
+      "inputs": [
+        {
+          "name": "briefing",
+          "type": "string",
+          "description": "生成的高管财务简报"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "简报发送环节产生的错误信息（可选）"
+        }
+      ],
+      "native_evidence": [
+        "Send Daily Briefing to Telegram"
+      ],
+      "requirement_evidence": [
+        "另一方面作为消息发送到指定的 Telegram 会话"
+      ],
+      "rationale": "将同一份简报作为消息发送到指定 Telegram 会话，为确定性的外部发送操作，判定为 code 节点；发送失败时走错误告警分支。"
+    },
+    {
+      "node_id": "n7",
+      "label": "检查收入下降幅度",
+      "node_type": "code",
+      "operation_family": "revenue_drop_check",
+      "inputs": [
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "计算得到的关键指标（含收入百分比变化）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "revenue_drop_flag",
+          "type": "boolean",
+          "description": "收入下降是否超过 10% 的判断结果"
+        }
+      ],
+      "native_evidence": [
+        "Check for Critical Revenue Drop"
+      ],
+      "requirement_evidence": [
+        "系统还会检查收入是否下降超过 10%"
+      ],
+      "rationale": "判断收入下降是否超过 10%，为确定性的条件判定操作，判定为 code 节点；超过时走紧急告警分支。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送紧急告警到 Telegram",
+      "node_type": "terminal",
+      "operation_family": "critical_alert_delivery",
+      "inputs": [
+        {
+          "name": "revenue_drop_flag",
+          "type": "boolean",
+          "description": "收入下降超过 10% 的判断结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Critical Revenue Alert"
+      ],
+      "requirement_evidence": [
+        "若超过，则额外向 Telegram 发送一条紧急告警消息"
+      ],
+      "rationale": "收入下降超过 10% 时额外向 Telegram 发送紧急告警，为该分支的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送错误告警到 Slack",
+      "node_type": "terminal",
+      "operation_family": "error_alerting",
+      "inputs": [
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "执行过程中任一环节失败的错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "On Workflow Error",
+        "Slack: Error Alert"
+      ],
+      "requirement_evidence": [
+        "若执行过程中任一环节失败，系统向 Slack 频道发送一条错误告警"
+      ],
+      "rationale": "向 Slack 发送错误告警为失败路径的用户可见完成动作，判定为 terminal 节点；从数据读取、简报生成与简报发送三个环节的错误分支汇入。"
+    },
+    {
+      "node_id": "n10",
+      "label": "流程正常结束",
+      "node_type": "terminal",
+      "operation_family": "normal_completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Check for Critical Revenue Drop"
+      ],
+      "requirement_evidence": [
+        "系统还会检查收入是否下降超过 10%"
+      ],
+      "rationale": "收入检查为需求声明的最后一步；需求对收入未超过 10% 的情况未声明任何后续动作，全部已声明步骤完成后流程自然终止。原生图中收入检查节点的 false 输出端无后继连接，支持该正常结束建模。无 CFG 出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后读取五个标签页数据。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据读取完成后合并并计算关键指标。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "指标计算完成后生成高管财务简报。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "简报生成后保存为 Notion 数据库页面。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "保存完成后将简报发送到 Telegram 会话。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "简报发送后检查收入下降幅度。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "revenue_drop_flag == true",
+      "rationale": "收入下降超过 10% 时发送紧急告警。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": "revenue_drop_flag == false",
+      "rationale": "收入未超过阈值时流程正常结束。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n2",
+      "target": "n9",
+      "variable": null,
+      "condition": "data_fetch_error != null",
+      "rationale": "数据读取环节失败时发送 Slack 错误告警。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n4",
+      "target": "n9",
+      "variable": null,
+      "condition": "generation_error != null",
+      "rationale": "简报生成环节失败时发送 Slack 错误告警。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": "delivery_error != null",
+      "rationale": "简报发送环节失败时发送 Slack 错误告警。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "sheet_data",
+      "condition": null,
+      "rationale": "五个标签页数据送入指标计算节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "metrics",
+      "condition": null,
+      "rationale": "关键指标送入简报生成节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "briefing",
+      "condition": null,
+      "rationale": "简报送入 Notion 保存节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "briefing",
+      "condition": null,
+      "rationale": "同一份简报送入 Telegram 发送节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n7",
+      "variable": "metrics",
+      "condition": null,
+      "rationale": "收入指标送入下降幅度检查节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "revenue_drop_flag",
+      "condition": null,
+      "rationale": "收入下降判断结果送入紧急告警节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n2",
+      "target": "n9",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "数据读取错误信息送入 Slack 告警节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n4",
+      "target": "n9",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "简报生成错误信息送入 Slack 告警节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n9",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "简报发送错误信息送入 Slack 告警节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8",
+    "n9",
+    "n10"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：定时触发（code）、读取五个标签页数据（code）、合并数据并计算关键指标（code）、生成高管财务简报（semantic）、保存到 Notion（code）、发送到 Telegram（code）、检查收入下降幅度（code，>10% 分支发紧急告警、否则正常结束）、Slack 错误告警（terminal，从读取/生成/发送三处错误分支汇入）。需求未声明的实现细节（AI 报告与财务数据的合并组装、并行取数实现）未纳入。混合任务满足 semantic→code 有类型 DFG 边（briefing）。"
+}

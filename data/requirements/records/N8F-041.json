@@ -1,0 +1,94 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-041",
+  "source_id": "n8n:14368",
+  "workflow_sha256": "f993c298643c0ae5fd46cfb67177a545da8146f149eb50b9a3709826d6f9119a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "2363d9ef02bf8f8419f5a67fe228868997a468385d660f6d7295fb492883d429",
+  "requirement": {
+    "requirement_text": "系统在两类触发下执行：一是在印度标准时间（IST）下午 2 点至晚上 11 点之间每 6 分钟自动执行一次，二是通过外部请求按需手动触发。每次执行时，系统从板球赛事数据服务获取当前全部进行中的比赛，并动态识别出正在进行的目标赛事，识别条件为赛事名称包含“IPL”或“Indian Premier League”、赛制为 T20、比赛已开始且尚未结束；若 IPL 不在赛季期间，则回退选择任意一场进行中的 T20 比赛。识别后系统判断当前进行的是第几局并计算相应指标：第一局计算当前得分率、剩余球数、剩余 wickets、预估总分、比赛阶段（Powerplay / Middle / Death）与压力等级；第二局在此基础上还需计算所需得分率、还需得分、所需得分率与当前得分率的差值以及压力指数。这些结构化比赛上下文交由语言模型生成一段恰好 2 句、使用前述具体数字、采用板球解说语言、不使用百分比的分析师风格叙述。生成的叙述一方面连同时间戳、赛事名称、局次、当前 over、比分、目标分、所需得分率、当前得分率、阶段与压力等级追加写入 Google Sheets 日志，另一方面以结构化结果返回给调用方；若处理过程中任一环节失败，则通过邮件发出告警。",
+    "source_spans": [
+      {
+        "start": 769,
+        "end": 1596,
+        "text": "What This Workflow Does\n⏰ Fires automatically every 6 minutes between 2PM and 11PM covering all IPL match windows\n🌐 Accepts manual triggers via webhook for on-demand narrative generation at any time\n🏏 Fetches all current cricket matches from CricAPI in real time on every execution\n🔍 Dynamically identifies the live IPL match from the API response — no hardcoded match IDs\n🧮 Detects which innings is active and computes all key match indicators automatically\n🤖 Sends structured match context to GPT-4o which generates a 2-sentence human-sounding narrative\n📝 Logs every narrative to Google Sheets with full match context for audit and analytics\n📤 Returns a clean JSON response via webhook that any app or widget can poll in real time\n⚠️ Fires an email alert if any node fails so you always know when the workflow needs attention"
+      },
+      {
+        "start": 2134,
+        "end": 2703,
+        "text": "Trigger Layer Two triggers run this workflow. The Schedule Trigger fires every 6 minutes between 2PM and 11PM IST covering both day games starting around 3:30PM and evening games starting around 7:30PM. The Webhook Trigger provides a manual entry point so developers can fire the workflow on demand for testing or to power a real-time polling architecture where a frontend app hits the webhook URL every few minutes to get the latest narrative. Both triggers feed into the same API call so the logic is completely identical regardless of how the workflow was triggered."
+      },
+      {
+        "start": 2705,
+        "end": 3269,
+        "text": "Data Fetch & Match Detection A single HTTP Request node fetches all current cricket matches from CricAPI's /v1/currentMatches endpoint. The Code node then scans the response and dynamically finds the live IPL match by checking that the match name contains \"IPL\" or \"Indian Premier League\", the match type is T20, and the match has started but not ended. No match IDs are hardcoded anywhere — the workflow finds the right match on every execution. When IPL is not in season the workflow falls back to any live T20 match so development and testing are never blocked."
+      },
+      {
+        "start": 3271,
+        "end": 3911,
+        "text": "Indicator Computation Once the match is identified the Code node detects which innings is active based on how many score entries the API returns. For the 1st innings it computes the current run rate, overs remaining, wickets in hand, projected total, match phase (Powerplay / Middle / Death), and pressure level. For the 2nd innings it additionally computes the required run rate, runs needed, run rate gap between RRR and CRR, and a pressure index based on how difficult the chase is becoming. Both scenarios produce a structured flat object that gets assembled into a context-rich GPT-4o prompt tailored to the specific innings situation."
+      },
+      {
+        "start": 3913,
+        "end": 4521,
+        "text": "AI Narrative Generation The prompt is sent to GPT-4o via HTTP Request with a system prompt that instructs the model to write exactly 2 sentences, use the specific numbers provided, sound like a human cricket analyst, use cricket language fans understand, and never use percentages. The result is a narrative like \"Mumbai Indians need 45 off 24 balls with 7 wickets in hand — the muscle is there but one collapse changes everything. Jasprit Bumrah has to be kept for the final two overs or this chase gets away from Kolkata.\" The narrative is then parsed from the API response and passed to both output nodes."
+      },
+      {
+        "start": 4523,
+        "end": 5062,
+        "text": "Output & Logging Every narrative is appended to a Google Sheets log with the full match context — timestamp, match name, innings, current over, score, target, RRR, CRR, phase, pressure level, and the narrative text. This creates a complete over-by-over record of every narrative generated across the entire match. Simultaneously the Respond to Webhook node returns a clean JSON payload containing the match name, innings, score, over, phase, pressure, narrative, and timestamp — ready for any frontend app or dashboard to consume directly."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "板球赛事数据服务返回的当前进行中比赛数据",
+        "外部按需触发请求"
+      ],
+      "conditions": [
+        "在印度标准时间（IST）下午 2 点至晚上 11 点之间每 6 分钟自动执行一次",
+        "支持通过外部请求按需手动触发",
+        "赛事名称包含“IPL”或“Indian Premier League”、赛制为 T20、已开始且未结束，才判定为目标赛事",
+        "IPL 不在赛季期间时回退到任意一场进行中的 T20 比赛",
+        "按当前进行的是第一局还是第二局采用不同的指标与提示"
+      ],
+      "allowed_actions": [
+        "获取当前进行中的比赛并识别目标赛事",
+        "判断当前局次并计算得分率、剩余球数、剩余 wickets、预估总分、比赛阶段与压力等级",
+        "第二局追加计算所需得分率、还需得分、得分率差与压力指数",
+        "生成恰好 2 句、使用具体数字、采用板球解说语言且不使用百分比的叙述",
+        "将叙述与完整比赛上下文追加写入 Google Sheets 日志",
+        "向调用方返回赛事名称、局次、比分、over、阶段、压力、叙述与时间戳",
+        "在任一环节失败时通过邮件发出告警"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中新增一条带完整比赛上下文的叙述日志",
+        "调用方收到包含赛事信息与叙述文本的结构化结果",
+        "处理失败时相关邮箱收到告警邮件"
+      ],
+      "failure_behavior": [
+        "任一环节失败时通过邮件发出告警"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-041.packet.json",
+    "packet_sha256": "5b0d48c1137d00496792f694d4ad548736b7502241e5059f53b93819dc8acecf",
+    "public_description_sha256": "0b956d45267ba859d5e313b10024003a47b46af3b21ab0c3bf8cfe6b597d3dcf"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-041.response.json",
+    "verification_response_sha256": "638e093158866efb2c877e7957479d3ca8468e6aa45a0879d348b20b15b59843",
+    "decision": "accept"
+  },
+  "formal_index": 52
+}

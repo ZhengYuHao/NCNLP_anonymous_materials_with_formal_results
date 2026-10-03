@@ -1,0 +1,1775 @@
+{
+  "schema_version": "n8n-s1-observable-projection-final-v2",
+  "generated_at": "2026-09-13T21:44:00+08:00",
+  "status": "READY_TO_FREEZE",
+  "scope": "development_qualification_preflight",
+  "formal_test_executed": false,
+  "source_candidate_sha256": "DD8147F3FF03CAAC60F11180E2DA640DA58736ED50138BBAB39749EE924AF339",
+  "source_human_review_sha256": "22CA836D5A5DBD60BDD1B7D012BC597AED4B9C6D3D5F43817F645A144886EA5A",
+  "anti_leakage_rule": "System runs and expected assertion values were not used to select projection sources.",
+  "human_review_row_count": 69,
+  "human_decision_counts": {
+    "通过": 65,
+    "修改": 3,
+    "拒绝": 1
+  },
+  "adjudicated_row_count": 4,
+  "automatic_correction_count": 1,
+  "unresolved_root_count": 0,
+  "oracle_errata": [
+    "OE-N8F080-SUBJECT-01"
+  ],
+  "oracle_erratum_promoted": true,
+  "oracle_manifest_sha256": "D304C044090AFD8F31B86166741582D14D7DB617F447E33A1F36AA3BF6C1F94A",
+  "records": [
+    {
+      "task_id": "N8F-006",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-008",
+      "status": "RESOLVED",
+      "projection_count": 4,
+      "review_required_roots": [
+        "discussion_reply",
+        "inline_comments",
+        "skipped_files",
+        "summary_reply"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "discussion_reply",
+          "oracle_target_paths": [
+            "output.discussion_reply",
+            "output.discussion_reply.body",
+            "output.discussion_reply.discussion_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "select_single",
+          "sources": [
+            "public_output.gitlab_comments.discussion_replies"
+          ],
+          "confidence": "high",
+          "rationale": "Both denote GitLab discussion replies.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "inline_comments",
+          "oracle_target_paths": [
+            "output.inline_comments",
+            "output.inline_comments[0].path",
+            "output.inline_comments[1].path"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.gitlab_comments.inline_review_comments"
+          ],
+          "confidence": "high",
+          "rationale": "Both denote line-positioned GitLab review comments.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "skipped_files",
+          "oracle_target_paths": [
+            "output.skipped_files",
+            "output.skipped_files[0]"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "derive_unreviewed_excluded_files",
+          "sources": [
+            "operation_trace.get_merge_request_changes.response.changes",
+            "operation_trace.review_bugs.requests",
+            "operation_trace.review_security.requests",
+            "operation_trace.review_maintainability.requests"
+          ],
+          "confidence": "medium",
+          "rationale": "Fetched changes minus files submitted to the three review operations exposes files skipped by the declared exclusion rule.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "summary_reply",
+          "oracle_target_paths": [
+            "output.summary_reply",
+            "output.summary_reply.body"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "select_single",
+          "sources": [
+            "public_output.gitlab_comments.summary_replies"
+          ],
+          "confidence": "high",
+          "rationale": "Both denote the final GitLab review summary reply.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-012",
+      "status": "RESOLVED",
+      "projection_count": 5,
+      "review_required_roots": [
+        "airtable",
+        "candidates",
+        "image",
+        "linkedin",
+        "post"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "airtable",
+          "oracle_target_paths": [
+            "output.airtable.posted",
+            "output.airtable.record_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.editorial_run_result.editorial_record"
+          ],
+          "confidence": "medium",
+          "rationale": "The bundled editorial result contains the Airtable editorial record and write-back result.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "candidates",
+          "oracle_target_paths": [
+            "output.candidates"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "operation_request",
+          "sources": [
+            "operation_trace.select_editorial_signal.request.candidates"
+          ],
+          "confidence": "high",
+          "rationale": "The complete candidate set is the declared input to editorial-signal selection.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "image",
+          "oracle_target_paths": [
+            "output.image.attempts",
+            "output.image.height",
+            "output.image.qa.passed",
+            "output.image.width"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.editorial_run_result.generated_image",
+            "public_output.editorial_run_result.image_qa_passed",
+            "operation_trace.qa_image"
+          ],
+          "confidence": "medium",
+          "rationale": "The bundled image observations plus QA call count expose dimensions, pass status, and number of attempts.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "linkedin",
+          "oracle_target_paths": [
+            "output.linkedin.post_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.editorial_run_result.publish_result"
+          ],
+          "confidence": "high",
+          "rationale": "The publish result is the observable LinkedIn publication outcome.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "post",
+          "oracle_target_paths": [
+            "output.post.draft",
+            "output.post.final_copy",
+            "output.post.hashtags"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.editorial_run_result.draft_post",
+            "public_output.editorial_run_result.refined_post",
+            "public_output.editorial_run_result.final_post"
+          ],
+          "confidence": "high",
+          "rationale": "The three public fields preserve the draft, refined, and final post states.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-016",
+      "status": "RESOLVED",
+      "projection_count": 6,
+      "review_required_roots": [
+        "already_commented_log",
+        "chosen_post",
+        "csv_uploaded",
+        "hashtag",
+        "posted_comment",
+        "scraped_posts"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "already_commented_log",
+          "oracle_target_paths": [
+            "output.already_commented_log.append_url",
+            "output.already_commented_log.total_rows",
+            "output.already_commented_log.urls"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose_log_before_and_append",
+          "sources": [
+            "operation_trace.read_already_commented.response",
+            "public_output.comment_execution_report.append_result",
+            "public_output.comment_execution_report.valid_post"
+          ],
+          "confidence": "medium",
+          "rationale": "The read result, append result, and validated post expose the prior list and the append effect.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "chosen_post",
+          "oracle_target_paths": [
+            "output.chosen_post",
+            "output.chosen_post.url"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.comment_execution_report.valid_post"
+          ],
+          "confidence": "high",
+          "rationale": "The validated post is the post eligible for comment execution.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "csv_uploaded",
+          "oracle_target_paths": [
+            "output.csv_uploaded.file_name"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "operation_trace.upload_file.request",
+            "operation_trace.upload_file.response"
+          ],
+          "confidence": "high",
+          "rationale": "The upload request and response expose file name and file identifier.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "hashtag",
+          "oracle_target_paths": [
+            "output.hashtag"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.comment_execution_report.hashtag"
+          ],
+          "confidence": "high",
+          "rationale": "Exact semantic and structural match.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "posted_comment",
+          "oracle_target_paths": [
+            "output.posted_comment",
+            "output.posted_comment.body",
+            "output.posted_comment.post_url"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.comment_execution_report.comment_reply",
+            "public_output.comment_execution_report.post_result",
+            "operation_trace.post_comment.request"
+          ],
+          "confidence": "high",
+          "rationale": "The generated reply, posting request, and result jointly describe the posted comment.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "scraped_posts",
+          "oracle_target_paths": [
+            "output.scraped_posts"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "operation_response",
+          "sources": [
+            "operation_trace.scrape_hashtag_posts.response.posts"
+          ],
+          "confidence": "high",
+          "rationale": "The scraper response is the complete typed post collection.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-021",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-024",
+      "status": "RESOLVED",
+      "projection_count": 7,
+      "review_required_roots": [
+        "booking",
+        "emails",
+        "sheets",
+        "sweep",
+        "telegram",
+        "weekly"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "booking",
+          "oracle_target_paths": [
+            "output.booking.booking_id",
+            "output.booking.valid"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.booking_append_record"
+          ],
+          "confidence": "medium",
+          "rationale": "The append record preserves the accepted booking and identifier; validity must be derived from whether append occurred.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "emails",
+          "oracle_target_paths": [
+            "output.emails.host_skip_alert.body",
+            "output.emails.host_skip_alert.recipient",
+            "output.emails.to_cleaner",
+            "output.emails.to_cleaner.recipient",
+            "output.emails.to_guests",
+            "output.emails.weekly_digest.body",
+            "output.emails.weekly_digest.recipient"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "RESOLVED",
+          "projection_kind": "partition_by_case_and_recipient_role",
+          "sources": [
+            "public_output.sent_emails",
+            "public_output.due_bookings",
+            "public_input"
+          ],
+          "confidence": "high",
+          "rationale": "Partition by case and by recipient roles declared in public input: due-booking guest addresses identify guest mail, cleaner_email identifies cleaner mail, and host_email identifies invalid-booking alerts or weekly digests according to the case workflow.",
+          "human_decision": "修改",
+          "human_comment": "sent_emails 仅含 message_id/to/subject/body，无用途类型字段，group_by_purpose 缺少客观分组键；建议按收件人与公开输入中的角色地址（客人邮箱/清洁人员邮箱/房东邮箱）匹配分组，单邮件用例按用例限定用途，或在公开契约中增加 email_type 字段后再分组",
+          "resolution": "采纳人工修改意见；取消无依据的通用用途分组。",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "guest_messages",
+          "oracle_target_paths": [
+            "output.guest_messages"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "DIRECT",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.guest_messages"
+          ],
+          "confidence": "high",
+          "rationale": "Oracle root and public output field have the same declared name.",
+          "final_status": "DIRECT"
+        },
+        {
+          "oracle_root": "sheets",
+          "oracle_target_paths": [
+            "output.sheets.bookings_appended",
+            "output.sheets.bookings_appended[0].check_out",
+            "output.sheets.bookings_appended[0].guest_name",
+            "output.sheets.cleaning_tasks_appended",
+            "output.sheets.cleaning_tasks_appended[0].property",
+            "output.sheets.guest_log_appended"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.booking_append_record",
+            "public_output.cleaning_task_append_record",
+            "public_output.guest_log_append_record"
+          ],
+          "confidence": "high",
+          "rationale": "The three append records cover the three asserted worksheet effects.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sweep",
+          "oracle_target_paths": [
+            "output.sweep.due_stays"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.due_bookings"
+          ],
+          "confidence": "high",
+          "rationale": "Due bookings are the observable result of the scheduled booking sweep.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "telegram",
+          "oracle_target_paths": [
+            "output.telegram.alerts",
+            "output.telegram.alerts[0].text",
+            "output.telegram.confirmations",
+            "output.telegram.notifications",
+            "output.telegram.notifications[0].text",
+            "output.telegram.weekly.text"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "RESOLVED",
+          "projection_kind": "partition_by_case_and_guest_message_membership",
+          "sources": [
+            "public_output.telegram_messages",
+            "public_output.guest_messages",
+            "public_input"
+          ],
+          "confidence": "high",
+          "rationale": "Use case identity for booking notification, invalid alert, and weekly digest cases. In daily-sweep cases, Telegram texts matching public guest_messages are confirmations; remaining messages are cleaner-configuration alerts.",
+          "human_decision": "修改",
+          "human_comment": "telegram_messages 仅含 message_id/ok/text，无法客观区分 alerts/notifications/confirmations/weekly 四种用途（均发送给房东，收件人不可区分）；建议在公开契约中增加用途类型字段，或在冻结映射中按用例限定（各用例仅产生单一用途消息）并显式写明该规则",
+          "resolution": "采纳人工修改意见；使用现有公开证据形成确定性规则，无需增加任务字段。",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "weekly",
+          "oracle_target_paths": [
+            "output.weekly.digest.text",
+            "output.weekly.stats"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.weekly_stats_and_digest"
+          ],
+          "confidence": "high",
+          "rationale": "The public object contains weekly statistics and the digest report.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-026",
+      "status": "RESOLVED",
+      "projection_count": 5,
+      "review_required_roots": [
+        "candidates",
+        "discovery_searches",
+        "sheets_appended",
+        "slack_digest"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "candidates",
+          "oracle_target_paths": [
+            "output.candidates",
+            "output.candidates[*].business_id",
+            "output.candidates[*].score"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.ranking_report"
+          ],
+          "confidence": "high",
+          "rationale": "The ranking report is the final candidate collection and includes the asserted score.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "complaint_themes",
+          "oracle_target_paths": [
+            "output.complaint_themes",
+            "output.complaint_themes[*].themes"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "DIRECT",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.complaint_themes"
+          ],
+          "confidence": "high",
+          "rationale": "Oracle root and public output field have the same declared name.",
+          "final_status": "DIRECT"
+        },
+        {
+          "oracle_root": "discovery_searches",
+          "oracle_target_paths": [
+            "output.discovery_searches"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "operation_calls",
+          "sources": [
+            "operation_trace.bright_data_maps_discovery"
+          ],
+          "confidence": "high",
+          "rationale": "The requirement asks for one discovery call per category, which is observable only in the operation trace.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sheets_appended",
+          "oracle_target_paths": [
+            "output.sheets_appended"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.sheet_log"
+          ],
+          "confidence": "high",
+          "rationale": "The sheet log records one append outcome per candidate.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "slack_digest",
+          "oracle_target_paths": [
+            "output.slack_digest",
+            "output.slack_digest.text"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.slack_post_status"
+          ],
+          "confidence": "high",
+          "rationale": "The Slack status includes the sent digest text and delivery status.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-028",
+      "status": "RESOLVED",
+      "projection_count": 6,
+      "review_required_roots": [
+        "drafts",
+        "fetched_leads",
+        "processed_leads",
+        "sent_emails",
+        "slack_alert",
+        "slack_notifications"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "drafts",
+          "oracle_target_paths": [
+            "output.drafts",
+            "output.drafts[0].body",
+            "output.drafts[0].owner_id",
+            "output.drafts[0].subject",
+            "output.drafts[0].to_email"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "RESOLVED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.email_fields"
+          ],
+          "confidence": "high",
+          "rationale": "email_fields already exposes every asserted draft field. Gmail creation receipts are not joined because list position is not a declared stable key.",
+          "human_decision": "修改",
+          "human_comment": "email_fields 已含 subject/body/to_email/owner_id，足以覆盖 drafts 的全部断言字段；建议以 email_fields 为唯一来源，如需补充创建回执应按 to_email 等稳定键关联 gmail_draft_creations，而非按位置拼接（位置一致性无契约保证）",
+          "resolution": "采纳人工修改意见；删除按位置拼接。",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "fetched_leads",
+          "oracle_target_paths": [
+            "output.fetched_leads"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "operation_response",
+          "sources": [
+            "operation_trace.search_leads.response.results"
+          ],
+          "confidence": "high",
+          "rationale": "The HubSpot search response is the complete fetched-lead collection.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "processed_leads",
+          "oracle_target_paths": [
+            "output.processed_leads",
+            "output.processed_leads[0].id",
+            "output.processed_leads[].status"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.qualified_leads"
+          ],
+          "confidence": "high",
+          "rationale": "Qualified leads are exactly the bad-timing leads selected for processing.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sent_emails",
+          "oracle_target_paths": [
+            "output.sent_emails"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "assert_absent_send_email_calls",
+          "sources": [
+            "operation_trace"
+          ],
+          "confidence": "medium",
+          "rationale": "The no-send requirement is checked as absence of email-send operations in the common trace; draft creation does not count as sending.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "slack_alert",
+          "oracle_target_paths": [
+            "output.slack_alert.text"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "select_single",
+          "sources": [
+            "public_output.slack_error_alerts"
+          ],
+          "confidence": "medium",
+          "rationale": "Error alerts are exposed as a typed list and the legacy root expects the relevant alert.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "slack_notifications",
+          "oracle_target_paths": [
+            "output.slack_notifications"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.slack_owner_notifications"
+          ],
+          "confidence": "high",
+          "rationale": "Both denote owner notifications for prepared drafts.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-029",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-036",
+      "status": "RESOLVED",
+      "projection_count": 5,
+      "review_required_roots": [
+        "appended_leads",
+        "deal_analysis",
+        "email",
+        "matches",
+        "team_notification"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "appended_leads",
+          "oracle_target_paths": [
+            "output.appended_leads",
+            "output.appended_leads[0].id",
+            "output.appended_leads[].id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "filter_and_extract_row",
+          "sources": [
+            "public_output.sheet_writes"
+          ],
+          "confidence": "medium",
+          "rationale": "Lead appends are identifiable worksheet writes whose typed row contains the lead.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "deal_analysis",
+          "oracle_target_paths": [
+            "output.deal_analysis.probability",
+            "output.deal_analysis.stage"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.deal_assessment"
+          ],
+          "confidence": "high",
+          "rationale": "Exact semantic match for deal probability, stage, and next action.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "email",
+          "oracle_target_paths": [
+            "output.email",
+            "output.email.deck_url",
+            "output.email.message_id",
+            "output.email.to"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "select_single",
+          "sources": [
+            "public_output.email_interactions"
+          ],
+          "confidence": "medium",
+          "rationale": "The interaction list exposes sent email, recipient, content, and listing references.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "matches",
+          "oracle_target_paths": [
+            "output.matches[0].listing_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.matched_properties"
+          ],
+          "confidence": "high",
+          "rationale": "Exact semantic match for lead-property matches.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "team_notification",
+          "oracle_target_paths": [
+            "output.team_notification.text"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "select_single",
+          "sources": [
+            "public_output.sales_notifications"
+          ],
+          "confidence": "medium",
+          "rationale": "The notification list exposes the sales-team message.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-039",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-040",
+      "status": "RESOLVED",
+      "projection_count": 2,
+      "review_required_roots": [
+        "researched_companies",
+        "sheets"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "researched_companies",
+          "oracle_target_paths": [
+            "output.researched_companies"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "collect_repeated_results",
+          "sources": [
+            "public_output.enriched_record"
+          ],
+          "confidence": "medium",
+          "rationale": "Each enriched record identifies a researched company and its structured enrichment.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sheets",
+          "oracle_target_paths": [
+            "output.sheets.output_appended",
+            "output.sheets.output_appended[0].company_name",
+            "output.sheets.output_appended[0].headquarters",
+            "output.sheets.output_appended[0].industry",
+            "output.sheets.output_appended[0].target_customers",
+            "output.sheets.output_appended[1].company_name",
+            "output.sheets.source_updated",
+            "output.sheets.source_updated[0].company_name",
+            "output.sheets.source_updated[0].enriched"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose_repeated_results",
+          "sources": [
+            "public_output.enriched_record",
+            "public_output.source_enriched_update_result"
+          ],
+          "confidence": "medium",
+          "rationale": "The two public outputs describe output-sheet appends and source-sheet updates.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-045",
+      "status": "RESOLVED",
+      "projection_count": 2,
+      "review_required_roots": [
+        "calculated",
+        "recalculated"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "calculated",
+          "oracle_target_paths": [
+            "output.calculated.fertile_window_end",
+            "output.calculated.fertile_window_start",
+            "output.calculated.next_period_start",
+            "output.calculated.ovulation_day",
+            "output.calculated.pms_window_start"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "rename_fields",
+          "sources": [
+            "public_output.cycle_dates"
+          ],
+          "confidence": "high",
+          "rationale": "Cycle dates contain the same calculated dates with one field-name difference for ovulation date.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "recalculated",
+          "oracle_target_paths": [
+            "output.recalculated.next_period_start"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "case_scoped_alias",
+          "sources": [
+            "public_output.cycle_dates"
+          ],
+          "confidence": "medium",
+          "rationale": "In the update case, cycle_dates is the recalculated cycle result.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-054",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-056",
+      "status": "RESOLVED",
+      "projection_count": 7,
+      "review_required_roots": [
+        "already_liked_log",
+        "chosen_post",
+        "csv_uploaded",
+        "like_executed",
+        "scraped_posts",
+        "selected_account"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "already_liked_log",
+          "oracle_target_paths": [
+            "output.already_liked_log.append_url",
+            "output.already_liked_log.total_rows",
+            "output.already_liked_log.urls"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose_log_before_and_append",
+          "sources": [
+            "operation_trace.read_already_liked.response",
+            "public_output.append_already_liked_result",
+            "public_output.unliked_post"
+          ],
+          "confidence": "medium",
+          "rationale": "The read result, append outcome, and accepted URL expose the prior list and append effect.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "chosen_post",
+          "oracle_target_paths": [
+            "output.chosen_post",
+            "output.chosen_post.url"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.unliked_post"
+          ],
+          "confidence": "high",
+          "rationale": "The unliked post is the selected post after duplicate filtering.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "csv_uploaded",
+          "oracle_target_paths": [
+            "output.csv_uploaded.file_name"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "operation_trace.upload_file.request",
+            "operation_trace.upload_file.response"
+          ],
+          "confidence": "high",
+          "rationale": "The upload request and response expose file name and file identifier.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "hashtag",
+          "oracle_target_paths": [
+            "output.hashtag"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "DIRECT",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.hashtag"
+          ],
+          "confidence": "high",
+          "rationale": "Oracle root and public output field have the same declared name.",
+          "final_status": "DIRECT"
+        },
+        {
+          "oracle_root": "like_executed",
+          "oracle_target_paths": [
+            "output.like_executed",
+            "output.like_executed.ok",
+            "output.like_executed.post_url"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.like_result",
+            "operation_trace.like_post.request"
+          ],
+          "confidence": "medium",
+          "rationale": "The like request URL and operation result jointly describe the executed like.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "scraped_posts",
+          "oracle_target_paths": [
+            "output.scraped_posts"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.recent_posts"
+          ],
+          "confidence": "high",
+          "rationale": "Both denote posts returned by hashtag scraping.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "selected_account",
+          "oracle_target_paths": [
+            "output.selected_account.id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "resolve_selected_account",
+          "sources": [
+            "public_output.account",
+            "public_input.fixtures.F-ACCOUNTS.accounts"
+          ],
+          "confidence": "medium",
+          "rationale": "The selected public account is resolved against the public configured account list to recover its stable account identifier.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-063",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-064",
+      "status": "RESOLVED",
+      "projection_count": 4,
+      "review_required_roots": [
+        "emails",
+        "normalized_quotes",
+        "report",
+        "sheets"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "emails",
+          "oracle_target_paths": [
+            "output.emails.alert.body",
+            "output.emails.alert.recipient",
+            "output.emails.alert.subject",
+            "output.emails.report.body",
+            "output.emails.report.recipient"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "group_by_email_type",
+          "sources": [
+            "public_output.sent_emails"
+          ],
+          "confidence": "high",
+          "rationale": "Typed email_type separates alert and report emails.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "normalized_quotes",
+          "oracle_target_paths": [
+            "output.normalized_quotes",
+            "output.normalized_quotes[0].pct_change",
+            "output.normalized_quotes[0].symbol",
+            "output.normalized_quotes[0].trend",
+            "output.normalized_quotes[1].trend"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "rename_fields",
+          "sources": [
+            "public_output.normalized_data"
+          ],
+          "confidence": "high",
+          "rationale": "The normalized data contains the same quote calculations; percent_change maps to pct_change.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "report",
+          "oracle_target_paths": [
+            "output.report.sections.actionable_outlook",
+            "output.report.sections.key_movers",
+            "output.report.sections.market_summary",
+            "output.report.sections.risk_sentiment"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "wrap_sections",
+          "sources": [
+            "public_output.report_content"
+          ],
+          "confidence": "high",
+          "rationale": "The report content fields are the asserted report sections.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sheets",
+          "oracle_target_paths": [
+            "output.sheets.error_log_appended",
+            "output.sheets.error_log_appended[0].status",
+            "output.sheets.error_log_appended[0].symbol",
+            "output.sheets.main_report_appended"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.error_log_records",
+            "public_output.main_report_archive"
+          ],
+          "confidence": "high",
+          "rationale": "The two side-effect outputs cover error-log and main-report worksheet appends.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-065",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-068",
+      "status": "RESOLVED",
+      "projection_count": 4,
+      "review_required_roots": [
+        "article",
+        "filtered_attachments",
+        "reply",
+        "source_content"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "article",
+          "oracle_target_paths": [
+            "output.article"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.generated_article"
+          ],
+          "confidence": "high",
+          "rationale": "Exact semantic match for the generated article.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "filtered_attachments",
+          "oracle_target_paths": [
+            "output.filtered_attachments",
+            "output.filtered_attachments[0].name"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "derive_extracted_attachments",
+          "sources": [
+            "public_input.attachments",
+            "operation_trace.extract_document.requests",
+            "operation_trace.extract_text.requests"
+          ],
+          "confidence": "medium",
+          "rationale": "Public attachment metadata joined with document-extractor requests exposes attachments accepted by the declared PDF/DOCX filter.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "reply",
+          "oracle_target_paths": [
+            "output.reply.article",
+            "output.reply.message_id",
+            "output.reply.original_input",
+            "output.reply.self_assessment.score"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose",
+          "sources": [
+            "public_output.reply_email_sent",
+            "public_output.extracted_content",
+            "public_output.generated_article",
+            "public_output.self_assessment"
+          ],
+          "confidence": "medium",
+          "rationale": "Delivery status and the three reply sections are exposed separately and can be composed transparently.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "source_content",
+          "oracle_target_paths": [
+            "output.source_content"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.extracted_content"
+          ],
+          "confidence": "high",
+          "rationale": "The extracted content is the source text used for rewriting.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-071",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-072",
+      "status": "RESOLVED",
+      "projection_count": 2,
+      "review_required_roots": [
+        "summary",
+        "telegram"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "summary",
+          "oracle_target_paths": [
+            "output.summary.sources",
+            "output.summary.text",
+            "output.summary.urlscan_data"
+          ],
+          "same_name_unsupported_paths": [
+            "output.summary.sources",
+            "output.summary.text",
+            "output.summary.urlscan_data"
+          ],
+          "status": "PROPOSED",
+          "projection_kind": "compose_security_summary",
+          "sources": [
+            "public_output.summary",
+            "public_output.merged_findings"
+          ],
+          "confidence": "medium",
+          "rationale": "The summary text and merged VirusTotal/urlscan findings jointly expose text, sources, and optional urlscan data.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "telegram",
+          "oracle_target_paths": [
+            "output.telegram.chat_id",
+            "output.telegram.message_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.telegram_send_message_response"
+          ],
+          "confidence": "high",
+          "rationale": "The operation response exposes Telegram message ID and send status.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-075",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-077",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-080",
+      "status": "RESOLVED",
+      "projection_count": 7,
+      "review_required_roots": [
+        "comments_processed",
+        "emails",
+        "metrics",
+        "posts_processed",
+        "report",
+        "sheets",
+        "slack"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "comments_processed",
+          "oracle_target_paths": [
+            "output.comments_processed"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "count_nested_comments",
+          "sources": [
+            "public_output.facebook_posts_and_comments"
+          ],
+          "confidence": "medium",
+          "rationale": "The fetched post/comment object is the public source for processed-comment count.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "emails",
+          "oracle_target_paths": [
+            "output.emails.outlook",
+            "output.emails.outlook.recipient"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "RESOLVED",
+          "projection_kind": "compose_delivery_with_public_recipient",
+          "sources": [
+            "public_output.email_report",
+            "public_input.outlook_recipient"
+          ],
+          "confidence": "high",
+          "rationale": "email_report proves successful Outlook delivery and the public input supplies the recipient. The unsupported subject assertion is removed by OE-N8F080-SUBJECT-01.",
+          "human_decision": "拒绝",
+          "human_comment": "公开契约中 email_report 仅含 message_id（additionalProperties:false），Outlook send_email 接口请求 schema 亦未暴露收件人与主题，oracle 断言的 emails.outlook.recipient/subject 无法从公开结果、公开输入或工具调用记录产生，属公开契约缺口；需补充公开可观察字段或调整该判定规则，映射本身无法修复",
+          "resolution": "部分采纳拒绝意见：主题确实不可观察；收件人可由公开输入获得。删除需求未规定的主题断言。",
+          "removed_oracle_target_paths": [
+            "output.emails.outlook.subject"
+          ],
+          "oracle_erratum_id": "OE-N8F080-SUBJECT-01",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "metrics",
+          "oracle_target_paths": [
+            "output.metrics",
+            "output.metrics[0].engagement.reactions",
+            "output.metrics[0].positive_ratio",
+            "output.metrics[0].post_id",
+            "output.metrics[1].positive_ratio"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "RESOLVED",
+          "projection_kind": "join_sentiment_and_engagement_by_post_id",
+          "sources": [
+            "public_output.sentiment_metrics",
+            "public_output.facebook_posts_and_comments"
+          ],
+          "confidence": "high",
+          "rationale": "Join sentiment results with the public Facebook records by post_id. The former supplies comment labels and the latter supplies per-post reactions; positive_ratio is computed from the exposed comment labels.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED",
+          "resolution": "自动一致性审计补充：原候选遗漏逐帖互动量来源，改为按post_id稳定连接两份公开结果。"
+        },
+        {
+          "oracle_root": "posts_processed",
+          "oracle_target_paths": [
+            "output.posts_processed"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "extract_posts",
+          "sources": [
+            "public_output.facebook_posts_and_comments"
+          ],
+          "confidence": "high",
+          "rationale": "The public fetch result contains the processed post collection.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "report",
+          "oracle_target_paths": [
+            "output.report.html"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "wrap_html",
+          "sources": [
+            "public_output.html_report"
+          ],
+          "confidence": "high",
+          "rationale": "The HTML report string is the asserted report HTML.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "sheets",
+          "oracle_target_paths": [
+            "output.sheets.metrics_appended"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "reshape",
+          "sources": [
+            "public_output.logged_metrics"
+          ],
+          "confidence": "high",
+          "rationale": "The logged-metrics object records appended metric rows.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "slack",
+          "oracle_target_paths": [
+            "output.slack.alerts",
+            "output.slack.alerts[0].text",
+            "output.slack.negative_alerts",
+            "output.slack.negative_alerts[0].text"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "rename_fields",
+          "sources": [
+            "public_output.slack_notifications"
+          ],
+          "confidence": "high",
+          "rationale": "The public object contains negative-sentiment and failure alerts.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-093",
+      "status": "RESOLVED",
+      "projection_count": 2,
+      "review_required_roots": [
+        "latest_video",
+        "selected_accounts"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "latest_video",
+          "oracle_target_paths": [
+            "output.latest_video.title"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "operation_response",
+          "sources": [
+            "operation_trace.fetch_latest_video.response"
+          ],
+          "confidence": "high",
+          "rationale": "The latest-video metadata is observable in the required fetch operation response.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "selected_accounts",
+          "oracle_target_paths": [
+            "output.selected_accounts.length"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.target_accounts"
+          ],
+          "confidence": "high",
+          "rationale": "Target accounts are the enabled, platform-deduplicated selected accounts.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-099",
+      "status": "RESOLVED",
+      "projection_count": 1,
+      "review_required_roots": [
+        "error_message"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "error_message",
+          "oracle_target_paths": [
+            "output.error_message"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "error_channel",
+          "sources": [
+            "runtime.error"
+          ],
+          "confidence": "medium",
+          "rationale": "The safe-failure case is observable through the standardized runtime error channel, not a normal successful output.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-101",
+      "status": "RESOLVED",
+      "projection_count": 1,
+      "review_required_roots": [
+        "answer"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "answer",
+          "oracle_target_paths": [
+            "output.answer"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "prefer_reply_with_structured_fallback",
+          "sources": [
+            "public_output.reply_message",
+            "public_output.answer_data.answer"
+          ],
+          "confidence": "high",
+          "rationale": "Both public fields expose the grounded answer; the reply is user-facing and answer_data preserves structure.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-104",
+      "status": "RESOLVED",
+      "projection_count": 3,
+      "review_required_roots": [
+        "posts_processed",
+        "wp"
+      ],
+      "contract_gap_roots": [],
+      "mappings": [
+        {
+          "oracle_root": "generated_tags",
+          "oracle_target_paths": [
+            "output.generated_tags"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "DIRECT",
+          "projection_kind": "alias",
+          "sources": [
+            "public_output.generated_tags"
+          ],
+          "confidence": "high",
+          "rationale": "Oracle root and public output field have the same declared name.",
+          "final_status": "DIRECT"
+        },
+        {
+          "oracle_root": "posts_processed",
+          "oracle_target_paths": [
+            "output.posts_processed"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "collect_repeated_results",
+          "sources": [
+            "public_output.updated_post"
+          ],
+          "confidence": "medium",
+          "rationale": "Each updated post is an observable processed-post result.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        },
+        {
+          "oracle_root": "wp",
+          "oracle_target_paths": [
+            "output.wp.created_tags",
+            "output.wp.updated",
+            "output.wp.updated.post_id",
+            "output.wp.updated.tags",
+            "output.wp.updated[0].post_id",
+            "output.wp.updated[1].post_id"
+          ],
+          "same_name_unsupported_paths": [],
+          "status": "PROPOSED",
+          "projection_kind": "compose_repeated_results",
+          "sources": [
+            "public_output.created_tags",
+            "public_output.updated_post"
+          ],
+          "confidence": "medium",
+          "rationale": "Created tags and updated posts jointly represent the WordPress effects.",
+          "human_decision": "通过",
+          "human_comment": "",
+          "final_status": "RESOLVED"
+        }
+      ],
+      "unresolved_roots": []
+    },
+    {
+      "task_id": "N8F-107",
+      "status": "RESOLVED",
+      "projection_count": 0,
+      "review_required_roots": [],
+      "contract_gap_roots": [],
+      "mappings": [],
+      "unresolved_roots": []
+    }
+  ]
+}

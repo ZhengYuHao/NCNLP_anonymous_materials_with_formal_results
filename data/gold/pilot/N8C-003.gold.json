@@ -1,0 +1,347 @@
+{
+  "pilot_id": "N8C-003",
+  "annotator_id": "GA-01",
+  "status": "submitted",
+  "requirement_sha256": "276f4b7d2d4afd27954d22ccd62de95d9760e34508c5bb193dc6469262672012",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Gmail trigger on email from configured sender",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "email_event",
+          "type": "object",
+          "description": "Incoming Gmail message from the configured sender, carrying sender address, subject and the bill of lading attachment reference"
+        }
+      ],
+      "native_evidence": [
+        "When Email Received"
+      ],
+      "requirement_evidence": [
+        "The system triggers when a new Gmail email arrives from the configured specific sender"
+      ],
+      "rationale": "Declared triggering condition; the configured-sender filter is part of the trigger contract, separate from the declared attachment-download action."
+    },
+    {
+      "node_id": "n2",
+      "label": "Download attached bill of lading document",
+      "node_type": "code",
+      "operation_family": "attachment_download",
+      "inputs": [
+        {
+          "name": "email_event",
+          "type": "object",
+          "description": "Email carrying the attachment to download"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "attachment_document",
+          "type": "binary",
+          "description": "Downloaded bill of lading document"
+        }
+      ],
+      "native_evidence": [
+        "When Email Received (downloadAttachments=true)"
+      ],
+      "requirement_evidence": [
+        "downloads the attached document (a bill of lading)"
+      ],
+      "rationale": "Declared allowed action with its own output contract (the downloaded document), distinct from the trigger event; deterministic retrieval."
+    },
+    {
+      "node_id": "n3",
+      "label": "Analyze attachment and rewrite bill of lading into structured Markdown",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "attachment_document",
+          "type": "binary",
+          "description": "Bill of lading document to analyze"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bol_markdown",
+          "type": "string",
+          "description": "Bill of lading content rewritten into the structured Markdown format"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Document with Gemini"
+      ],
+      "requirement_evidence": [
+        "use a language model to analyze the attachment and rewrite the bill of lading content into a structured Markdown format"
+      ],
+      "rationale": "Document understanding and restructuring into Markdown requires open-text interpretation that deterministic rules cannot replace."
+    },
+    {
+      "node_id": "n4",
+      "label": "Convert Markdown into validated JSON fields via structured-output agent",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "bol_markdown",
+          "type": "string",
+          "description": "Structured Markdown to convert"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bol_json",
+          "type": "object",
+          "description": "Validated JSON fields: shipper, consignee, shipment details, and line items, conforming to the structured output schema"
+        }
+      ],
+      "native_evidence": [
+        "AI Document Analyzer Agent",
+        "Parse Structured Output",
+        "Gemini Main Analysis 1"
+      ],
+      "requirement_evidence": [
+        "use a second language model agent with a structured output schema to convert the Markdown into validated JSON fields for shipper, consignee, shipment details, and line items"
+      ],
+      "rationale": "Second, distinct language-model extraction step constrained by the structured output schema; declared as a separate action with its own output contract."
+    },
+    {
+      "node_id": "n5",
+      "label": "Programmatically validate order values against carrier line items",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "bol_json",
+          "type": "object",
+          "description": "Extracted JSON containing customer orders and carrier line items"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_json",
+          "type": "object",
+          "description": "The JSON payload with an appended validation result comparing customer order package/weight values against carrier line items"
+        }
+      ],
+      "native_evidence": [
+        "Validate Data with Code"
+      ],
+      "requirement_evidence": [
+        "run a programmatic validation that compares customer order package/weight values against the carrier line items and append a validation result to the JSON"
+      ],
+      "rationale": "Deterministic comparison rules over typed fields; fully declared programmatic logic."
+    },
+    {
+      "node_id": "n6",
+      "label": "Send JSON payload to external HTTP webhook endpoint",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "validated_json",
+          "type": "object",
+          "description": "The resulting JSON payload to deliver"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post to Webhook API"
+      ],
+      "requirement_evidence": [
+        "send the resulting JSON payload to an external HTTP webhook endpoint"
+      ],
+      "rationale": "Declared external delivery of the structured JSON payload (a visible outcome). The linear flow continues to the reply steps, so it is modelled as code with a successor CFG edge; the webhook response is not consumed anywhere, so no output variable is declared."
+    },
+    {
+      "node_id": "n7",
+      "label": "Draft HTML acceptance reply email with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "validated_json",
+          "type": "object",
+          "description": "Validated bill of lading data the reply is based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_reply",
+          "type": "string",
+          "description": "HTML acceptance reply email drafted from the validated data"
+        }
+      ],
+      "native_evidence": [
+        "AI Validation Agent",
+        "Gemini Main Analysis 2"
+      ],
+      "requirement_evidence": [
+        "use a language model to draft an HTML acceptance reply email based on the validated data"
+      ],
+      "rationale": "Open-text drafting of a styled acceptance email based on the validated data; cannot be replaced by frozen deterministic rules. Only validated data is consumed, per the requirement."
+    },
+    {
+      "node_id": "n8",
+      "label": "Send acceptance reply to original sender via Gmail",
+      "node_type": "terminal",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "html_reply",
+          "type": "string",
+          "description": "HTML reply body to send"
+        },
+        {
+          "name": "email_event",
+          "type": "object",
+          "description": "Provides the original sender address and subject for the reply"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Gmail Message"
+      ],
+      "requirement_evidence": [
+        "send it back to the original sender via Gmail"
+      ],
+      "rationale": "User-visible completion action: the original sender receives the HTML acceptance reply; terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "The attachment is downloaded once the configured email arrives."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "The downloaded document is analyzed next."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "The Markdown rewrite is converted into JSON fields."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "The extracted JSON is programmatically validated."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "The validated payload is sent to the webhook."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "After the webhook submission, the acceptance reply is drafted (declared step order 4 then 5)."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "The drafted reply is sent to the original sender."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "email_event",
+      "condition": null,
+      "rationale": "The download uses the email's attachment reference."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "attachment_document",
+      "condition": null,
+      "rationale": "The language model analyzes the downloaded document."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "bol_markdown",
+      "condition": null,
+      "rationale": "The structured Markdown is the input of the JSON conversion."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "bol_json",
+      "condition": null,
+      "rationale": "Validation consumes the extracted JSON fields."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "validated_json",
+      "condition": null,
+      "rationale": "The webhook receives the validated JSON payload."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "validated_json",
+      "condition": null,
+      "rationale": "The reply is drafted based on the validated data."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "html_reply",
+      "condition": null,
+      "rationale": "The send action delivers the drafted HTML body."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n1",
+      "target": "n8",
+      "variable": "email_event",
+      "condition": null,
+      "rationale": "The send action needs the original sender address and subject."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "共识 Gold（8 节点线性管道）：触发→下载→Markdown 重写(semantic)→结构化 JSON 提取(semantic)→程序化校验(code)→webhook 投递(code)→HTML 回信草拟(semantic)→Gmail 发送(terminal)。裁决要点：①触发/下载拆分（需求分别以 conditions 与 allowed_action 声明，两个输出契约）；②webhook 投递无输出（响应未被消费）；③草拟仅消费 validated_json（需求 'based on the validated data'）；④发送消费 html_reply + email_event。混合任务类型边：n4(semantic)→n5(code, bol_json)、n5(code)→n7(semantic) 均有类型边。排除未声明实现：Gemini fallback 模型子节点（模型选择细节）。"
+}

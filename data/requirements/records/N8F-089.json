@@ -1,0 +1,146 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-089",
+  "source_id": "n8n:12135",
+  "workflow_sha256": "7c749a4123e61abbac4519e81f824dfa06ef05846df40d0386d3d0538f993a1a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "a86a4b6953eaf3853ada863c21c7e4611e536ca25381d88dcd11cf127a25ed14",
+  "requirement": {
+    "requirement_text": "一、输入\n当 UAT 反馈通过回调接口提交时开始处理，来源可以是表单、Slack 或内部工具；先把传入数据规范化为一致的结构（测试人、版本、页面、反馈内容），并清洗为可供模型处理的文本。\n\n二、模型分诊\n由语言模型分析反馈，输出以下内容：类型（严重缺陷、功能需求、体验改进或无效噪音）、严重程度与情感、摘要与建议标题、以及置信度评分。\n\n三、质量控制\n若模型输出不可靠（置信度偏低或解析出错），该反馈自动转人工复核，并通过邮件与 Slack 通知。\n\n四、路由与动作\n置信度充足时按类型分流：\n1. 严重缺陷：在 Jira 中创建问题，并向工程团队发送 Slack 告警。\n2. 功能需求：进入 Notion 产品路线图。\n3. 体验改进：进入设计或体验跟踪。\n4. 无效噪音：归档，但保留可追溯记录。\n\n五、闭环与最终结果\n1. 通过 Slack 或邮件通知提交反馈的测试人，并向原始回调方返回结构化的状态结果。\n2. 全部处理在 Jira、Slack、Notion、Google Sheets 与邮件之间保持同步。",
+    "source_spans": [
+      {
+        "start": 168,
+        "end": 427,
+        "text": "This workflow analyzes raw UAT feedback, classifies it (critical bug, feature request, UX improvement, or noise), validates AI confidence, escalates when human review is needed, and synchronizes everything across Jira, Slack, Notion, Google Sheets, and email."
+      },
+      {
+        "start": 1477,
+        "end": 1574,
+        "text": "The workflow starts when UAT feedback is submitted via a webhook (form, Slack, or internal tool)."
+      },
+      {
+        "start": 1595,
+        "end": 1709,
+        "text": "Incoming data is normalized into a consistent structure (tester, build, page, message) and cleaned to be AI-ready."
+      },
+      {
+        "start": 1722,
+        "end": 1768,
+        "text": "An AI model analyzes the feedback and returns:"
+      },
+      {
+        "start": 1771,
+        "end": 1830,
+        "text": "Type (Critical Bug, Feature Request, UX Improvement, Noise)"
+      },
+      {
+        "start": 1833,
+        "end": 1853,
+        "text": "Severity & sentiment"
+      },
+      {
+        "start": 1856,
+        "end": 1883,
+        "text": "Summary and suggested title"
+      },
+      {
+        "start": 1886,
+        "end": 1902,
+        "text": "Confidence score"
+      },
+      {
+        "start": 1921,
+        "end": 2061,
+        "text": "If the AI output is unreliable (low confidence or parsing error), the feedback is automatically routed to manual review via email and Slack."
+      },
+      {
+        "start": 2083,
+        "end": 2111,
+        "text": "If confidence is sufficient:"
+      },
+      {
+        "start": 2114,
+        "end": 2166,
+        "text": "Critical Bugs → Jira issue + Engineering Slack alert"
+      },
+      {
+        "start": 2169,
+        "end": 2202,
+        "text": "Feature Requests → Notion roadmap"
+      },
+      {
+        "start": 2205,
+        "end": 2243,
+        "text": "UX Improvements → Design / UX tracking"
+      },
+      {
+        "start": 2246,
+        "end": 2276,
+        "text": "Noise → Archived but traceable"
+      },
+      {
+        "start": 2291,
+        "end": 2417,
+        "text": "The tester is notified via Slack or email, and the workflow responds to the original webhook with a structured status payload."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过回调接口提交的 UAT 反馈（来源可为表单、Slack 或内部工具）",
+        "规范化后的反馈字段：测试人、版本、页面、反馈内容"
+      ],
+      "conditions": [
+        "模型输出不可靠（置信度偏低或解析出错）时转人工复核",
+        "置信度充足时按类型路由",
+        "类型为严重缺陷时创建 Jira 问题并告警工程团队",
+        "类型为功能需求时进入 Notion 路线图",
+        "类型为体验改进时进入设计或体验跟踪",
+        "类型为无效噪音时归档但保留可追溯记录"
+      ],
+      "allowed_actions": [
+        "规范化并清洗传入的反馈数据",
+        "由语言模型判定类型、严重程度与情感、摘要与建议标题及置信度",
+        "输出不可靠时转人工复核并通过邮件与 Slack 通知",
+        "在 Jira 中创建问题",
+        "向工程团队发送 Slack 告警",
+        "将功能需求写入 Notion 路线图",
+        "将体验改进转入设计或体验跟踪",
+        "归档无效噪音并保留可追溯记录",
+        "通过 Slack 或邮件通知测试人",
+        "向原始回调方返回结构化状态结果",
+        "在 Google Sheets 中同步留存反馈记录"
+      ],
+      "visible_outcomes": [
+        "不同类型的反馈进入各自的目的地：Jira 问题、Notion 路线图、体验跟踪或归档记录",
+        "输出不可靠的反馈进入人工复核，并通过邮件与 Slack 通知",
+        "测试人通过 Slack 或邮件收到反馈处理结果",
+        "原始回调方收到结构化的状态结果",
+        "Google Sheets 中留存反馈记录"
+      ],
+      "failure_behavior": [
+        "模型输出不可靠（置信度偏低或解析出错）时，反馈自动转人工复核，并通过邮件与 Slack 通知"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-089.packet.json",
+    "packet_sha256": "08d36e1d75805f30b83fffa438536243012cd1d7b803726d881a98228b0c95dc",
+    "public_description_sha256": "b1e9f1851bf099a727e411f195853db7827e9d5a18a6c43f8e51acbc2ba2ad56"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-089.response.json",
+    "verification_response_sha256": "a1392f6945c95d566620a30abda0d13e7714940d37d3ab67d1d7b5d87b2705d1",
+    "decision": "accept"
+  },
+  "formal_index": 100
+}

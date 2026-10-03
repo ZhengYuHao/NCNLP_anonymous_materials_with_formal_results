@@ -1,0 +1,124 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-004",
+  "source_id": "n8n:14502",
+  "workflow_sha256": "a4622c6724191b8ba1c6aa30430c8c8cca6367d34c38afffeeb6ac73f5c69e59",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "973c474d1bc07098a9321fe09119d613263cb5b71311c9ce335262fdc449bd04",
+  "requirement": {
+    "pilot_id": "N8C-004",
+    "requirement_text": "Users interact with the system via LINE messages received through a webhook. The system validates the message type (image or command) and behaves as follows: (1) when a user sends a handwritten memo image, the system saves the image to Google Drive, runs AI OCR on it and generates structured data, safely parses and validates the AI output, stores the memo record in Google Sheets, and sends a completion message to the user — the memo is analyzed, summarized, tagged, and saved automatically, with a title and summary automatically generated and tags extracted for knowledge organization; (2) when a user sends a tag command (#タグ名), the system searches memos that contain the specified tag; (3) when a user sends the tag-list command (#タグリスト), the system displays all tags currently stored in the database. Each stored memo record includes: Title, Summary, Tags, Timestamp, and a Link to the original image (images are archived in Google Drive, allowing easy access to the original memo later). If OCR fails, the user receives guidance to retake the photo.",
+    "source_spans": [
+      {
+        "start": 64,
+        "end": 157,
+        "text": "converts handwritten memo images sent via LINE into structured, searchable knowledge using AI"
+      },
+      {
+        "start": 202,
+        "end": 323,
+        "text": "The workflow automatically performs OCR, summarizes the content, generates tags, and stores the results in Google Sheets."
+      },
+      {
+        "start": 323,
+        "end": 408,
+        "text": "Images are archived in Google Drive, allowing easy access to the original memo later."
+      },
+      {
+        "start": 756,
+        "end": 822,
+        "text": "The memo is analyzed, summarized, tagged, and saved automatically."
+      },
+      {
+        "start": 833,
+        "end": 879,
+        "text": "Searches memos that contain the specified tag."
+      },
+      {
+        "start": 892,
+        "end": 943,
+        "text": "Displays all tags currently stored in the database."
+      },
+      {
+        "start": 1001,
+        "end": 1041,
+        "text": "Validate message type (image or command)"
+      },
+      {
+        "start": 1044,
+        "end": 1070,
+        "text": "Save image to Google Drive"
+      },
+      {
+        "start": 1073,
+        "end": 1112,
+        "text": "Run AI OCR and generate structured JSON"
+      },
+      {
+        "start": 1115,
+        "end": 1150,
+        "text": "Parse and validate AI output safely"
+      },
+      {
+        "start": 1153,
+        "end": 1185,
+        "text": "Store memo data in Google Sheets"
+      },
+      {
+        "start": 1188,
+        "end": 1223,
+        "text": "Send completion message to the user"
+      },
+      {
+        "start": 1225,
+        "end": 1286,
+        "text": "If OCR fails, the user receives guidance to retake the photo."
+      },
+      {
+        "start": 1386,
+        "end": 1412,
+        "text": "Link to the original image"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "LINE messages received via webhook: handwritten memo images or text commands"
+      ],
+      "conditions": [
+        "The incoming message type (image or command) determines the processing path",
+        "A tag search returns memos that contain the specified tag"
+      ],
+      "allowed_actions": [
+        "Validate the incoming message type (image or command)",
+        "Save received memo images to Google Drive",
+        "Run AI OCR on the handwritten memo and generate structured data",
+        "Safely parse and validate the AI output",
+        "Store memo data (Title, Summary, Tags, Timestamp, Link to the original image) in Google Sheets",
+        "Send a completion message to the user",
+        "Search memos that contain a specified tag (#タグ名)",
+        "Display all tags currently stored in the database (#タグリスト)"
+      ],
+      "visible_outcomes": [
+        "The memo is analyzed, summarized, tagged, and saved automatically; the user receives a completion message",
+        "Tag search results for the specified tag",
+        "The list of all tags currently stored in the database",
+        "Original memo images archived in Google Drive, accessible via the link stored in each memo record"
+      ],
+      "failure_behavior": [
+        "If OCR fails, the user receives guidance to retake the photo."
+      ]
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 4
+}

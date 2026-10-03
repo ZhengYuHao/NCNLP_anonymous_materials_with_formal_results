@@ -1,0 +1,868 @@
+{
+  "pilot_id": "N8C-011",
+  "annotator_id": "GA-01",
+  "status": "submitted",
+  "requirement_sha256": "4691a5fb0de00ffdf2ab47f4bd246fd1e97fd04789407708f552bd24bfd60f6c",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Receive pre-analysed video data",
+      "node_type": "code",
+      "operation_family": "subworkflow_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "video_data",
+          "type": "object",
+          "description": "Pre-analysed video data from the parent workflow: transcript, key moments/sections, visual analysis, and metadata"
+        }
+      ],
+      "native_evidence": [
+        "Shorts Trigger (executeWorkflowTrigger)"
+      ],
+      "requirement_evidence": [
+        "triggered by a parent workflow that provides pre-analysed video data (transcript, key moments/sections, visual analysis, and metadata)"
+      ],
+      "rationale": "Entry point: the sub-workflow is invoked by a parent workflow with pre-analysed video data. Deterministic external IO, type=code."
+    },
+    {
+      "node_id": "n2",
+      "label": "Extract and structure snippets and context",
+      "node_type": "code",
+      "operation_family": "data_preparation",
+      "inputs": [
+        {
+          "name": "video_data",
+          "type": "object",
+          "description": "Pre-analysed video data from the parent workflow"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_context",
+          "type": "object",
+          "description": "Structured key snippets, B-roll timestamps/clips, video overview, and context ready for AI processing"
+        }
+      ],
+      "native_evidence": [
+        "Extract Snippets (code)",
+        "Edit Fields (set)"
+      ],
+      "requirement_evidence": [
+        "extract and structure the key snippets, B-roll timestamps, and video context ready for AI processing"
+      ],
+      "rationale": "Deterministic restructuring of the incoming data into a prepared context object; the prompt-field preparation for the AI agent is part of the same data-preparation contract, type=code."
+    },
+    {
+      "node_id": "n3",
+      "label": "Generate 3 unique short-form concepts",
+      "node_type": "semantic",
+      "operation_family": "llm_concept_generation",
+      "inputs": [
+        {
+          "name": "video_context",
+          "type": "object",
+          "description": "Prepared transcript, key moments, and video overview"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "concepts",
+          "type": "array",
+          "description": "Exactly 3 unique short-form concepts, each with hook, body structure, CTA, full avatar script, and lead magnet deliverable prompt"
+        }
+      ],
+      "native_evidence": [
+        "Poll Short Form Concept Ideator (agent)",
+        "Structured Output Parser",
+        "Google Gemini Chat Model",
+        "Edit Fields"
+      ],
+      "requirement_evidence": [
+        "use a language model-powered AI agent to analyse the transcript, key moments, and video overview and generate 3 unique short-form concepts per video",
+        "using structured output parsing to guarantee clean JSON"
+      ],
+      "rationale": "Open-ended concept ideation constrained by structured output parsing, type=semantic. Produces the 3 concepts consumed by the loop."
+    },
+    {
+      "node_id": "n4",
+      "label": "Loop over concepts",
+      "node_type": "code",
+      "operation_family": "loop_control",
+      "inputs": [
+        {
+          "name": "concepts",
+          "type": "array",
+          "description": "The 3 generated concepts"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "The concept currently being produced in the pipeline"
+        }
+      ],
+      "native_evidence": [
+        "Split Out (splitOut)",
+        "Loop Through Concepts (splitInBatches)"
+      ],
+      "requirement_evidence": [
+        "loop through each concept and run the full production pipeline in parallel for each one"
+      ],
+      "rationale": "Deterministic iteration control over the 3 concepts. Termination: all 3 concepts processed; max_iterations = 3 (<= 20). The loop body fans out into parallel production lanes (avatar, B-roll, lead magnet) and re-enters via the tracker-log back edge."
+    },
+    {
+      "node_id": "n5",
+      "label": "Generate avatar video",
+      "node_type": "code",
+      "operation_family": "external_generation",
+      "inputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "Concept whose full avatar script is rendered"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "avatar_video_url",
+          "type": "string",
+          "description": "URL of the completed vertical (1080x1920) AI avatar video"
+        }
+      ],
+      "native_evidence": [
+        "HeyGen - Generate Full Avatar",
+        "Set Avatar Video ID",
+        "Wait for Avatar",
+        "Poll Avatar Status",
+        "Avatar Done?",
+        "Set Avatar URL"
+      ],
+      "requirement_evidence": [
+        "send each concept's full script to an avatar video generation service to generate a vertical (1080×1920) AI avatar video, poll the status endpoint until rendering is complete, and capture the avatar video URL"
+      ],
+      "rationale": "Deterministic external generation whose internal polling loop terminates when status == completed (max_iterations <= 20); the captured URL is the single output contract, so the submit/poll/capture sub-steps are folded into this node."
+    },
+    {
+      "node_id": "n6",
+      "label": "Determine needed B-roll",
+      "node_type": "semantic",
+      "operation_family": "llm_directing",
+      "inputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "Concept used to decide which B-roll visuals are needed"
+        },
+        {
+          "name": "video_context",
+          "type": "object",
+          "description": "Available B-roll timestamps/clips from the source video"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "broll_plan",
+          "type": "object",
+          "description": "Planned B-roll prompts and clip specifications"
+        }
+      ],
+      "native_evidence": [
+        "AI Video Director",
+        "Split Out1",
+        "Get AI B-Roll"
+      ],
+      "requirement_evidence": [
+        "determine what B-roll is needed via an AI Video Director and send prompts to a video generation service to generate 2-second vertical clips at 24fps and 720p"
+      ],
+      "rationale": "Open-ended creative direction of which B-roll is required, based on the concept and the available source-video B-roll material, type=semantic. Runs while the avatar renders (parallel lane)."
+    },
+    {
+      "node_id": "n7",
+      "label": "Generate and aggregate B-roll clips",
+      "node_type": "code",
+      "operation_family": "external_generation",
+      "inputs": [
+        {
+          "name": "broll_plan",
+          "type": "object",
+          "description": "Prompts and specs for the B-roll clips"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "broll_clips",
+          "type": "array",
+          "description": "Aggregated 2-second vertical B-roll clips at 24fps and 720p"
+        }
+      ],
+      "native_evidence": [
+        "Get AI B-Roll (replicate)",
+        "Extract Flash B-Roll Result1",
+        "Aggregate Flash B-Roll"
+      ],
+      "requirement_evidence": [
+        "with multiple clips generated and aggregated"
+      ],
+      "rationale": "Deterministic external generation of multiple clips and their aggregation into one collection, type=code."
+    },
+    {
+      "node_id": "n8",
+      "label": "Create beat-by-beat storyboard",
+      "node_type": "semantic",
+      "operation_family": "llm_directing",
+      "inputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "Concept with title, type, and full script"
+        },
+        {
+          "name": "avatar_video_url",
+          "type": "string",
+          "description": "Completed avatar video used to fix the total duration"
+        },
+        {
+          "name": "broll_clips",
+          "type": "array",
+          "description": "Aggregated B-roll clips selectable by the director"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "storyboard",
+          "type": "object",
+          "description": "Beat-by-beat storyboard with layout types (avatar full-frame, split-screen, picture-in-picture), transition effects, and timing"
+        }
+      ],
+      "native_evidence": [
+        "AI Video Director (agent)",
+        "Structured Output Parser1",
+        "Google Gemini Chat Model3",
+        "Creatomate Effects Library",
+        "Merge"
+      ],
+      "requirement_evidence": [
+        "use a language model-powered AI Video Director to create a beat-by-beat storyboard with dynamic layout transitions",
+        "specifying layout types (avatar full-frame for hooks/CTAs, split-screen for demos, picture-in-picture overlays for focus moments), transition effects, and timing"
+      ],
+      "rationale": "Open-ended direction of a timed storyboard constrained by structured output, type=semantic. Consumes the avatar URL and the aggregated B-roll."
+    },
+    {
+      "node_id": "n9",
+      "label": "Build render payload",
+      "node_type": "code",
+      "operation_family": "payload_assembly",
+      "inputs": [
+        {
+          "name": "storyboard",
+          "type": "object",
+          "description": "Storyboard with beats, layouts, and transitions"
+        },
+        {
+          "name": "avatar_video_url",
+          "type": "string",
+          "description": "Avatar video to assemble"
+        },
+        {
+          "name": "broll_clips",
+          "type": "array",
+          "description": "B-roll clips to assemble"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "render_payload",
+          "type": "object",
+          "description": "1080x1920 composition payload assembling avatar video, B-roll clips, transitions, text overlays, and effects"
+        }
+      ],
+      "native_evidence": [
+        "Creatomate Template Builder Code1 (code)"
+      ],
+      "requirement_evidence": [
+        "convert the storyboard into a render payload assembling avatar video, B-roll clips, transitions, text overlays, and effects into a single 1080×1920 composition"
+      ],
+      "rationale": "Deterministic conversion of the storyboard into a render payload that assembles the avatar video, B-roll clips, transitions, text overlays, and effects, type=code."
+    },
+    {
+      "node_id": "n10",
+      "label": "Render final video and download",
+      "node_type": "code",
+      "operation_family": "external_render",
+      "inputs": [
+        {
+          "name": "render_payload",
+          "type": "object",
+          "description": "Composition payload to render"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_video",
+          "type": "binary",
+          "description": "Downloaded finished rendered vertical video (1080x1920)"
+        }
+      ],
+      "native_evidence": [
+        "Creatomate - Render",
+        "Set Render ID",
+        "Wait for Render",
+        "Poll Render Status",
+        "Render Done?",
+        "Download Rendered Video"
+      ],
+      "requirement_evidence": [
+        "send the render to a rendering service, poll until complete, and download it"
+      ],
+      "rationale": "Deterministic external render whose internal polling loop terminates when status == succeeded (max_iterations <= 20), then downloads the file; the submit/poll/download sub-steps are folded into this node."
+    },
+    {
+      "node_id": "n11",
+      "label": "Upload video to Google Drive and share",
+      "node_type": "code",
+      "operation_family": "external_storage",
+      "inputs": [
+        {
+          "name": "rendered_video",
+          "type": "binary",
+          "description": "Finished video to upload"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "drive_url",
+          "type": "string",
+          "description": "Google Drive link of the uploaded and shared video"
+        }
+      ],
+      "native_evidence": [
+        "Upload to Google Drive (googleDrive)"
+      ],
+      "requirement_evidence": [
+        "upload the finished video to Google Drive and share it"
+      ],
+      "rationale": "Deterministic external upload/share, type=code; the requirement declares sharing alongside upload, so both are captured in this step. The drive link is consumed by the copywriter and the tracker."
+    },
+    {
+      "node_id": "n12",
+      "label": "Generate platform-optimised copy",
+      "node_type": "semantic",
+      "operation_family": "llm_copywriting",
+      "inputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "Concept providing title, type, description, CTA, and script"
+        },
+        {
+          "name": "drive_url",
+          "type": "string",
+          "description": "Drive link of the finished video"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "social_copy",
+          "type": "object",
+          "description": "Platform-optimised titles, descriptions, hashtags, and captions for YouTube Shorts, Instagram Reels, and TikTok"
+        }
+      ],
+      "native_evidence": [
+        "Social Media Copyrighter (openAi)"
+      ],
+      "requirement_evidence": [
+        "use a language model-powered Social Media Copywriter to generate platform-optimised titles, descriptions, hashtags, and captions for YouTube Shorts, Instagram Reels, and TikTok"
+      ],
+      "rationale": "Open-ended platform copywriting, type=semantic."
+    },
+    {
+      "node_id": "n13",
+      "label": "Create lead magnet document",
+      "node_type": "semantic",
+      "operation_family": "llm_document_generation",
+      "inputs": [
+        {
+          "name": "current_concept",
+          "type": "object",
+          "description": "Concept whose CTA promise defines the lead magnet deliverable"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lead_magnet_markdown",
+          "type": "string",
+          "description": "Downloadable lead magnet document content (guide, template, checklist, etc.) in Markdown"
+        }
+      ],
+      "native_evidence": [
+        "Document Generator (agent)",
+        "Google Gemini Chat Model2"
+      ],
+      "requirement_evidence": [
+        "use a language model-powered Document Generator to create a downloadable lead magnet (actionable guide, template, checklist, etc.) based on the CTA promise from each concept"
+      ],
+      "rationale": "Open-ended document generation per concept (each concept carries a lead magnet deliverable prompt), type=semantic. Runs in parallel with the video production lanes."
+    },
+    {
+      "node_id": "n14",
+      "label": "Convert lead magnet to HTML",
+      "node_type": "code",
+      "operation_family": "document_conversion",
+      "inputs": [
+        {
+          "name": "lead_magnet_markdown",
+          "type": "string",
+          "description": "Markdown document content to convert"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lead_magnet_html",
+          "type": "string",
+          "description": "HTML-rendered lead magnet document"
+        }
+      ],
+      "native_evidence": [
+        "Convert Document to HTML (code)"
+      ],
+      "requirement_evidence": [
+        "convert it to HTML"
+      ],
+      "rationale": "Deterministic conversion of the generated Markdown into HTML, a distinct intermediate artifact with its own output contract, type=code."
+    },
+    {
+      "node_id": "n15",
+      "label": "Create and share Google Doc",
+      "node_type": "code",
+      "operation_family": "document_publishing",
+      "inputs": [
+        {
+          "name": "lead_magnet_html",
+          "type": "string",
+          "description": "HTML content to upload as a Google Doc"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "magnet_url",
+          "type": "string",
+          "description": "Publicly shared Google Doc link of the lead magnet"
+        }
+      ],
+      "native_evidence": [
+        "Create Google Doc (httpRequest)",
+        "Share file (googleDrive share)"
+      ],
+      "requirement_evidence": [
+        "upload it as a Google Doc, share it publicly"
+      ],
+      "rationale": "Deterministic external actions uploading the HTML as a Google Doc and sharing it publicly; the single output contract is the public link (magnet_url), so the two external sub-actions form one publish node, type=code."
+    },
+    {
+      "node_id": "n16",
+      "label": "Log everything to Google Sheets tracker",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "social_copy",
+          "type": "object",
+          "description": "Platform copy to record"
+        },
+        {
+          "name": "drive_url",
+          "type": "string",
+          "description": "Video drive link to record"
+        },
+        {
+          "name": "magnet_url",
+          "type": "string",
+          "description": "Lead magnet doc link to record"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tracker_row",
+          "type": "object",
+          "description": "Full tracking row for the produced short"
+        }
+      ],
+      "native_evidence": [
+        "Append row in sheet (googleSheets)",
+        "Append row in sheet1 (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "log everything to a Google Sheets tracker",
+        "link it in the tracker sheet"
+      ],
+      "rationale": "Deterministic external write that aggregates the per-concept artifacts into the tracker (both native appends write to the same tracker with the same output contract). Its back edge re-enters the loop for the next concept."
+    },
+    {
+      "node_id": "n17",
+      "label": "Complete source video processing",
+      "node_type": "terminal",
+      "operation_family": "completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Loop Through Concepts (loop exit after the last concept)"
+      ],
+      "requirement_evidence": [
+        "for each source video, 3 unique shorts are generated",
+        "a finished rendered vertical video (1080×1920 MP4) uploaded to Google Drive"
+      ],
+      "rationale": "Loop-exit terminal: after all 3 concepts have been processed, the per-video processing completes. All per-concept visible outcomes (video in Drive, copy, lead magnet doc, tracker rows) are delivered inside the loop. No CFG out-edges."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "Incoming video data is structured for AI processing."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Prepared context drives concept ideation."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "The 3 concepts enter the loop control."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "concepts remain (max_iterations = 3)",
+      "rationale": "Loop body entry for the avatar generation lane."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "concepts remain (max_iterations = 3)",
+      "rationale": "Loop body entry for the B-roll planning lane (parallel to avatar generation)."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n13",
+      "variable": null,
+      "condition": "concepts remain (max_iterations = 3)",
+      "rationale": "Loop body entry for the lead magnet document lane (parallel)."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n5",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "Completed avatar video feeds the storyboard direction."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "B-roll plan is sent to the video generation service."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "Aggregated B-roll clips feed the storyboard direction."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "Storyboard is converted into the render payload."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "Payload is sent for rendering and the output is downloaded."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "Finished video is uploaded and shared on Google Drive."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "Drive link and concept feed the social copy generation."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "Platform copy is logged to the tracker."
+    },
+    {
+      "edge_id": "c15",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "Generated document is converted to HTML."
+    },
+    {
+      "edge_id": "c16",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "HTML is uploaded as a Google Doc and shared publicly."
+    },
+    {
+      "edge_id": "c17",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "Lead magnet link is logged to the tracker."
+    },
+    {
+      "edge_id": "c18",
+      "source": "n16",
+      "target": "n4",
+      "variable": null,
+      "condition": "more concepts remain (max_iterations = 3)",
+      "rationale": "Back edge: after logging, the loop proceeds to the next concept."
+    },
+    {
+      "edge_id": "c19",
+      "source": "n4",
+      "target": "n17",
+      "variable": null,
+      "condition": "all 3 concepts processed",
+      "rationale": "Loop exit: processing completes once all concepts are done; n17 is the terminal."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video_data",
+      "condition": null,
+      "rationale": "Pre-analysed data is structured."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "video_context",
+      "condition": null,
+      "rationale": "Prepared context drives concept generation."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "concepts",
+      "condition": null,
+      "rationale": "Concepts enter the loop."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "current_concept",
+      "condition": null,
+      "rationale": "Concept script feeds avatar generation."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "current_concept",
+      "condition": null,
+      "rationale": "Concept feeds B-roll planning."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n2",
+      "target": "n6",
+      "variable": "video_context",
+      "condition": null,
+      "rationale": "B-roll planning uses the source video's available B-roll material."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "broll_plan",
+      "condition": null,
+      "rationale": "Planned prompts drive B-roll generation."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "broll_clips",
+      "condition": null,
+      "rationale": "Aggregated clips feed the storyboard."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n5",
+      "target": "n8",
+      "variable": "avatar_video_url",
+      "condition": null,
+      "rationale": "Avatar video URL fixes the storyboard duration."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n4",
+      "target": "n8",
+      "variable": "current_concept",
+      "condition": null,
+      "rationale": "Concept info feeds the storyboard direction."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n8",
+      "target": "n9",
+      "variable": "storyboard",
+      "condition": null,
+      "rationale": "Storyboard is assembled into the render payload."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n5",
+      "target": "n9",
+      "variable": "avatar_video_url",
+      "condition": null,
+      "rationale": "The payload assembles the avatar video."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n7",
+      "target": "n9",
+      "variable": "broll_clips",
+      "condition": null,
+      "rationale": "The payload assembles the B-roll clips."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n9",
+      "target": "n10",
+      "variable": "render_payload",
+      "condition": null,
+      "rationale": "Payload is rendered and downloaded."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n10",
+      "target": "n11",
+      "variable": "rendered_video",
+      "condition": null,
+      "rationale": "Finished video is uploaded to Drive."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n11",
+      "target": "n12",
+      "variable": "drive_url",
+      "condition": null,
+      "rationale": "Drive link is included in the copy context."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n4",
+      "target": "n12",
+      "variable": "current_concept",
+      "condition": null,
+      "rationale": "Concept details feed copy generation."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n4",
+      "target": "n13",
+      "variable": "current_concept",
+      "condition": null,
+      "rationale": "Concept CTA promise feeds lead magnet generation."
+    },
+    {
+      "edge_id": "d19",
+      "source": "n13",
+      "target": "n14",
+      "variable": "lead_magnet_markdown",
+      "condition": null,
+      "rationale": "Markdown document is converted to HTML."
+    },
+    {
+      "edge_id": "d20",
+      "source": "n14",
+      "target": "n15",
+      "variable": "lead_magnet_html",
+      "condition": null,
+      "rationale": "HTML content is uploaded as a Google Doc."
+    },
+    {
+      "edge_id": "d21",
+      "source": "n15",
+      "target": "n16",
+      "variable": "magnet_url",
+      "condition": null,
+      "rationale": "Lead magnet link is logged in the tracker."
+    },
+    {
+      "edge_id": "d22",
+      "source": "n12",
+      "target": "n16",
+      "variable": "social_copy",
+      "condition": null,
+      "rationale": "Platform copy is logged in the tracker."
+    },
+    {
+      "edge_id": "d23",
+      "source": "n11",
+      "target": "n16",
+      "variable": "drive_url",
+      "condition": null,
+      "rationale": "Video drive link is logged in the tracker."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n17"
+  ],
+  "confidence": 0.88,
+  "notes": "共识 Gold（17 节点、单入口 n1、单终止 n17 循环退出）：触发 → 结构化 → 概念生成(semantic) → 概念循环 → 并行车道（avatar 折叠生成 / B-roll 规划 semantic + 生成聚合 / lead magnet 生成 semantic + HTML 转换 + 创建共享 doc）→ storyboard semantic → render payload → 渲染下载折叠 → Drive 上传共享 → 社媒文案 semantic → 单一 tracker 写入（回边 n16→n4）→ 循环退出终止 n17。轮询折叠进节点契约（status==completed/succeeded，max_iterations<=20）；循环终止条件 all 3 concepts processed（max_iterations=3）。混合任务类型边：n3/n6/n8/n12/n13(semantic)→code。补全三条漏画 DFG 边（n2→n6、n5→n9、n7→n9）。排除未声明实现：头像/语音 ID、特效库内容、品牌示例文案、文件夹 ID、提示词文本等。"
+}

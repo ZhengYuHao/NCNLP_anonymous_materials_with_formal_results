@@ -1,0 +1,493 @@
+{
+  "task_id": "N8F-092",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "a7a176255dbd9ff31fbf008c4f31a4236368c966592b34fd44f8ea63c426cf4e",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每 12 小时定时触发轮播帖生成与发布",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Schedule Trigger (scheduleTrigger, 每 12 小时)"
+      ],
+      "requirement_evidence": [
+        "按每 12 小时的定时计划"
+      ],
+      "rationale": "需求声明的定时触发入口（每 12 小时），判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "手动触发轮播帖生成与发布",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "When clicking 'Test workflow' (manualTrigger)"
+      ],
+      "requirement_evidence": [
+        "或手动触发"
+      ],
+      "rationale": "需求声明的手动触发入口，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "将主题起始点、焦点与卖点三类随机向量组合为主题输入",
+      "node_type": "code",
+      "operation_family": "vector_combine",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "theme_input",
+          "type": "object",
+          "description": "组合后的主题输入"
+        }
+      ],
+      "native_evidence": [
+        "generate search term (code)"
+      ],
+      "requirement_evidence": [
+        "将主题起始点、焦点与卖点三类随机向量组合为主题输入"
+      ],
+      "rationale": "随机向量组合为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型生成唯一轮播主题并为每页生成标题、说明文字、话题标签与行动号召",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "theme_input",
+          "type": "object",
+          "description": "组合后的主题输入"
+        },
+        {
+          "name": "historical_themes",
+          "type": "array",
+          "description": "向量数据库中已存储的历史主题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "carousel_content",
+          "type": "object",
+          "description": "轮播主题与逐页内容（标题、说明文字、话题标签、行动号召）"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent (agent)",
+        "OpenAI Chat Model (lmChatOpenAi)",
+        "Simple Vector Store1 (vectorStoreInMemory)"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成唯一的轮播主题，并为轮播中的每一页生成标题、说明文字、话题标签与行动号召"
+      ],
+      "rationale": "需求声明由语言模型生成主题与逐页内容，判 semantic；历史主题为契约输入。"
+    },
+    {
+      "node_id": "n5",
+      "label": "将新主题与历史主题做语义相似度比对",
+      "node_type": "code",
+      "operation_family": "similarity_check",
+      "inputs": [
+        {
+          "name": "carousel_content",
+          "type": "object",
+          "description": "新生成的轮播内容"
+        },
+        {
+          "name": "historical_themes",
+          "type": "array",
+          "description": "历史主题（向量库）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "similarity_verdict",
+          "type": "boolean",
+          "description": "相似度是否超过阈值"
+        }
+      ],
+      "native_evidence": [
+        "Answer questions with a vector store (toolVectorStore)",
+        "Embeddings OpenAI (embeddingsOpenAi)"
+      ],
+      "requirement_evidence": [
+        "将新主题与向量数据库中已存储的历史主题做语义相似度比对，以确保内容不重复，若相似度超过阈值则重新生成主题"
+      ],
+      "rationale": "相似度比对为基于向量的确定性计算，判 code；超阈值时经 CFG 回边（n5→n4）重新生成，重新生成次数 max_iterations<=20。"
+    },
+    {
+      "node_id": "n6",
+      "label": "对生成内容做结构解析与校验",
+      "node_type": "code",
+      "operation_family": "validate",
+      "inputs": [
+        {
+          "name": "carousel_content",
+          "type": "object",
+          "description": "生成的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_content",
+          "type": "object",
+          "description": "校验通过的内容"
+        }
+      ],
+      "native_evidence": [
+        "Parsear JSON Inicial (code)"
+      ],
+      "requirement_evidence": [
+        "对生成内容做结构解析与校验"
+      ],
+      "rationale": "结构解析与校验为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "图像生成服务为每一页生成 1024x1024 配图",
+      "node_type": "code",
+      "operation_family": "image_generation_service",
+      "inputs": [
+        {
+          "name": "validated_content",
+          "type": "object",
+          "description": "校验通过的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slide_images",
+          "type": "array",
+          "description": "逐页生成的 1024x1024 配图"
+        }
+      ],
+      "native_evidence": [
+        "generate image (openAi, 1024x1024)"
+      ],
+      "requirement_evidence": [
+        "由图像生成服务为每一页生成一张 1024x1024 的配图"
+      ],
+      "rationale": "图像生成类外部服务调用判 code；分辨率 1024x1024 为契约约束。"
+    },
+    {
+      "node_id": "n8",
+      "label": "将配图上传至图片托管服务以获取公开访问链接",
+      "node_type": "code",
+      "operation_family": "external_upload",
+      "inputs": [
+        {
+          "name": "slide_images",
+          "type": "array",
+          "description": "逐页配图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_urls",
+          "type": "array",
+          "description": "配图的公开访问链接"
+        }
+      ],
+      "native_evidence": [
+        "upload image to imgur (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "并将配图上传至图片托管服务以获取公开访问链接"
+      ],
+      "rationale": "需求声明的图片托管上传，为确定性外部操作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "将轮播帖元数据写入 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "validated_content",
+          "type": "object",
+          "description": "轮播帖元数据（标题、说明文字、话题标签、页数、计划发布日期）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "save in sheets (googleSheets, append)"
+      ],
+      "requirement_evidence": [
+        "将轮播帖的元数据（标题、说明文字、话题标签、页数、计划发布日期）写入 Google Sheets，用于追踪、分析与审计"
+      ],
+      "rationale": "需求声明的元数据写入，为确定性外部操作，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "通过 Instagram Graph API 创建媒体容器",
+      "node_type": "code",
+      "operation_family": "external_api",
+      "inputs": [
+        {
+          "name": "image_urls",
+          "type": "array",
+          "description": "配图的公开访问链接"
+        },
+        {
+          "name": "validated_content",
+          "type": "object",
+          "description": "轮播内容（说明文字等）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "container_ids",
+          "type": "array",
+          "description": "创建的媒体容器 ID"
+        }
+      ],
+      "native_evidence": [
+        "create container (httpRequest, Instagram Graph API media)"
+      ],
+      "requirement_evidence": [
+        "通过 Instagram Graph API 创建媒体容器"
+      ],
+      "rationale": "需求声明的 Graph API 容器创建，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "连同说明文字发布该轮播帖",
+      "node_type": "terminal",
+      "operation_family": "external_publish",
+      "inputs": [
+        {
+          "name": "container_ids",
+          "type": "array",
+          "description": "媒体容器 ID"
+        },
+        {
+          "name": "validated_content",
+          "type": "object",
+          "description": "说明文字等发布内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "POst to instagram (httpRequest, media_publish)"
+      ],
+      "requirement_evidence": [
+        "最后通过 Instagram Graph API 创建媒体容器，并连同说明文字发布该轮播帖"
+      ],
+      "rationale": "需求声明的发布动作，为最终交付，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n12",
+      "label": "结构校验不通过，不进入发布环节",
+      "node_type": "terminal",
+      "operation_family": "safe_reject",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "需求 source_span: \"Error handling ensures invalid JSON never reaches the publishing nodes.\"",
+        "原生无独立失败分支节点：结构校验由 Parsear JSON Inicial (code) 完成，其 jsCode 在校验失败时 throw new Error 抛错终止执行，原生 main 边中该节点直接连向 save in sheets，无失败分支出边"
+      ],
+      "requirement_evidence": [
+        "校验不通过的内容不会进入发布环节，以避免发布失败"
+      ],
+      "rationale": "n12 是冻结需求 failure_behavior 声明的抽象失败出口（校验不通过即终止、不进入发布），非原生独立条件分支节点的复制；原生图以 Parsear JSON Inicial 抛错终止实现同一行为，作为佐证。判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后组合主题输入"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发后组合主题输入"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "主题输入就绪后生成内容"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成后进行相似度比对"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n4",
+      "variable": null,
+      "condition": "similarity_verdict == true",
+      "rationale": "相似度超阈值则重新生成主题（max_iterations<=20）"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "similarity_verdict == false",
+      "rationale": "未超阈值则进入结构校验"
+    },
+    {
+      "edge_id": "cfg_e7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "校验通过",
+      "rationale": "校验通过后生成配图"
+    },
+    {
+      "edge_id": "cfg_e8",
+      "source": "n6",
+      "target": "n12",
+      "variable": null,
+      "condition": "校验不通过",
+      "rationale": "校验不通过则终止，不进入发布"
+    },
+    {
+      "edge_id": "cfg_e9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成配图后上传托管"
+    },
+    {
+      "edge_id": "cfg_e10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "上传完成后写入元数据"
+    },
+    {
+      "edge_id": "cfg_e11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "元数据写入后创建媒体容器"
+    },
+    {
+      "edge_id": "cfg_e12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "容器创建后发布轮播帖"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n3",
+      "target": "n4",
+      "variable": "theme_input",
+      "condition": null,
+      "rationale": "内容生成基于主题输入"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "carousel_content",
+      "condition": null,
+      "rationale": "相似度比对使用新生成的主题"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n4",
+      "target": "n6",
+      "variable": "carousel_content",
+      "condition": null,
+      "rationale": "结构校验基于生成内容"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n6",
+      "target": "n7",
+      "variable": "validated_content",
+      "condition": null,
+      "rationale": "配图生成基于校验后的内容"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n7",
+      "target": "n8",
+      "variable": "slide_images",
+      "condition": null,
+      "rationale": "上传使用生成的配图"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n8",
+      "target": "n10",
+      "variable": "image_urls",
+      "condition": null,
+      "rationale": "创建容器使用公开图片链接"
+    },
+    {
+      "edge_id": "dfg_d7",
+      "source": "n6",
+      "target": "n9",
+      "variable": "validated_content",
+      "condition": null,
+      "rationale": "元数据写入使用校验后的内容"
+    },
+    {
+      "edge_id": "dfg_d8",
+      "source": "n6",
+      "target": "n10",
+      "variable": "validated_content",
+      "condition": null,
+      "rationale": "容器创建附带说明文字"
+    },
+    {
+      "edge_id": "dfg_d9",
+      "source": "n6",
+      "target": "n11",
+      "variable": "validated_content",
+      "condition": null,
+      "rationale": "发布附带说明文字"
+    },
+    {
+      "edge_id": "dfg_d10",
+      "source": "n10",
+      "target": "n11",
+      "variable": "container_ids",
+      "condition": null,
+      "rationale": "发布使用创建的容器 ID"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n2"
+  ],
+  "terminal_nodes": [
+    "n11",
+    "n12"
+  ],
+  "confidence": 0.85,
+  "notes": "定时与手动双入口汇入同一生成发布链。相似度超阈值时的重新生成经 n5→n4 回边建模（max_iterations<=20）；结构校验失败以 n12 安全拒绝终止节点建模——n12 是冻结需求 failure_behavior 声明的抽象失败出口（\"校验不通过时不进入发布环节\"），原生图无独立失败分支节点，校验由 Parsear JSON Inicial (code) 的 jsCode 抛错终止实现（throw new Error），该行为作为佐证而非节点复制。元数据写入顺序按需求声明置于图片上传之后、容器创建之前。原生 Simple Memory、Embeddings、Vector Store 等模型依赖为实现细节，未纳入。"
+}

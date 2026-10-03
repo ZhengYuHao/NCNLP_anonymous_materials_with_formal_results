@@ -1,0 +1,371 @@
+{
+  "task_id": "N8F-081",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "4fddb4581808febff0971090a6bef2f70242cf60156e52874bd2cf7ffc735fca",
+  "fixtures": [
+    {
+      "fixture_id": "F-CANDIDATE-HIGH",
+      "purpose": "正常用例：高分候选人（模型评分为 92），验证 CRM 收录与祝贺邮件分支",
+      "input_data": {
+        "name": "Alice Zhang",
+        "email": "alice.zhang@example.com",
+        "resume_pdf": "base64://mock-resume-alice.pdf",
+        "submitted_at": "2026-08-10T10:00:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-CANDIDATE-LOW",
+      "purpose": "正常用例：未达标候选人（模型评分为 60），验证反馈邮件分支",
+      "input_data": {
+        "name": "Bob Li",
+        "email": "bob.li@example.com",
+        "resume_pdf": "base64://mock-resume-bob.pdf",
+        "submitted_at": "2026-08-11T10:00:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-CANDIDATE-BOUNDARY-85",
+      "purpose": "边界用例：评分恰好为 85 分，验证按未达标处理（仅高于 85 才走高分分支）",
+      "input_data": {
+        "name": "Carol Wang",
+        "email": "carol.wang@example.com",
+        "resume_pdf": "base64://mock-resume-carol.pdf",
+        "submitted_at": "2026-08-12T10:00:00Z"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-PDFCO-CONVERT",
+      "dependency_type": "n8n-nodes-pdfco.PDFco Api",
+      "operation": "pdf_to_image",
+      "request_contract": {
+        "pdf": "base64://mock-resume-alice.pdf"
+      },
+      "response_contract": {
+        "image_url": "https://mock-pdfco.example/img/alice-page1.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AZURE-OCR",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "ocr_extract_text",
+      "request_contract": {
+        "image_url": "https://mock-pdfco.example/img/alice-page1.png"
+      },
+      "response_contract": {
+        "text": "Alice Zhang - Senior Software Engineer. 8 years of experience in distributed systems at Example Corp. Led a team of 5 engineers. Python, Go, Kubernetes."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-HIGH-SCORE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_resume",
+      "request_contract": {
+        "resume_text": "Alice Zhang - Senior Software Engineer. 8 years of experience in distributed systems at Example Corp. Led a team of 5 engineers. Python, Go, Kubernetes."
+      },
+      "response_contract": {
+        "strengths": ["Distributed systems expertise", "Team leadership"],
+        "improvements": ["Add quantifiable impact metrics"],
+        "score": 92
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LOW-SCORE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_resume",
+      "request_contract": {
+        "resume_text": "Bob Li - Junior developer with 1 year of experience in web development. HTML, CSS, basic JavaScript."
+      },
+      "response_contract": {
+        "strengths": ["Willing to learn"],
+        "improvements": ["Build a stronger project portfolio", "Gain production experience"],
+        "score": 60
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-BOUNDARY-SCORE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_resume",
+      "request_contract": {
+        "resume_text": "Carol Wang - Product manager with 5 years of experience. Strong stakeholder management skills."
+      },
+      "response_contract": {
+        "strengths": ["Stakeholder management"],
+        "improvements": ["Deepen technical background"],
+        "score": 85
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PG-INSERT",
+      "dependency_type": "n8n-nodes-base.postgres",
+      "operation": "insert_submission",
+      "request_contract": {
+        "name": "Alice Zhang",
+        "email": "alice.zhang@example.com",
+        "score": 92
+      },
+      "response_contract": {
+        "inserted_id": 1,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PG-INSERT-LOW",
+      "dependency_type": "n8n-nodes-base.postgres",
+      "operation": "insert_submission",
+      "request_contract": {
+        "name": "Bob Li",
+        "email": "bob.li@example.com",
+        "score": 60
+      },
+      "response_contract": {
+        "inserted_id": 2,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PG-INSERT-BOUNDARY",
+      "dependency_type": "n8n-nodes-base.postgres",
+      "operation": "insert_submission",
+      "request_contract": {
+        "name": "Carol Wang",
+        "email": "carol.wang@example.com",
+        "score": 85
+      },
+      "response_contract": {
+        "inserted_id": 3,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ZOHO-CREATE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_crm_lead",
+      "request_contract": {
+        "full_name": "Alice Zhang",
+        "email": "alice.zhang@example.com",
+        "score": 92
+      },
+      "response_contract": {
+        "id": "zoho-lead-901",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-CONGRAT",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_congratulation_email",
+      "request_contract": {
+        "to": "alice.zhang@example.com",
+        "subject": "Congratulations - next steps"
+      },
+      "response_contract": {
+        "message_id": "gm-congrat-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-FEEDBACK",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_feedback_email",
+      "request_contract": {
+        "to": "bob.li@example.com",
+        "subject": "Application feedback"
+      },
+      "response_contract": {
+        "message_id": "gm-fb-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-FEEDBACK-BOUNDARY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_feedback_email",
+      "request_contract": {
+        "to": "carol.wang@example.com",
+        "subject": "Application feedback"
+      },
+      "response_contract": {
+        "message_id": "gm-fb-2",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-HIGH-SCORE-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-CANDIDATE-HIGH"],
+      "mock_ids": [
+        "M-PDFCO-CONVERT",
+        "M-AZURE-OCR",
+        "M-LLM-HIGH-SCORE",
+        "M-PG-INSERT",
+        "M-ZOHO-CREATE",
+        "M-GMAIL-CONGRAT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-HIGH-1",
+          "target": "exec_log.mock_calls.M-PDFCO-CONVERT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "PDF 简历必须先转换为图片"
+        },
+        {
+          "assertion_id": "A-HIGH-2",
+          "target": "exec_log.mock_calls.M-AZURE-OCR.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图片必须经文字识别提取文本"
+        },
+        {
+          "assertion_id": "A-HIGH-3",
+          "target": "exec_log.mock_calls.M-LLM-HIGH-SCORE.request_contract.resume_text",
+          "operator": "contains",
+          "expected": "Alice Zhang",
+          "rationale": "模型分析的文本必须来自 OCR 提取结果，而非候选人的原始输入字段"
+        },
+        {
+          "assertion_id": "A-HIGH-4",
+          "target": "result.score",
+          "operator": "equals",
+          "expected": 92,
+          "rationale": "评分必须为模型输出的 92 分"
+        },
+        {
+          "assertion_id": "A-HIGH-5",
+          "target": "exec_log.mock_calls.M-PG-INSERT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "提交数据必须存入数据库"
+        },
+        {
+          "assertion_id": "A-HIGH-6",
+          "target": "exec_log.mock_calls.M-ZOHO-CREATE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "评分 92 > 85 时必须添加到 Zoho CRM"
+        },
+        {
+          "assertion_id": "A-HIGH-7",
+          "target": "exec_log.mock_calls.M-GMAIL-CONGRAT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "高分候选人必须收到祝贺邮件"
+        },
+        {
+          "assertion_id": "A-HIGH-8",
+          "target": "exec_log.mock_calls.M-GMAIL-FEEDBACK.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "高分候选人不得收到反馈邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LOW-SCORE-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-CANDIDATE-LOW"],
+      "mock_ids": ["M-LLM-LOW-SCORE", "M-PG-INSERT-LOW", "M-GMAIL-FEEDBACK"],
+      "assertions": [
+        {
+          "assertion_id": "A-LOW-1",
+          "target": "result.score",
+          "operator": "equals",
+          "expected": 60,
+          "rationale": "评分必须为模型输出的 60 分"
+        },
+        {
+          "assertion_id": "A-LOW-2",
+          "target": "exec_log.mock_calls.M-PG-INSERT-LOW.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "无论评分高低，提交数据都必须先入库"
+        },
+        {
+          "assertion_id": "A-LOW-3",
+          "target": "exec_log.mock_calls.M-GMAIL-FEEDBACK.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "评分 60 未达标时必须发送反馈邮件"
+        },
+        {
+          "assertion_id": "A-LOW-4",
+          "target": "exec_log.mock_calls.M-ZOHO-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "未达标候选人不得被添加到 Zoho CRM"
+        },
+        {
+          "assertion_id": "A-LOW-5",
+          "target": "exec_log.mock_calls.M-GMAIL-CONGRAT.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "未达标候选人不得收到祝贺邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-SCORE-85",
+      "kind": "boundary",
+      "fixture_ids": ["F-CANDIDATE-BOUNDARY-85"],
+      "mock_ids": ["M-LLM-BOUNDARY-SCORE", "M-PG-INSERT-BOUNDARY", "M-GMAIL-FEEDBACK-BOUNDARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-B85-1",
+          "target": "result.score",
+          "operator": "equals",
+          "expected": 85,
+          "rationale": "评分必须为模型输出的 85 分"
+        },
+        {
+          "assertion_id": "A-B85-2",
+          "target": "exec_log.mock_calls.M-GMAIL-FEEDBACK-BOUNDARY.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求规定高于 85 分才走高分分支，恰好 85 分按未达标处理，发送反馈邮件"
+        },
+        {
+          "assertion_id": "A-B85-3",
+          "target": "exec_log.mock_calls.M-ZOHO-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "恰好 85 分不满足高于 85 的条件，不得进入 CRM"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖高分（92 分 → CRM+祝贺邮件）、未达标（60 分 → 反馈邮件）与边界（恰好 85 分 → 按未达标处理）三个场景。PDF 转换、OCR、LLM、PostgreSQL、Zoho CRM 与 Gmail 全部固定模拟；断言验证 OCR 文本进入模型、数据库入库、分支调用次数（Zoho/祝贺/反馈邮件）的精确相等。"
+}

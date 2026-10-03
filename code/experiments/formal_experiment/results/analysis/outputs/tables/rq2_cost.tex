@@ -1,0 +1,18 @@
+% RQ2 cost table (recomputed from results/rq2 records)
+\begin{table}[!htbp]
+\centering
+\caption{RQ2: mean token costs per workflow and sustained break-even executions (recomputed); --- denotes not applicable.}
+\label{tab:rq2-cost}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrrr@{}}
+\toprule
+System & Build $C$ & Run $R$ & $C+10R$ & Break-even $N_b^*$ \\
+\midrule
+Direct LLM & 0 & 3000 & 30000 & 3 \\
+DSPy & 4000 & 2200 & 26000 & 2 \\
+LMQL & 0 & 2600 & 26000 & 4 \\
+PAL & 0 & 4800 & 48000 & 2 \\
+NCNLP & 6000 & 800 & 14000 & --- \\
+\bottomrule
+\end{tabular*}
+\end{table}

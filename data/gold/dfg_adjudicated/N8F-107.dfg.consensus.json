@@ -1,0 +1,70 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-107",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "请求中的可选输出结构（JSON Schema）",
+        "请求中携带的输出结构（JSON Schema）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g4",
+      "data_items": [
+        "自然语言指令",
+        "自然语言指令（prompt）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "校验失败信息（说明与示例结构）",
+        "结构不合法的校验结果与错误说明（含示例结构）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "校验通过的输出结构或宽松默认结构",
+        "校验通过或回退后的输出结构"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "格式化后的结构化结果",
+        "与结构一致的结构化 JSON 结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 1.0,
+    "shared_edge_count": 5,
+    "adjudicated_dispute_count": 0,
+    "adjudicator_id": null,
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,444 @@
+{
+  "task_id": "N8F-018",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "55dde59b84d452dbb29c4831be7016f4283ea5931f5082d900a146a89a33bc07",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_trigger",
+          "type": "trigger_event",
+          "description": "每日计划时点的触发事件（服务器时区 10:00、12:00、19:00、21:00）"
+        }
+      ],
+      "native_evidence": ["Hourly trigger (scheduleTrigger, cron 0 10,12,19,21 * * *)"],
+      "requirement_evidence": ["按每日计划定时运行，运行时间为服务器时区的 10:00、12:00、19:00、21:00", "每日定时触发（服务器时区 10:00、12:00、19:00、21:00）"],
+      "rationale": "固定时点的周期调度为确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取已发布标题记录",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "schedule_trigger",
+          "type": "trigger_event",
+          "description": "每日计划时点的触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "posted_titles",
+          "type": "array",
+          "description": "已发布标题记录（用于去重）"
+        }
+      ],
+      "native_evidence": ["Get Previous News Titles (googleFirebaseCloudFirestore)"],
+      "requirement_evidence": ["先读取已发布标题记录，用于去重", "已发布标题记录（用于去重）"],
+      "rationale": "确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "请求近期新闻",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "posted_titles",
+          "type": "array",
+          "description": "已发布标题记录（用于去重）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_articles",
+          "type": "array",
+          "description": "新闻数据源返回的近期新闻条目（最近 24–48 小时、按标题检索、按发布时间排序）"
+        }
+      ],
+      "native_evidence": ["API NEWS (httpRequest, newsapi.org query AI Startup, searchIn=title, sortBy=publishedAt)"],
+      "requirement_evidence": ["随后向新闻数据源请求近期新闻，检索范围为最近 24–48 小时、按标题检索、并按发布时间排序", "新闻数据源返回的近期新闻条目（最近 24–48 小时、按标题检索、按发布时间排序）"],
+      "rationale": "按声明参数调用新闻数据源为确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "筛选分组排序文章",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "raw_articles",
+          "type": "array",
+          "description": "新闻数据源返回的近期新闻条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_articles",
+          "type": "array",
+          "description": "筛选、去重并按新旧排序后的文章列表（每主题一篇，最多 10 条，均含有效链接与图片）"
+        }
+      ],
+      "native_evidence": ["Collect Articles (set)", "Select Articles (code)"],
+      "requirement_evidence": ["排除聚合站点与公关稿源（包括 Biztoc、Techmeme、TheFly、PRNewswire、GlobeNewswire、MarketWatch 新闻稿、Medium、Substack、Yahoo 同意页等）", "要求条目同时具备有效的链接与图片", "按主题（规范化标题加域名）分组并只取其中最具代表性的一篇", "再按时间新旧排序，最多返回 10 条不重复的文章"],
+      "rationale": "来源黑名单过滤、链接/图片有效性要求、主题分组取代表、排序与数量上限均为基于类型化数据的确定性规则，合并为一个筛选节点契约，判 code。缺链接/图片条目与 Yahoo 同意页在本节点按设计被跳过（failure_behavior 折叠）。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发布资格校验",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "selected_articles",
+          "type": "array",
+          "description": "筛选、去重并按新旧排序后的文章列表"
+        },
+        {
+          "name": "posted_titles",
+          "type": "array",
+          "description": "已发布标题记录（用于去重）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approved_article",
+          "type": "object",
+          "description": "通过发布资格校验的单篇文章（链接存在且标题未发布过，含链接、图片、标题与摘要）"
+        }
+      ],
+      "native_evidence": ["URL checker (if)"],
+      "requirement_evidence": ["对每篇文章，先检查链接存在且标题未发布过", "链接不存在或标题已发布过则不予发布"],
+      "rationale": "链接存在性与标题查重为确定性规则，判 code。逐篇校验，未通过者按设计跳过（failure_behavior），通过后方进入文案生成。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成 LinkedIn 帖文",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "approved_article",
+          "type": "object",
+          "description": "通过发布资格校验的单篇文章（含链接、图片、标题与摘要）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "语言模型生成的英文口语化帖文（含 2–3 个话题标签，不含表情符号、链接与 Markdown）"
+        }
+      ],
+      "native_evidence": ["LinkedIn post redaction (langchain.agent)", "LinkedIn post redaction 2 (langchain.agent)", "OpenAI Chat Model2/4 (lmChatOpenAi)", "Simple Memory2/4 (memoryBufferWindow)", "Structured Output Parser2/4 (outputParserStructured)"],
+      "requirement_evidence": ["再按是否存在摘要分为两种文案变体：有摘要时生成内容更丰富的帖子，无摘要时生成仍然口语化、简短的帖子", "文案由语言模型生成，风格为自然口语化的英文，不使用表情符号、链接与 Markdown 标记，并附 2–3 个话题标签", "调用语言模型生成 LinkedIn 帖文"],
+      "rationale": "帖文撰写需开放文本生成，判 semantic。需求声明的是同一生成行为的两种文案变体（按摘要有无分支），故折叠为一个语义节点并在契约内按变体选择提示，不按原生两条 agent 链一对一展开。"
+    },
+    {
+      "node_id": "n7",
+      "label": "清理文案并保留图片链接",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "语言模型生成的英文口语化帖文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "清理后的最终帖文文本及保留的图片链接"
+        }
+      ],
+      "native_evidence": ["Post setup (set)", "Post setup 2 (set)"],
+      "requirement_evidence": ["随后清理文案文本并保留图片链接", "清理文案文本并保留图片链接"],
+      "rationale": "文本清理与字段透传为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "下载文章图片验证可用性",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "清理后的最终帖文文本及保留的图片链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "verified_image",
+          "type": "object",
+          "description": "下载验证结果（图片可用时为图片文件/可用链接，不可用或下载失败时为失败标记）"
+        }
+      ],
+      "native_evidence": ["Image Dowloader (httpRequest)", "Image Dowloader 2 (httpRequest)"],
+      "requirement_evidence": ["接着下载文章图片以确认图片链接可用", "下载文章图片以验证链接可用", "图片不可用或下载失败时改为纯文本发布"],
+      "rationale": "图片下载验证为确定性外部动作，其成败决定后续带图/纯文本分支，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "带图发布到 LinkedIn",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "清理后的最终帖文文本"
+        },
+        {
+          "name": "verified_image",
+          "type": "object",
+          "description": "图片可用时为已验证的图片文件/可用链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "LinkedIn 发布结果"
+        }
+      ],
+      "native_evidence": ["LinkedIn Publisher (linkedIn)", "LinkedIn Publisher 2 (linkedIn)"],
+      "requirement_evidence": ["图片可用时以带图形式发布到 LinkedIn", "发布到 LinkedIn（带图或纯文本）", "LinkedIn 上出现一条带图或纯文本的英文帖文，含 2–3 个话题标签"],
+      "rationale": "以确定性契约调用 LinkedIn 发布带图帖文；由于发布成功后还需写入标题记录，故非终止节点，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "纯文本发布到 LinkedIn",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "清理后的最终帖文文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "LinkedIn 发布结果"
+        }
+      ],
+      "native_evidence": ["LinkedIn Publisher 3 (linkedIn)", "LinkedIn Publisher 4 (linkedIn)"],
+      "requirement_evidence": ["图片不可用或下载失败时改为纯文本发布", "发布到 LinkedIn（带图或纯文本）"],
+      "rationale": "退化分支的纯文本发布为确定性外部动作，发布后仍需写入标题记录，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "写入已发布标题记录",
+      "node_type": "terminal",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "LinkedIn 发布结果（发布成功后触发写入）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Firebase Article Saver 1–8 (googleFirebaseCloudFirestore)", "set up 1–8 (set)"],
+      "requirement_evidence": ["发布成功后，把该文章标题写入已发布标题记录，使其在其他时段不会被再次发布", "已发布标题记录中新增该文章标题"],
+      "rationale": "需求声明发布成功后写入标题记录，是本链路的最终可见结果（去重闭环），无 CFG 出边，判 terminal。原生按 8 个时间槽展开的重复保存链折叠进本节点契约。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后先读取已发布标题记录。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得历史记录后请求近期新闻。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始条目进入筛选分组排序。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "候选文章逐篇做发布资格校验。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "link_valid == true && title_not_posted == true",
+      "rationale": "链接存在且标题未发布过才生成文案；否则该文章按设计被跳过。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成的文案进入清理环节。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "清理后下载图片验证可用性。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": "image_available == true",
+      "rationale": "图片下载成功则带图发布。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": "image_available == false",
+      "rationale": "图片不可用或下载失败时改为纯文本发布。"
+    },
+    {
+      "edge_id": "e_cfg_10",
+      "source": "n9",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "带图发布成功后写入标题记录。"
+    },
+    {
+      "edge_id": "e_cfg_11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "纯文本发布成功后写入标题记录。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n2",
+      "target": "n5",
+      "variable": "posted_titles",
+      "condition": null,
+      "rationale": "标题查重消费已发布标题记录。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "raw_articles",
+      "condition": null,
+      "rationale": "筛选分组消费原始新闻条目。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "selected_articles",
+      "condition": null,
+      "rationale": "发布资格校验消费筛选后的文章。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "approved_article",
+      "condition": null,
+      "rationale": "文案生成消费通过校验的文章（含摘要有无信息，决定文案变体）。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "post_draft",
+      "condition": null,
+      "rationale": "清理环节消费生成的文案。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "final_post",
+      "condition": null,
+      "rationale": "图片验证消费文案中保留的图片链接。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n7",
+      "target": "n9",
+      "variable": "final_post",
+      "condition": null,
+      "rationale": "带图发布消费最终帖文。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "verified_image",
+      "condition": null,
+      "rationale": "带图发布消费已验证的图片。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n7",
+      "target": "n10",
+      "variable": "final_post",
+      "condition": null,
+      "rationale": "纯文本发布消费最终帖文。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n9",
+      "target": "n11",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "标题写入以发布成功为前提。"
+    },
+    {
+      "edge_id": "e_dfg_11",
+      "source": "n10",
+      "target": "n11",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "标题写入以发布成功为前提。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n11"],
+  "confidence": 0.85,
+  "notes": "关键取舍：1) 原生按 8 个时间槽展开的重复链（time checker 1–8、set up 1–8、LinkedIn Publisher 1–4、Firebase Article Saver 1–8）属实现细节，需求仅声明四个运行时点与统一行为，故折叠为单链。2) 有摘要/无摘要两种文案变体折叠进同一语义生成节点契约（原生两条 agent 链不一对一展开）。3) 带图/纯文本两个发布分支因发布成功后均需写回标题记录，建模为 code 节点，写入标题记录为唯一 terminal。4) 缺链接/图片跳过与 Yahoo 同意页跳过折叠进筛选与校验节点的 failure 契约，不单列节点。"
+}

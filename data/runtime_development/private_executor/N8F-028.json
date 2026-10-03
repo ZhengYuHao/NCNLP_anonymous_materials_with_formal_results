@@ -1,0 +1,374 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-028",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-hubspot-search",
+      "dependency_type": "hubspot",
+      "operation": "search_leads",
+      "request_contract": {
+        "max_results": 20,
+        "properties": [
+          "activity",
+          "lifecycle"
+        ]
+      },
+      "response_contract": {
+        "results": [
+          {
+            "id": "lead1",
+            "name": "Alice Chen",
+            "email": "alice@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead2",
+            "name": "Bob Li",
+            "email": "bob@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead3",
+            "name": "Carol Wu",
+            "email": "carol@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead4",
+            "name": "Dan Xu",
+            "email": "dan@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead5",
+            "name": "Eva Sun",
+            "email": "eva@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active3",
+            "name": "Henry Gao",
+            "email": "henry@example.com",
+            "status": "active",
+            "lifecycle_stage": "customer",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active4",
+            "name": "Ivy Zhang",
+            "email": "ivy@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active5",
+            "name": "Jack Zhou",
+            "email": "jack@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active6",
+            "name": "Kate Hu",
+            "email": "kate@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active7",
+            "name": "Leo Pan",
+            "email": "leo@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active8",
+            "name": "Mia Tang",
+            "email": "mia@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active9",
+            "name": "Nick Ren",
+            "email": "nick@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active10",
+            "name": "Olive Ye",
+            "email": "olive@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active11",
+            "name": "Paul Qiao",
+            "email": "paul@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active12",
+            "name": "Quinn Bao",
+            "email": "quinn@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active13",
+            "name": "Rita He",
+            "email": "rita@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active14",
+            "name": "Sam Jiao",
+            "email": "sam@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active15",
+            "name": "Tina Kong",
+            "email": "tina@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "late1",
+            "name": "Uma Guo",
+            "email": "uma@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late2",
+            "name": "Vera Lei",
+            "email": "vera@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late3",
+            "name": "Will Feng",
+            "email": "will@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late4",
+            "name": "Xena Shao",
+            "email": "xena@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late5",
+            "name": "Yuki Luo",
+            "email": "yuki@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email",
+      "dependency_type": "llm",
+      "operation": "generate_followup_email",
+      "request_contract": {
+        "lead_status": "bad_timing"
+      },
+      "response_contract": {
+        "subject": "Quick follow-up",
+        "body": "Hi, just checking in — no pressure at all. Happy to help whenever the timing works for you.",
+        "to_email": "alice@example.com",
+        "owner_id": "owner_a"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-draft",
+      "dependency_type": "gmail",
+      "operation": "create_draft",
+      "request_contract": {
+        "to_email": "alice@example.com"
+      },
+      "response_contract": {
+        "draft_id": "draft_001",
+        "created": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-notify",
+      "dependency_type": "slack",
+      "operation": "post_owner_notification",
+      "request_contract": {
+        "owner_id": "owner_a"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1111.2222"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-fail",
+      "dependency_type": "llm",
+      "operation": "generate_followup_email",
+      "request_contract": {
+        "fail": true
+      },
+      "response_contract": {
+        "error": "LLMError: context window exceeded"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-alert",
+      "dependency_type": "slack",
+      "operation": "post_error_alert",
+      "request_contract": {
+        "lead_id": "lead1"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "2222.3333"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-pos-main",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ]
+    },
+    {
+      "case_id": "C-pos-normalize",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ]
+    },
+    {
+      "case_id": "C-neg-llm-fail",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-fail",
+        "M-slack-alert"
+      ]
+    },
+    {
+      "case_id": "C-bnd-zero-qualified",
+      "fixture_ids": [
+        "F-leads-zero",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ]
+    }
+  ]
+}

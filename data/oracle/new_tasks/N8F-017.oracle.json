@@ -1,0 +1,348 @@
+{
+  "task_id": "N8F-017",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "ec7ac7fd3aacef7cd59d9bdea976028d7c65575e52e726e2e74d09fe213c23c7",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-TEXT",
+      "purpose": "正常用例：文本消息，应直接交给主智能助理并以文本消息回复",
+      "input_data": {
+        "message_type": "text",
+        "message": {
+          "message_id": 1,
+          "text": "What is the capital of France?"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-VOICE",
+      "purpose": "正常用例：语音消息，应下载音频、转写为文本，并以音频形式回复",
+      "input_data": {
+        "message_type": "voice",
+        "message": {
+          "message_id": 2,
+          "voice": {
+            "file_id": "voice-file-1",
+            "duration": 12
+          }
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-IMAGE",
+      "purpose": "正常用例：图片消息，应下载图片并由视觉理解能力分析，以文本消息回复",
+      "input_data": {
+        "message_type": "photo",
+        "message": {
+          "message_id": 3,
+          "photo": [
+            {
+              "file_id": "photo-file-1",
+              "width": 800,
+              "height": 600
+            }
+          ]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-DOCUMENT",
+      "purpose": "正常用例：文档消息，应下载文档并将内容存入临时向量库使其可检索，以文本消息回复",
+      "input_data": {
+        "message_type": "document",
+        "message": {
+          "message_id": 4,
+          "document": {
+            "file_id": "doc-file-1",
+            "file_name": "meeting-notes.pdf"
+          }
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TG-DOWNLOAD-VOICE",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "voice-file-1"
+      },
+      "response_contract": {
+        "file_url": "https://mock-telegram.example/files/voice-file-1.ogg",
+        "mime_type": "audio/ogg"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OPENAI-TRANSCRIBE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "transcribe_audio",
+      "request_contract": {
+        "file_url": "https://mock-telegram.example/files/voice-file-1.ogg"
+      },
+      "response_contract": {
+        "text": "Please summarize the quarterly meeting notes for the engineering team."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-DOWNLOAD-IMAGE",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "photo-file-1"
+      },
+      "response_contract": {
+        "file_url": "https://mock-telegram.example/files/photo-file-1.jpg",
+        "mime_type": "image/jpeg"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OPENAI-VISION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_image_vision",
+      "request_contract": {
+        "image_url": "https://mock-telegram.example/files/photo-file-1.jpg"
+      },
+      "response_contract": {
+        "description": "A photo of a whiteboard with a network architecture diagram and a red marker highlight."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-DOWNLOAD-DOC",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "doc-file-1"
+      },
+      "response_contract": {
+        "file_url": "https://mock-telegram.example/files/meeting-notes.pdf",
+        "mime_type": "application/pdf"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VSTORE-INSERT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "operation": "insert_document",
+      "request_contract": {
+        "file_name": "meeting-notes.pdf",
+        "content": "Q3 goals: reduce latency by 30%, ship the new dashboard, hire two backend engineers."
+      },
+      "response_contract": {
+        "document_ids": ["v-1", "v-2"],
+        "inserted": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AGENT-TEXT-REPLY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "agent_reply",
+      "request_contract": {
+        "user_message": "What is the capital of France?"
+      },
+      "response_contract": {
+        "response": "The capital of France is Paris."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AGENT-VOICE-REPLY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "agent_reply",
+      "request_contract": {
+        "transcript": "Please summarize the quarterly meeting notes for the engineering team."
+      },
+      "response_contract": {
+        "response": "Here is the summary: the team aims to reduce latency by 30%, ship the dashboard, and hire two backend engineers."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TTS-AUDIO",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "text_to_speech",
+      "request_contract": {
+        "text": "Here is the summary: the team aims to reduce latency by 30%, ship the dashboard, and hire two backend engineers."
+      },
+      "response_contract": {
+        "audio_url": "https://mock-tts.example/audio/reply-1.mp3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-SEND-TEXT",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message_text",
+      "request_contract": {
+        "chat_id": "chat-fixed-1",
+        "text": "The capital of France is Paris."
+      },
+      "response_contract": {
+        "message_id": 1001,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-SEND-AUDIO",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_audio",
+      "request_contract": {
+        "chat_id": "chat-fixed-1",
+        "audio_url": "https://mock-tts.example/audio/reply-1.mp3"
+      },
+      "response_contract": {
+        "message_id": 1002,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TEXT-MESSAGE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-TEXT"],
+      "mock_ids": ["M-AGENT-TEXT-REPLY", "M-TG-SEND-TEXT"],
+      "assertions": [
+        {
+          "assertion_id": "A-TXT-1",
+          "target": "exec_log.mock_calls.M-TG-SEND-TEXT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "文本消息必须以文本消息形式回复用户"
+        },
+        {
+          "assertion_id": "A-TXT-2",
+          "target": "exec_log.mock_calls.M-TG-SEND-TEXT.request_contract.text",
+          "operator": "equals",
+          "expected": "The capital of France is Paris.",
+          "rationale": "回复内容必须是主智能助理生成的回答原文"
+        },
+        {
+          "assertion_id": "A-TXT-3",
+          "target": "exec_log.mock_calls.M-TG-SEND-AUDIO.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "初始消息非语音留言时不得生成音频回复"
+        }
+      ]
+    },
+    {
+      "case_id": "C-VOICE-MESSAGE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-VOICE"],
+      "mock_ids": [
+        "M-TG-DOWNLOAD-VOICE",
+        "M-OPENAI-TRANSCRIBE",
+        "M-AGENT-VOICE-REPLY",
+        "M-TTS-AUDIO",
+        "M-TG-SEND-AUDIO"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-VOI-1",
+          "target": "exec_log.mock_calls.M-OPENAI-TRANSCRIBE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "语音消息必须先下载并转写为文本"
+        },
+        {
+          "assertion_id": "A-VOI-2",
+          "target": "exec_log.mock_calls.M-AGENT-VOICE-REPLY.request_contract.transcript",
+          "operator": "contains",
+          "expected": "quarterly",
+          "rationale": "送入主助理的输入必须是语音转写得到的文本内容"
+        },
+        {
+          "assertion_id": "A-VOI-3",
+          "target": "exec_log.mock_calls.M-TTS-AUDIO.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "语音留言必须生成音频回复"
+        },
+        {
+          "assertion_id": "A-VOI-4",
+          "target": "exec_log.mock_calls.M-TG-SEND-AUDIO.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "语音留言必须通过音频消息发送回复"
+        }
+      ]
+    },
+    {
+      "case_id": "C-IMAGE-MESSAGE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-IMAGE"],
+      "mock_ids": ["M-TG-DOWNLOAD-IMAGE", "M-OPENAI-VISION", "M-TG-SEND-TEXT"],
+      "assertions": [
+        {
+          "assertion_id": "A-IMG-1",
+          "target": "exec_log.mock_calls.M-OPENAI-VISION.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图片消息必须由视觉理解能力分析其内容"
+        },
+        {
+          "assertion_id": "A-IMG-2",
+          "target": "exec_log.mock_calls.M-OPENAI-VISION.request_contract.image_url",
+          "operator": "equals",
+          "expected": "https://mock-telegram.example/files/photo-file-1.jpg",
+          "rationale": "视觉分析必须基于从 Telegram 下载的图片文件"
+        },
+        {
+          "assertion_id": "A-IMG-3",
+          "target": "exec_log.mock_calls.M-TG-SEND-AUDIO.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "图片消息非语音留言，不得生成音频回复"
+        }
+      ]
+    },
+    {
+      "case_id": "C-DOCUMENT-MESSAGE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-DOCUMENT"],
+      "mock_ids": ["M-TG-DOWNLOAD-DOC", "M-VSTORE-INSERT", "M-TG-SEND-TEXT"],
+      "assertions": [
+        {
+          "assertion_id": "A-DOC-1",
+          "target": "exec_log.mock_calls.M-VSTORE-INSERT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "文档消息必须把文档内容存入临时向量库使其可被检索"
+        },
+        {
+          "assertion_id": "A-DOC-2",
+          "target": "exec_log.mock_calls.M-VSTORE-INSERT.request_contract.file_name",
+          "operator": "equals",
+          "expected": "meeting-notes.pdf",
+          "rationale": "存入向量库的文档必须与用户上传的文档对应"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 Telegram 四类消息（文本/语音/图片/文档）的分派处理：语音验证下载+转写+音频回复链路，图片验证视觉分析调用，文档验证向量库写入；文本用例同时验证回复渠道选择（文本而非音频）。Telegram 下载、Whisper 转写、视觉模型、TTS 与向量库全部固定模拟；断言基于调用次数、请求参数相等与内容包含。"
+}

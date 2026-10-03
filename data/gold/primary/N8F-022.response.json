@@ -1,0 +1,505 @@
+{
+  "task_id": "N8F-022",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "822104ae68f8d74a4d8e96600ece7130cee04b32867181b6018b02049c4cf2cd",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单输入并生成运行标识",
+      "node_type": "code",
+      "operation_family": "input_receipt_and_metadata",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "deal_meta",
+          "type": "object",
+          "description": "交易名称、Google Drive 文件夹 ID 与通知邮箱"
+        },
+        {
+          "name": "run_id",
+          "type": "string",
+          "description": "本次运行的唯一运行标识"
+        },
+        {
+          "name": "notify_email",
+          "type": "string",
+          "description": "用于接收通知的邮箱地址"
+        },
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "工作流运行失败时的错误信息"
+        }
+      ],
+      "native_evidence": [
+        "Start Due Diligence Review",
+        "Set Run Metadata"
+      ],
+      "requirement_evidence": [
+        "从表单提交获取交易名称、Google Drive 文件夹 ID 以及用于接收通知的邮箱地址",
+        "为本次运行生成唯一运行标识"
+      ],
+      "rationale": "接收表单输入并为每次运行生成唯一运行标识，为确定性输入整理操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "列出数据室文件",
+      "node_type": "code",
+      "operation_family": "file_listing",
+      "inputs": [
+        {
+          "name": "deal_meta",
+          "type": "object",
+          "description": "含 Google Drive 文件夹 ID 的交易元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_list",
+          "type": "array",
+          "description": "数据室内的文件清单"
+        }
+      ],
+      "native_evidence": [
+        "Get Data Room Files"
+      ],
+      "requirement_evidence": [
+        "并列出该 Google Drive 数据室内的文件"
+      ],
+      "rationale": "列出 Google Drive 数据室文件为确定性外部读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "逐文档下载并抽取文本",
+      "node_type": "code",
+      "operation_family": "document_extraction_loop",
+      "inputs": [
+        {
+          "name": "file_list",
+          "type": "array",
+          "description": "待处理的文件清单"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "doc_text",
+          "type": "string",
+          "description": "从单个文档抽取出的文本内容"
+        }
+      ],
+      "native_evidence": [
+        "Loop Through Documents",
+        "Download Document",
+        "Extract Document Text"
+      ],
+      "requirement_evidence": [
+        "随后逐个处理每个文件：从 Google Drive 下载文件并抽取文档文本"
+      ],
+      "rationale": "逐文档循环下载并抽取文本，为确定性循环与文件处理操作，判定为 code 节点；循环终止条件为全部文档处理完毕（splitInBatches）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "判定文档类别并生成风险发现",
+      "node_type": "semantic",
+      "operation_family": "risk_analysis",
+      "inputs": [
+        {
+          "name": "doc_text",
+          "type": "string",
+          "description": "文档抽取文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "finding",
+          "type": "object",
+          "description": "文档类别、风险等级、标记项与简短摘要"
+        },
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "分析环节返回的问题"
+        }
+      ],
+      "native_evidence": [
+        "Due Diligence Analysis Agent"
+      ],
+      "requirement_evidence": [
+        "把抽取出的文本交给语言模型，用于判定文档类别并生成包含风险等级、标记项与简短摘要的发现结果"
+      ],
+      "rationale": "需求声明由语言模型判定文档类别并生成风险发现，需要开放文本理解，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "解析发现并追加到尽调工作表",
+      "node_type": "code",
+      "operation_family": "finding_persistence",
+      "inputs": [
+        {
+          "name": "finding",
+          "type": "object",
+          "description": "语言模型生成的风险发现"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "log_result",
+          "type": "object",
+          "description": "追加写入 Google Sheets 的结果"
+        }
+      ],
+      "native_evidence": [
+        "Parse Finding",
+        "Log Finding to Sheet"
+      ],
+      "requirement_evidence": [
+        "解析该结果后，把每个文档的发现追加到 Google Sheets 的尽职调查工作表"
+      ],
+      "rationale": "解析模型输出并追加写入 Google Sheets，为确定性的结构化解析与外部存储操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "取回本次运行全部发现",
+      "node_type": "code",
+      "operation_family": "findings_retrieval",
+      "inputs": [
+        {
+          "name": "run_id",
+          "type": "string",
+          "description": "本次运行标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "all_findings",
+          "type": "object",
+          "description": "本次运行的全部发现集合"
+        }
+      ],
+      "native_evidence": [
+        "Get All Findings",
+        "Aggregate Findings"
+      ],
+      "requirement_evidence": [
+        "全部文档处理完毕后，从 Google Sheets 取回本次运行的全部发现"
+      ],
+      "rationale": "全部文档处理完成后从 Google Sheets 取回发现并聚合，为确定性外部读取与聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "起草尽职调查执行摘要",
+      "node_type": "semantic",
+      "operation_family": "summary_generation",
+      "inputs": [
+        {
+          "name": "all_findings",
+          "type": "object",
+          "description": "本次运行的全部发现"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "尽职调查执行摘要文本"
+        },
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "摘要环节返回的问题"
+        }
+      ],
+      "native_evidence": [
+        "Summary Compiler Agent"
+      ],
+      "requirement_evidence": [
+        "交给语言模型起草一份尽职调查执行摘要"
+      ],
+      "rationale": "需求声明由语言模型起草执行摘要，需要开放文本生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "将摘要转换为 HTML",
+      "node_type": "code",
+      "operation_family": "html_formatting",
+      "inputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "执行摘要文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "HTML 格式的摘要内容"
+        }
+      ],
+      "native_evidence": [
+        "Format Report Content"
+      ],
+      "requirement_evidence": [
+        "将摘要转换为 HTML"
+      ],
+      "rationale": "将摘要转换为 HTML 为确定性格式化操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "邮件发送 HTML 摘要",
+      "node_type": "terminal",
+      "operation_family": "email_delivery",
+      "inputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "HTML 格式的摘要"
+        },
+        {
+          "name": "notify_email",
+          "type": "string",
+          "description": "通知邮箱地址"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Report to Deal Team"
+      ],
+      "requirement_evidence": [
+        "通过邮件发送到提交时提供的通知邮箱"
+      ],
+      "rationale": "向通知邮箱发送 HTML 摘要邮件，为用户可见的完成动作，判定为 terminal 节点。"
+    },
+    {
+      "node_id": "n10",
+      "label": "发送 Slack 错误告警",
+      "node_type": "terminal",
+      "operation_family": "error_alerting",
+      "inputs": [
+        {
+          "name": "error_info",
+          "type": "object",
+          "description": "工作流失败或 LLM 环节返回的问题"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "On Workflow Error",
+        "Slack – Post Workflow Error Alert",
+        "Slack – Post Analysis Agent Error",
+        "Slack – Post Summary Agent Error"
+      ],
+      "requirement_evidence": [
+        "工作流运行失败，以及语言模型分析与摘要环节返回的问题，都会向 Slack 发送告警"
+      ],
+      "rationale": "向 Slack 发送错误告警为失败路径的用户可见完成动作，判定为 terminal 节点；从工作流失败、分析环节错误与摘要环节错误三个分支汇入。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收表单并生成运行标识后列出文件。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "列出文件后进入逐文档处理循环。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "has_next_document",
+      "rationale": "存在下一个文档时抽取文本并送入分析。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成发现后解析并写入工作表。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入完成后回到循环头处理下一个文档（max_iterations=文件总数）。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": "all_documents_processed",
+      "rationale": "全部文档处理完毕后取回全部发现。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "取回发现后起草执行摘要。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后转换为 HTML。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "HTML 转换完成后发送邮件。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n1",
+      "target": "n10",
+      "variable": null,
+      "condition": "workflow_error == true",
+      "rationale": "工作流运行失败时发送 Slack 告警。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n4",
+      "target": "n10",
+      "variable": null,
+      "condition": "analysis_error != null",
+      "rationale": "语言模型分析环节返回问题时发送 Slack 告警。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": "summary_error != null",
+      "rationale": "语言模型摘要环节返回问题时发送 Slack 告警。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "deal_meta",
+      "condition": null,
+      "rationale": "交易元数据（含文件夹 ID）送入文件列示节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "file_list",
+      "condition": null,
+      "rationale": "文件清单送入逐文档处理节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "doc_text",
+      "condition": null,
+      "rationale": "文档文本送入风险分析节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "finding",
+      "condition": null,
+      "rationale": "风险发现送入解析与写入节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n1",
+      "target": "n6",
+      "variable": "run_id",
+      "condition": null,
+      "rationale": "运行标识送入发现取回节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "all_findings",
+      "condition": null,
+      "rationale": "全部发现送入摘要起草节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "summary",
+      "condition": null,
+      "rationale": "摘要文本送入 HTML 转换节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "html_report",
+      "condition": null,
+      "rationale": "HTML 摘要送入邮件发送节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n1",
+      "target": "n9",
+      "variable": "notify_email",
+      "condition": null,
+      "rationale": "通知邮箱送入邮件发送节点。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n1",
+      "target": "n10",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "工作流错误信息送入 Slack 告警节点。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n4",
+      "target": "n10",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "分析环节错误信息送入 Slack 告警节点。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n7",
+      "target": "n10",
+      "variable": "error_info",
+      "condition": null,
+      "rationale": "摘要环节错误信息送入 Slack 告警节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9",
+    "n10"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求流程建模：表单输入+运行标识（code）、列出文件（code）、逐文档下载抽取（code，循环，终止条件为全部文档处理完毕）、风险分析（semantic）、解析并写入工作表（code）、取回全部发现（code）、执行摘要（semantic）、HTML 转换（code）、邮件发送（terminal）。失败行为建模为独立的 Slack 告警 terminal，从工作流失败、分析错误、摘要错误三个分支汇入。混合任务满足 semantic→code 的有类型 DFG 边（finding、summary、all_findings 等）。"
+}

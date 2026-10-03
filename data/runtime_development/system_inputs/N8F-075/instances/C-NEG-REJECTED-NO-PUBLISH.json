@@ -1,0 +1,15 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-075",
+  "case_id": "C-NEG-REJECTED-NO-PUBLISH",
+  "kind": "negative",
+  "input_data": {
+    "history_topics": [
+      "Old topic one",
+      "Old topic two"
+    ],
+    "generated_topic": "Another focus tips video",
+    "approval": "rejected"
+  },
+  "input_sha256": "8672A31B9F406265C0FAD45C8420AF020C7AC03EF86AA8B74E2C77AA140D4282"
+}

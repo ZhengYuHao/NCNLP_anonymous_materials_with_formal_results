@@ -1,0 +1,31 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-054",
+  "case_id": "C-TWO-UPDATED-DOCS",
+  "kind": "positive",
+  "input_data": {
+    "docs_list": [
+      {
+        "doc_id": "doc-a1",
+        "name": "Q3 Product Roadmap",
+        "category": "Projects",
+        "last_modified": "2026-08-29T10:00:00Z"
+      },
+      {
+        "doc_id": "doc-b2",
+        "name": "Weekly Engineering Meeting",
+        "category": "Meetings",
+        "last_modified": "2026-08-28T15:30:00Z"
+      },
+      {
+        "doc_id": "doc-c3",
+        "name": "Old Release Notes",
+        "category": "Updates",
+        "last_modified": "2026-07-10T08:00:00Z"
+      }
+    ],
+    "window_days": 7,
+    "run_date": "2026-09-02"
+  },
+  "input_sha256": "EA36259E3565BDADD6A99A09DA56D74FE54AA3DD486E41122CF5F2ACC8AFCCFA"
+}

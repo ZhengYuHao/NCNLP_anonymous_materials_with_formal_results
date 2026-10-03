@@ -1,0 +1,143 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-029",
+  "source_id": "n8n:11807",
+  "workflow_sha256": "ad9ac5560934b1b90dab2a582200c251c6850da5f3825500ff61df5789346801",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "5ae844aec8f80c6fc0e88f2eeb9abb61a87a8c1ae64efc0c89970cf39c1cc560",
+  "requirement": {
+    "requirement_text": "该需求面向基于自有文档的客户问答：客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord，答复依据自有文档检索得到；无依据的答复、负面情绪以及明确的转人工请求会升级为人工处理并生成工单；每次会话都会被分类、记录，并每周汇总上报。\n\n消息接入：客户消息从上述任一渠道到达后被归一化为统一结构，并按渠道分别走独立分支。\n\n五项前置检查在任何一次模型调用之前执行：自动回复与退信、空内容、重复投递、超长消息，以及以六种语言（英语、罗马尼亚语、德语、法语、西班牙语、意大利语）匹配的明确转人工请求。在线聊天渠道在这些路径上都会立即返回响应，使调用方不会停留在未关闭的连接上等待。置信度阈值与最大消息长度可配置。\n\n答复生成：助理依据自有文档作答，文档通过向量知识库以工具方式检索；会话记忆持久化保存，重启后历史仍然可用（保留期默认为 30 天）。\n\n置信度评估：置信度按答复是否有据可依来评估，而不是按答复长度，即助理是否检索了知识库、知识库是否返回了内容；冗长流畅但没有检索依据的答复得分很低。问候与致谢会短路该判定，而不是被判为失败，因此普通的礼貌用语不会触发工单。\n\n回复与升级：置信度达到或超过阈值且无负面情绪时，答复通过原始渠道返回，邮件沿用客户原始主题（加 Re: 前缀），Slack 在会话线程内回复。其余情况升级为人工处理：升级原因直接取自已发生的判断而不再重新判定；由语言模型为人工客服在工单正文中写一段简短说明；工单系统按情绪推导优先级。该链路中某一步失败时仍继续执行，因此单点故障不会导致整条升级失效。\n\n记录与维护：无论自动答复还是升级处理，每次会话都被分类并记录到 Google Sheets，字段包括用户标识、渠道、消息、分类、情绪、时间戳、答复内容、置信度、是否升级与升级原因。每周任务把真实数据发布到 Slack，随后归档这些数据并清理旧的会话记忆。另有手动分支用于导入自有文档，导入前先清除上次结果，因此重复运行不会产生重复内容。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 338,
+        "text": "Answers customer questions on Email, Live Chat, WhatsApp, Slack and Discord from your own documentation, retrieved through a Supabase vector store. Ungrounded answers, negative sentiment and explicit handover requests escalate to a human with a Zendesk ticket. Every conversation is categorised, logged and reported weekly."
+      },
+      {
+        "start": 353,
+        "end": 490,
+        "text": "A message arrives on Email, Live Chat, WhatsApp, Slack or Discord and is normalised into one schema, with an explicit branch per channel."
+      },
+      {
+        "start": 491,
+        "end": 797,
+        "text": "Five guards run before a single model call is paid for: auto-replies and bounces, empty bodies, duplicate deliveries, oversized messages, and an explicit request for a human matched in six languages. Live chat receives an HTTP response on each of those paths, so a caller never waits on an open connection."
+      },
+      {
+        "start": 798,
+        "end": 959,
+        "text": "The agent answers from your documentation, retrieved from a Supabase vector store wired as a tool, with Postgres-backed chat memory so history survives restarts."
+      },
+      {
+        "start": 960,
+        "end": 1170,
+        "text": "Confidence is scored on grounding rather than on answer length: did the agent search the knowledge base, and did the knowledge base return anything. A long, fluent answer with no retrieval behind it scores low."
+      },
+      {
+        "start": 1171,
+        "end": 1297,
+        "text": "Greetings and thank-yous short circuit that test instead of failing it, so ordinary politeness does not open a support ticket."
+      },
+      {
+        "start": 1298,
+        "end": 1470,
+        "text": "At or above the threshold, and without negative sentiment, the answer goes back on the originating channel. Email keeps the customer's own subject, Slack replies in thread."
+      },
+      {
+        "start": 1471,
+        "end": 1787,
+        "text": "Otherwise the case escalates. The reason is derived from what already happened rather than re-decided, an AI step writes a short note for the human agent into the ticket body, and Zendesk gets a priority derived from sentiment. The chain keeps going if a step fails, so one outage cannot delete an entire escalation."
+      },
+      {
+        "start": 1788,
+        "end": 2080,
+        "text": "Every conversation, answered or escalated, is categorised and logged to Google Sheets. A weekly job posts real figures to Slack, then archives them and purges old chat memory. A manual branch ingests your documentation, clearing the previous run first so re-running never duplicates anything."
+      },
+      {
+        "start": 3734,
+        "end": 3834,
+        "text": "until it has, grounding scores zero and everything routes to a human, which is the intended fallback"
+      },
+      {
+        "start": 5022,
+        "end": 5110,
+        "text": "Confidence threshold and maximum message length live in the Workflow Configuration node."
+      },
+      {
+        "start": 5111,
+        "end": 5187,
+        "text": "Chat memory retention lives in Weekly Configuration and defaults to 30 days."
+      },
+      {
+        "start": 5561,
+        "end": 5713,
+        "text": "Keyword gates cover English, Romanian, German, French, Spanish and Italian across handover detection, escalation reasons, categorisation and small talk."
+      },
+      {
+        "start": 5931,
+        "end": 6050,
+        "text": "Email replies carry the customer's own subject, prefixed with Re:, which is how Gmail and Outlook group a conversation."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "来自邮件、在线聊天、WhatsApp、Slack 或 Discord 的客户消息",
+        "自有文档（导入向量知识库后供检索）",
+        "持久化保存的会话记忆历史",
+        "可配置的置信度阈值与最大消息长度"
+      ],
+      "conditions": [
+        "消息按渠道分别走独立分支，并归一化为统一结构",
+        "五项前置检查：自动回复与退信、空内容、重复投递、超长消息、以六种语言匹配的明确转人工请求",
+        "置信度按是否有检索依据评估，问候与致谢短路该判定",
+        "置信度达到或超过阈值且无负面情绪时自动回复",
+        "置信度低于阈值、存在负面情绪或客户明确请求转人工时升级为人工处理",
+        "会话记忆保留期默认为 30 天",
+        "文档尚未导入时置信度为零，全部消息路由到人工，这是预期的兜底行为"
+      ],
+      "allowed_actions": [
+        "按渠道接入消息并归一化为统一结构",
+        "执行五项前置检查，并在每条前置检查路径上立即向在线聊天调用方返回响应",
+        "检索向量知识库",
+        "调用语言模型生成答复",
+        "按原始渠道回复（邮件沿用客户主题，Slack 在线程内回复）",
+        "在工单系统中创建工单，写入升级原因、给人工客服的简短说明，以及按情绪推导的优先级",
+        "为每次会话分类并记录到 Google Sheets",
+        "每周向 Slack 发布统计数据，随后归档数据并清理旧会话记忆",
+        "手动导入自有文档（先清除上次结果）"
+      ],
+      "visible_outcomes": [
+        "客户在原始渠道收到答复",
+        "工单系统中出现含升级原因、人工客服说明与优先级的工单",
+        "Google Sheets 中记录每条会话的渠道、消息、分类、情绪、时间戳、答复内容、置信度、是否升级与升级原因",
+        "Slack 每周收到一次真实统计数据",
+        "每周结束后统计数据被归档、旧会话记忆被清理"
+      ],
+      "failure_behavior": [
+        "升级链路中某一步失败时仍继续执行，单点故障不会导致整条升级失效",
+        "在线聊天渠道在任何前置检查路径上都会立即得到响应，连接不会被挂起",
+        "文档尚未导入时置信度为零，全部消息路由到人工处理"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-029.packet.json",
+    "packet_sha256": "476272710b4d37b6f3aa2741aec9c979e6e5bf5e1e5840f60c528ee881032946",
+    "public_description_sha256": "1b969afc6398b9335582cdcb087b3bed014ac3a454d3f3094670272e3597b674"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-029.response.json",
+    "verification_response_sha256": "2e76405be1cd1e0cffb24e0c0f219408b012906b6fb073542085ba46e394d1dd",
+    "decision": "accept"
+  },
+  "formal_index": 40
+}

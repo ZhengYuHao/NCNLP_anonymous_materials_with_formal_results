@@ -1,0 +1,850 @@
+{
+  "task_id": "N8F-047",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "e52821d6ef7c9f777a3cc2d3d59172bb2fa30916f79e9332937658ee5f5a8ea1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收学生门户 POST 请求",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "request",
+          "type": "http_request",
+          "description": "学生门户提交的 POST 请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "request_body",
+          "type": "object",
+          "description": "请求体，含动作字段及该动作所需数据"
+        }
+      ],
+      "native_evidence": ["Student Portal Webhook"],
+      "requirement_evidence": ["学生门户通过一个统一入口接收 POST 请求"],
+      "rationale": "需求声明统一入口接收 POST 请求并解析请求体，为流程入口的确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按动作字段路由",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "request_body",
+          "type": "object",
+          "description": "请求体，含动作字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "registration_data",
+          "type": "object",
+          "description": "注册分支参数：姓名、邮箱、学号、密码"
+        },
+        {
+          "name": "login_credentials",
+          "type": "object",
+          "description": "登录分支参数：邮箱与密码"
+        },
+        {
+          "name": "feedback_data",
+          "type": "object",
+          "description": "反馈分支参数：学生字段与反馈字段"
+        },
+        {
+          "name": "semester_data",
+          "type": "object",
+          "description": "CGPA 分支参数：各学期绩点与学分"
+        },
+        {
+          "name": "profile_data",
+          "type": "object",
+          "description": "资料更新分支参数：资料字段"
+        }
+      ],
+      "native_evidence": ["Switch"],
+      "requirement_evidence": ["并依据请求中的动作字段将请求路由到注册、登录、意见反馈提交、CGPA 计算或资料更新五类处理"],
+      "rationale": "需求声明按请求中的动作字段路由到五类处理分支，为确定性路由，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "校验注册信息",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "registration_data",
+          "type": "object",
+          "description": "注册提交的姓名、邮箱、学号与密码"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_student",
+          "type": "object",
+          "description": "通过校验的学生记录"
+        }
+      ],
+      "native_evidence": ["Set Data", "Validate Data"],
+      "requirement_evidence": ["提取并校验学生的姓名、邮箱、学号与密码"],
+      "rationale": "需求声明提取并校验注册字段，为带条件的确定性校验，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "写入学生数据表",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "validated_student",
+          "type": "object",
+          "description": "通过校验的学生记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "student_record",
+          "type": "object",
+          "description": "写入后的学生记录"
+        }
+      ],
+      "native_evidence": ["Insert Student"],
+      "requirement_evidence": ["将记录写入学生数据表"],
+      "rationale": "需求声明将学生记录写入数据表，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发送注册确认邮件",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "student_record",
+          "type": "object",
+          "description": "写入的学生记录，含邮箱"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "confirm_send_result",
+          "type": "object",
+          "description": "确认邮件发送结果"
+        }
+      ],
+      "native_evidence": ["Send Email"],
+      "requirement_evidence": ["通过 Gmail 发送确认邮件"],
+      "rationale": "需求声明通过 Gmail 发送注册确认邮件，为确定性外部发送动作，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "返回注册成功响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "confirm_send_result",
+          "type": "object",
+          "description": "确认邮件发送结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond Success"],
+      "requirement_evidence": ["并返回 JSON 格式的成功或失败响应"],
+      "rationale": "需求声明注册成功时返回 JSON 成功响应，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n7",
+      "label": "返回注册失败响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "validation_error",
+          "type": "string",
+          "description": "校验失败原因"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond Error"],
+      "requirement_evidence": ["并返回 JSON 格式的成功或失败响应", "注册处理失败时返回 JSON 失败响应"],
+      "rationale": "需求声明注册校验失败时返回 JSON 失败响应，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n8",
+      "label": "查询并校验登录凭据",
+      "node_type": "code",
+      "operation_family": "credential_verification",
+      "inputs": [
+        {
+          "name": "login_credentials",
+          "type": "object",
+          "description": "提交的邮箱与密码"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "login_success",
+          "type": "object",
+          "description": "凭据匹配的登录成功结果"
+        },
+        {
+          "name": "login_error",
+          "type": "string",
+          "description": "凭据无效的错误信息"
+        }
+      ],
+      "native_evidence": ["Edit Fields2", "Check User", "User Exists?"],
+      "requirement_evidence": ["使用提交的邮箱与密码在学生数据表中查询该学生并校验凭据"],
+      "rationale": "需求声明按邮箱与密码查询并校验凭据，为带条件的确定性查询校验，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "返回登录成功响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "login_success",
+          "type": "object",
+          "description": "凭据匹配结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Login Success"],
+      "requirement_evidence": ["返回 JSON 格式的成功响应或凭据无效响应"],
+      "rationale": "需求声明凭据匹配时返回成功响应，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n10",
+      "label": "返回凭据无效响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "login_error",
+          "type": "string",
+          "description": "凭据无效的错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Login Failed"],
+      "requirement_evidence": ["返回 JSON 格式的成功响应或凭据无效响应", "登录凭据不匹配时返回 JSON 凭据无效响应"],
+      "rationale": "需求声明凭据不匹配时返回凭据无效响应，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n11",
+      "label": "规范化反馈数据",
+      "node_type": "code",
+      "operation_family": "data_normalization",
+      "inputs": [
+        {
+          "name": "feedback_data",
+          "type": "object",
+          "description": "提交的学生字段与反馈字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "规范化后的反馈记录"
+        }
+      ],
+      "native_evidence": ["Edit Fields"],
+      "requirement_evidence": ["规范化提交的学生字段与反馈字段"],
+      "rationale": "需求声明规范化提交的学生与反馈字段，为确定性数据整理变换，判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "存储反馈到反馈数据表",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "规范化后的反馈记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stored_feedback",
+          "type": "object",
+          "description": "存入反馈数据表的记录"
+        }
+      ],
+      "native_evidence": ["Store Feedback"],
+      "requirement_evidence": ["将反馈存入反馈数据表"],
+      "rationale": "需求声明将反馈存入反馈数据表，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n13",
+      "label": "生成个性化感谢回复",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "stored_feedback",
+          "type": "object",
+          "description": "已存储的反馈内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "thank_you_email",
+          "type": "string",
+          "description": "个性化感谢回复邮件内容"
+        }
+      ],
+      "native_evidence": ["Feedback Response Agent", "Groq Chat Model"],
+      "requirement_evidence": ["使用语言模型生成一封个性化的感谢回复邮件"],
+      "rationale": "需求声明使用语言模型生成个性化感谢回复，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n14",
+      "label": "发送感谢回复邮件",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "thank_you_email",
+          "type": "string",
+          "description": "个性化感谢回复内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_preview",
+          "type": "string",
+          "description": "邮件预览文本"
+        }
+      ],
+      "native_evidence": ["Reply Mail"],
+      "requirement_evidence": ["通过 Gmail 发送该回复"],
+      "rationale": "需求声明通过 Gmail 发送个性化感谢回复，为确定性外部发送动作，判 code。"
+    },
+    {
+      "node_id": "n15",
+      "label": "返回反馈响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "email_preview",
+          "type": "string",
+          "description": "邮件预览文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Feedback Success"],
+      "requirement_evidence": ["并返回包含邮件预览的 JSON 响应"],
+      "rationale": "需求声明返回包含邮件预览的 JSON 响应，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n16",
+      "label": "计算 CGPA",
+      "node_type": "semantic",
+      "operation_family": "llm_computation",
+      "inputs": [
+        {
+          "name": "semester_data",
+          "type": "object",
+          "description": "各学期绩点与学分数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_cgpa_output",
+          "type": "string",
+          "description": "语言模型计算的 CGPA 原始输出"
+        }
+      ],
+      "native_evidence": ["CGPA CALCULATOR AGENT", "Mistral Cloud Chat Model"],
+      "requirement_evidence": ["将提交的各学期绩点与学分数据交由语言模型计算 CGPA"],
+      "rationale": "需求声明将绩点与学分数据交由语言模型计算 CGPA，需开放数值推理，判 semantic。"
+    },
+    {
+      "node_id": "n17",
+      "label": "解析并校验 CGPA 结果",
+      "node_type": "code",
+      "operation_family": "output_parsing",
+      "inputs": [
+        {
+          "name": "raw_cgpa_output",
+          "type": "string",
+          "description": "模型返回的 CGPA 原始输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cgpa_result",
+          "type": "object",
+          "description": "解析并校验后的 CGPA、总学分与所计入学期"
+        }
+      ],
+      "native_evidence": ["Extract CGPA Results", "Validate & Format CGPA Response"],
+      "requirement_evidence": ["解析并校验返回结果"],
+      "rationale": "需求声明解析并校验模型返回的 CGPA 结果，为确定性解析与校验变换，判 code。"
+    },
+    {
+      "node_id": "n18",
+      "label": "返回 CGPA 结果",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "cgpa_result",
+          "type": "object",
+          "description": "CGPA、总学分与所计入的学期"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Calculated Success"],
+      "requirement_evidence": ["返回 CGPA、总学分以及所计入的学期"],
+      "rationale": "需求声明返回 CGPA、总学分与所计入学期，为完成动作且无出边，判 terminal。"
+    },
+    {
+      "node_id": "n19",
+      "label": "校验资料必填字段",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "profile_data",
+          "type": "object",
+          "description": "提交的资料字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_profile",
+          "type": "object",
+          "description": "通过校验的资料字段"
+        }
+      ],
+      "native_evidence": ["Prepare Profile Data", "Validate Profile"],
+      "requirement_evidence": ["校验必填的资料字段"],
+      "rationale": "需求声明校验必填资料字段，为带条件的确定性校验，判 code。"
+    },
+    {
+      "node_id": "n20",
+      "label": "按学号确认学生存在",
+      "node_type": "code",
+      "operation_family": "lookup",
+      "inputs": [
+        {
+          "name": "validated_profile",
+          "type": "object",
+          "description": "通过校验的资料字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "student_record",
+          "type": "object",
+          "description": "学号对应的学生记录"
+        }
+      ],
+      "native_evidence": ["Check Student", "Student Found?"],
+      "requirement_evidence": ["按学号确认该学生在学生数据表中存在"],
+      "rationale": "需求声明按学号确认学生存在，为带条件的确定性查询，判 code。"
+    },
+    {
+      "node_id": "n21",
+      "label": "更新学生资料表",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "student_record",
+          "type": "object",
+          "description": "确认存在的学生记录与更新字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "updated_profile",
+          "type": "object",
+          "description": "更新后的学生资料"
+        }
+      ],
+      "native_evidence": ["Update Student Profile"],
+      "requirement_evidence": ["更新学生资料表"],
+      "rationale": "需求声明更新学生资料表，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n22",
+      "label": "返回更新结果或错误信息",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "updated_profile",
+          "type": "object",
+          "description": "更新后的学生资料"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Profile Update Success", "Profile Validation Error", "Student Not Found"],
+      "requirement_evidence": ["并返回更新后的数据或错误信息", "资料更新中学生不存在时返回错误信息"],
+      "rationale": "需求声明返回更新后的数据或错误信息，为完成动作且无出边，判 terminal；校验失败与学生不存在的错误分支均汇入此节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收请求后按动作字段路由。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "action == 'register'",
+      "rationale": "动作字段为注册时进入注册分支。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "校验通过",
+      "rationale": "注册信息校验通过后写入数据表。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n7",
+      "variable": null,
+      "condition": "校验失败",
+      "rationale": "校验失败直接返回失败响应。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入成功后发送确认邮件。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件发送后返回成功响应。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n2",
+      "target": "n8",
+      "variable": null,
+      "condition": "action == 'login'",
+      "rationale": "动作字段为登录时进入登录分支。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": "凭据匹配",
+      "rationale": "凭据匹配时返回登录成功响应。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": "凭据无效",
+      "rationale": "凭据不匹配时返回凭据无效响应。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n2",
+      "target": "n11",
+      "variable": null,
+      "condition": "action == 'feedback'",
+      "rationale": "动作字段为意见反馈时进入反馈分支。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后存储反馈。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "存储后生成个性化感谢回复。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复生成后发送邮件。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送后返回含邮件预览的响应。"
+    },
+    {
+      "edge_id": "cfg-15",
+      "source": "n2",
+      "target": "n16",
+      "variable": null,
+      "condition": "action == 'cgpa'",
+      "rationale": "动作字段为 CGPA 时进入计算分支。"
+    },
+    {
+      "edge_id": "cfg-16",
+      "source": "n16",
+      "target": "n17",
+      "variable": null,
+      "condition": null,
+      "rationale": "模型计算后解析并校验结果。"
+    },
+    {
+      "edge_id": "cfg-17",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "校验完成后返回 CGPA 结果。"
+    },
+    {
+      "edge_id": "cfg-18",
+      "source": "n2",
+      "target": "n19",
+      "variable": null,
+      "condition": "action == 'profile_update'",
+      "rationale": "动作字段为资料更新时进入更新分支。"
+    },
+    {
+      "edge_id": "cfg-19",
+      "source": "n19",
+      "target": "n20",
+      "variable": null,
+      "condition": "校验通过",
+      "rationale": "必填字段校验通过后确认学生存在。"
+    },
+    {
+      "edge_id": "cfg-20",
+      "source": "n19",
+      "target": "n22",
+      "variable": null,
+      "condition": "校验失败",
+      "rationale": "校验失败直接返回错误信息。"
+    },
+    {
+      "edge_id": "cfg-21",
+      "source": "n20",
+      "target": "n21",
+      "variable": null,
+      "condition": "学生存在",
+      "rationale": "学生存在则更新资料表。"
+    },
+    {
+      "edge_id": "cfg-22",
+      "source": "n20",
+      "target": "n22",
+      "variable": null,
+      "condition": "学生不存在",
+      "rationale": "学生不存在返回错误信息。"
+    },
+    {
+      "edge_id": "cfg-23",
+      "source": "n21",
+      "target": "n22",
+      "variable": null,
+      "condition": null,
+      "rationale": "更新完成后返回更新后数据。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "request_body",
+      "condition": null,
+      "rationale": "请求体从接收节点传给路由节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "registration_data",
+      "condition": null,
+      "rationale": "注册数据传给校验节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "validated_student",
+      "condition": null,
+      "rationale": "校验通过的学生记录传给写入节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "student_record",
+      "condition": null,
+      "rationale": "写入的记录（含邮箱）传给邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "confirm_send_result",
+      "condition": null,
+      "rationale": "发送结果传给成功响应节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n2",
+      "target": "n8",
+      "variable": "login_credentials",
+      "condition": null,
+      "rationale": "登录凭据传给查询校验节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n8",
+      "target": "n9",
+      "variable": "login_success",
+      "condition": null,
+      "rationale": "匹配结果传给成功响应节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n8",
+      "target": "n10",
+      "variable": "login_error",
+      "condition": null,
+      "rationale": "错误信息传给凭据无效响应节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n2",
+      "target": "n11",
+      "variable": "feedback_data",
+      "condition": null,
+      "rationale": "反馈数据传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n11",
+      "target": "n12",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "规范化反馈传给存储节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n12",
+      "target": "n13",
+      "variable": "stored_feedback",
+      "condition": null,
+      "rationale": "已存储反馈传给回复生成节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n13",
+      "target": "n14",
+      "variable": "thank_you_email",
+      "condition": null,
+      "rationale": "生成的回复内容传给邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n14",
+      "target": "n15",
+      "variable": "email_preview",
+      "condition": null,
+      "rationale": "邮件预览传给响应节点。"
+    },
+    {
+      "edge_id": "dfg-14",
+      "source": "n2",
+      "target": "n16",
+      "variable": "semester_data",
+      "condition": null,
+      "rationale": "各学期绩点与学分传给 CGPA 计算节点。"
+    },
+    {
+      "edge_id": "dfg-15",
+      "source": "n16",
+      "target": "n17",
+      "variable": "raw_cgpa_output",
+      "condition": null,
+      "rationale": "模型原始输出传给解析校验节点。"
+    },
+    {
+      "edge_id": "dfg-16",
+      "source": "n17",
+      "target": "n18",
+      "variable": "cgpa_result",
+      "condition": null,
+      "rationale": "校验后的 CGPA 结果传给响应节点。"
+    },
+    {
+      "edge_id": "dfg-17",
+      "source": "n2",
+      "target": "n19",
+      "variable": "profile_data",
+      "condition": null,
+      "rationale": "资料字段传给校验节点。"
+    },
+    {
+      "edge_id": "dfg-18",
+      "source": "n19",
+      "target": "n20",
+      "variable": "validated_profile",
+      "condition": null,
+      "rationale": "校验后的资料传给存在性确认节点。"
+    },
+    {
+      "edge_id": "dfg-19",
+      "source": "n20",
+      "target": "n21",
+      "variable": "student_record",
+      "condition": null,
+      "rationale": "确认存在的学生记录传给更新节点。"
+    },
+    {
+      "edge_id": "dfg-20",
+      "source": "n21",
+      "target": "n22",
+      "variable": "updated_profile",
+      "condition": null,
+      "rationale": "更新后的资料传给响应节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6", "n7", "n9", "n10", "n15", "n18", "n22"],
+  "confidence": 0.94,
+  "notes": "按冻结需求建模：统一入口接收 POST 请求并按动作字段路由到五类处理分支。注册与资料更新的字段校验为带条件 code 节点，失败分支返回失败/错误响应；登录凭据校验为条件分支；反馈分支中感谢回复由语言模型生成判 semantic；CGPA 计算由语言模型完成判 semantic，结果解析校验为 code。每个分支以 JSON 响应为终止。原生中的 Set/Format 数据准备、各 IF 控制节点及具体模型（Groq/Mistral）为实现细节，不单独建模。"
+}

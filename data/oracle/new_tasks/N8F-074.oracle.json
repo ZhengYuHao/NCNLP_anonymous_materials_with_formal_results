@@ -1,0 +1,339 @@
+{
+  "task_id": "N8F-074",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "9eefc9c3e6a2bc171b3c5ee0ec763ca160feab7bd1a566260b7e12671613e404",
+  "fixtures": [
+    {
+      "fixture_id": "F-CHAT-COMPLETE",
+      "purpose": "完整对话：用户逐步提供歌曲标题、风格、歌词需求与负面标签",
+      "input_data": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Make a song titled Neon Sky"
+          },
+          {
+            "role": "user",
+            "content": "Synthwave genre"
+          },
+          {
+            "role": "user",
+            "content": "Generate lyrics for me"
+          },
+          {
+            "role": "user",
+            "content": "Avoid slow tempo and acoustic sounds"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-CHAT-INCOMPLETE",
+      "purpose": "不完整对话：缺少歌词与负面标签，验证不提交生成",
+      "input_data": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Make a song titled Neon Sky"
+          },
+          {
+            "role": "user",
+            "content": "Synthwave genre"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-GET-SONGS-TWO",
+      "purpose": "回调完成后取回 2 首歌曲的固定结果",
+      "input_data": {
+        "songs": [
+          {
+            "song_id": "S-1001",
+            "audio_url": "https://media.example.com/songs/S-1001.mp3",
+            "title": "Neon Sky"
+          },
+          {
+            "song_id": "S-1002",
+            "audio_url": "https://media.example.com/songs/S-1002.mp3",
+            "title": "Neon Sky (Remix)"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-GET-SONGS-ONE",
+      "purpose": "单首歌曲的固定结果，验证逐首处理边界",
+      "input_data": {
+        "songs": [
+          {
+            "song_id": "S-1001",
+            "audio_url": "https://media.example.com/songs/S-1001.mp3",
+            "title": "Neon Sky"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-AGENT",
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "conversational_param_collection",
+      "request_contract": {
+        "input_is_chat_messages": true
+      },
+      "response_contract": {
+        "title": "Neon Sky",
+        "genre": "Synthwave",
+        "lyrics": "generated lyrics text for Neon Sky",
+        "negative_tags": [
+          "slow tempo",
+          "acoustic"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SONGWRITER",
+      "dependency_type": "agentTool",
+      "operation": "write_lyrics",
+      "request_contract": {
+        "tool": "Songwriter"
+      },
+      "response_contract": {
+        "lyrics": "generated lyrics text for Neon Sky"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIEAI-SUBMIT",
+      "dependency_type": "httpRequest",
+      "operation": "submit_song_generation",
+      "request_contract": {
+        "payload_has_all_four_params": true,
+        "async_callback": true
+      },
+      "response_contract": {
+        "job_id": "JOB-0001",
+        "status": "accepted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIEAI-CALLBACK",
+      "dependency_type": "webhook",
+      "operation": "receive_generation_callback",
+      "request_contract": {
+        "job_id": "JOB-0001"
+      },
+      "response_contract": {
+        "job_id": "JOB-0001",
+        "status": "completed",
+        "song_ids": [
+          "S-1001",
+          "S-1002"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIEAI-GET",
+      "dependency_type": "httpRequest",
+      "operation": "get_generated_songs",
+      "request_contract": {
+        "job_id": "JOB-0001"
+      },
+      "response_contract": {
+        "songs": "see fixtures F-GET-SONGS-TWO / F-GET-SONGS-ONE"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AUDIO-DL",
+      "dependency_type": "httpRequest",
+      "operation": "download_audio",
+      "request_contract": {
+        "one_download_per_song": true
+      },
+      "response_contract": {
+        "status": "ok",
+        "content_type": "audio/mpeg",
+        "size_bytes": 4096
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-UPLOAD",
+      "dependency_type": "googleDrive",
+      "operation": "upload_file",
+      "request_contract": {
+        "folder_id": "DRV-MUSIC-01",
+        "filename_must_be_timestamped": true
+      },
+      "response_contract": {
+        "file_id": "DRV-A-0001",
+        "status": "uploaded",
+        "folder_id": "DRV-MUSIC-01"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FULL",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CHAT-COMPLETE",
+        "F-GET-SONGS-TWO"
+      ],
+      "mock_ids": [
+        "M-LLM-AGENT",
+        "M-LLM-SONGWRITER",
+        "M-KIEAI-SUBMIT",
+        "M-KIEAI-CALLBACK",
+        "M-KIEAI-GET",
+        "M-AUDIO-DL",
+        "M-DRIVE-UPLOAD"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.collected_params.title",
+          "operator": "equals",
+          "expected": "Neon Sky",
+          "rationale": "四项参数之一：歌曲标题"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.collected_params.genre",
+          "operator": "equals",
+          "expected": "Synthwave",
+          "rationale": "四项参数之一：音乐风格"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.collected_params.lyrics",
+          "operator": "exists",
+          "rationale": "四项参数之一：歌词（由写词能力生成或检索获得）",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.collected_params.negative_tags",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "四项参数之一：负面标签，须完整收集"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.submission.job_id",
+          "operator": "equals",
+          "expected": "JOB-0001",
+          "rationale": "参数收集完成后提交音乐生成服务"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.generated_songs",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "回调完成后取回的歌曲数为固定值 2"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.uploaded_files",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每首歌曲下载并上传一次"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.uploaded_files[0].filename",
+          "operator": "matches",
+          "expected": "^[0-9]{8}_[0-9]{6}",
+          "rationale": "文件名须带时间戳（YYYYMMDD_HHMMSS 前缀）"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.uploaded_files[*].folder_id",
+          "operator": "equals",
+          "expected": "DRV-MUSIC-01",
+          "rationale": "音频须上传到指定 Google Drive 文件夹"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-SINGLE-SONG",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CHAT-COMPLETE",
+        "F-GET-SONGS-ONE"
+      ],
+      "mock_ids": [
+        "M-LLM-AGENT",
+        "M-LLM-SONGWRITER",
+        "M-KIEAI-SUBMIT",
+        "M-KIEAI-CALLBACK",
+        "M-KIEAI-GET",
+        "M-AUDIO-DL",
+        "M-DRIVE-UPLOAD"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.generated_songs",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅返回 1 首歌曲时取回 1 首"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.uploaded_files",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "单首歌曲同样逐首下载并上传"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INCOMPLETE-PARAMS",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CHAT-INCOMPLETE"
+      ],
+      "mock_ids": [
+        "M-LLM-AGENT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.submission",
+          "operator": "not_exists",
+          "rationale": "四项参数未收集完成（缺少歌词与负面标签）时不得提交音乐生成",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.uploaded_files",
+          "operator": "not_exists",
+          "rationale": "未生成歌曲则无下载与上传",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Gemini 对话、写词/检索工具、Kie.ai 提交与回调、歌曲取回、音频下载、Drive 上传均为固定模拟。四项参数是否收齐、回调后的歌曲数、上传文件数与时间戳文件名均可程序判定。"
+}

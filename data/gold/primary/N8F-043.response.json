@@ -1,0 +1,315 @@
+{
+  "task_id": "N8F-043",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "37c9ffb87dc52edaa6cb694aa6a42f2d5b4ed34ccbfdd72d2463f8d7faa025b4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "本次执行的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "系统每天执行一次 Reddit 监测",
+        "Checks Reddit once a day for new posts matching your keywords in selected subreddits or across all of Reddit."
+      ],
+      "rationale": "需求声明每天执行一次 Reddit 监测，原生图 Schedule Trigger 为入口，映射为定时触发代码节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取关键词与检索范围配置",
+      "node_type": "code",
+      "operation_family": "config_loading",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "search_config",
+          "type": "object",
+          "description": "用户设定的关键词与 subreddit 范围（或整个 Reddit）配置"
+        }
+      ],
+      "native_evidence": [
+        "Define Keywords And Subreddits"
+      ],
+      "requirement_evidence": [
+        "按用户设定的关键词，在指定的 subreddit 或整个 Reddit 范围内检索新帖子",
+        "matching your keywords in selected subreddits or across all of Reddit"
+      ],
+      "rationale": "需求声明按用户设定的关键词与范围检索，关键词与范围为配置输入，判为确定性配置读取代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按关键词检索 Reddit 新帖子",
+      "node_type": "code",
+      "operation_family": "search",
+      "inputs": [
+        {
+          "name": "search_config",
+          "type": "object",
+          "description": "关键词与检索范围配置"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "posts",
+          "type": "array",
+          "description": "检索到的 Reddit 新帖子列表"
+        }
+      ],
+      "native_evidence": [
+        "Search Reddit",
+        "Split Out Keywords",
+        "Filter Reddit Items With No Posts"
+      ],
+      "requirement_evidence": [
+        "按用户设定的关键词，在指定的 subreddit 或整个 Reddit 范围内检索新帖子",
+        "Reddit Search: Queries new posts based on user-defined keywords."
+      ],
+      "rationale": "需求声明按关键词检索 Reddit 新帖子，为外部检索动作（Reddit API 调用），判为代码节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "读取相关性判定标准与评论生成提示语",
+      "node_type": "code",
+      "operation_family": "config_loading",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "analysis_config",
+          "type": "object",
+          "description": "用户设定的相关性判定标准与评论生成提示语"
+        }
+      ],
+      "native_evidence": [
+        "Define Relevance Criteria",
+        "Define Instructions For Generating Comments"
+      ],
+      "requirement_evidence": [
+        "依据用户设定的判定标准给出相关性评分",
+        "用于评分和生成评论的提示语可由用户自定义",
+        "Allow custom prompts so you can tweak AI behavior for lead generation, competitor monitoring, or brand mentions."
+      ],
+      "rationale": "需求声明判定标准与评论提示语可由用户自定义，为配置输入，判为确定性配置读取代码节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型评估相关性并生成建议评论",
+      "node_type": "semantic",
+      "operation_family": "ai_analysis",
+      "inputs": [
+        {
+          "name": "posts",
+          "type": "array",
+          "description": "检索到的 Reddit 新帖子"
+        },
+        {
+          "name": "analysis_config",
+          "type": "object",
+          "description": "相关性判定标准与评论生成提示语"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analyzed_posts",
+          "type": "array",
+          "description": "带相关性评分与建议评论的帖子列表"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Each Post",
+        "Split Out Posts",
+        "Add Relevance Score And Comment To Each Post"
+      ],
+      "requirement_evidence": [
+        "系统使用语言模型依据用户设定的判定标准给出相关性评分，并生成一条贴合目标受众或互动策略的建议评论",
+        "Assign a relevance score to each post based on your defined priorities.",
+        "Generate a suggested comment tailored to your audience or engagement strategy."
+      ],
+      "rationale": "需求声明由语言模型按判定标准评分并生成建议评论，需开放文本评估与创作，判为语义节点；逐帖分析的原生循环折叠进节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "将帖子、评分与建议评论写入 Notion 数据库",
+      "node_type": "code",
+      "operation_family": "database_write",
+      "inputs": [
+        {
+          "name": "analyzed_posts",
+          "type": "array",
+          "description": "带评分与建议评论的帖子列表"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Aggregate Posts",
+        "Split Out Posts Into Items",
+        "Add Each Post to Notion Database"
+      ],
+      "requirement_evidence": [
+        "所有帖子及其相关性评分与建议评论写入 Notion 数据库，便于跟踪与协作",
+        "Saves all posts, relevance scores, and AI-generated comments directly into your Notion database for easy tracking and collaboration."
+      ],
+      "rationale": "需求声明将帖子、评分与建议评论写入 Notion 数据库，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成并发送每日汇总邮件（可选）",
+      "node_type": "terminal",
+      "operation_family": "email_summary",
+      "inputs": [
+        {
+          "name": "analyzed_posts",
+          "type": "array",
+          "description": "本轮检索与分析结果（用于汇总新讨论与洞察）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Generate HTML Email",
+        "Send a message"
+      ],
+      "requirement_evidence": [
+        "此外可选择每天发送一封汇总新讨论与洞察的邮件",
+        "Optional Email Alerts",
+        "Sends a clean, HTML-formatted email summarizing new discussions and insights."
+      ],
+      "rationale": "需求声明可选发送每日汇总邮件（条件：邮件通知已启用），为邮件分支的最终用户可见完成动作（最终发送），无后续环节，判为终止节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "每日监测流程完成",
+      "node_type": "terminal",
+      "operation_family": "completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "NO_DIRECT_NATIVE_NODE: requirement-only terminal abstraction; see notes"
+      ],
+      "requirement_evidence": [
+        "所有帖子及其相关性评分与建议评论写入 Notion 数据库，便于跟踪与协作"
+      ],
+      "rationale": "邮件通知未启用时，写入 Notion 后流程即完成，作为该分支的终止节点（邮件为可选项，需求未强制发送）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每日触发后读取检索配置。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置就绪后按关键词检索。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "检索完成后读取分析配置。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析配置就绪后由语言模型评估帖子。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后写入 Notion 数据库。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "邮件通知已启用（可选项）",
+      "rationale": "启用邮件通知时发送每日汇总邮件。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "邮件通知未启用",
+      "rationale": "未启用邮件通知时流程完成。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "search_config",
+      "condition": null,
+      "rationale": "检索配置供检索使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n5",
+      "variable": "posts",
+      "condition": null,
+      "rationale": "检索到的帖子供语言模型分析。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "analysis_config",
+      "condition": null,
+      "rationale": "判定标准与提示语供分析使用。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "analyzed_posts",
+      "condition": null,
+      "rationale": "带评分与评论的帖子供写入 Notion（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n7",
+      "variable": "analyzed_posts",
+      "condition": null,
+      "rationale": "分析结果供邮件汇总使用（semantic→terminal 有类型数据边）。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7",
+    "n8"
+  ],
+  "confidence": 0.92,
+  "notes": "按冻结需求建模：每日触发→读取关键词与范围→检索→读取判定标准与提示语→LLM 评分与生成建议评论→写入 Notion→（可选）发送每日汇总邮件。邮件为可选项，故拆分发送邮件与流程完成两个终止节点。终止节点 n8（每日监测流程完成）为邮件未启用分支的终止出口，依据冻结需求抽象得到（写入 Notion 后流程即完成），原生图中无对应结束节点（原生图以 Gmail 发送节点为最后动作节点，且邮件为可选分支），并非原生节点的一对一映射。原生图中配置节点的串行连接顺序与聚合/拆分等为实现细节，未单独建模。"
+}

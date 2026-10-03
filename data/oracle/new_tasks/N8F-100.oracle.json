@@ -1,0 +1,311 @@
+{
+  "task_id": "N8F-100",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "87f0a5e946678e7938e4451f78e1089082865c983dffd2e3d42936b95f799fe9",
+  "fixtures": [
+    {
+      "fixture_id": "F-payroll",
+      "purpose": "收入与工资数据：3 名员工的工资，配合固定代扣税率可程序复算",
+      "input_data": {
+        "employees": [
+          {
+            "id": "E1",
+            "gross_salary": 10000
+          },
+          {
+            "id": "E2",
+            "gross_salary": 20000
+          },
+          {
+            "id": "E3",
+            "gross_salary": 30000
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-tax-rules",
+      "purpose": "用户配置的税款代扣规则与税务代理人信息",
+      "input_data": {
+        "withholding_rate": 0.2,
+        "tax_agent_email": "tax@agency.com",
+        "compliance_thresholds": {
+          "min_net_positive": true
+        }
+      }
+    },
+    {
+      "fixture_id": "F-payroll-zero",
+      "purpose": "边界用例：工资为 0 的员工",
+      "input_data": {
+        "employees": [
+          {
+            "id": "E0",
+            "gross_salary": 0
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-data-fetch",
+      "dependency_type": "payroll_source",
+      "operation": "fetch_payroll_data",
+      "request_contract": {
+        "period": "2026-08"
+      },
+      "response_contract": {
+        "employees": [
+          {
+            "id": "E1",
+            "gross_salary": 10000
+          },
+          {
+            "id": "E2",
+            "gross_salary": 20000
+          },
+          {
+            "id": "E3",
+            "gross_salary": 30000
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-withholding",
+      "dependency_type": "llm",
+      "operation": "apply_withholding_rules",
+      "request_contract": {
+        "withholding_rate": 0.2
+      },
+      "response_contract": {
+        "withheld": {
+          "E1": 2000,
+          "E2": 4000,
+          "E3": 6000
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-withholding-zero",
+      "dependency_type": "llm",
+      "operation": "apply_withholding_rules",
+      "request_contract": {
+        "employee_id": "E0"
+      },
+      "response_contract": {
+        "withheld": {
+          "E0": 0
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-compliance",
+      "dependency_type": "llm",
+      "operation": "compliance_check",
+      "request_contract": {
+        "tax_summary": ""
+      },
+      "response_contract": {
+        "compliant": true,
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-doc-gen",
+      "dependency_type": "html_report",
+      "operation": "render_report",
+      "request_contract": {
+        "calculations": ""
+      },
+      "response_contract": {
+        "html": "<h1>Payroll Tax Report</h1><p>Total withheld: 12000</p>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-html2pdf",
+      "dependency_type": "pdf_converter",
+      "operation": "convert_to_pdf",
+      "request_contract": {
+        "html": "<h1>Payroll Tax Report</h1><p>Total withheld: 12000</p>"
+      },
+      "response_contract": {
+        "pdf_url": "https://drive.example/report_2026_08.pdf",
+        "file_name": "report_2026_08.pdf"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "audit_trail"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 15
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-upload",
+      "dependency_type": "google_drive",
+      "operation": "upload_file",
+      "request_contract": {
+        "file_name": "report_2026_08.pdf"
+      },
+      "response_contract": {
+        "file_id": "archive_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-send",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "tax@agency.com"
+      },
+      "response_contract": {
+        "message_id": "tax_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-payroll",
+        "F-tax-rules"
+      ],
+      "mock_ids": [
+        "M-data-fetch",
+        "M-llm-withholding",
+        "M-llm-compliance",
+        "M-doc-gen",
+        "M-html2pdf",
+        "M-sheets-append",
+        "M-drive-upload",
+        "M-gmail-send"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.calculations.E1.withheld",
+          "operator": "equals",
+          "expected": 2000,
+          "rationale": "E1 扣税额 = 10000 x 20% = 2000，可程序复算"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.calculations.E2.net_salary",
+          "operator": "equals",
+          "expected": 16000,
+          "rationale": "E2 净工资 = 20000 - 4000 = 16000"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.tax_summary.total_withheld",
+          "operator": "equals",
+          "expected": 12000,
+          "rationale": "税务信息汇总：2000 + 4000 + 6000 = 12000"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.compliance.compliant",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "语言模型合规校验结果为固定模拟值 compliant=true"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.pdf.url",
+          "operator": "exists",
+          "rationale": "须生成结构化报表文档并转换为 PDF",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sheets_record",
+          "operator": "exists",
+          "rationale": "记录须保存到 Google Sheets 作为审计留痕",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.drive.file_id",
+          "operator": "exists",
+          "rationale": "文件须归档到 Google Drive",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.email.to",
+          "operator": "equals",
+          "expected": "tax@agency.com",
+          "rationale": "税务摘要须发送给配置的税务代理人"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.email.body",
+          "operator": "contains",
+          "expected": "12000",
+          "rationale": "发送给税务代理人的摘要须包含汇总的扣税总额"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-zero",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-payroll-zero",
+        "F-tax-rules"
+      ],
+      "mock_ids": [
+        "M-llm-withholding-zero"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-zero",
+          "target": "output.calculations.E0.withheld",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "工资为 0 时扣税额应为 0"
+        },
+        {
+          "assertion_id": "A-2-bnd-zero",
+          "target": "output.calculations.E0.net_salary",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "工资为 0 时净工资应为 0"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "代扣规则固定为税率 20%，工资、收入数据来自固定模拟；计算结果（扣税、净工资、汇总）均可由程序按规则复算，合规校验、PDF 转换、Sheets/Drive/Gmail 均为固定模拟响应。"
+}

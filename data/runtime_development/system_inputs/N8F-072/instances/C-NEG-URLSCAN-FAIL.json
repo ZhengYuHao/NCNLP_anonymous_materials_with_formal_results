@@ -1,0 +1,11 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-072",
+  "case_id": "C-NEG-URLSCAN-FAIL",
+  "kind": "negative",
+  "input_data": {
+    "url": "http://example.com/click?id=123",
+    "telegram_chat_id": "123456789"
+  },
+  "input_sha256": "8439EA33DD09A1C73DD2654D2EE99C5D82724D9752BF9AC8A36E63D73F8B2993"
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-024",
+  "case_id": "C-BOUND-NO-CLEANER",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-SWEEP-DUE": {
+        "sweep_date": "2026-09-02",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-001",
+            "guest_name": "Alice Chen",
+            "guest_email": "alice@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-09-03",
+            "check_out": "2026-09-05"
+          },
+          {
+            "booking_id": "B-002",
+            "guest_name": "Bob",
+            "guest_email": "bob@example.com",
+            "property": "Sea House",
+            "check_in": "2026-08-29",
+            "check_out": "2026-09-02"
+          },
+          {
+            "booking_id": "B-003",
+            "guest_name": "Carol",
+            "guest_email": "carol@example.com",
+            "property": "Mountain Cabin",
+            "check_in": "2026-08-15",
+            "check_out": "2026-08-31"
+          },
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      },
+      "F-PLAYBOOK": {
+        "properties": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      },
+      "F-CLEANER-UNSET": {
+        "cleaner_email": null
+      }
+    }
+  },
+  "input_sha256": "4AF7956E1ABD1D49431FBA18537C169B04905AF7CCAF65BB769CE2491D07C45E"
+}

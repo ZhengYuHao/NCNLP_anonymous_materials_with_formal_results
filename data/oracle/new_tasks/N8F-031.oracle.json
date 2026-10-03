@@ -1,0 +1,224 @@
+{
+  "task_id": "N8F-031",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "e6720e1c2f31b01deb4d4148325db73e9cbd1176cf8a2af925b1b7f0068aec53",
+  "fixtures": [
+    {
+      "fixture_id": "F-EMAIL-NON-EN",
+      "purpose": "正常用例：一封法文新邮件（含 HTML 正文），验证语言检测、翻译、转发与加标签全流程",
+      "input_data": {
+        "email": {
+          "id": "msg-fr-001",
+          "subject": "Bonjour, projet en cours",
+          "from": "jean.dupont@example.fr",
+          "received_date": "2026-09-02T09:00:00Z",
+          "message_id": "<abc123@example.fr>",
+          "body_html": "<html><body><p>Bonjour, le projet avance bien.</p><p>Merci pour votre aide.</p></body></html>"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-EMAIL-EN",
+      "purpose": "负例/分支：一封英文邮件，验证语言检测为英文后不再继续处理（不翻译、不转发、不加标签）",
+      "input_data": {
+        "email": {
+          "id": "msg-en-002",
+          "subject": "Weekly status update",
+          "from": "alice@example.com",
+          "received_date": "2026-09-02T10:00:00Z",
+          "message_id": "<def456@example.com>",
+          "body_html": "<html><body><p>The project is on track for release.</p></body></html>"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-DETECT-FR",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_language",
+      "request_contract": {
+        "text": "Bonjour, le projet avance bien. Merci pour votre aide."
+      },
+      "response_contract": {
+        "language": "fr"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TRANSLATE-FR",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "translate_to_english",
+      "request_contract": {
+        "text": "Bonjour, le projet avance bien. Merci pour votre aide.",
+        "target_language": "en"
+      },
+      "response_contract": {
+        "translation": "Hello, the project is progressing well. Thank you for your help."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND-TRANSLATED",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_translated_email",
+      "request_contract": {
+        "to": "me@example.com",
+        "subject": "[TRANSLATED] Bonjour, projet en cours",
+        "body": "From: jean.dupont@example.fr\nSubject: Bonjour, projet en cours\nReceived: 2026-09-02T09:00:00Z\nMessage-ID: <abc123@example.fr>\n\nHello, the project is progressing well. Thank you for your help."
+      },
+      "response_contract": {
+        "message_id": "sent-msg-001",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-ADD-LABEL",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "add_label_to_message",
+      "request_contract": {
+        "message_id": "msg-fr-001",
+        "label": "Translated Emails"
+      },
+      "response_contract": {
+        "label_ids": ["Label_1"],
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DETECT-EN",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_language",
+      "request_contract": {
+        "text": "The project is on track for release."
+      },
+      "response_contract": {
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TRANSLATE-NON-EN",
+      "kind": "positive",
+      "fixture_ids": ["F-EMAIL-NON-EN"],
+      "mock_ids": ["M-LLM-DETECT-FR", "M-LLM-TRANSLATE-FR", "M-GMAIL-SEND-TRANSLATED", "M-GMAIL-ADD-LABEL"],
+      "assertions": [
+        {
+          "assertion_id": "A-031-1",
+          "target": "exec_log.normalized_text",
+          "operator": "equals",
+          "expected": "Bonjour, le projet avance bien. Merci pour votre aide.",
+          "rationale": "邮件正文必须先去除 HTML 并规范化为纯文本，规范结果必须与固定输入一致"
+        },
+        {
+          "assertion_id": "A-031-2",
+          "target": "exec_log.llm.detected_language",
+          "operator": "equals",
+          "expected": "fr",
+          "rationale": "语言模型必须对正文进行语言检测，固定模拟判定为法语"
+        },
+        {
+          "assertion_id": "A-031-3",
+          "target": "exec_log.llm.translation",
+          "operator": "equals",
+          "expected": "Hello, the project is progressing well. Thank you for your help.",
+          "rationale": "非英文邮件必须被翻译为英文，译文必须与固定模拟的模型输出一致"
+        },
+        {
+          "assertion_id": "A-031-4",
+          "target": "exec_log.gmail.send.subject",
+          "operator": "contains",
+          "expected": "[TRANSLATED]",
+          "rationale": "转发邮件的主题必须以 [TRANSLATED] 前缀开头"
+        },
+        {
+          "assertion_id": "A-031-5",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "jean.dupont@example.fr",
+          "rationale": "转发邮件必须包含原发件人信息"
+        },
+        {
+          "assertion_id": "A-031-6",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "Bonjour, projet en cours",
+          "rationale": "转发邮件必须包含原主题"
+        },
+        {
+          "assertion_id": "A-031-7",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "2026-09-02T09:00:00Z",
+          "rationale": "转发邮件必须包含接收日期"
+        },
+        {
+          "assertion_id": "A-031-8",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "<abc123@example.fr>",
+          "rationale": "转发邮件必须包含邮件标识（Message-ID）"
+        },
+        {
+          "assertion_id": "A-031-9",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "Hello, the project is progressing well",
+          "rationale": "转发邮件必须包含翻译后的英文内容"
+        },
+        {
+          "assertion_id": "A-031-10",
+          "target": "exec_log.gmail.label_added",
+          "operator": "equals",
+          "expected": "Translated Emails",
+          "rationale": "必须为原始邮件添加“Translated Emails”标签，标签名必须精确匹配"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SKIP-ENGLISH",
+      "kind": "negative",
+      "fixture_ids": ["F-EMAIL-EN"],
+      "mock_ids": ["M-LLM-DETECT-EN"],
+      "assertions": [
+        {
+          "assertion_id": "A-031-11",
+          "target": "exec_log.llm.detected_language",
+          "operator": "equals",
+          "expected": "en",
+          "rationale": "语言检测必须判定该邮件为英文"
+        },
+        {
+          "assertion_id": "A-031-12",
+          "target": "exec_log.gmail.send.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "英文邮件不得触发翻译转发，不应发送任何邮件"
+        },
+        {
+          "assertion_id": "A-031-13",
+          "target": "exec_log.gmail.label_added",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "英文邮件不应被添加“Translated Emails”标签，流程应在语言检测为英文后终止"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两条分支：非英文邮件全流程（HTML 规范化→语言检测→翻译→组织转发邮件（含原发件人/原主题/接收日期/邮件标识/译文）→[TRANSLATED] 前缀发送→加“Translated Emails”标签）与英文邮件提前终止（不翻译、不发送、不加标签）。所有外部依赖（OpenAI 语言检测与翻译、Gmail 发送与标签）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、相等、包含与调用次数检查。"
+}

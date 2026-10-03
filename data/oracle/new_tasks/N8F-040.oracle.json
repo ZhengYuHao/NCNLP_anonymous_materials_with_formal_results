@@ -1,0 +1,308 @@
+{
+  "task_id": "N8F-040",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "290fb97f66b43eb4ecb2be1ae9d02050075c7ce48490ad38fb4bbda1fd842741",
+  "fixtures": [
+    {
+      "fixture_id": "F-SOURCE-ROWS",
+      "purpose": "源 Google Sheets 公司记录（含已充实与未充实）",
+      "input_data": {
+        "rows": [
+          {
+            "company_name": "Acme Corp",
+            "website": "https://acme.example.com",
+            "enriched": "No"
+          },
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          },
+          {
+            "company_name": "Initech Co",
+            "website": "https://initech.example.org",
+            "enriched": "No"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SOURCE-ALL-ENRICHED",
+      "purpose": "全部已充实的源记录",
+      "input_data": {
+        "rows": [
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-READ-SOURCE",
+      "dependency_type": "googleSheets",
+      "operation": "read_source_rows",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "company_name": "Acme Corp",
+            "website": "https://acme.example.com",
+            "enriched": "No"
+          },
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          },
+          {
+            "company_name": "Initech Co",
+            "website": "https://initech.example.org",
+            "enriched": "No"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-SOURCE-ALL",
+      "dependency_type": "googleSheets",
+      "operation": "read_source_rows",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SERPAPI-ACME",
+      "dependency_type": "toolSerpApi",
+      "operation": "web_search",
+      "request_contract": {
+        "query": "Acme Corp"
+      },
+      "response_contract": {
+        "snippets": [
+          {
+            "title": "Acme Corp official",
+            "url": "https://acme.example.com"
+          },
+          {
+            "title": "Acme Corp news",
+            "url": "https://news.example.com/acme"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SERPAPI-INITECH",
+      "dependency_type": "toolSerpApi",
+      "operation": "web_search",
+      "request_contract": {
+        "query": "Initech Co"
+      },
+      "response_contract": {
+        "snippets": [
+          {
+            "title": "Initech Co homepage",
+            "url": "https://initech.example.org"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ENRICH",
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "enrich_company",
+      "request_contract": {},
+      "response_contract": {
+        "industry": "Software",
+        "description": "Acme builds workflow tools.",
+        "target_customers": [
+          "SMB",
+          "Enterprise"
+        ],
+        "headquarters": "San Francisco",
+        "estimated_size": "50-200"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-OUTPUT",
+      "dependency_type": "googleSheets",
+      "operation": "append_enriched",
+      "request_contract": {
+        "tab": "output"
+      },
+      "response_contract": {
+        "appended_rows": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-UPDATE-SOURCE",
+      "dependency_type": "googleSheets",
+      "operation": "update_source_enriched",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "updated_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-ENRICH",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-SOURCE-ROWS"
+      ],
+      "mock_ids": [
+        "M-READ-SOURCE",
+        "M-SERPAPI-ACME",
+        "M-SERPAPI-INITECH",
+        "M-LLM-ENRICH",
+        "M-APPEND-OUTPUT",
+        "M-UPDATE-SOURCE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.researched_companies",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "已充实行(Globex)被跳过，仅处理两家未充实公司"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.sheets.output_appended",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "两家公司记录追加写入输出工作表"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.sheets.output_appended[0].company_name",
+          "operator": "equals",
+          "expected": "Acme Corp",
+          "rationale": "输出记录对应源记录"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.sheets.output_appended[0].industry",
+          "operator": "equals",
+          "expected": "Software",
+          "rationale": "结构化调研信息含行业"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets.output_appended[0].target_customers",
+          "operator": "equals",
+          "expected": "SMB, Enterprise",
+          "rationale": "目标客户数组被整理为逗号分隔文本"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sheets.output_appended[0].headquarters",
+          "operator": "equals",
+          "expected": "San Francisco",
+          "rationale": "调研信息含总部所在地"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.sheets.output_appended[1].company_name",
+          "operator": "equals",
+          "expected": "Initech Co",
+          "rationale": "第二家公司同样被充实"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.sheets.source_updated",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "按公司名称更新源表中两家原始记录"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.sheets.source_updated[0].company_name",
+          "operator": "equals",
+          "expected": "Acme Corp",
+          "rationale": "源表更新按公司名称定位"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.sheets.source_updated[0].enriched",
+          "operator": "equals",
+          "expected": "Yes",
+          "rationale": "源行'是否已充实'更新为是，避免重复处理"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-ALL-ENRICHED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-SOURCE-ALL-ENRICHED"
+      ],
+      "mock_ids": [
+        "M-READ-SOURCE-ALL",
+        "M-APPEND-OUTPUT",
+        "M-UPDATE-SOURCE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-ALL-ENRICHED",
+          "target": "output.researched_companies",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "全部已充实时不调研任何公司"
+        },
+        {
+          "assertion_id": "A-2-BOUND-ALL-ENRICHED",
+          "target": "output.sheets.output_appended",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "输出工作表无新增"
+        },
+        {
+          "assertion_id": "A-3-BOUND-ALL-ENRICHED",
+          "target": "output.sheets.source_updated",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "源表无更新"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；手动触发由 fixture 说明；SerpAPI/LLM/Sheets 均为固定模拟，无真实副作用；输出以 output.* JSON 路径表达。"
+}

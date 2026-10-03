@@ -1,0 +1,451 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-006",
+  "dataset_partition": "development_qualification",
+  "domain": "medical",
+  "requirement_sha256": "ac45d955b0d7dcb3e4587f9932067b71b124ed23cf22d1cf00d6926a200ec942",
+  "natural_language_requirement": "系统用于自动生成针对特定疾病与患者人群的个性化自然健康指南。\n输入：用户通过网页表单提交患者信息，包括疾病、年龄和性别。\n处理过程：\n1. 内容生成：使用语言模型依据提交的疾病信息生成完整的健康指南，内容包括医学信息、自然疗法、预防策略和疗愈食谱，并按疾病、年龄、性别对内容进行个性化定制；\n2. 自动质量评估：由语言模型担任评估器，对生成内容的完整性与准确性进行审查；\n3. 迭代优化：未达到质量标准时，由语言模型自动优化内容并重新评估，最多迭代 5 次；\n4. 审核通过后，对内容进行专业排版（统一样式与分节标记），并附加本地时间与 UTC 双时区时间戳；\n5. 导出为 Google Docs 文档；同时记录执行指标，包括使用的 token 数、处理耗时和质量迭代次数，用于性能追踪。\n输出：生成的健康指南以 Google Docs 文档形式交付，用户可从 Google Docs 下载该指南。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "guide": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "guide"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "issues": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "missing_sections": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "qa_passed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "issues",
+              "missing_sections",
+              "qa_passed"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "issues": {
+                "items": {},
+                "type": "array"
+              },
+              "missing_sections": {
+                "items": {},
+                "type": "array"
+              },
+              "qa_passed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "issues",
+              "missing_sections",
+              "qa_passed"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "generate_health_guide",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "age": {
+            "type": "integer"
+          },
+          "disease": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "age",
+          "disease",
+          "gender"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "completeness": {
+            "type": "string"
+          },
+          "guide": {
+            "additionalProperties": false,
+            "properties": {
+              "healing_recipes": {
+                "type": "string"
+              },
+              "medical_info": {
+                "type": "string"
+              },
+              "natural_remedies": {
+                "type": "string"
+              },
+              "personalization": {
+                "additionalProperties": false,
+                "properties": {
+                  "age_group": {
+                    "type": "string"
+                  },
+                  "disease": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "age_group",
+                  "disease",
+                  "gender"
+                ],
+                "type": "object"
+              },
+              "prevention_strategies": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "healing_recipes",
+              "medical_info",
+              "natural_remedies",
+              "personalization",
+              "prevention_strategies"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "completeness",
+          "guide"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "optimize_guide",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "issues"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "guide": {
+            "additionalProperties": false,
+            "properties": {
+              "healing_recipes": {
+                "type": "string"
+              },
+              "medical_info": {
+                "type": "string"
+              },
+              "natural_remedies": {
+                "type": "string"
+              },
+              "personalization": {
+                "additionalProperties": false,
+                "properties": {
+                  "age_group": {
+                    "type": "string"
+                  },
+                  "disease": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "age_group",
+                  "disease",
+                  "gender"
+                ],
+                "type": "object"
+              },
+              "prevention_strategies": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "healing_recipes",
+              "medical_info",
+              "natural_remedies",
+              "personalization",
+              "prevention_strategies"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "guide"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "create_document",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "document_id",
+          "url"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "guide_document",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "document_id": {
+              "type": "string",
+              "description": "Google Docs 文档的唯一标识"
+            },
+            "url": {
+              "type": "string",
+              "description": "用户可访问并下载的 Google Docs 文档链接"
+            }
+          },
+          "required": [
+            "document_id",
+            "url"
+          ]
+        },
+        "description": "生成的健康指南以 Google Docs 文档形式交付，用户可从 Google Docs 下载该指南",
+        "requirement_evidence": [
+          "输出：生成的健康指南以 Google Docs 文档形式交付，用户可从 Google Docs 下载该指南。"
+        ],
+        "source_operations": [
+          "create_document"
+        ],
+        "design_sources": [
+          "n7.doc_reference",
+          "n6.formatted_content"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "quality_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "内容完整性与准确性问题列表"
+            },
+            "missing_sections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "缺失的内容章节列表"
+            },
+            "qa_passed": {
+              "type": "boolean",
+              "description": "质量评估是否通过"
+            }
+          },
+          "required": [
+            "issues",
+            "missing_sections",
+            "qa_passed"
+          ],
+          "additionalProperties": false
+        },
+        "description": "评估结果，含完整性与准确性审查结论及通过与否的判定信息",
+        "requirement_evidence": [
+          "由语言模型担任评估器，对生成内容的完整性与准确性进行审查"
+        ],
+        "source_operations": [
+          "evaluate_guide_quality"
+        ],
+        "design_sources": [
+          "n3.quality_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "guide_content",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "healing_recipes": {
+              "type": "string",
+              "description": "疗愈食谱"
+            },
+            "medical_info": {
+              "type": "string",
+              "description": "医学信息"
+            },
+            "natural_remedies": {
+              "type": "string",
+              "description": "自然疗法"
+            },
+            "prevention_strategies": {
+              "type": "string",
+              "description": "预防策略"
+            },
+            "personalization": {
+              "type": "object",
+              "properties": {
+                "age_group": {
+                  "type": "string"
+                },
+                "disease": {
+                  "type": "string"
+                },
+                "gender": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "age_group",
+                "disease",
+                "gender"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "healing_recipes",
+            "medical_info",
+            "natural_remedies",
+            "prevention_strategies",
+            "personalization"
+          ],
+          "additionalProperties": false
+        },
+        "description": "生成的健康指南文本，含医学信息、自然疗法、预防策略与疗愈食谱",
+        "requirement_evidence": [
+          "使用语言模型依据提交的疾病信息生成完整的健康指南，内容包括医学信息、自然疗法、预防策略和疗愈食谱，并按疾病、年龄、性别对内容进行个性化定制"
+        ],
+        "source_operations": [
+          "generate_health_guide"
+        ],
+        "design_sources": [
+          "n2.guide_content"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "execution_metrics",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "token_usage": {
+              "type": "number",
+              "description": "使用的 token 数"
+            },
+            "processing_time": {
+              "type": "number",
+              "description": "处理耗时，单位秒"
+            },
+            "quality_iterations": {
+              "type": "integer",
+              "description": "质量迭代次数"
+            }
+          },
+          "required": [
+            "token_usage",
+            "processing_time",
+            "quality_iterations"
+          ]
+        },
+        "description": "同时记录执行指标，包括使用的 token 数、处理耗时和质量迭代次数，用于性能追踪。",
+        "requirement_evidence": [
+          "同时记录执行指标，包括使用的 token 数、处理耗时和质量迭代次数，用于性能追踪。"
+        ],
+        "source_operations": [
+          "evaluate_guide_quality",
+          "generate_health_guide",
+          "optimize_guide",
+          "create_document"
+        ],
+        "design_sources": [
+          "n4.metrics_data"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "AB9EF944EAE83E1C485011D4DF37F2890F468B3D991210205000502D819B5045",
+  "public_interface_sha256": "6A78A2C4C612309FBC581CD495B3B1A8498BAA4EA513652CB0768A1729451C4D",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

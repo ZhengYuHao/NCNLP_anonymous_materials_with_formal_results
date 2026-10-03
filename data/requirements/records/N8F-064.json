@@ -1,0 +1,80 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-064",
+  "source_id": "n8n:14805",
+  "workflow_sha256": "3b52e13b76fcaad66736fb9ca4a01cfd802250aee8c218069e8b55a1c633b08f",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "dbf8cbf4f49420b715320234649c0b529f5efcbde15ee490757dd65f290cf254",
+  "requirement": {
+    "requirement_text": "系统生成一份多资产市场日报。系统依据用户设定的关注清单，覆盖三类标的：指数（如 SPY、QQQ）、外汇（如 EUR/USD）和大宗商品（如黄金、原油），并逐一从 TwelveData 获取清单中各标的的当日行情数据。在取数过程中，若某次数据请求失败或触及接口的硬性限制，系统立即把失败详情记录到 Google Sheets 的“Error logs”标签页，并通过 Gmail 发送一条紧急失败告警。成功获取的数据被规范化处理，计算出当日百分比变化以及看涨/看跌的基本趋势判断。规范化后的数据集被交给语言模型，由其扮演宏观策略分析师的角色，基于这些数据生成一份结构化快照，内容包括市场综述、主要波动标的、风险情绪以及可执行的操作展望。系统按这些固定板块提取内容，将完整报告写入主 Google Sheets 标签页用于历史留存，并将最终排版好的报告文本通过 Gmail 发送出去。",
+    "source_spans": [
+      {
+        "start": 35,
+        "end": 462,
+        "text": "This workflow fully automates the creation of a daily multi-asset market report. It retrieves live pricing data for specified indices, forex pairs and commodities using the TwelveData API, manages rate limits safely and feeds the normalized data into a Groq-powered AI (Llama-3). The AI generates a professional, institutional-grade market summary which is then automatically logged in Google Sheets and emailed to your inbox. "
+      },
+      {
+        "start": 1034,
+        "end": 1476,
+        "text": "This workflow acts as an automated quantitative analyst. It starts by establishing your target asset watchlists across three categories: Indices (e.g., SPY, QQQ), Forex (e.g., EUR/USD) and Commodities (e.g., Gold, Oil). It breaks these lists down and carefully queues them up to fetch daily pricing from the TwelveData API. To ensure it doesn't overwhelm the API and get blocked, it uses a batching system with a built-in 15-second throttle. "
+      },
+      {
+        "start": 1478,
+        "end": 1834,
+        "text": "As data flows in, the workflow actively monitors for errors. If an API call fails or hits a hard limit, it instantly logs the failure details into an \"Error logs\" Google Sheet and sends an emergency failure alert via Gmail. Successfully fetched data is normalized into a clean format, calculating daily percentage changes and basic bullish/bearish trends. "
+      },
+      {
+        "start": 1836,
+        "end": 2279,
+        "text": "Finally, the cleaned dataset is passed to a Llama-3 AI agent via Groq. Instructed to act as a macro strategist, the AI parses the numbers to generate a structured snapshot including a market summary, key movers, risk sentiment and actionable outlook. A custom script safely extracts these exact sections, logs the complete report into your main Google Sheet for historical tracking and delivers the final formatted text straight to your Gmail."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户设定的关注标的清单，覆盖指数、外汇、大宗商品三类",
+        "TwelveData 返回的各标的当日行情数据"
+      ],
+      "conditions": [
+        "行情数据请求失败或触及接口硬性限制时进入失败处理分支"
+      ],
+      "allowed_actions": [
+        "按关注清单逐一从 TwelveData 获取标的当日行情数据",
+        "将失败详情写入 Google Sheets 的“Error logs”标签页",
+        "通过 Gmail 发送紧急失败告警",
+        "规范化行情数据并计算当日百分比变化与看涨/看跌趋势",
+        "交由语言模型按宏观策略分析师角色生成含市场综述、主要波动标的、风险情绪、操作展望四部分的结构化快照",
+        "将完整报告写入主 Google Sheets 标签页用于历史留存",
+        "通过 Gmail 发送最终排版好的报告文本"
+      ],
+      "visible_outcomes": [
+        "主 Google Sheets 标签页中新增一条完整的市场报告记录",
+        "失败时“Error logs”标签页中新增一条失败详情记录",
+        "Gmail 收到排版好的报告文本或紧急失败告警"
+      ],
+      "failure_behavior": [
+        "行情请求失败或触及接口硬性限制时，将失败详情写入 Google Sheets 的“Error logs”标签页并通过 Gmail 发送紧急失败告警"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-064.packet.json",
+    "packet_sha256": "050e52e21761c894dd3357a8d95769764baa8593b16659e351ff29b52d6e8dfe",
+    "public_description_sha256": "49285d9d558a29a49c6cf8f9eddf4f818909c7bee429a0e1630cde2e6bd35d55"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-064.response.json",
+    "verification_response_sha256": "682220d7e5158e07e99692803bd9f7d57fc50b656de1f2265beff6d7311571b7",
+    "decision": "accept"
+  },
+  "formal_index": 75
+}

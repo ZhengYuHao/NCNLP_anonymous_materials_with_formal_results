@@ -1,0 +1,902 @@
+{
+  "task_id": "N8F-029",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "5ae844aec8f80c6fc0e88f2eeb9abb61a87a8c1ae64efc0c89970cf39c1cc560",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "邮件渠道消息接入",
+      "node_type": "code",
+      "operation_family": "channel_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "邮件渠道到达的原始客户消息"
+        }
+      ],
+      "native_evidence": ["Email Trigger (IMAP)"],
+      "requirement_evidence": ["客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord"],
+      "rationale": "渠道接入触发为确定性入口行为，判为 code；五渠道各自独立入口，对应'按渠道分别走独立分支'。"
+    },
+    {
+      "node_id": "n2",
+      "label": "在线聊天渠道消息接入",
+      "node_type": "code",
+      "operation_family": "channel_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "在线聊天渠道到达的原始客户消息"
+        }
+      ],
+      "native_evidence": ["Webhook Trigger (Live Chat)"],
+      "requirement_evidence": ["客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord"],
+      "rationale": "渠道接入触发为确定性入口行为，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "WhatsApp 渠道消息接入",
+      "node_type": "code",
+      "operation_family": "channel_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "WhatsApp 渠道到达的原始客户消息"
+        }
+      ],
+      "native_evidence": ["WhatsApp Trigger"],
+      "requirement_evidence": ["客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord"],
+      "rationale": "渠道接入触发为确定性入口行为，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "Slack 渠道消息接入",
+      "node_type": "code",
+      "operation_family": "channel_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "Slack 渠道到达的原始客户消息"
+        }
+      ],
+      "native_evidence": ["Slack Trigger (Mentions)"],
+      "requirement_evidence": ["客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord"],
+      "rationale": "渠道接入触发为确定性入口行为，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "Discord 渠道消息接入",
+      "node_type": "code",
+      "operation_family": "channel_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "Discord 渠道到达的原始客户消息"
+        }
+      ],
+      "native_evidence": ["Discord Webhook Trigger"],
+      "requirement_evidence": ["客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord"],
+      "rationale": "渠道接入触发为确定性入口行为，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "归一化消息结构",
+      "node_type": "code",
+      "operation_family": "normalization",
+      "inputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "任一渠道的原始消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "统一结构的消息（含渠道、文本、用户标识等）"
+        }
+      ],
+      "native_evidence": ["Normalize Payload", "Workflow Configuration"],
+      "requirement_evidence": ["客户消息从上述任一渠道到达后被归一化为统一结构"],
+      "rationale": "结构归一化为确定性变换，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "五项前置检查（模型调用前）",
+      "node_type": "code",
+      "operation_family": "precheck_filtering",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "统一结构的消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "precheck_result",
+          "type": "object",
+          "description": "五项检查结果：自动回复与退信、空内容、重复投递、超长消息、六种语言的明确转人工请求"
+        }
+      ],
+      "native_evidence": ["Automated Email?", "Has Valid Message?", "Remove Duplicate Messages", "New Message?", "Message Within Limit?", "Handover Requested?"],
+      "requirement_evidence": ["五项前置检查在任何一次模型调用之前执行：自动回复与退信、空内容、重复投递、超长消息，以及以六种语言（英语、罗马尼亚语、德语、法语、西班牙语、意大利语）匹配的明确转人工请求", "置信度阈值与最大消息长度可配置"],
+      "rationale": "五项检查均为确定性规则判断（含可配置阈值），判为 code；检查合并建模因其被需求声明为一组前置检查，路由条件区分各检查结果。"
+    },
+    {
+      "node_id": "n8",
+      "label": "前置检查未通过时立即响应在线聊天调用方",
+      "node_type": "terminal",
+      "operation_family": "immediate_response",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "未通过前置检查的在线聊天消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Is Live Chat? (Empty)", "Respond to Live Chat (Ignored)", "Is Live Chat? (Duplicate)", "Respond to Live Chat (Duplicate)"],
+      "requirement_evidence": ["在线聊天渠道在这些路径上都会立即返回响应，使调用方不会停留在未关闭的连接上等待"],
+      "rationale": "立即返回响应是用户可见的完成动作，判为 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n9",
+      "label": "忽略未通过前置检查的消息",
+      "node_type": "terminal",
+      "operation_family": "safe_ignore",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": ["Ignored (Automated Email)", "Ignored (Empty Message)"],
+      "requirement_evidence": ["五项前置检查在任何一次模型调用之前执行"],
+      "rationale": "未通过前置检查的消息不进入模型调用；非在线聊天渠道对这类消息无后续声明行为，按安全忽略终止，判为 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n10",
+      "label": "检索自有文档并生成答复",
+      "node_type": "semantic",
+      "operation_family": "rag_answer_generation",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "通过前置检查的客户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer",
+          "type": "object",
+          "description": "依据自有文档生成的答复（含是否检索了知识库及知识库是否返回内容）"
+        }
+      ],
+      "native_evidence": ["RAG Support Agent", "Knowledge Base Search", "OpenAI Chat Model (RAG)", "Chat Memory", "Derive Session Key", "Restore Context (Answer)"],
+      "requirement_evidence": ["助理依据自有文档作答，文档通过向量知识库以工具方式检索", "会话记忆持久化保存，重启后历史仍然可用（保留期默认为 30 天）"],
+      "rationale": "依据文档的答复生成为开放文本生成，判为 semantic；向量知识库检索为该节点的内嵌工具，会话记忆持久化（30 天保留期）折叠进节点契约。"
+    },
+    {
+      "node_id": "n11",
+      "label": "置信度评估（基于检索依据，问候致谢短路）",
+      "node_type": "code",
+      "operation_family": "confidence_scoring",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "object",
+          "description": "答复及检索依据信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "description": "基于是否有检索依据的置信度得分"
+        },
+        {
+          "name": "is_greeting",
+          "type": "boolean",
+          "description": "是否为问候或致谢（短路判定）"
+        }
+      ],
+      "native_evidence": ["Confidence Scoring", "Restore Context (Sentiment)"],
+      "requirement_evidence": ["置信度按答复是否有据可依来评估，而不是按答复长度，即助理是否检索了知识库、知识库是否返回了内容", "问候与致谢会短路该判定，而不是被判为失败"],
+      "rationale": "置信度按声明以检索依据确定性推导（有据与否），判为 code；问候致谢短路为确定性规则。"
+    },
+    {
+      "node_id": "n12",
+      "label": "负面情绪分析",
+      "node_type": "semantic",
+      "operation_family": "sentiment_analysis",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "object",
+          "description": "生成的答复内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sentiment",
+          "type": "string",
+          "description": "情绪判定结果（含负面情绪标记）"
+        }
+      ],
+      "native_evidence": ["Sentiment Analysis", "OpenAI Chat Model (Sentiment)"],
+      "requirement_evidence": ["无依据的答复、负面情绪以及明确的转人工请求会升级为人工处理并生成工单"],
+      "rationale": "情绪分析需要开放文本理解，判为 semantic。"
+    },
+    {
+      "node_id": "n13",
+      "label": "按原始渠道回复答复",
+      "node_type": "code",
+      "operation_family": "channel_reply",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "原始消息（含渠道信息）"
+        },
+        {
+          "name": "answer",
+          "type": "object",
+          "description": "生成的答复"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "description": "置信度得分"
+        },
+        {
+          "name": "is_greeting",
+          "type": "boolean",
+          "description": "是否问候/致谢"
+        },
+        {
+          "name": "sentiment",
+          "type": "string",
+          "description": "情绪判定结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "session_record",
+          "type": "object",
+          "description": "本次会话的处理上下文（答复、渠道、置信度、情绪等，用于记录）"
+        }
+      ],
+      "native_evidence": ["Channel Router", "Format Email Response", "Format Webhook Response", "Format WhatsApp Response", "Format Slack Response", "Format Discord Response", "Send Email Reply", "Respond to Live Chat", "Send WhatsApp Reply", "Send Slack Reply", "Send Discord Reply", "Valid Email Recipient?"],
+      "requirement_evidence": ["置信度达到或超过阈值且无负面情绪时，答复通过原始渠道返回，邮件沿用客户原始主题（加 Re: 前缀），Slack 在会话线程内回复"],
+      "rationale": "按渠道路由与格式化并发送答复为确定性变换与外部动作，判为 code；各渠道格式差异为实现细节，按'通过原始渠道返回'合并为一个回复节点（含收件人有效性检查）。"
+    },
+    {
+      "node_id": "n14",
+      "label": "生成升级原因与人工客服说明",
+      "node_type": "semantic",
+      "operation_family": "escalation_reasoning",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "客户消息"
+        },
+        {
+          "name": "precheck_result",
+          "type": "object",
+          "description": "已发生的前置检查判断（如转人工请求）"
+        },
+        {
+          "name": "confidence_score",
+          "type": "number",
+          "description": "置信度得分（低置信升级时）"
+        },
+        {
+          "name": "sentiment",
+          "type": "string",
+          "description": "情绪判定结果（负面升级时）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "escalation_note",
+          "type": "object",
+          "description": "升级原因（直接取自已发生的判断）、给人工客服的简短说明、按情绪推导的优先级"
+        }
+      ],
+      "native_evidence": ["Escalation Reason", "Escalation Reasoning", "OpenAI Chat Model (Escalation)", "Restore Context (Escalation)"],
+      "requirement_evidence": ["其余情况升级为人工处理：升级原因直接取自已发生的判断而不再重新判定", "由语言模型为人工客服在工单正文中写一段简短说明"],
+      "rationale": "为人工客服撰写说明是开放文本生成，判为 semantic；升级原因取自已发生的判断（确定性取值）折叠进节点契约。"
+    },
+    {
+      "node_id": "n15",
+      "label": "创建工单并通知支持团队",
+      "node_type": "code",
+      "operation_family": "ticket_creation",
+      "inputs": [
+        {
+          "name": "escalation_note",
+          "type": "object",
+          "description": "升级原因、客服说明与优先级"
+        },
+        {
+          "name": "message",
+          "type": "object",
+          "description": "客户消息（工单上下文）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "session_record",
+          "type": "object",
+          "description": "本次会话的升级处理上下文（工单信息等，用于记录）"
+        }
+      ],
+      "native_evidence": ["Prepare Ticket Object", "Create Zendesk Ticket", "Escalation Alert to Support Team"],
+      "requirement_evidence": ["在工单系统中创建工单，写入升级原因、给人工客服的简短说明，以及按情绪推导的优先级"],
+      "rationale": "工单创建与团队通知为确定性外部动作，判为 code；优先级按情绪推导为确定性规则，折叠进契约；需求声明升级链路单点失败仍继续，容错要求折叠进本节点与记录节点的契约说明。"
+    },
+    {
+      "node_id": "n16",
+      "label": "分类并记录会话到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "session_logging",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "客户消息"
+        },
+        {
+          "name": "session_record",
+          "type": "object",
+          "description": "会话处理上下文（自动答复或升级）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Log Conversation to Sheets", "Log Escalation to Sheets", "End Workflow", "End Workflow (Escalated)"],
+      "requirement_evidence": ["无论自动答复还是升级处理，每次会话都被分类并记录到 Google Sheets，字段包括用户标识、渠道、消息、分类、情绪、时间戳、答复内容、置信度、是否升级与升级原因"],
+      "rationale": "会话分类由处理路径（自动答复/升级/转人工）确定性推导，记录为确定性数据表写入；记录是每次会话处理的最终动作，判为 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n17",
+      "label": "手动文档导入触发",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ingest_request",
+          "type": "object",
+          "description": "手动导入请求"
+        }
+      ],
+      "native_evidence": ["Ingest Knowledge Base (Manual)", "Ingestion Configuration"],
+      "requirement_evidence": ["另有手动分支用于导入自有文档"],
+      "rationale": "手动触发为确定性入口行为，判为 code；作为文档导入链路入口。"
+    },
+    {
+      "node_id": "n18",
+      "label": "清除上次导入结果",
+      "node_type": "code",
+      "operation_family": "data_cleanup",
+      "inputs": [
+        {
+          "name": "ingest_request",
+          "type": "object",
+          "description": "导入请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "purge_done",
+          "type": "boolean",
+          "description": "上次导入结果已清除"
+        }
+      ],
+      "native_evidence": ["Purge Existing Docs"],
+      "requirement_evidence": ["导入前先清除上次结果，因此重复运行不会产生重复内容"],
+      "rationale": "清空向量库旧数据为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n19",
+      "label": "加载自有文档并写入向量知识库",
+      "node_type": "terminal",
+      "operation_family": "knowledge_ingestion",
+      "inputs": [
+        {
+          "name": "ingest_request",
+          "type": "object",
+          "description": "导入请求（含文档来源）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Load Source Documents", "Reload Documents After Purge", "Supabase Docs Insert", "Docs Loader", "Docs Text Splitter", "OpenAI Embeddings (Docs)"],
+      "requirement_evidence": ["自有文档（导入向量知识库后供检索）", "手动导入自有文档（先清除上次结果）"],
+      "rationale": "文档加载、切分、向量化并写入知识库为确定性管道动作，判为 terminal——导入完成即该链路的最终可见结果（知识库可供检索），无 CFG 出边。"
+    },
+    {
+      "node_id": "n20",
+      "label": "每周维护定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "maintenance_event",
+          "type": "object",
+          "description": "每周维护触发事件"
+        }
+      ],
+      "native_evidence": ["Weekly Maintenance Schedule", "Weekly Configuration"],
+      "requirement_evidence": ["每周任务把真实数据发布到 Slack，随后归档这些数据并清理旧的会话记忆"],
+      "rationale": "定时触发为确定性调度行为，判为 code；作为每周维护链路入口。"
+    },
+    {
+      "node_id": "n21",
+      "label": "读取周数据并汇总统计",
+      "node_type": "code",
+      "operation_family": "metrics_aggregation",
+      "inputs": [
+        {
+          "name": "maintenance_event",
+          "type": "object",
+          "description": "维护触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "从记录数据汇总的真实周统计"
+        }
+      ],
+      "native_evidence": ["Fetch Weekly Metrics", "Aggregate Weekly Metrics"],
+      "requirement_evidence": ["每周任务把真实数据发布到 Slack"],
+      "rationale": "读取并聚合统计数据为确定性变换，判为 code。"
+    },
+    {
+      "node_id": "n22",
+      "label": "向 Slack 发布每周统计",
+      "node_type": "code",
+      "operation_family": "message_posting",
+      "inputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "周统计数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "已发布的周统计（供归档）"
+        }
+      ],
+      "native_evidence": ["Send Weekly Summary"],
+      "requirement_evidence": ["每周向 Slack 发布统计数据"],
+      "rationale": "向 Slack 发布为确定性外部动作，判为 code；因归档随后执行，本节点不设为 terminal。"
+    },
+    {
+      "node_id": "n23",
+      "label": "归档统计数据并清理旧会话记忆",
+      "node_type": "terminal",
+      "operation_family": "maintenance_cleanup",
+      "inputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "已发布的周统计"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Archive Weekly Metrics", "Purge Old Chat Memory"],
+      "requirement_evidence": ["随后归档这些数据并清理旧的会话记忆", "会话记忆保留期默认为 30 天"],
+      "rationale": "归档与清理为每周维护链路的最终动作，判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件消息进入归一化。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "在线聊天消息进入归一化。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "WhatsApp 消息进入归一化。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Slack 消息进入归一化。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Discord 消息进入归一化。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "归一化后执行五项前置检查。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "precheck_failed（自动回复/空内容/重复/超长） && channel == live_chat",
+      "rationale": "在线聊天渠道在前置检查未通过路径上立即返回响应。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": "precheck_failed（自动回复/空内容/重复/超长） && channel != live_chat",
+      "rationale": "非在线聊天渠道的未通过消息不进入模型调用，按忽略终止。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": "precheck_passed",
+      "rationale": "通过全部前置检查后进入答复生成。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n7",
+      "target": "n14",
+      "variable": null,
+      "condition": "handover_requested == true（六种语言匹配的明确转人工请求）",
+      "rationale": "明确转人工请求直接进入升级链路。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "答复生成后进行置信度评估。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "置信度评估后进行情绪分析。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": "(confidence_score >= threshold || is_greeting == true) && sentiment != negative",
+      "rationale": "置信度达到阈值（或问候致谢短路判定）且无负面情绪时按原渠道自动回复。"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n14",
+      "variable": null,
+      "condition": "其余情况：confidence_score < threshold（非问候）或 sentiment == negative",
+      "rationale": "低置信（非问候）或负面情绪时升级为人工处理。"
+    },
+    {
+      "edge_id": "c15",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "升级说明就绪后创建工单并通知。"
+    },
+    {
+      "edge_id": "c16",
+      "source": "n13",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "自动答复后记录会话。"
+    },
+    {
+      "edge_id": "c17",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "升级处理后记录会话。"
+    },
+    {
+      "edge_id": "c18",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动导入先清除上次结果。"
+    },
+    {
+      "edge_id": "c19",
+      "source": "n18",
+      "target": "n19",
+      "variable": null,
+      "condition": null,
+      "rationale": "清除后加载文档写入知识库。"
+    },
+    {
+      "edge_id": "c20",
+      "source": "n20",
+      "target": "n21",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周触发后读取并汇总统计。"
+    },
+    {
+      "edge_id": "c21",
+      "source": "n21",
+      "target": "n22",
+      "variable": null,
+      "condition": null,
+      "rationale": "统计汇总后发布到 Slack。"
+    },
+    {
+      "edge_id": "c22",
+      "source": "n22",
+      "target": "n23",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布后归档数据并清理旧记忆。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n6",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "归一化消费邮件原始消息。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n6",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "归一化消费在线聊天原始消息。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n6",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "归一化消费 WhatsApp 原始消息。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "归一化消费 Slack 原始消息。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "归一化消费 Discord 原始消息。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "message",
+      "condition": null,
+      "rationale": "前置检查消费统一结构消息。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n8",
+      "variable": "message",
+      "condition": null,
+      "rationale": "立即响应用定位未通过检查的会话。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n10",
+      "variable": "message",
+      "condition": null,
+      "rationale": "答复生成消费客户消息。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n13",
+      "variable": "message",
+      "condition": null,
+      "rationale": "按原始渠道回复需渠道与主题信息。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n6",
+      "target": "n14",
+      "variable": "message",
+      "condition": null,
+      "rationale": "升级说明需客户消息上下文。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n6",
+      "target": "n15",
+      "variable": "message",
+      "condition": null,
+      "rationale": "工单创建需客户消息上下文。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n6",
+      "target": "n16",
+      "variable": "message",
+      "condition": null,
+      "rationale": "会话记录需客户消息字段。"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n7",
+      "target": "n14",
+      "variable": "precheck_result",
+      "condition": null,
+      "rationale": "升级原因直接取自已发生的前置检查判断（如转人工请求）。"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n10",
+      "target": "n11",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "置信度评估消费答复及检索依据。"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n10",
+      "target": "n12",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "情绪分析消费答复内容。"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n10",
+      "target": "n13",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "回复发送消费生成的答复。"
+    },
+    {
+      "edge_id": "d17",
+      "source": "n11",
+      "target": "n13",
+      "variable": "confidence_score",
+      "condition": null,
+      "rationale": "回复记录携带置信度。"
+    },
+    {
+      "edge_id": "d18",
+      "source": "n11",
+      "target": "n13",
+      "variable": "is_greeting",
+      "condition": null,
+      "rationale": "回复记录携带问候短路标记。"
+    },
+    {
+      "edge_id": "d19",
+      "source": "n11",
+      "target": "n14",
+      "variable": "confidence_score",
+      "condition": null,
+      "rationale": "升级说明引用置信度判断。"
+    },
+    {
+      "edge_id": "d20",
+      "source": "n12",
+      "target": "n13",
+      "variable": "sentiment",
+      "condition": null,
+      "rationale": "回复记录携带情绪结果。"
+    },
+    {
+      "edge_id": "d21",
+      "source": "n12",
+      "target": "n14",
+      "variable": "sentiment",
+      "condition": null,
+      "rationale": "升级说明引用情绪判断并推导优先级。"
+    },
+    {
+      "edge_id": "d22",
+      "source": "n14",
+      "target": "n15",
+      "variable": "escalation_note",
+      "condition": null,
+      "rationale": "工单写入升级原因、客服说明与优先级。"
+    },
+    {
+      "edge_id": "d23",
+      "source": "n13",
+      "target": "n16",
+      "variable": "session_record",
+      "condition": null,
+      "rationale": "自动答复会话上下文进入记录。"
+    },
+    {
+      "edge_id": "d24",
+      "source": "n15",
+      "target": "n16",
+      "variable": "session_record",
+      "condition": null,
+      "rationale": "升级会话上下文进入记录。"
+    },
+    {
+      "edge_id": "d25",
+      "source": "n21",
+      "target": "n22",
+      "variable": "weekly_stats",
+      "condition": null,
+      "rationale": "发布消费周统计。"
+    },
+    {
+      "edge_id": "d26",
+      "source": "n22",
+      "target": "n23",
+      "variable": "weekly_stats",
+      "condition": null,
+      "rationale": "归档消费已发布的周统计。"
+    }
+  ],
+  "entry_nodes": ["n1", "n2", "n3", "n4", "n5", "n17", "n20"],
+  "terminal_nodes": ["n8", "n9", "n16", "n19", "n23"],
+  "confidence": 0.7,
+  "notes": "关键取舍：(1) 五个渠道各自独立入口节点，对应需求'按渠道分别走独立分支'；各渠道回复的格式化与发送合并为一个回复节点（邮件 Re: 主题、Slack 线程内回复等按需求折叠进契约）；(2) 五项前置检查合并为一个检查节点，路由条件区分各检查结果与渠道；(3) 升级链路的容错（单点失败仍继续）为声明属性，折叠进升级与记录节点的契约说明，不单列节点；(4) 升级后在线聊天渠道的响应未在需求中显式声明，未单独建模；(5) 会话'分类'按处理路径（自动答复/升级/转人工）确定性推导，折叠进记录节点；(6) 文档导入的加载/切分/向量化折叠进导入节点并以导入完成作为链路终止；(7) 原生的 Restore Context 系列、Error Trigger 等上下文恢复与错误处理实现细节未纳入 Gold。"
+}

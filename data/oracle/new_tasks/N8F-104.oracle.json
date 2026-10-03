@@ -1,0 +1,342 @@
+{
+  "task_id": "N8F-104",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "b10cbe9f5c9e07d38d66b0d30ef524a4f82b52c6d329c87b956e860ae8e2e9e6",
+  "fixtures": [
+    {
+      "fixture_id": "F-POST-MANUAL",
+      "purpose": "手动输入的文章内容",
+      "input_data": {
+        "source": "manual",
+        "post": {
+          "id": 123,
+          "title": "Building AI Workflows",
+          "content": "In this post we discuss AI automation for business workflows."
+        }
+      }
+    },
+    {
+      "fixture_id": "F-RSS",
+      "purpose": "RSS 订阅源提供的两篇文章",
+      "input_data": {
+        "source": "rss",
+        "entries": [
+          {
+            "post_id": 201,
+            "title": "RSS Post One",
+            "content": "Content of post one about automation."
+          },
+          {
+            "post_id": 202,
+            "title": "RSS Post Two",
+            "content": "Content of post two about low-code."
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-EXISTING-TAGS",
+      "purpose": "WordPress 中已存在的标签",
+      "input_data": {
+        "tags": [
+          {
+            "id": 1,
+            "name": "AI"
+          },
+          {
+            "id": 2,
+            "name": "n8n"
+          },
+          {
+            "id": 3,
+            "name": "Workflow"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-RSS",
+      "dependency_type": "rssFeedReadTrigger",
+      "operation": "read_feed",
+      "request_contract": {},
+      "response_contract": {
+        "entries": [
+          {
+            "post_id": 201,
+            "title": "RSS Post One",
+            "content": "Content of post one about automation."
+          },
+          {
+            "post_id": 202,
+            "title": "RSS Post Two",
+            "content": "Content of post two about low-code."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-TAGS",
+      "dependency_type": "wordpress",
+      "operation": "list_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          {
+            "id": 1,
+            "name": "AI"
+          },
+          {
+            "id": 2,
+            "name": "n8n"
+          },
+          {
+            "id": 3,
+            "name": "Workflow"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TAGS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          "AI",
+          "Automation",
+          "Low-code"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TAGS-EXIST",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          "AI",
+          "n8n"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-AUTOMATION",
+      "dependency_type": "wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Automation"
+      },
+      "response_contract": {
+        "tag": {
+          "id": 11,
+          "name": "Automation"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-LOWCODE",
+      "dependency_type": "wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Low-code"
+      },
+      "response_contract": {
+        "tag": {
+          "id": 12,
+          "name": "Low-code"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-UPDATE",
+      "dependency_type": "wordpress",
+      "operation": "update_post",
+      "request_contract": {},
+      "response_contract": {
+        "post": {
+          "id": 123,
+          "tags": [
+            1,
+            11,
+            12
+          ]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-MANUAL",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-POST-MANUAL",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-WP-TAGS",
+        "M-LLM-TAGS",
+        "M-WP-CREATE-AUTOMATION",
+        "M-WP-CREATE-LOWCODE",
+        "M-WP-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.generated_tags",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "语言模型生成与上下文相关的3个标签"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.generated_tags",
+          "operator": "contains",
+          "expected": "AI",
+          "rationale": "生成标签包含 AI"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.wp.created_tags",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "已存在的 AI 不重复创建，仅创建 Automation 与 Low-code"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.wp.created_tags",
+          "operator": "contains",
+          "expected": "Automation",
+          "rationale": "新标签 Automation 被创建"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.wp.created_tags",
+          "operator": "contains",
+          "expected": "Low-code",
+          "rationale": "新标签 Low-code 被创建"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.wp.updated.post_id",
+          "operator": "equals",
+          "expected": 123,
+          "rationale": "文章被自动更新"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.wp.updated.tags",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "文章以准确且经过优化的标签更新"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-RSS",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-RSS",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-RSS",
+        "M-WP-TAGS",
+        "M-LLM-TAGS",
+        "M-WP-CREATE-AUTOMATION",
+        "M-WP-CREATE-LOWCODE",
+        "M-WP-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-POS-RSS",
+          "target": "output.posts_processed",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "RSS 订阅源的两篇文章均被处理"
+        },
+        {
+          "assertion_id": "A-2-POS-RSS",
+          "target": "output.wp.updated",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "两篇文章均被更新标签"
+        },
+        {
+          "assertion_id": "A-3-POS-RSS",
+          "target": "output.wp.updated[0].post_id",
+          "operator": "equals",
+          "expected": 201,
+          "rationale": "第一篇 RSS 文章被更新"
+        },
+        {
+          "assertion_id": "A-4-POS-RSS",
+          "target": "output.wp.updated[1].post_id",
+          "operator": "equals",
+          "expected": 202,
+          "rationale": "第二篇 RSS 文章被更新"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-ALL-EXIST",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-POST-MANUAL",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-WP-TAGS",
+        "M-LLM-TAGS-EXIST",
+        "M-WP-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-ALL-EXIST",
+          "target": "output.wp.created_tags",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "生成标签全部已存在时不创建新标签"
+        },
+        {
+          "assertion_id": "A-2-BOUND-ALL-EXIST",
+          "target": "output.wp.updated.post_id",
+          "operator": "equals",
+          "expected": 123,
+          "rationale": "文章仍使用已有标签更新"
+        },
+        {
+          "assertion_id": "A-3-BOUND-ALL-EXIST",
+          "target": "output.wp.updated.tags",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "文章更新为生成的2个标签"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；RSS/WordPress/LLM 均固定模拟，无真实副作用；仅当 WordPress 中不存在该标签时才创建新标签的条件以已存在标签集精确验证；输出按 output.* JSON 路径表达。"
+}

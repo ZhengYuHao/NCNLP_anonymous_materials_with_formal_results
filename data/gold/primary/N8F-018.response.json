@@ -1,0 +1,332 @@
+{
+  "task_id": "N8F-018",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "55dde59b84d452dbb29c4831be7016f4283ea5931f5082d900a146a89a33bc07",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发并读取已发布标题记录",
+      "node_type": "code",
+      "operation_family": "trigger_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "published_titles",
+          "type": "string[]",
+          "description": "已发布文章标题列表"
+        }
+      ],
+      "native_evidence": [
+        "Hourly trigger",
+        "Get Previous News Titles"
+      ],
+      "requirement_evidence": [
+        "按每日计划定时运行，运行时间为服务器时区的 10:00、12:00、19:00、21:00",
+        "先读取已发布标题记录，用于去重"
+      ],
+      "rationale": "定时触发并加载已发布标题供去重"
+    },
+    {
+      "node_id": "n2",
+      "label": "向新闻数据源请求近期新闻",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "news_items",
+          "type": "object[]",
+          "description": "新闻条目列表"
+        }
+      ],
+      "native_evidence": [
+        "API NEWS"
+      ],
+      "requirement_evidence": [
+        "随后向新闻数据源请求近期新闻，检索范围为最近 24–48 小时、按标题检索、并按发布时间排序"
+      ],
+      "rationale": "向新闻 API 发起检索请求"
+    },
+    {
+      "node_id": "n3",
+      "label": "筛选、分组、排序并限制新闻数量",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "news_items",
+          "type": "object[]",
+          "description": "新闻条目列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_articles",
+          "type": "object[]",
+          "description": "筛选后的文章列表（最多 10 条）"
+        }
+      ],
+      "native_evidence": [
+        "Collect Articles",
+        "Select Articles"
+      ],
+      "requirement_evidence": [
+        "排除聚合站点与公关稿源（包括 Biztoc、Techmeme、TheFly、PRNewswire、GlobeNewswire、MarketWatch 新闻稿、Medium、Substack、Yahoo 同意页等）；要求条目同时具备有效的链接与图片；按主题（规范化标题加域名）分组并只取其中最具代表性的一篇；再按时间新旧排序，最多返回 10 条不重复的文章"
+      ],
+      "rationale": "确定性过滤、分组、排序与数量限制"
+    },
+    {
+      "node_id": "n4",
+      "label": "链接与去重检查（链接存在且标题未发布）",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "selected_articles",
+          "type": "object[]",
+          "description": "筛选后的文章列表"
+        },
+        {
+          "name": "published_titles",
+          "type": "string[]",
+          "description": "已发布文章标题列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approved_articles",
+          "type": "object[]",
+          "description": "通过链接与去重检查的文章列表"
+        }
+      ],
+      "native_evidence": [
+        "URL checker"
+      ],
+      "requirement_evidence": [
+        "对每篇文章，先检查链接存在且标题未发布过",
+        "缺少链接或图片的条目按设计直接跳过，Yahoo 同意页同样跳过"
+      ],
+      "rationale": "确定性校验链接存在性与标题去重"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型生成 LinkedIn 帖文文案（有/无摘要两种变体）",
+      "node_type": "semantic",
+      "operation_family": "text_generation",
+      "inputs": [
+        {
+          "name": "approved_articles",
+          "type": "object[]",
+          "description": "通过链接与去重检查的文章列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_content",
+          "type": "object",
+          "description": "帖文内容（文案文本与图片链接）"
+        }
+      ],
+      "native_evidence": [
+        "Description Checker",
+        "LinkedIn post redaction",
+        "LinkedIn post redaction 2"
+      ],
+      "requirement_evidence": [
+        "按是否存在摘要分为两种文案变体：有摘要时生成内容更丰富的帖子，无摘要时生成仍然口语化、简短的帖子。文案由语言模型生成，风格为自然口语化的英文，不使用表情符号、链接与 Markdown 标记，并附 2–3 个话题标签",
+        "随后清理文案文本并保留图片链接"
+      ],
+      "rationale": "口语化英文帖文生成需语言模型；两种变体并入同一节点契约"
+    },
+    {
+      "node_id": "n6",
+      "label": "下载文章图片验证可用性并确定发布方式",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "post_content",
+          "type": "object",
+          "description": "帖文内容（文案文本与图片链接）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_mode",
+          "type": "string",
+          "description": "发布方式：with_image 或 text_only"
+        }
+      ],
+      "native_evidence": [
+        "Image Dowloader",
+        "Image Dowloader 2"
+      ],
+      "requirement_evidence": [
+        "下载文章图片以确认图片链接可用：图片可用时以带图形式发布到 LinkedIn；图片不可用或下载失败时改为纯文本发布"
+      ],
+      "rationale": "下载图片验证链接并确定发布方式，为确定性动作"
+    },
+    {
+      "node_id": "n7",
+      "label": "发布到 LinkedIn（带图或纯文本）并记录已发布标题",
+      "node_type": "terminal",
+      "operation_family": "publish",
+      "inputs": [
+        {
+          "name": "post_content",
+          "type": "object",
+          "description": "帖文内容（文案文本与图片链接）"
+        },
+        {
+          "name": "publish_mode",
+          "type": "string",
+          "description": "发布方式"
+        },
+        {
+          "name": "published_titles",
+          "type": "string[]",
+          "description": "已发布文章标题列表"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "LinkedIn Publisher",
+        "LinkedIn Publisher 2",
+        "LinkedIn Publisher 3",
+        "LinkedIn Publisher 4",
+        "Firebase Article Saver"
+      ],
+      "requirement_evidence": [
+        "图片可用时以带图形式发布到 LinkedIn；图片不可用或下载失败时改为纯文本发布",
+        "发布成功后，把该文章标题写入已发布标题记录，使其在其他时段不会被再次发布"
+      ],
+      "rationale": "LinkedIn 发布为最终可见动作；发布成功后的标题写入记录并入同一终止契约"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取已发布标题后请求新闻"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "新闻条目进入筛选"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选后逐条检查链接与去重"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "通过检查的文章生成帖文"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成文案后验证图片"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "确定发布方式后发布"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n4",
+      "variable": "published_titles",
+      "condition": null,
+      "rationale": "已发布标题用于去重检查"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "news_items",
+      "condition": null,
+      "rationale": "新闻条目供筛选"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "selected_articles",
+      "condition": null,
+      "rationale": "筛选结果进入链接/去重检查"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "approved_articles",
+      "condition": null,
+      "rationale": "通过检查的文章供文案生成"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "post_content",
+      "condition": null,
+      "rationale": "文案中的图片链接用于下载验证"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "post_content",
+      "condition": null,
+      "rationale": "帖文文案用于发布"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "publish_mode",
+      "condition": null,
+      "rationale": "发布方式决定带图/纯文本"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n1",
+      "target": "n7",
+      "variable": "published_titles",
+      "condition": null,
+      "rationale": "发布后追加新标题需现有记录"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "定时→读已发布标题→抓新闻→筛选分组排序→链接/去重检查→LLM 生成两种文案变体→下载图片定发布方式→发布并记录标题。发布与标题记录合并为终止节点契约（发布为最终可见动作，记录为其收尾副作用）。"
+}

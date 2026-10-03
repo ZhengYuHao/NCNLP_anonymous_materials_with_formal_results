@@ -1,0 +1,44 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-036",
+  "case_id": "C-pos-dedup",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-webhook-leads": {
+        "leads": [
+          {
+            "id": "L1",
+            "name": "Alice Smith",
+            "email": "alice@x.com",
+            "budget": 500000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 3
+            }
+          },
+          {
+            "id": "L2",
+            "name": "Bob Jones",
+            "email": "bob@x.com",
+            "budget": 450000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 2
+            }
+          }
+        ]
+      },
+      "F-crm-records": {
+        "records": [
+          {
+            "id": "C1",
+            "name": "Alice Smith",
+            "email": "alice@x.com"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "C3170641663693D9537BE09929CB9BB26619082257DA7C792156C29AB7E3ED67"
+}

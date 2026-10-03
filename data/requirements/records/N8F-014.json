@@ -1,0 +1,120 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-014",
+  "source_id": "n8n:7756",
+  "workflow_sha256": "2ceb3de1ae731a06346550adcff102c44363f26655e2c52980f36c0345c142ba",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "913ca08f54c52f5e3248f9ef8bcbe0f6f4136e2a1d30a8116484a38558566c8d",
+  "requirement": {
+    "requirement_text": "系统提供一个基于 Telegram 的营养助手，用户可通过 AI 助手记录饮食、计算营养素摄入并跟踪营养目标。\n输入：用户通过 Telegram 以文本、语音或图片方式发送的消息。\n处理过程与行为：\n1. 多模态输入：文本消息直接由 AI 助手处理；语音消息经转写后处理；食物图片由 AI 进行识别分析；\n2. 餐食记录：识别或理解用户描述的餐食后，自动估算热量、蛋白质、碳水化合物和脂肪，并写入餐食记录；\n3. 用户注册：提供简单的注册引导，不存储个人健康数据（不需要体重或身高）；\n4. 目标管理：用户可设置并更新每日热量目标和蛋白质目标；\n5. 日报：向用户推送个性化的每日进度消息，并带有可视化的进度条；\n6. 数据存储：以 Google Sheets 作为数据库，分别维护用户档案（含目标）与餐食记录。\n典型交互：\n- 用户发送一张餐食照片 → AI 识别食物并记录热量与营养素；\n- 用户发送一段语音 → AI 转写后记录该餐；\n- 用户输入“report” → AI 返回带进度条的每日营养汇总；\n- 用户说“update my protein goal” → AI 更新 Google Sheets 中的用户档案。",
+    "source_spans": [
+      {
+        "start": 354,
+        "end": 511,
+        "text": "It allows users to interact with an AI agent via text, voice, or images to track meals, calculate macros, and monitor nutrition goals directly from Telegram."
+      },
+      {
+        "start": 513,
+        "end": 707,
+        "text": "The system integrates Google Sheets as the database, handling both user profiles and meal logs, while leveraging Gemini AI for natural conversation, food recognition, and daily progress reports."
+      },
+      {
+        "start": 727,
+        "end": 814,
+        "text": "Multi-input support: Text, voice messages (transcribed), and food images (AI analysis)."
+      },
+      {
+        "start": 817,
+        "end": 896,
+        "text": "Macro calculation: Automatic estimation of calories, proteins, carbs, and fats."
+      },
+      {
+        "start": 899,
+        "end": 1010,
+        "text": "User-friendly registration: Simple onboarding without storing personal health data (no weight/height required)."
+      },
+      {
+        "start": 1013,
+        "end": 1081,
+        "text": "Goal tracking: Users can set and update calorie and protein targets."
+      },
+      {
+        "start": 1084,
+        "end": 1156,
+        "text": "Daily reports: Personalized progress messages with visual progress bars."
+      },
+      {
+        "start": 2140,
+        "end": 2217,
+        "text": "User sends a photo of a meal → AI analyzes the food and logs calories/macros."
+      },
+      {
+        "start": 2220,
+        "end": 2282,
+        "text": "User sends a voice message → AI transcribes and logs the meal."
+      },
+      {
+        "start": 2286,
+        "end": 2364,
+        "text": "User types “report” → AI returns a daily nutrition summary with progress bars."
+      },
+      {
+        "start": 2367,
+        "end": 2440,
+        "text": "User says “update my protein goal” → AI updates profile in Google Sheets."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户通过 Telegram 发送的文本消息",
+        "用户通过 Telegram 发送的语音消息",
+        "用户通过 Telegram 发送的食物图片",
+        "用户设置或更新的热量目标与蛋白质目标"
+      ],
+      "conditions": [
+        "支持文本、语音、图片三种输入方式",
+        "语音消息需先转写后再处理",
+        "食物图片需经 AI 识别分析",
+        "注册时不存储个人健康数据，不需要体重或身高",
+        "用户档案与餐食记录分别存放于 Google Sheets"
+      ],
+      "allowed_actions": [
+        "转写语音消息",
+        "识别食物图片",
+        "自动估算热量、蛋白质、碳水化合物与脂肪",
+        "记录餐食",
+        "引导用户完成注册",
+        "设置与更新热量目标和蛋白质目标",
+        "生成并推送带可视化进度条的每日营养报告",
+        "更新 Google Sheets 中的用户档案"
+      ],
+      "visible_outcomes": [
+        "餐食记录中的热量与营养素数据",
+        "用户收到的带可视化进度条的每日营养汇总",
+        "Google Sheets 中更新后的用户目标档案"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-014.packet.json",
+    "packet_sha256": "05fda72507f726eac629b6d5c24eda819091337fcc165636b7865583fe449a54",
+    "public_description_sha256": "79161c8b559c87eae7ccd168786df359ebd438a4b5d191e90ca9be39b3f60225"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-014.response.json",
+    "verification_response_sha256": "963aa81170225e2c4e9b354ae73df02a2ca5611f91a7503d8e9f9070d7c45199",
+    "decision": "accept"
+  },
+  "formal_index": 25
+}

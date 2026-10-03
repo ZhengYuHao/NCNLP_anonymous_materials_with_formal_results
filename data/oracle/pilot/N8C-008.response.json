@@ -1,0 +1,197 @@
+{
+  "pilot_id": "N8C-008",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "0f0d3098f9687151f8d615575e119638ad319d458a0a7cd18b1e88afc1f61f80",
+  "fixtures": [
+    {
+      "fixture_id": "F-FORM-DEFAULT",
+      "purpose": "默认配置的表单提交：Part A 2 分、Part B 13 分、Part C 14 分",
+      "input_data": {
+        "subject_code": "CS501",
+        "syllabus_topics": ["Data Structures", "Algorithms"],
+        "email": "student@university.edu",
+        "config": {"marks": {"A": 2, "B": 13, "C": 14}, "counts": {"A": 5, "B": 5, "C": 2}}
+      }
+    },
+    {
+      "fixture_id": "F-FORM-CUSTOM",
+      "purpose": "自定义分值/题数的表单提交，验证定制能力",
+      "input_data": {
+        "subject_code": "CS502",
+        "syllabus_topics": ["Database Management"],
+        "email": "faculty@university.edu",
+        "config": {"marks": {"A": 1, "B": 10, "C": 15}, "counts": {"A": 10, "B": 3, "C": 1}}
+      }
+    },
+    {
+      "fixture_id": "F-FORM-SINGLE-TOPIC",
+      "purpose": "单一教学大纲主题的边界，验证仍生成完整三部分试卷",
+      "input_data": {
+        "subject_code": "CS503",
+        "syllabus_topics": ["Data Structures"],
+        "email": "student@university.edu",
+        "config": {"marks": {"A": 2, "B": 13, "C": 14}, "counts": {"A": 5, "B": 5, "C": 2}}
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-PARTA",
+      "dependency_type": "language_model",
+      "operation": "generate_part_a_questions",
+      "request_contract": {"part": "A", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Define a binary tree.", "marks": 2},
+          {"q": "What is Big-O notation?", "marks": 2},
+          {"q": "Explain a stack.", "marks": 2},
+          {"q": "What is recursion?", "marks": 2},
+          {"q": "Define a linked list.", "marks": 2}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARTB",
+      "dependency_type": "language_model",
+      "operation": "generate_part_b_questions",
+      "request_contract": {"part": "B", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Describe sorting algorithms with examples.", "marks": 13},
+          {"q": "Explain tree traversals.", "marks": 13},
+          {"q": "Discuss hashing techniques.", "marks": 13},
+          {"q": "Analyze graph algorithms.", "marks": 13},
+          {"q": "Compare stacks and queues.", "marks": 13}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARTC",
+      "dependency_type": "language_model",
+      "operation": "generate_part_c_questions",
+      "request_contract": {"part": "C", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Design an efficient index structure.", "marks": 14},
+          {"q": "Propose an optimization for sorting.", "marks": 14}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARTA-CUSTOM",
+      "dependency_type": "language_model",
+      "operation": "generate_part_a_questions",
+      "request_contract": {"part": "A", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Define a primary key.", "marks": 1},
+          {"q": "What is normalization?", "marks": 1},
+          {"q": "Define a transaction.", "marks": 1},
+          {"q": "What is an index?", "marks": 1},
+          {"q": "Define ACID.", "marks": 1},
+          {"q": "What is a foreign key?", "marks": 1},
+          {"q": "Define a view.", "marks": 1},
+          {"q": "What is a join?", "marks": 1},
+          {"q": "Define a trigger.", "marks": 1},
+          {"q": "What is a stored procedure?", "marks": 1}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARTB-CUSTOM",
+      "dependency_type": "language_model",
+      "operation": "generate_part_b_questions",
+      "request_contract": {"part": "B", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Explain ER modeling.", "marks": 10},
+          {"q": "Discuss query optimization.", "marks": 10},
+          {"q": "Describe concurrency control.", "marks": 10}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARTC-CUSTOM",
+      "dependency_type": "language_model",
+      "operation": "generate_part_c_questions",
+      "request_contract": {"part": "C", "marks": "configured value", "count": "configured value", "syllabus_topics": "submitted topics"},
+      "response_contract": {
+        "questions": [
+          {"q": "Design a distributed database schema.", "marks": 15}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_exam_paper_email",
+      "request_contract": {"to": "recipient email", "subject": "Exam paper", "body_html": "HTML exam paper", "cc": "optional", "bcc": "optional"},
+      "response_contract": {"message_id": "gm-exam-1", "sent": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-DEFAULT",
+      "kind": "positive",
+      "fixture_ids": ["F-FORM-DEFAULT"],
+      "mock_ids": ["M-LLM-PARTA", "M-LLM-PARTB", "M-LLM-PARTC", "M-GMAIL-SEND"],
+      "assertions": [
+        {"assertion_id": "A-PARTA-MARKS", "target": "mock.M-LLM-PARTA.requests[0].marks", "operator": "equals", "expected": 2, "rationale": "需求声明 Part A 题 2 分（默认值），分值为契约声明"},
+        {"assertion_id": "A-PARTB-MARKS", "target": "mock.M-LLM-PARTB.requests[0].marks", "operator": "equals", "expected": 13, "rationale": "需求声明 Part B 题 13 分"},
+        {"assertion_id": "A-PARTC-MARKS", "target": "mock.M-LLM-PARTC.requests[0].marks", "operator": "equals", "expected": 14, "rationale": "需求声明 Part C 题 14 分"},
+        {"assertion_id": "A-PARTA-COUNT", "target": "mock.M-LLM-PARTA.requests[0].count", "operator": "equals", "expected": 5, "rationale": "需求声明题数可定制；5 题来自 fixture F-FORM-DEFAULT config.counts.A，非需求预设默认值"},
+        {"assertion_id": "A-PARTC-COUNT", "target": "mock.M-LLM-PARTC.requests[0].count", "operator": "equals", "expected": 2, "rationale": "2 题来自 fixture config.counts.C"},
+        {"assertion_id": "A-HTML-SECTIONS", "target": "output.html", "operator": "contains", "expected": "Part B", "rationale": "需求声明将全部题目合并为单一结构化文档并格式化为 HTML 试卷，含 Part A/B/C 三部分"},
+        {"assertion_id": "A-HTML-MARKS", "target": "output.html", "operator": "contains", "expected": "2 Marks", "rationale": "HTML 试卷标注分值（Part A=2 分为需求声明默认值）"},
+        {"assertion_id": "A-EMAIL-TO", "target": "mock.M-GMAIL-SEND.requests[0].to", "operator": "equals", "expected": "student@university.edu", "rationale": "需求声明发送至表单填写的邮箱（来自 fixture）"},
+        {"assertion_id": "A-EMAIL-HTML", "target": "mock.M-GMAIL-SEND.requests[0].body_html", "operator": "contains", "expected": "<html", "rationale": "需求声明邮件内容为格式化 HTML 试卷"}
+      ]
+    },
+    {
+      "case_id": "C-POS-CUSTOM",
+      "kind": "positive",
+      "fixture_ids": ["F-FORM-CUSTOM"],
+      "mock_ids": ["M-LLM-PARTA-CUSTOM", "M-LLM-PARTB-CUSTOM", "M-LLM-PARTC-CUSTOM", "M-GMAIL-SEND"],
+      "assertions": [
+        {"assertion_id": "A-CUSTOM-PARTA", "target": "mock.M-LLM-PARTA-CUSTOM.requests[0].marks", "operator": "equals", "expected": 1, "rationale": "自定义分值与题数（fixture config.marks.A=1），验证需求'分值与题数可定制'"},
+        {"assertion_id": "A-CUSTOM-PARTB", "target": "mock.M-LLM-PARTB-CUSTOM.requests[0].marks", "operator": "equals", "expected": 10, "rationale": "自定义 Part B 分值（fixture config.marks.B=10）"},
+        {"assertion_id": "A-CUSTOM-PARTC", "target": "mock.M-LLM-PARTC-CUSTOM.requests[0].marks", "operator": "equals", "expected": 15, "rationale": "自定义 Part C 分值（fixture config.marks.C=15）"},
+        {"assertion_id": "A-CUSTOM-COUNTS", "target": "mock.M-LLM-PARTA-CUSTOM.requests[0].count", "operator": "equals", "expected": 10, "rationale": "自定义 Part A 题数（fixture config.counts.A=10）"},
+        {"assertion_id": "A-CUSTOM-PARTC-COUNT", "target": "mock.M-LLM-PARTC-CUSTOM.requests[0].count", "operator": "equals", "expected": 1, "rationale": "自定义 Part C 题数（fixture config.counts.C=1）"},
+        {"assertion_id": "A-CUSTOM-EMAIL", "target": "mock.M-GMAIL-SEND.requests[0].to", "operator": "equals", "expected": "faculty@university.edu", "rationale": "发送至自定义表单邮箱（来自 fixture）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-SINGLE-TOPIC",
+      "kind": "boundary",
+      "fixture_ids": ["F-FORM-SINGLE-TOPIC"],
+      "mock_ids": ["M-LLM-PARTA", "M-LLM-PARTB", "M-LLM-PARTC", "M-GMAIL-SEND"],
+      "assertions": [
+        {"assertion_id": "A-BOUNDARY-EMAIL", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 1, "rationale": "单一主题仍应完成出题并发送"},
+        {"assertion_id": "A-BOUNDARY-TOPIC", "target": "output.html", "operator": "contains", "expected": "Data Structures", "rationale": "需求声明基于提交的主题出题；主题来自 fixture"},
+        {"assertion_id": "A-BOUNDARY-PARTA-COUNT", "target": "mock.M-LLM-PARTA.requests[0].count", "operator": "equals", "expected": 5, "rationale": "单一主题下配置题数仍生效（fixture config.counts.A=5）"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-PARTA-MARKS/A-PARTB-MARKS/A-PARTC-MARKS（需求声明的默认分值 2/13/14）、A-CUSTOM-*（需求'分值与题数可定制'，数值来自 fixture config）、A-HTML-SECTIONS/A-HTML-MARKS（需求'合并为单一结构化文档并格式化为 HTML'）、A-EMAIL-TO/A-EMAIL-HTML（需求'发送至填写的邮箱'）。\n- 修改：A-QUESTION-COUNT/A-CUSTOM-COUNT/A-BOUNDARY-COUNT 删除（output.question_count 为自创输出字段，且'总题数'非需求声明的输出概念）；改为按配置断言传给 AI 代理的分值与题数（A-*-COUNT），数值全部可追溯到 fixture config；M-LLM-PARTA/PARTB/PARTC 等 request_contract 的 marks/count/syllabus_topics 泛化为 'configured value'/'submitted topics'，避免与单主题等变体输入冲突。\n- 删除：output.question_count 相关断言（3 处）。"
+}

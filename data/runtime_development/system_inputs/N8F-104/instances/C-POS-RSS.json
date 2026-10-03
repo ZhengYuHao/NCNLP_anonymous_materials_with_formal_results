@@ -1,0 +1,42 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-104",
+  "case_id": "C-POS-RSS",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-RSS": {
+        "source": "rss",
+        "entries": [
+          {
+            "post_id": 201,
+            "title": "RSS Post One",
+            "content": "Content of post one about automation."
+          },
+          {
+            "post_id": 202,
+            "title": "RSS Post Two",
+            "content": "Content of post two about low-code."
+          }
+        ]
+      },
+      "F-EXISTING-TAGS": {
+        "tags": [
+          {
+            "id": 1,
+            "name": "AI"
+          },
+          {
+            "id": 2,
+            "name": "n8n"
+          },
+          {
+            "id": 3,
+            "name": "Workflow"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "4E81A9E9A79B5DFFC5C25FD0DDAC5E5AC0C5C16DA4CDDBC0F59233E1171FAE0C"
+}

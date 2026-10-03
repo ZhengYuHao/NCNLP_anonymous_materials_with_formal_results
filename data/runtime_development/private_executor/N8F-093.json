@@ -1,0 +1,122 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-093",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-POSTA-RSS-FETCH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_latest_video",
+      "request_contract": {
+        "channel_id": "UC_promotion"
+      },
+      "response_contract": {
+        "video": {
+          "id": "video_promo_001",
+          "title": "Top 10 Coding Tips",
+          "description": "Practical coding advice for beginners.",
+          "thumbnail_url": "https://i.ytimg.com/vi/video_promo_001/maxresdefault.jpg",
+          "link": "https://www.youtube.com/watch?v=video_promo_001"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-UPLOAD-MEDIA",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "upload_media",
+      "request_contract": {
+        "thumbnail_url": "https://i.ytimg.com/vi/video_promo_001/maxresdefault.jpg"
+      },
+      "response_contract": {
+        "media_id": "media-7788",
+        "reusable": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-LIST-ACCOUNTS",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "list_social_accounts",
+      "request_contract": {
+        "include_inactive": false
+      },
+      "response_contract": {
+        "accounts": [
+          {
+            "id": "acc-x-1",
+            "platform": "twitter",
+            "active": true
+          },
+          {
+            "id": "acc-li-1",
+            "platform": "linkedin",
+            "active": true
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-LLM-CAPTION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "operation": "generate_platform_caption",
+      "request_contract": {
+        "platform": "twitter",
+        "video_title": "Top 10 Coding Tips"
+      },
+      "response_contract": {
+        "caption": "Coding tips that actually help 🚀 Watch: https://www.youtube.com/watch?v=video_promo_001",
+        "platform": "twitter"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-CREATE-DRAFT",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "create_draft_post",
+      "request_contract": {
+        "account_id": "acc-x-1",
+        "platform": "twitter",
+        "media_id": "media-7788",
+        "caption_platform": "twitter",
+        "video_link": "https://www.youtube.com/watch?v=video_promo_001"
+      },
+      "response_contract": {
+        "draft_id": "draft-6001",
+        "status": "draft"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-MULTI-PLATFORM-DRAFTS",
+      "fixture_ids": [
+        "F-POSTA-MULTI-PLATFORM"
+      ],
+      "mock_ids": [
+        "M-POSTA-RSS-FETCH",
+        "M-POSTA-UPLOAD-MEDIA",
+        "M-POSTA-LIST-ACCOUNTS",
+        "M-POSTA-LLM-CAPTION",
+        "M-POSTA-CREATE-DRAFT"
+      ]
+    },
+    {
+      "case_id": "C-ALL-DISABLED-NOOP",
+      "fixture_ids": [
+        "F-POSTA-ALL-DISABLED"
+      ],
+      "mock_ids": [
+        "M-POSTA-RSS-FETCH",
+        "M-POSTA-LIST-ACCOUNTS"
+      ]
+    }
+  ]
+}

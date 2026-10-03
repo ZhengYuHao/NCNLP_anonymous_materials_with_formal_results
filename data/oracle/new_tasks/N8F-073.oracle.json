@@ -1,0 +1,281 @@
+{
+  "task_id": "N8F-073",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "a683e5e67c6adf6af3678717cb1c94cfdb91183935cd42c8ede8e8a9ec9351db",
+  "fixtures": [
+    {
+      "fixture_id": "F-CONFIG",
+      "purpose": "正常用例：配置的 RSS 订阅源清单与固定执行日期（2026-08-31 周一），7 天窗口为 2026-08-25 至 2026-08-31",
+      "input_data": {
+        "run_at": "2026-08-31T08:00:00+08:00",
+        "feeds": [
+          {"feed_url": "https://mock-rss.example/tech.xml", "label": "Tech"},
+          {"feed_url": "https://mock-rss.example/ai.xml", "label": "AI"}
+        ],
+        "recipient": "reader@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-CONFIG-OVERFLOW",
+      "purpose": "边界用例：合并去重后超过 15 篇，验证列表被截断为 15 篇",
+      "input_data": {
+        "run_at": "2026-08-31T08:00:00+08:00",
+        "feeds": [
+          {"feed_url": "https://mock-rss.example/tech.xml", "label": "Tech"},
+          {"feed_url": "https://mock-rss.example/ai.xml", "label": "AI"},
+          {"feed_url": "https://mock-rss.example/dev.xml", "label": "Dev"}
+        ],
+        "recipient": "reader@example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-RSS-TECH",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_feed",
+      "request_contract": {
+        "feed_url": "https://mock-rss.example/tech.xml"
+      },
+      "response_contract": {
+        "items": [
+          {"title": "T1", "link": "https://mock-rss.example/a1", "pubDate": "2026-08-31"},
+          {"title": "T1-dup", "link": "https://mock-rss.example/a1", "pubDate": "2026-08-31"},
+          {"title": "T3", "link": "https://mock-rss.example/a3", "pubDate": "2026-08-30"},
+          {"title": "T4", "link": "https://mock-rss.example/a4", "pubDate": "2026-08-29"},
+          {"title": "T5", "link": "https://mock-rss.example/a5", "pubDate": "2026-08-28"},
+          {"title": "T6", "link": "https://mock-rss.example/a6", "pubDate": "2026-08-27"},
+          {"title": "T7", "link": "https://mock-rss.example/a7", "pubDate": "2026-08-26"},
+          {"title": "T8", "link": "https://mock-rss.example/a8", "pubDate": "2026-08-25"},
+          {"title": "T-old1", "link": "https://mock-rss.example/a9", "pubDate": "2026-08-24"},
+          {"title": "T-old2", "link": "https://mock-rss.example/a10", "pubDate": "2026-08-18"},
+          {"title": "T-old3", "link": "https://mock-rss.example/a11", "pubDate": "2026-08-11"},
+          {"title": "T-old4", "link": "https://mock-rss.example/a12", "pubDate": "2026-08-03"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RSS-AI",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_feed",
+      "request_contract": {
+        "feed_url": "https://mock-rss.example/ai.xml"
+      },
+      "response_contract": {
+        "items": [
+          {"title": "A1", "link": "https://mock-rss.example/a5", "pubDate": "2026-08-28"},
+          {"title": "A2", "link": "https://mock-rss.example/b2", "pubDate": "2026-08-30"},
+          {"title": "A3", "link": "https://mock-rss.example/b3", "pubDate": "2026-08-29"},
+          {"title": "A4", "link": "https://mock-rss.example/b4", "pubDate": "2026-08-27"},
+          {"title": "A5", "link": "https://mock-rss.example/b5", "pubDate": "2026-08-26"},
+          {"title": "A6", "link": "https://mock-rss.example/b6", "pubDate": "2026-08-25"},
+          {"title": "A-old1", "link": "https://mock-rss.example/b7", "pubDate": "2026-08-23"},
+          {"title": "A-old2", "link": "https://mock-rss.example/b8", "pubDate": "2026-08-15"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RSS-DEV",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_feed",
+      "request_contract": {
+        "feed_url": "https://mock-rss.example/dev.xml"
+      },
+      "response_contract": {
+        "items": [
+          {"title": "D1", "link": "https://mock-rss.example/d1", "pubDate": "2026-08-31"},
+          {"title": "D2", "link": "https://mock-rss.example/d2", "pubDate": "2026-08-30"},
+          {"title": "D3", "link": "https://mock-rss.example/d3", "pubDate": "2026-08-29"},
+          {"title": "D4", "link": "https://mock-rss.example/d4", "pubDate": "2026-08-28"},
+          {"title": "D5", "link": "https://mock-rss.example/d5", "pubDate": "2026-08-27"},
+          {"title": "D6", "link": "https://mock-rss.example/d6", "pubDate": "2026-08-26"},
+          {"title": "D7", "link": "https://mock-rss.example/d7", "pubDate": "2026-08-25"},
+          {"title": "D8", "link": "https://mock-rss.example/d8", "pubDate": "2026-08-24"},
+          {"title": "D9", "link": "https://mock-rss.example/d9", "pubDate": "2026-08-23"},
+          {"title": "D10", "link": "https://mock-rss.example/d10", "pubDate": "2026-08-22"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DIGEST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_digest",
+      "request_contract": {
+        "articles_count": 12
+      },
+      "response_contract": {
+        "themes": [
+          {"name": "AI Advances", "article_links": ["https://mock-rss.example/a5", "https://mock-rss.example/b3"]},
+          {"name": "Web Development", "article_links": ["https://mock-rss.example/a3", "https://mock-rss.example/a4"]},
+          {"name": "Industry News", "article_links": ["https://mock-rss.example/a6"]}
+        ],
+        "html": "<ul><li><a href='https://mock-rss.example/a3'>T3</a> - Summary of T3</li><li><a href='https://mock-rss.example/a4'>T4</a> - Summary of T4</li></ul>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DIGEST-15",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_digest",
+      "request_contract": {
+        "articles_count": 15
+      },
+      "response_contract": {
+        "themes": [
+          {"name": "Theme A", "article_links": ["https://mock-rss.example/a1"]},
+          {"name": "Theme B", "article_links": ["https://mock-rss.example/d1"]}
+        ],
+        "html": "<ul><li><a href='https://mock-rss.example/a1'>T1</a> - Summary</li></ul>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_email",
+      "request_contract": {
+        "to": "reader@example.com",
+        "subject": "Weekly Digest 2026-08-31",
+        "body_html": "<ul><li><a href='https://mock-rss.example/a3'>T3</a> - Summary of T3</li><li><a href='https://mock-rss.example/a4'>T4</a> - Summary of T4</li></ul>"
+      },
+      "response_contract": {
+        "message_id": "gm-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND-15",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_email",
+      "request_contract": {
+        "to": "reader@example.com",
+        "subject": "Weekly Digest 2026-08-31"
+      },
+      "response_contract": {
+        "message_id": "gm-2",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-DIGEST-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-CONFIG"],
+      "mock_ids": ["M-RSS-TECH", "M-RSS-AI", "M-LLM-DIGEST", "M-GMAIL-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-DIG-1",
+          "target": "exec_log.mock_calls.M-RSS-TECH.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须按订阅源清单逐条读取每个 RSS 订阅源"
+        },
+        {
+          "assertion_id": "A-DIG-2",
+          "target": "exec_log.mock_calls.M-RSS-AI.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "第二个订阅源也必须被读取"
+        },
+        {
+          "assertion_id": "A-DIG-3",
+          "target": "exec_log.mock_calls.M-LLM-DIGEST.request_contract.articles_count",
+          "operator": "equals",
+          "expected": 12,
+          "rationale": "合并去重后：feedA 12 条中去 1 条站内重复、4 条超 7 天 → 7 条；feedB 8 条中去 2 条超 7 天 → 6 条；跨站重复 1 条 → 12 条，必须恰好 12 篇入选"
+        },
+        {
+          "assertion_id": "A-DIG-4",
+          "target": "result.articles[0].pubDate",
+          "operator": "equals",
+          "expected": "2026-08-31",
+          "rationale": "入选文章必须按发布时间由新到旧排序，最新一篇应为 2026-08-31"
+        },
+        {
+          "assertion_id": "A-DIG-5",
+          "target": "result.themes",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "文章必须被归入 2-4 个主题，固定模拟输出 3 个主题"
+        },
+        {
+          "assertion_id": "A-DIG-6",
+          "target": "result.themes[0].name",
+          "operator": "equals",
+          "expected": "AI Advances",
+          "rationale": "主题名称必须来自模型输出且忠实传递"
+        },
+        {
+          "assertion_id": "A-DIG-7",
+          "target": "exec_log.mock_calls.M-GMAIL-SEND.request_contract.subject",
+          "operator": "contains",
+          "expected": "2026-08-31",
+          "rationale": "邮件主题必须带有摘要日期"
+        },
+        {
+          "assertion_id": "A-DIG-8",
+          "target": "exec_log.mock_calls.M-GMAIL-SEND.request_contract.to",
+          "operator": "equals",
+          "expected": "reader@example.com",
+          "rationale": "邮件收件人必须为配置的收件人"
+        },
+        {
+          "assertion_id": "A-DIG-9",
+          "target": "exec_log.mock_calls.M-GMAIL-SEND.request_contract.body_html",
+          "operator": "contains",
+          "expected": "<a href=",
+          "rationale": "邮件正文必须为 HTML 格式且包含文章链接"
+        },
+        {
+          "assertion_id": "A-DIG-10",
+          "target": "exec_log.mock_calls.M-GMAIL-SEND.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每次运行必须恰好发送一封摘要邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-DIGEST-LIMIT-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": ["F-CONFIG-OVERFLOW"],
+      "mock_ids": ["M-RSS-TECH", "M-RSS-AI", "M-RSS-DEV", "M-LLM-DIGEST-15", "M-GMAIL-SEND-15"],
+      "assertions": [
+        {
+          "assertion_id": "A-LIM-1",
+          "target": "exec_log.mock_calls.M-LLM-DIGEST-15.request_contract.articles_count",
+          "operator": "equals",
+          "expected": 15,
+          "rationale": "合并去重并过滤 7 天后有效条目超过 15 篇时，必须截断为 15 篇"
+        },
+        {
+          "assertion_id": "A-LIM-2",
+          "target": "result.articles",
+          "operator": "length_equals",
+          "expected": 15,
+          "rationale": "最终入选文章列表长度必须为 15"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常链路（两个订阅源，合并去重+7 天窗口过滤+新到旧排序，最终 12 篇）与超过 15 篇时截断的边界用例。RSS 读取、LLM 摘要与 Gmail 发送全部固定模拟；断言验证逐源读取次数、入选文章数的精确计算（12 篇）、排序（首篇为最新日期）、主题数量、邮件收件人/主题日期/HTML 正文包含链接，全部可计算。"
+}

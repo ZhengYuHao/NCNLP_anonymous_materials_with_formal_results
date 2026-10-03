@@ -1,0 +1,206 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-036",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-llm-dedup",
+      "dependency_type": "llm",
+      "operation": "dedup_check",
+      "request_contract": {
+        "new_leads": [
+          {
+            "id": "L1"
+          },
+          {
+            "id": "L2"
+          }
+        ]
+      },
+      "response_contract": {
+        "duplicate_ids": [
+          "L1"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-lead",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "pipeline"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 11
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-match",
+      "dependency_type": "llm",
+      "operation": "match_properties",
+      "request_contract": {
+        "lead_id": "L2"
+      },
+      "response_contract": {
+        "matches": [
+          {
+            "lead_id": "L2",
+            "listing_id": "P1",
+            "score": 0.92
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-get-deck",
+      "dependency_type": "google_drive",
+      "operation": "get_file",
+      "request_contract": {
+        "file_id": "deck_P1"
+      },
+      "response_contract": {
+        "url": "https://drive.example/deck_P1.pdf"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-send",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "bob@x.com"
+      },
+      "response_contract": {
+        "message_id": "msg_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-log",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "interactions"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-score",
+      "dependency_type": "llm",
+      "operation": "score_deal",
+      "request_contract": {
+        "interactions": [
+          {
+            "lead_id": "L2",
+            "listing_id": "P1",
+            "viewed": true,
+            "days_since": 3
+          }
+        ]
+      },
+      "response_contract": {
+        "probability": 0.75,
+        "stage": "high_intent",
+        "next_actions": [
+          "Send follow-up email",
+          "Schedule viewing"
+        ],
+        "priority": "P1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-team",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#sales-team"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "3333.4444"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-match-none",
+      "dependency_type": "llm",
+      "operation": "match_properties",
+      "request_contract": {
+        "lead_id": "L3"
+      },
+      "response_contract": {
+        "matches": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-pos-dedup",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-crm-records"
+      ],
+      "mock_ids": [
+        "M-llm-dedup",
+        "M-sheets-append-lead"
+      ]
+    },
+    {
+      "case_id": "C-pos-match-send",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-listings",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-match",
+        "M-drive-get-deck",
+        "M-gmail-send",
+        "M-sheets-log"
+      ]
+    },
+    {
+      "case_id": "C-pos-cron",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-listings",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-score",
+        "M-slack-team"
+      ]
+    },
+    {
+      "case_id": "C-bnd-no-match",
+      "fixture_ids": [
+        "F-no-match",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-match-none",
+        "M-gmail-send"
+      ]
+    }
+  ]
+}

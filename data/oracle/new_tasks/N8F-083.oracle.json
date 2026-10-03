@@ -1,0 +1,315 @@
+{
+  "task_id": "N8F-083",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "cd6ad0b61888c9ca2666081316453d3658df8f9ac593b55537fe14bb17539cc0",
+  "fixtures": [
+    {
+      "fixture_id": "F-CUSTOMER-IN",
+      "purpose": "正常用例：客户消息、会话无人工客服、有 1 名在线客服，验证自动回复与分条发送",
+      "input_data": {
+        "webhook": {
+          "conversation_id": "C1",
+          "message_id": "M1",
+          "sender_type": "customer",
+          "message": "Do you support refunds after 30 days?",
+          "assigned_agent": null
+        },
+        "agents": [
+          {"id": "A1", "name": "Sara", "online": true},
+          {"id": "A2", "name": "Tom", "online": false}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-OUTGOING-AGENT",
+      "purpose": "负例：会话中外发消息（发送方为客服），验证被忽略以避免自回复循环",
+      "input_data": {
+        "webhook": {
+          "conversation_id": "C2",
+          "message_id": "M2",
+          "sender_type": "agent",
+          "message": "We can help with that.",
+          "assigned_agent": null
+        }
+      }
+    },
+    {
+      "fixture_id": "F-HUMAN-ASSIGNED",
+      "purpose": "负例：客户消息但会话已指派人工客服，验证停止自动处理",
+      "input_data": {
+        "webhook": {
+          "conversation_id": "C3",
+          "message_id": "M3",
+          "sender_type": "customer",
+          "message": "Where is my order?",
+          "assigned_agent": "A9"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-ESCALATE-ASSIGN",
+      "purpose": "正常用例：语言模型判定需要转人工，验证指派客服到会话",
+      "input_data": {
+        "webhook": {
+          "conversation_id": "C4",
+          "message_id": "M4",
+          "sender_type": "customer",
+          "message": "I need a refund immediately",
+          "assigned_agent": null
+        },
+        "agents": [
+          {"id": "A1", "name": "Sara", "online": true}
+        ],
+        "model_decision": "escalate"
+      }
+    },
+    {
+      "fixture_id": "F-ESCALATE-EMAIL",
+      "purpose": "正常用例：转人工时走内部摘要邮件分支，验证 Gmail 摘要发送",
+      "input_data": {
+        "webhook": {
+          "conversation_id": "C5",
+          "message_id": "M5",
+          "sender_type": "customer",
+          "message": "Complaint about billing",
+          "assigned_agent": null
+        },
+        "agents": [
+          {"id": "A1", "name": "Sara", "online": true}
+        ],
+        "model_decision": "escalate_email"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-CW-AGENTS",
+      "dependency_type": "httpRequest",
+      "operation": "list_agents",
+      "request_contract": {
+        "conversation_id": "string"
+      },
+      "response_contract": {
+        "agents": [
+          {"id": "A1", "name": "Sara", "online": true},
+          {"id": "A2", "name": "Tom", "online": false}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REPLY",
+      "dependency_type": "lmChatGroq",
+      "operation": "generate_reply",
+      "request_contract": {
+        "conversation_id": "string",
+        "message": "string",
+        "history": "array",
+        "agent_online": "boolean"
+      },
+      "response_contract": {
+        "replies": {
+          "C1": {"text": "Yes, refunds are available within 60 days. Please share your order ID so we can process it right away.", "escalate": false},
+          "C4": {"text": "I will connect you with a live agent for the refund.", "escalate": true},
+          "C5": {"text": "Internal summary needed for billing complaint.", "escalate": true}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VECTOR-RETRIEVE",
+      "dependency_type": "vectorStorePinecone",
+      "operation": "retrieve_faq",
+      "request_contract": {
+        "query": "string"
+      },
+      "response_contract": {
+        "answers": [
+          {"content": "Refunds are available within 60 days of purchase."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CW-SEND",
+      "dependency_type": "httpRequest",
+      "operation": "post_message_chunks",
+      "request_contract": {
+        "conversation_id": "string",
+        "chunks": "array"
+      },
+      "response_contract": {
+        "status": "sent",
+        "sent_count": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CW-ASSIGN",
+      "dependency_type": "httpRequest",
+      "operation": "assign_agent",
+      "request_contract": {
+        "conversation_id": "string",
+        "agent_id": "string"
+      },
+      "response_contract": {
+        "status": "assigned"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-ESCALATION",
+      "dependency_type": "gmailTool",
+      "operation": "send_internal_summary",
+      "request_contract": {
+        "to": "string",
+        "subject": "string",
+        "body": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-006",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-REPLY-SPLIT",
+      "kind": "positive",
+      "fixture_ids": ["F-CUSTOMER-IN"],
+      "mock_ids": ["M-CW-AGENTS", "M-LLM-REPLY", "M-VECTOR-RETRIEVE", "M-CW-SEND", "M-CW-ASSIGN"],
+      "assertions": [
+        {
+          "assertion_id": "A-AGENT-FETCHED",
+          "target": "cw_agents.list_agents.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "处理客户消息前应获取可用客服列表"
+        },
+        {
+          "assertion_id": "A-REPLY-USES-KB",
+          "target": "vector.retrieve_faq.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "系统应尝试从向量知识库检索常见问题答案"
+        },
+        {
+          "assertion_id": "A-CHUNKS-SENT",
+          "target": "cw_send.post_message_chunks.calls[0].chunks",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "回复应拆分为较短片段依次发回，模拟拆分为 2 段"
+        },
+        {
+          "assertion_id": "A-CONCAT-FULL-REPLY",
+          "target": "cw_send.post_message_chunks.calls[0].chunks",
+          "operator": "contains",
+          "expected": "60 days",
+          "rationale": "拆分后的片段拼接应包含完整回复内容（知识库中的退款期限）"
+        },
+        {
+          "assertion_id": "A-NO-ASSIGN",
+          "target": "cw_assign.assign_agent.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无需转人工时不得把客服指派到会话"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-IGNORE-OUTGOING",
+      "kind": "negative",
+      "fixture_ids": ["F-OUTGOING-AGENT"],
+      "mock_ids": ["M-CW-AGENTS", "M-LLM-REPLY", "M-CW-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-OUT-NO-SEND",
+          "target": "cw_send.post_message_chunks.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "外发消息必须被忽略，不得自动回复自身消息"
+        },
+        {
+          "assertion_id": "A-OUT-NO-LLM",
+          "target": "llm_reply.generate_reply.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "外发消息不应进入语言模型生成回复流程"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-HUMAN-ASSIGNED",
+      "kind": "negative",
+      "fixture_ids": ["F-HUMAN-ASSIGNED"],
+      "mock_ids": ["M-CW-AGENTS", "M-LLM-REPLY", "M-CW-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-HUMAN-NO-SEND",
+          "target": "cw_send.post_message_chunks.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "会话已指派人工客服时停止自动处理，不得发送自动回复"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-ESCALATE-ASSIGN",
+      "kind": "positive",
+      "fixture_ids": ["F-ESCALATE-ASSIGN"],
+      "mock_ids": ["M-CW-AGENTS", "M-LLM-REPLY", "M-CW-ASSIGN"],
+      "assertions": [
+        {
+          "assertion_id": "A-ESC-ASSIGNED",
+          "target": "cw_assign.assign_agent.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "需要转人工时把选定的客服指派到该会话"
+        },
+        {
+          "assertion_id": "A-ESC-AGENT-ID",
+          "target": "cw_assign.assign_agent.calls[0].agent_id",
+          "operator": "equals",
+          "expected": "A1",
+          "rationale": "指派对象应为在线客服 A1"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-ESCALATE-EMAIL",
+      "kind": "positive",
+      "fixture_ids": ["F-ESCALATE-EMAIL"],
+      "mock_ids": ["M-CW-AGENTS", "M-LLM-REPLY", "M-GMAIL-ESCALATION"],
+      "assertions": [
+        {
+          "assertion_id": "A-ESC-EMAIL-SENT",
+          "target": "gmail.send_internal_summary.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "转人工的邮件分支应通过 Gmail 发送内部摘要邮件"
+        },
+        {
+          "assertion_id": "A-ESC-EMAIL-BODY",
+          "target": "gmail.send_internal_summary.calls[0].body",
+          "operator": "contains",
+          "expected": "C5",
+          "rationale": "内部摘要应包含会话标识以定位问题"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：客户消息自动回复并分条发送、外发消息忽略、已指派人工客服停止处理、转人工指派客服与内部摘要邮件两个分支。客服列表、语言模型、向量检索、Chatwoot 发送/指派、Gmail 全部确定性模拟。"
+}

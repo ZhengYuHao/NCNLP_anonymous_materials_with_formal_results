@@ -1,0 +1,317 @@
+{
+  "task_id": "N8F-066",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "9700975ffd6055cbc932eae0bc015bbeb9640ffa5b392ee39ba7a6a63ab963a4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收通话结束回调并解析转写、时长与元数据",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "call_data",
+          "type": "object",
+          "description": "通话转写文本、时长与元数据"
+        }
+      ],
+      "native_evidence": [
+        "Receive Retell call webhook",
+        "Parse call transcript and metadata"
+      ],
+      "requirement_evidence": [
+        "当一通语音通话结束时，语音呼叫平台向系统发送通话分析回调。系统解析该通话的转写文本、通话时长与元数据"
+      ],
+      "rationale": "解析回调数据为确定性动作"
+    },
+    {
+      "node_id": "n2",
+      "label": "语言模型分析通话内容",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "call_data",
+          "type": "object",
+          "description": "通话转写文本、时长与元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果（情绪、评分、话题、购买信号、异议、待办、建议）"
+        }
+      ],
+      "native_evidence": [
+        "Analyze call with OpenAI",
+        "Extract and structure AI analysis"
+      ],
+      "requirement_evidence": [
+        "将这些内容交给语言模型进行分析。语言模型返回结构化的分析结果，包括情绪倾向、线索评分（1–10 分）、关键话题、购买信号、客户异议、待办事项以及推荐的下一步动作"
+      ],
+      "rationale": "通话语义分析需语言模型"
+    },
+    {
+      "node_id": "n3",
+      "label": "将分析结果同步到 HubSpot 更新联系人",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hubspot_contact",
+          "type": "object",
+          "description": "更新后的联系人记录"
+        }
+      ],
+      "native_evidence": [
+        "Update HubSpot contact with insights"
+      ],
+      "requirement_evidence": [
+        "这些补充后的数据被同步到 HubSpot，用于更新对应的联系人记录"
+      ],
+      "rationale": "确定性 CRM 写入"
+    },
+    {
+      "node_id": "n4",
+      "label": "判断线索评分是否达到阈值",
+      "node_type": "code",
+      "operation_family": "branching",
+      "inputs": [
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qualification_result",
+          "type": "object",
+          "description": "是否达标判定结果"
+        }
+      ],
+      "native_evidence": [
+        "Check if lead is qualified"
+      ],
+      "requirement_evidence": [
+        "若线索评分达到设定阈值"
+      ],
+      "rationale": "确定性阈值判定分支"
+    },
+    {
+      "node_id": "n5",
+      "label": "在 Slack 向销售团队发出提醒",
+      "node_type": "code",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slack_alert",
+          "type": "object",
+          "description": "Slack 提醒发送结果"
+        }
+      ],
+      "native_evidence": [
+        "Alert sales team about hot lead"
+      ],
+      "requirement_evidence": [
+        "系统会在 Slack 中向销售团队发出提醒"
+      ],
+      "rationale": "达标分支的中间通知动作"
+    },
+    {
+      "node_id": "n6",
+      "label": "在 HubSpot 创建优先跟进任务",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "followup_task",
+          "type": "object",
+          "description": "创建的优先跟进任务"
+        }
+      ],
+      "native_evidence": [
+        "Create follow-up task in HubSpot"
+      ],
+      "requirement_evidence": [
+        "并在 HubSpot 中创建一条优先跟进任务"
+      ],
+      "rationale": "确定性任务创建"
+    },
+    {
+      "node_id": "n7",
+      "label": "将每次通话记录到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "record",
+      "inputs": [
+        {
+          "name": "call_data",
+          "type": "object",
+          "description": "通话转写文本、时长与元数据"
+        },
+        {
+          "name": "call_analysis",
+          "type": "object",
+          "description": "结构化分析结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log call analysis to tracking sheet"
+      ],
+      "requirement_evidence": [
+        "每一次通话都会被记录到 Google Sheets 中用于追踪"
+      ],
+      "rationale": "通话记录落库为最终动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析后进入 LLM 分析"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析后同步 HubSpot"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "更新后判定是否达标"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "score >= threshold",
+      "rationale": "达标时提醒销售团队"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "提醒后创建跟进任务"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "创建任务后记录通话"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": "score < threshold",
+      "rationale": "未达标直接记录通话"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "call_data",
+      "condition": null,
+      "rationale": "通话数据供分析"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "call_analysis",
+      "condition": null,
+      "rationale": "分析结果用于 HubSpot 更新"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "call_analysis",
+      "condition": null,
+      "rationale": "评分用于阈值判定"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "call_analysis",
+      "condition": null,
+      "rationale": "分析用于 Slack 提醒"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n2",
+      "target": "n6",
+      "variable": "call_analysis",
+      "condition": null,
+      "rationale": "分析用于跟进任务"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n2",
+      "target": "n7",
+      "variable": "call_analysis",
+      "condition": null,
+      "rationale": "分析结果记录到 Sheets"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n1",
+      "target": "n7",
+      "variable": "call_data",
+      "condition": null,
+      "rationale": "原始通话数据记录到 Sheets"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "通话回调→解析→LLM 分析→HubSpot 更新→阈值分支（达标：Slack+优先任务；未达标：跳过）→每次通话记 Sheets 为终止。Slack 提醒与任务创建为中间动作。"
+}

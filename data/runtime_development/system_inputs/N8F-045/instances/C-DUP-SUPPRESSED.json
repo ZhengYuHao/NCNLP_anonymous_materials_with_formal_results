@@ -1,0 +1,20 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-DUP-SUPPRESSED",
+  "kind": "boundary",
+  "input_data": {
+    "today": "2026-08-15",
+    "subscriber": {
+      "email": "alice@example.com",
+      "last_period_start": "2026-08-01",
+      "cycle_length_days": 28,
+      "active": true,
+      "last_sent": {
+        "cycle_key": "2026-08-01",
+        "email_type": "ovulation"
+      }
+    }
+  },
+  "input_sha256": "8ABD1F39AC3C2E73BD69899064C67E9D07DD19382544F14D0EB5E3C9F454F025"
+}

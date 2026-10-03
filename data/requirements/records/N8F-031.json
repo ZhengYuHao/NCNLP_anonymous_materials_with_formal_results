@@ -1,0 +1,68 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-031",
+  "source_id": "n8n:8031",
+  "workflow_sha256": "84caeaa1950a018fa8f35931373aa82546836358080e44a241e43bfb2f8b4ece",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "e6720e1c2f31b01deb4d4148325db73e9cbd1176cf8a2af925b1b7f0068aec53",
+  "requirement": {
+    "requirement_text": "系统需要持续监听 Gmail 收件箱中的新未读邮件，并获取邮件的主题、发件人、正文与元数据。对每封邮件，先提取原始内容、去除 HTML 并规范化为纯文本，然后由语言模型判断邮件正文所用语言：若判定为英文，则不再继续处理；若判定为非英文，则由语言模型将正文翻译为英文，并按原发件人、原主题、接收日期、邮件标识与译文内容组织一封转发邮件。该转发邮件发送至同一收件箱，其主题前缀为 [TRANSLATED]，同时为 Gmail 中的原始邮件添加“Translated Emails”标签，便于后续筛选。",
+    "source_spans": [
+      {
+        "start": 45,
+        "end": 298,
+        "text": "This workflow automatically detects the language of every new Gmail email and translates non-English messages into English. The translated email is forwarded to your inbox with a clear \"[TRANSLATED]\" subject tag, and a label is added for easy filtering."
+      },
+      {
+        "start": 317,
+        "end": 1402,
+        "text": "Gmail New Email Trigger  \n   Listens for new unread emails in your Gmail inbox.  \n   Captures subject, sender, body text, and metadata.  \n\nNormalize Email Data  \n   A Code node extracts the raw content from the email.  \n   Strips HTML, normalizes plain text, and prepares data for language detection.  \n\nDetect Language (OpenAI)  \n   Uses OpenAI GPT-3.5-turbo to detect the email’s language.  \n   If the language is English, workflow ends.  \n   If not, continues to translation.  \n\nTranslate to English  \n   OpenAI translates the email body into clear English.  \n\nPrepare Translated Email  \n   Builds a forwarded email containing:  \n     Original sender & subject  \n     Received date  \n     Message ID  \n     Translated content (with formatting)  \n\nSend Translated Email  \n   A Gmail node sends the translated message to your inbox.  \n   Subject is prefixed with [TRANSLATED] for easy recognition.  \n\nAdd \"Translated Emails\" Label  \n   Automatically tags the original message in Gmail with \"Translated Emails\".  \n   Helps you filter all auto-translated emails later.  \n\n🛠️ Setup Steps"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Gmail 收件箱中的新未读邮件（主题、发件人、正文与元数据）"
+      ],
+      "conditions": [
+        "邮件正文语言判定为英文时不再继续处理",
+        "邮件正文语言判定为非英文时才执行翻译"
+      ],
+      "allowed_actions": [
+        "提取邮件原始内容、去除 HTML 并规范化为纯文本",
+        "由语言模型判断邮件正文所用语言",
+        "由语言模型将非英文正文翻译为英文",
+        "按原发件人、原主题、接收日期、邮件标识与译文内容组织转发邮件",
+        "发送主题前缀为 [TRANSLATED] 的转发邮件",
+        "为 Gmail 中的原始邮件添加“Translated Emails”标签"
+      ],
+      "visible_outcomes": [
+        "收件箱中收到主题带 [TRANSLATED] 前缀的英文译文邮件",
+        "原始邮件被打上“Translated Emails”标签"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-031.packet.json",
+    "packet_sha256": "781bccfb7e9ebba1d19e05c1e49ed013a737ae0b21bcbaf0342dcfd9d9d427f8",
+    "public_description_sha256": "1f023bfbc606c452e6906cd7b4fd6c4c340d5e726c8e8cab25589f3be4ead6df"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-031.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-031.revision.json",
+    "revision_record_sha256": "b3bf880a79d610f8f5b8dcc73d52022e7273fa1fa366265bffd0e98d8ef98540",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-04/responses/N8F-031.response.json",
+    "final_confirmation_sha256": "5e2d808ab55a5dcd68d1c0b010121a26afead7a70270895636e887bf353474c0",
+    "decision": "accept"
+  },
+  "formal_index": 42
+}

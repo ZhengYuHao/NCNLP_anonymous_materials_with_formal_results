@@ -1,0 +1,576 @@
+{
+  "task_id": "N8F-001",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "bf0e6cb9d26bc81f49ac01847429d56fe627af4d2ab5a1c89d5f5bfb453d95a3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Webhook 请求",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "request",
+          "type": "http_request",
+          "description": "POST 方式提交的 Webhook 请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "request_body",
+          "type": "object",
+          "description": "请求体，含模块名称及该模块所需输入字段"
+        }
+      ],
+      "native_evidence": ["Skillora AI Webhook"],
+      "requirement_evidence": ["请求以 POST 方式提交，请求体中携带要调用的模块名称以及该模块所需的输入字段"],
+      "rationale": "需求声明系统对外提供统一 Webhook 接口接收 POST 请求并解析请求体，为入口节点，执行确定性入站解析。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按模块名称分发请求",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "request_body",
+          "type": "object",
+          "description": "Webhook 请求体，含模块名称"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "notes_input",
+          "type": "object",
+          "description": "notes 分支参数：主题、难度、语言、格式"
+        },
+        {
+          "name": "search_input",
+          "type": "object",
+          "description": "youtube_search 分支参数：检索词、语言"
+        },
+        {
+          "name": "quiz_input",
+          "type": "object",
+          "description": "quiz 分支参数：题目数量"
+        },
+        {
+          "name": "roadmap_input",
+          "type": "object",
+          "description": "roadmap 分支参数：职业类别、岗位"
+        },
+        {
+          "name": "session_request",
+          "type": "object",
+          "description": "assistant 分支参数：会话 ID（可新建）与用户消息"
+        }
+      ],
+      "native_evidence": ["Route by Request Type"],
+      "requirement_evidence": ["系统按请求体中的模块名称分发到以下五类处理"],
+      "rationale": "需求声明按请求体中的模块名称分发到五类处理分支，属确定性路由。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成结构化学习笔记",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "notes_input",
+          "type": "object",
+          "description": "主题、难度、语言、格式"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "notes",
+          "type": "string",
+          "description": "生成的结构化学习笔记内容"
+        }
+      ],
+      "native_evidence": ["Notes Creation Agent", "Mistral Chat Model for Notes", "Parse Structured Output for Notes"],
+      "requirement_evidence": ["调用语言模型生成结构化的学习笔记"],
+      "rationale": "需求声明调用语言模型根据主题、难度、语言和格式生成结构化学习笔记，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "返回笔记结果",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "notes",
+          "type": "string",
+          "description": "结构化学习笔记内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond with Generated Notes"],
+      "requirement_evidence": ["以 JSON 形式返回笔记内容"],
+      "rationale": "需求声明以 JSON 形式返回笔记内容，为面向调用方的完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n5",
+      "label": "查询 YouTube 视频",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "search_input",
+          "type": "object",
+          "description": "检索词与语言"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_videos",
+          "type": "array",
+          "description": "YouTube API 返回的匹配视频条目，最多 10 个"
+        }
+      ],
+      "native_evidence": ["Fetch YouTube Videos"],
+      "requirement_evidence": ["按给定的检索词和语言查询 YouTube Data API，返回最多 10 个匹配的视频"],
+      "rationale": "需求声明查询 YouTube Data API 获取最多 10 个匹配视频，为确定性外部动作，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "整理视频列表",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "raw_videos",
+          "type": "array",
+          "description": "YouTube API 返回的原始视频条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "videos",
+          "type": "array",
+          "description": "规整后的视频列表"
+        }
+      ],
+      "native_evidence": ["Process YouTube API Data"],
+      "requirement_evidence": ["将结果整理为规整的视频列表后以 JSON 形式返回"],
+      "rationale": "需求声明将 API 结果整理为规整的视频列表，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "返回视频列表",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "videos",
+          "type": "array",
+          "description": "规整后的视频列表"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond with YouTube Data"],
+      "requirement_evidence": ["将结果整理为规整的视频列表后以 JSON 形式返回"],
+      "rationale": "需求声明以 JSON 形式返回视频列表，为完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n8",
+      "label": "生成单选题",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "quiz_input",
+          "type": "object",
+          "description": "题目数量"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "quiz_output",
+          "type": "string",
+          "description": "语言模型生成的原始题目输出"
+        }
+      ],
+      "native_evidence": ["Quiz Creation Agent", "Mistral Chat Model for Quiz"],
+      "requirement_evidence": ["按请求中指定的题目数量，调用语言模型生成对应数量的单选题"],
+      "rationale": "需求声明调用语言模型按指定数量生成单选题，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n9",
+      "label": "解析测验输出为 JSON",
+      "node_type": "code",
+      "operation_family": "output_parsing",
+      "inputs": [
+        {
+          "name": "quiz_output",
+          "type": "string",
+          "description": "语言模型生成的原始题目输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "quiz_result",
+          "type": "object",
+          "description": "解析为合法 JSON 的题目，含选项、答案与解析"
+        }
+      ],
+      "native_evidence": ["Process Quiz Data"],
+      "requirement_evidence": ["将模型输出解析为合法 JSON 后返回题目、选项、答案和解析"],
+      "rationale": "需求声明将模型输出解析为合法 JSON，为确定性解析变换，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "返回测验结果",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "quiz_result",
+          "type": "object",
+          "description": "合法 JSON 的题目（选项、答案、解析）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond with Quiz Results"],
+      "requirement_evidence": ["返回题目、选项、答案和解析"],
+      "rationale": "需求声明返回解析后的题目结果，为完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n11",
+      "label": "生成职业路线图",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "roadmap_input",
+          "type": "object",
+          "description": "职业类别与岗位"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "roadmap",
+          "type": "object",
+          "description": "结构化路线图对象，含里程碑、资源与进度"
+        }
+      ],
+      "native_evidence": ["Roadmap Creation Agent", "Mistral Chat Model for Roadmap", "Parse Structured Output for Roadmap"],
+      "requirement_evidence": ["调用语言模型生成包含里程碑、学习资源和进度安排的结构化路线图对象"],
+      "rationale": "需求声明调用语言模型生成结构化路线图对象，需开放内容生成，判 semantic。"
+    },
+    {
+      "node_id": "n12",
+      "label": "返回路线图",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "roadmap",
+          "type": "object",
+          "description": "结构化路线图对象"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond with Roadmap"],
+      "requirement_evidence": ["并以 JSON 形式返回"],
+      "rationale": "需求声明以 JSON 形式返回路线图，为完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n13",
+      "label": "创建或复用会话 ID",
+      "node_type": "code",
+      "operation_family": "session_management",
+      "inputs": [
+        {
+          "name": "session_request",
+          "type": "object",
+          "description": "会话 ID（可复用或新建）与用户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "session_context",
+          "type": "object",
+          "description": "会话上下文：会话 ID、用户消息与历史上下文"
+        }
+      ],
+      "native_evidence": ["Prepare Session Data"],
+      "requirement_evidence": ["创建或复用一个会话 ID"],
+      "rationale": "需求声明创建或复用会话 ID，为确定性会话管理动作，判 code。"
+    },
+    {
+      "node_id": "n14",
+      "label": "生成辅导回复",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "session_context",
+          "type": "object",
+          "description": "会话 ID、用户消息与历史上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assistant_reply",
+          "type": "string",
+          "description": "针对当前对话的辅导回复"
+        }
+      ],
+      "native_evidence": ["Coaching Agent", "Mistral Chat Model for Coaching", "Persist Chat in Postgres"],
+      "requirement_evidence": ["结合会话记忆存储中的历史上下文与语言模型生成针对当前对话的辅导回复"],
+      "rationale": "需求声明结合会话记忆历史上下文用语言模型生成辅导回复，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n15",
+      "label": "返回辅导回复",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "assistant_reply",
+          "type": "string",
+          "description": "生成的助手消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond with Coaching Data"],
+      "requirement_evidence": ["以 JSON 形式返回助手消息"],
+      "rationale": "需求声明以 JSON 形式返回助手消息，为完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "Webhook 接收请求后按模块名分发。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "module == 'notes'",
+      "rationale": "模块名为 notes 时进入笔记生成分支。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": "module == 'youtube_search'",
+      "rationale": "模块名为 youtube_search 时进入视频检索分支。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n2",
+      "target": "n8",
+      "variable": null,
+      "condition": "module == 'quiz'",
+      "rationale": "模块名为 quiz 时进入测验生成分支。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n2",
+      "target": "n11",
+      "variable": null,
+      "condition": "module == 'roadmap'",
+      "rationale": "模块名为 roadmap 时进入路线图生成分支。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n2",
+      "target": "n13",
+      "variable": null,
+      "condition": "module == 'assistant'",
+      "rationale": "模块名为 assistant 时进入学习教练分支。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "笔记生成后返回结果。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "查询结果后整理视频列表。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "整理完成后返回视频列表。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "模型生成后解析输出为 JSON。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析完成后返回测验结果。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "路线图生成后返回结果。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "会话上下文就绪后生成辅导回复。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "辅导回复生成后返回结果。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "request_body",
+      "condition": null,
+      "rationale": "请求体从接收节点传给分发节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "notes_input",
+      "condition": null,
+      "rationale": "笔记参数传给生成节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "notes",
+      "condition": null,
+      "rationale": "笔记内容传给返回节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "search_input",
+      "condition": null,
+      "rationale": "检索参数传给查询节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "raw_videos",
+      "condition": null,
+      "rationale": "API 原始结果传给整理节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "videos",
+      "condition": null,
+      "rationale": "规整后的视频列表传给返回节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n2",
+      "target": "n8",
+      "variable": "quiz_input",
+      "condition": null,
+      "rationale": "测验参数（题目数量）传给生成节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "quiz_output",
+      "condition": null,
+      "rationale": "模型输出传给解析节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "quiz_result",
+      "condition": null,
+      "rationale": "解析后的题目传给返回节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n2",
+      "target": "n11",
+      "variable": "roadmap_input",
+      "condition": null,
+      "rationale": "路线图参数传给生成节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n11",
+      "target": "n12",
+      "variable": "roadmap",
+      "condition": null,
+      "rationale": "路线图对象传给返回节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n2",
+      "target": "n13",
+      "variable": "session_request",
+      "condition": null,
+      "rationale": "会话请求传给会话管理节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n13",
+      "target": "n14",
+      "variable": "session_context",
+      "condition": null,
+      "rationale": "会话上下文传给辅导回复生成节点。"
+    },
+    {
+      "edge_id": "dfg-14",
+      "source": "n14",
+      "target": "n15",
+      "variable": "assistant_reply",
+      "condition": null,
+      "rationale": "助手消息传给返回节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n4", "n7", "n10", "n12", "n15"],
+  "confidence": 0.95,
+  "notes": "需求为统一 Webhook 按模块名分发到五类处理分支，故建模为入口接收+路由节点加五个独立分支，每分支以 JSON 返回为终止。quiz 分支按需求拆分为语义生成与确定性 JSON 解析两个节点；assistant 分支按需求拆分会话 ID 管理（code）与结合记忆生成回复（semantic）。原生的 Mistral 聊天模型、输出解析器等均为 LLM 实现细节，不单独成节点；原生的 Set 节点数据准备属未声明实现细节未纳入。"
+}

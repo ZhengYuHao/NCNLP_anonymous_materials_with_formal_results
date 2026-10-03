@@ -1,0 +1,299 @@
+{
+  "task_id": "N8F-051",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "ed57b38d4e63ce6edf9b06f3a88b93e0135cc486f920566f4197b2fff5908258",
+  "fixtures": [
+    {
+      "fixture_id": "F-MSG-NORMAL",
+      "purpose": "正常用例：第一轮消息且模型回复无标记，验证回复、日志与知识库使用",
+      "input_data": {
+        "session_id": "S1",
+        "student_name": "Alice",
+        "message": "How do I reset my password?",
+        "turn": 1
+      }
+    },
+    {
+      "fixture_id": "F-MSG-DISTRESS",
+      "purpose": "正常用例：模型回复带情绪困扰标记，验证升级到 Slack",
+      "input_data": {
+        "session_id": "S2",
+        "student_name": "Bob",
+        "message": "I feel overwhelmed and need help now",
+        "turn": 1
+      }
+    },
+    {
+      "fixture_id": "F-MSG-TURN2-UNRESOLVED",
+      "purpose": "边界用例：第 2 轮仍未解决，验证此时不触发升级（两轮之后才升级）",
+      "input_data": {
+        "session_id": "S3",
+        "student_name": "Carol",
+        "message": "Still cannot access the library portal",
+        "turn": 2
+      }
+    },
+    {
+      "fixture_id": "F-MSG-TURN3-UNRESOLVED",
+      "purpose": "正常用例：第 3 轮仍未解决，验证触发升级并记入 FAQ Gaps",
+      "input_data": {
+        "session_id": "S3",
+        "student_name": "Carol",
+        "message": "Library portal still broken",
+        "turn": 3
+      }
+    },
+    {
+      "fixture_id": "F-WEEKLY-REPORT",
+      "purpose": "正常用例：每周一 09:00 触发周报生成，验证 HTML 报告邮件",
+      "input_data": {
+        "trigger": "monday_0900",
+        "report_period": "week-35-2026"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-KB",
+      "dependency_type": "googleSheets",
+      "operation": "read_knowledge_base",
+      "request_contract": {
+        "sheet": "knowledge_base"
+      },
+      "response_contract": {
+        "entries": [
+          {"question": "How do I reset my password?", "answer": "Use the account portal at portal.example.com to reset your password."},
+          {"question": "How do I access the library?", "answer": "The library portal requires your student ID."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REPLY",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_constrained_reply",
+      "request_contract": {
+        "session_id": "string",
+        "message": "string",
+        "turn": "number",
+        "knowledge_base": "string"
+      },
+      "response_contract": {
+        "replies": {
+          "S1": {"reply": "You can reset your password at portal.example.com.", "flags": []},
+          "S2": {"reply": "I am escalating your situation to a counselor.", "flags": ["distressed"]},
+          "S3_turn2": {"reply": "Let me check again. Still unresolved.", "flags": ["unresolved"]},
+          "S3_turn3": {"reply": "This remains unresolved after two turns.", "flags": ["unresolved"]}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ESCALATE",
+      "dependency_type": "slack",
+      "operation": "post_escalation",
+      "request_contract": {
+        "session_id": "string",
+        "context": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-LOG",
+      "dependency_type": "googleSheets",
+      "operation": "append_conversation_log",
+      "request_contract": {
+        "session_id": "string",
+        "message": "string",
+        "reply": "string"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-GAPS",
+      "dependency_type": "googleSheets",
+      "operation": "append_faq_gap",
+      "request_contract": {
+        "question": "string"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-WEEKLY",
+      "dependency_type": "gmail",
+      "operation": "send_html_report",
+      "request_contract": {
+        "to": "admin@example.com",
+        "html": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-004",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-NORMAL-REPLY",
+      "kind": "positive",
+      "fixture_ids": ["F-MSG-NORMAL"],
+      "mock_ids": ["M-SHEETS-KB", "M-LLM-REPLY", "M-SLACK-ESCALATE", "M-SHEETS-LOG", "M-SHEETS-GAPS"],
+      "assertions": [
+        {
+          "assertion_id": "A-REPLY-KB-ANSWER",
+          "target": "llm_reply.output.replies.S1.reply",
+          "operator": "contains",
+          "expected": "portal.example.com",
+          "rationale": "回复应基于知识库内容生成，包含知识库中的答案信息"
+        },
+        {
+          "assertion_id": "A-NORMAL-LOG-APPENDED",
+          "target": "sheets_log.append_conversation_log.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "每轮对话都应追加写入对话日志"
+        },
+        {
+          "assertion_id": "A-NORMAL-NO-SLACK",
+          "target": "slack.post_escalation.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无困扰且问题已解决时不得升级到 Slack"
+        },
+        {
+          "assertion_id": "A-NORMAL-NO-GAPS",
+          "target": "sheets_gaps.append_faq_gap.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "已解决的问题不得写入 FAQ Gaps"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-ESCALATE-DISTRESS",
+      "kind": "positive",
+      "fixture_ids": ["F-MSG-DISTRESS"],
+      "mock_ids": ["M-SHEETS-KB", "M-LLM-REPLY", "M-SLACK-ESCALATE", "M-SHEETS-LOG", "M-SHEETS-GAPS"],
+      "assertions": [
+        {
+          "assertion_id": "A-DISTRESS-SLACK-ONE",
+          "target": "slack.post_escalation.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "模型回复带情绪困扰标记时必须升级到 Slack"
+        },
+        {
+          "assertion_id": "A-DISTRESS-CONTEXT",
+          "target": "slack.post_escalation.calls[0].session_id",
+          "operator": "equals",
+          "expected": "S2",
+          "rationale": "升级内容应携带会话 ID 以便定位"
+        },
+        {
+          "assertion_id": "A-DISTRESS-MESSAGE-INCLUDED",
+          "target": "slack.post_escalation.calls[0].context",
+          "operator": "contains",
+          "expected": "I feel overwhelmed",
+          "rationale": "升级应包含完整上下文即原始学生消息"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-TURN2-NO-ESCALATE",
+      "kind": "boundary",
+      "fixture_ids": ["F-MSG-TURN2-UNRESOLVED"],
+      "mock_ids": ["M-SHEETS-KB", "M-LLM-REPLY", "M-SLACK-ESCALATE", "M-SHEETS-LOG", "M-SHEETS-GAPS"],
+      "assertions": [
+        {
+          "assertion_id": "A-TURN2-NO-SLACK",
+          "target": "slack.post_escalation.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "条件为两轮之后仍未解决才升级，第 2 轮不应触发升级"
+        },
+        {
+          "assertion_id": "A-TURN2-LOGGED",
+          "target": "sheets_log.append_conversation_log.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "本轮对话仍应记录到对话日志"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-ESCALATE-TURN3",
+      "kind": "positive",
+      "fixture_ids": ["F-MSG-TURN3-UNRESOLVED"],
+      "mock_ids": ["M-SHEETS-KB", "M-LLM-REPLY", "M-SLACK-ESCALATE", "M-SHEETS-LOG", "M-SHEETS-GAPS"],
+      "assertions": [
+        {
+          "assertion_id": "A-TURN3-SLACK-ONE",
+          "target": "slack.post_escalation.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "第 3 轮仍未解决即两轮之后，应升级到 Slack"
+        },
+        {
+          "assertion_id": "A-TURN3-GAPS-APPENDED",
+          "target": "sheets_gaps.append_faq_gap.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "未解决的问题应记入 FAQ Gaps 表供知识库补充"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-WEEKLY-REPORT",
+      "kind": "positive",
+      "fixture_ids": ["F-WEEKLY-REPORT"],
+      "mock_ids": ["M-SHEETS-LOG", "M-GMAIL-WEEKLY"],
+      "assertions": [
+        {
+          "assertion_id": "A-WEEKLY-EMAIL-ONE",
+          "target": "gmail.send_html_report.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "每周一 09:00 应发送一封周报邮件"
+        },
+        {
+          "assertion_id": "A-WEEKLY-HTML-FORMAT",
+          "target": "gmail.send_html_report.calls[0].html",
+          "operator": "matches",
+          "expected": "<[a-zA-Z][^>]*>",
+          "rationale": "报告必须是 HTML 格式，正文应包含 HTML 标签"
+        },
+        {
+          "assertion_id": "A-WEEKLY-RECIPIENT",
+          "target": "gmail.send_html_report.calls[0].to",
+          "operator": "equals",
+          "expected": "admin@example.com",
+          "rationale": "报告应发送给管理员"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：正常回复（知识库使用、日志追加、无升级）、情绪困扰升级、第 2 轮不升级与第 3 轮升级的边界、未解决问题记 FAQ Gaps、每周一 HTML 周报邮件。知识库、语言模型、Slack、Sheets、Gmail 全部确定性模拟。"
+}

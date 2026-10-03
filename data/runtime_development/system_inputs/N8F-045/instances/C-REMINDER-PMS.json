@@ -1,0 +1,17 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-REMINDER-PMS",
+  "kind": "positive",
+  "input_data": {
+    "today": "2026-08-24",
+    "subscriber": {
+      "email": "alice@example.com",
+      "last_period_start": "2026-08-01",
+      "cycle_length_days": 28,
+      "active": true,
+      "last_sent": {}
+    }
+  },
+  "input_sha256": "4EE123D1CACF8B92B3228D59F9C9CBC64DE82EDD5DACB273F0F0D1548F186EBE"
+}

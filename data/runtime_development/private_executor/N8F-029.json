@@ -1,0 +1,240 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-029",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-CS-KB-FOUND",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "vector_search",
+      "request_contract": {
+        "query": "How do I reset my password?"
+      },
+      "response_contract": {
+        "results": [
+          {
+            "content": "To reset your password, go to Settings and click Reset Password.",
+            "score": 0.92
+          }
+        ],
+        "returned_any": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-KB-EMPTY",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "vector_search",
+      "request_contract": {
+        "query": "What is your refund policy?"
+      },
+      "response_contract": {
+        "results": [],
+        "returned_any": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-LLM-ANSWER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_answer",
+      "request_contract": {
+        "prompt_contains": "How do I reset my password?"
+      },
+      "response_contract": {
+        "answer": "Go to Settings and click Reset Password to change your password.",
+        "retrieved_documents": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-MEMORY-LOAD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "operation": "load_history",
+      "request_contract": {
+        "user_id": "cust-1001"
+      },
+      "response_contract": {
+        "history": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-EMAIL-REPLY",
+      "dependency_type": "n8n-nodes-base.emailSend",
+      "operation": "send_reply",
+      "request_contract": {
+        "to": "cust-1001@example.com",
+        "subject_prefix": "Re:",
+        "subject": "Re: Password reset help"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "msg-reply-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-CHAT-REPLY",
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "respond_live_chat",
+      "request_contract": {
+        "respond_immediately": true
+      },
+      "response_contract": {
+        "status_code": 200
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-SLACK-REPLY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_thread_reply",
+      "request_contract": {
+        "thread_ts": "1680000000.000300"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1680000100.000400"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-ZENDESK-CREATE",
+      "dependency_type": "n8n-nodes-base.zendesk",
+      "operation": "create_ticket",
+      "request_contract": {
+        "escalation_reason_exists": true,
+        "priority_from_sentiment": true,
+        "escalation_reason": "handover_request",
+        "priority": "high",
+        "body": "AI note: escalated for human review, please check the conversation history."
+      },
+      "response_contract": {
+        "ticket_id": 900001,
+        "status": "open"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_log_row",
+      "request_contract": {
+        "required_fields": [
+          "user_id",
+          "channel",
+          "message",
+          "category",
+          "sentiment",
+          "timestamp",
+          "answer",
+          "confidence",
+          "escalated",
+          "escalation_reason"
+        ],
+        "escalated": false
+      },
+      "response_contract": {
+        "row_appended": true,
+        "row_number": 42
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-EMAIL-ANSWERED",
+      "fixture_ids": [
+        "F-CS-EMAIL-QA"
+      ],
+      "mock_ids": [
+        "M-CS-KB-FOUND",
+        "M-CS-LLM-ANSWER",
+        "M-CS-MEMORY-LOAD",
+        "M-CS-EMAIL-REPLY",
+        "M-CS-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-CHAT-GREETING",
+      "fixture_ids": [
+        "F-CS-CHAT-GREETING"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY",
+        "M-CS-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-SLACK-ESCALATED",
+      "fixture_ids": [
+        "F-CS-SLACK-ESCALATE"
+      ],
+      "mock_ids": [
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-CHAT-EMPTY-REJECTED",
+      "fixture_ids": [
+        "F-CS-CHAT-EMPTY"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY"
+      ]
+    },
+    {
+      "case_id": "C-CHAT-OVERSIZED-REJECTED",
+      "fixture_ids": [
+        "F-CS-CHAT-OVERSIZED"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY"
+      ]
+    },
+    {
+      "case_id": "C-DISCORD-HANDOVER",
+      "fixture_ids": [
+        "F-CS-DISCORD-HANDOVER"
+      ],
+      "mock_ids": [
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-SLACK-ANSWERED",
+      "fixture_ids": [
+        "F-CS-SLACK-QA"
+      ],
+      "mock_ids": [
+        "M-CS-KB-FOUND",
+        "M-CS-LLM-ANSWER",
+        "M-CS-SLACK-REPLY",
+        "M-CS-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-WA-UNGROUNDED-FALLBACK",
+      "fixture_ids": [
+        "F-CS-WA-UNGROUNDED"
+      ],
+      "mock_ids": [
+        "M-CS-KB-EMPTY",
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ]
+    }
+  ]
+}

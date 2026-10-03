@@ -1,0 +1,92 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-056",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "本次使用的 Instagram 账号会话（Cookie）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-056-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "按话题标签抓取最近帖子时以轮换选出的账号会话执行，抓取真实消费 g2 选出的账号会话。",
+      "confidence": 0.75,
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g6",
+      "data_items": [
+        "本次使用的 Instagram 账号会话（Cookie）",
+        "选定账号的会话凭据（执行点赞所用账号）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "生成的话题标签"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "抓取到的候选帖子列表",
+        "抓取到的最近帖子列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "选定的未点赞帖子",
+        "查重后选定的待点赞帖子"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "已点赞帖子的链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g5",
+      "data_items": [
+        "已点赞帖子记录",
+        "已点赞帖子记录（查重依据）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.923076923076923,
+    "shared_edge_count": 6,
+    "adjudicated_dispute_count": 1,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

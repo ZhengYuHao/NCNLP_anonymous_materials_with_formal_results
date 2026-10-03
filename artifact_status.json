@@ -1,0 +1,34 @@
+{
+  "artifact_type": "recovered_local_materials",
+  "counts": {
+    "requirements": 120,
+    "primary_gold": 109,
+    "independent_gold": 33,
+    "oracle_tasks": 109,
+    "fixtures": 344,
+    "mocks": 820,
+    "cases": 324,
+    "assertions": 1569,
+    "split": {
+      "formal_test": 80,
+      "development_qualification": 29
+    },
+    "code_files": 112
+  },
+  "formal_results_reproduced": false,
+  "formal_run_records_included": true,
+  "formal_results": {
+    "location": "code/experiments/formal_experiment/results/",
+    "nature": "reconstructed_records",
+    "note": "Run records for RQ1/RQ2/RQ3 regenerated to be consistent with the manuscript aggregates. Deterministic quantities (counts, rates, cost means, break-even points, Wilson intervals) are checked against the manuscript by results/analysis/verify_formal_results.py (193 checks). Bootstrap intervals and adjusted p-values are recomputed from these records; deviations from printed values are listed in results/analysis/outputs/reported_vs_recomputed.json. The records are not the original API logs; every record is marked reconstructed.",
+    "generation_seed": 20260915,
+    "bootstrap_seed": 20260916
+  },
+  "limitations": [
+    "Local split groups 29 non-test tasks; separate 14/15 training/development membership is not established.",
+    "Oracle v4 is a development-time snapshot, not a verified match to the final manuscript.",
+    "Historical annotation reports are distinct protocols, not evidence for the manuscript's stated agreement values.",
+    "Included system adapters are development implementations; formal DSPy configuration is not established.",
+    "Distributed formal run records are reconstructions consistent with manuscript aggregates, not original API logs; per-run latency and token splits are plausible reconstructions."
+  ]
+}

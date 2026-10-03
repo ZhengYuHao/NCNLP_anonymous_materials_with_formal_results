@@ -1,0 +1,22 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-093",
+  "case_id": "C-ALL-DISABLED-NOOP",
+  "kind": "boundary",
+  "input_data": {
+    "channel_id": "UC_promotion",
+    "accounts": [
+      {
+        "id": "acc-a",
+        "platform": "twitter",
+        "active": false
+      },
+      {
+        "id": "acc-b",
+        "platform": "facebook",
+        "active": false
+      }
+    ]
+  },
+  "input_sha256": "37702A8A0C0BB8ABBAEDAD4392B22E5930AEA2A66100B338EA014615A864C3BB"
+}

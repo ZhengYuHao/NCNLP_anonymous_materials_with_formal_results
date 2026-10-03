@@ -1,0 +1,74 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-082",
+  "source_id": "n8n:18253",
+  "workflow_sha256": "7b71d493d5eea9ffe486e3eef33c3054f6b2d8910d499ca12d8d230145fb4fb4",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "84cb33472a458eb5f92eae22c72baa38e82a12f52ec387e92a7167affe1ad239",
+  "requirement": {
+    "requirement_text": "一、输入与校验\n1. 通过回调接口接收项目需求申请（也支持手动测试提交），并对传入字段做规范化。\n2. 检查需求简述的必填项是否齐备；不齐备时返回 400 响应，列出缺失字段并给出澄清问题。\n\n二、主要处理\n1. 对完整的申请，由语言模型生成简短的分诊摘要、判定申请类型，并抽取风险、依赖、待决策事项与建议的负责人类型。\n2. 依据申请元信息与语言模型输出，进行确定性的风险与紧急度打分，据此决定分诊去向。\n3. 在 Airtable 中创建分诊记录，写入申请信息、摘要、评分与去向信息。\n\n三、审批分支\n若评分超过审批阈值，则准备审批消息并（可选）发送到 Slack，记录审批结论，随后指派负责人或将申请标记为已拒绝。\n\n四、最终结果\n1. 构建结构化的交付交接内容，把负责人、状态、下一步动作与审批结果更新回 Airtable 记录，并向调用方返回分诊结果。\n2. 按周计划加载 Airtable 中未结的分诊记录，生成运营汇总，并（可选）通过 Gmail 以邮件发送。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 329,
+        "text": "Quick overview\nThis workflow accepts project requests via webhook, validates the minimum brief, and uses OpenAI to generate a triage summary and classification before scoring risk/urgency and storing the request in Airtable, optionally routing higher-risk items to Slack for approval and sending an optional weekly summary email."
+      },
+      {
+        "start": 331,
+        "end": 1506,
+        "text": "How it works\nReceives a project request via a POST webhook (or a manual test payload) and normalizes the incoming fields.\nChecks whether required brief details are present and, if not, returns a 400 response with missing fields and clarification questions.\nSends complete requests to OpenAI to produce a short triage summary, classify the request type, and extract risks, dependencies, decisions, and a recommended owner type.\nApplies deterministic risk and urgency scoring based on the request metadata and the OpenAI output to determine the triage route.\nCreates a new triage record in Airtable with the request details, summary, score, and routing information.\nIf the score exceeds the approval threshold, prepares an approval message and (optionally) posts it to Slack, then records an approval decision and either assigns an owner or marks the request as declined.\nBuilds a structured delivery handoff, updates the Airtable record with owner, status, next action and approval outcome, and responds to the webhook caller with the triage result.\nOn a weekly schedule, loads open Airtable triage records, builds an operational summary, and (optionally) emails it via Gmail."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过回调接口提交的项目需求申请（亦支持手动测试提交）"
+      ],
+      "conditions": [
+        "必填的需求简述不齐备时返回 400 并列出缺失字段与澄清问题",
+        "风险与紧急度打分由申请元信息与语言模型输出确定性得出",
+        "评分超过审批阈值时进入审批分支",
+        "审批消息发送到 Slack 与每周汇总邮件均为可选"
+      ],
+      "allowed_actions": [
+        "规范化传入字段",
+        "校验必填项并返回缺失字段与澄清问题",
+        "由语言模型生成分诊摘要、类型判定并抽取风险、依赖、待决策事项与建议负责人类型",
+        "对风险与紧急度打分并确定分诊去向",
+        "在 Airtable 中创建分诊记录",
+        "准备审批消息并（可选）发送到 Slack",
+        "记录审批结论，指派负责人或标记为已拒绝",
+        "更新 Airtable 记录并向调用方返回分诊结果",
+        "按周生成未结分诊记录的运营汇总并（可选）通过 Gmail 发送"
+      ],
+      "visible_outcomes": [
+        "必填项缺失的申请收到 400 响应及缺失字段与澄清问题",
+        "Airtable 中生成分诊记录，含申请信息、摘要、评分与去向",
+        "超过审批阈值的申请记录审批结论，并可选地在 Slack 中收到审批消息",
+        "Airtable 记录被更新为负责人、状态、下一步动作与审批结果",
+        "调用方收到分诊结果响应",
+        "（可选）每周通过 Gmail 收到运营汇总邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-082.packet.json",
+    "packet_sha256": "31f291b35bf8ea4e99df55f162956905306271c8619ceee2488ca9378289698c",
+    "public_description_sha256": "aa0a4dd4378e67dcf13984c723487717f814e6cb2e45f6f75137f6e30cc8556a"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-082.response.json",
+    "verification_response_sha256": "b2b4721407fe00f452a32e5a50c1781c366523a21c8c0bc20d3ba57e6240776a",
+    "decision": "accept"
+  },
+  "formal_index": 93
+}

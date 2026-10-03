@@ -1,0 +1,65 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-040",
+  "source_id": "n8n:16223",
+  "workflow_sha256": "97c6f39d7ec6456a4ac3df3ead170d9a0ea144805f8a788d0752c70cfda52632",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "290fb97f66b43eb4ecb2be1ae9d02050075c7ce48490ad38fb4bbda1fd842741",
+  "requirement": {
+    "requirement_text": "该流程由人工手动启动。系统从源 Google Sheets 工作表读取全部公司记录，仅保留公司名称、网站与“是否已充实”三项；已标记为已充实的记录直接跳过。对其余每家公司，系统使用网络搜索服务与语言模型调研该公司，返回行业、简介、目标客户、总部所在地与规模估计等结构化信息，其中目标客户列表会被整理为逗号分隔的文本。充实后的公司记录追加写入另一个 Google Sheets 工作表，同时按公司名称定位源工作表中的原始记录，将其“是否已充实”更新为是，避免重复处理。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 308,
+        "text": "Quick Overview\nThis workflow manually runs a company enrichment pipeline that reads companies from Google Sheets, uses SerpAPI web search plus Google Gemini to generate structured company details, writes the enriched data to a second Google Sheet, and marks the source rows as enriched to avoid reprocessing."
+      },
+      {
+        "start": 310,
+        "end": 1031,
+        "text": "How it works\nStarts when you run the workflow manually.\nReads all rows from a source Google Sheets worksheet and keeps only the Company Name, Website, and Enriched fields.\nSkips any row where Enriched is already set to Yes.\nFor each remaining company, uses SerpAPI web search and Google Gemini (via an AI agent) to research the company and return structured JSON fields such as industry, description, target customers, headquarters, and estimated size.\nNormalizes the AI output by converting the target_customers array into a comma-separated string.\nAppends the enriched company record to an output Google Sheets worksheet.\nUpdates the original source row in Google Sheets to set Enriched = Yes based on the Company Name."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "源 Google Sheets 工作表中的公司记录（公司名称、网站、是否已充实）"
+      ],
+      "conditions": [
+        "由人工手动启动",
+        "已标记为已充实的行跳过处理",
+        "以公司名称作为定位源表原始记录的依据"
+      ],
+      "allowed_actions": [
+        "读取源工作表并保留公司名称、网站与是否已充实三项",
+        "使用网络搜索与语言模型调研公司并生成结构化信息",
+        "将目标客户列表整理为逗号分隔文本",
+        "将充实后的公司记录追加写入输出工作表",
+        "将源行“是否已充实”更新为是"
+      ],
+      "visible_outcomes": [
+        "输出 Google Sheets 工作表中新增行业、简介、目标客户、总部与规模估计等记录",
+        "源工作表中对应行的“是否已充实”被标记为是"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-040.packet.json",
+    "packet_sha256": "1f13e4fa83e75780dd8b3a96abbd7f5aae6513c97de75c8479209ee7966abe64",
+    "public_description_sha256": "d07c3a269f4445a5996a217ad02f9dc7d53ab12b7a32eb9faa932716c1987dab"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-040.response.json",
+    "verification_response_sha256": "8ad3db232986430ec642b8c18d8bd206323bf098c8ce9d61971a1b65bfa0a433",
+    "decision": "accept"
+  },
+  "formal_index": 51
+}

@@ -1,0 +1,212 @@
+{
+  "pilot_id": "N8C-002",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "1a632d6022839d1a60138e798410a18df31d4964b3a4c522dd371935aa25b9a6",
+  "fixtures": [
+    {
+      "fixture_id": "F-CONFIG-MIXED",
+      "purpose": "混合配置：1 个 keyword 目标 + 1 个 competitor 目标，验证双路径路由",
+      "input_data": {
+        "config_sheet": "Config",
+        "targets": [
+          {"type": "keyword", "value": "LLM agents"},
+          {"type": "competitor", "value": "r/artificial"}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-CONFIG-KEYWORD-ONLY",
+      "purpose": "仅 keyword 目标，验证 competitor 路径不被触发",
+      "input_data": {
+        "config_sheet": "Config",
+        "targets": [
+          {"type": "keyword", "value": "LangChain"},
+          {"type": "keyword", "value": "RAG"}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-CONFIG-EMPTY",
+      "purpose": "空目标列表边界：不应产生任何处理与归档",
+      "input_data": {"config_sheet": "Config", "targets": []}
+    },
+    {
+      "fixture_id": "F-POSTS-FEWER-THAN-3",
+      "purpose": "抓取结果不足 3 条（2 条）的边界，验证 top-3 合并可用全部可得帖",
+      "input_data": {
+        "target": "r/artificial",
+        "posts": [
+          {"title": "Post A about agent tooling", "url": "https://reddit.com/r/artificial/post1", "score": 450},
+          {"title": "Post B about RAG", "url": "https://reddit.com/r/artificial/post2", "score": 320}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GSHEETS-CONFIG-MIXED",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_monitoring_targets",
+      "request_contract": {"sheet": "Config", "range": "A1:B100"},
+      "response_contract": {
+        "rows": [
+          {"type": "keyword", "value": "LLM agents"},
+          {"type": "competitor", "value": "r/artificial"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-CONFIG-KEYWORD",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_monitoring_targets",
+      "request_contract": {"sheet": "Config", "range": "A1:B100"},
+      "response_contract": {
+        "rows": [
+          {"type": "keyword", "value": "LangChain"},
+          {"type": "keyword", "value": "RAG"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-CONFIG-EMPTY",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_monitoring_targets",
+      "request_contract": {"sheet": "Config", "range": "A1:B100"},
+      "response_contract": {"rows": [], "retrieved": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-KEYWORD",
+      "dependency_type": "n8n-nodes-browseract.browserAct",
+      "operation": "scrape_keyword_search",
+      "request_contract": {"target_type": "keyword", "query": "LLM agents|LangChain|RAG"},
+      "response_contract": {
+        "posts": [
+          {"title": "Agent tooling momentum", "url": "https://reddit.com/r/search/llm1", "score": 980},
+          {"title": "Memory patterns for agents", "url": "https://reddit.com/r/search/llm2", "score": 760},
+          {"title": "Prompting agents in prod", "url": "https://reddit.com/r/search/llm3", "score": 540}
+        ],
+        "blocked": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-COMPETITOR",
+      "dependency_type": "n8n-nodes-browseract.browserAct",
+      "operation": "scrape_subreddit",
+      "request_contract": {"target_type": "competitor", "subreddit": "r/artificial"},
+      "response_contract": {
+        "posts": [
+          {"title": "State of applied AI", "url": "https://reddit.com/r/artificial/post1", "score": 1200},
+          {"title": "Local models roundup", "url": "https://reddit.com/r/artificial/post2", "score": 890},
+          {"title": "AI infrastructure stack", "url": "https://reddit.com/r/artificial/post3", "score": 610}
+        ],
+        "blocked": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-FEWER",
+      "dependency_type": "n8n-nodes-browseract.browserAct",
+      "operation": "scrape_subreddit",
+      "request_contract": {"target_type": "competitor", "subreddit": "r/artificial"},
+      "response_contract": {
+        "posts": [
+          {"title": "Post A about agent tooling", "url": "https://reddit.com/r/artificial/post1", "score": 450},
+          {"title": "Post B about RAG", "url": "https://reddit.com/r/artificial/post2", "score": 320}
+        ],
+        "blocked": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "language_model",
+      "operation": "generate_executive_summary",
+      "request_contract": {"top_posts": "top 3 posts for the target"},
+      "response_contract": {
+        "summary": "Daily digest: agent tooling momentum continues; top posts focus on memory patterns and production prompting.",
+        "noise_filtered": true,
+        "source_links": ["https://reddit.com/r/search/llm1", "https://reddit.com/r/search/llm2", "https://reddit.com/r/search/llm3"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_report_row",
+      "request_contract": {"sheet": "Report", "row": "[Date, Competitor/Keyword, Summary, Link]"},
+      "response_contract": {"appended": true, "row_number": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-MIXED",
+      "kind": "positive",
+      "fixture_ids": ["F-CONFIG-MIXED"],
+      "mock_ids": ["M-GSHEETS-CONFIG-MIXED", "M-SCRAPE-KEYWORD", "M-SCRAPE-COMPETITOR", "M-LLM-SUMMARY", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-KEYWORD-SCRAPED", "target": "mock.M-SCRAPE-KEYWORD.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明按输入类型路由双路径；1 个 keyword 目标走 keyword 抓取"},
+        {"assertion_id": "A-COMPETITOR-SCRAPED", "target": "mock.M-SCRAPE-COMPETITOR.call_count", "operator": "equals", "expected": 1, "rationale": "1 个 competitor 目标走 competitor 抓取"},
+        {"assertion_id": "A-SUMMARIZED", "target": "mock.M-LLM-SUMMARY.call_count", "operator": "equals", "expected": 2, "rationale": "需求声明每个目标生成一份执行摘要；2 个目标来自 fixture 配置"},
+        {"assertion_id": "A-APPENDED", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 2, "rationale": "每个目标一行归档到 Report 表"},
+        {"assertion_id": "A-ROW-LABEL", "target": "mock.M-GSHEETS-APPEND.requests[0].row[1]", "operator": "contains", "expected": "LLM agents", "rationale": "Report 声明列 Competitor/Keyword 的内容为目标文本（来自 fixture）"},
+        {"assertion_id": "A-ROW-LINK", "target": "mock.M-GSHEETS-APPEND.requests[0].row[3]", "operator": "matches", "expected": "^https://reddit\\.com/", "rationale": "Report 声明列 Link 含来源链接（来自抓取 mock）"},
+        {"assertion_id": "A-ROW-COLUMNS", "target": "mock.M-GSHEETS-APPEND.requests[0].row", "operator": "length_equals", "expected": 4, "rationale": "需求声明 Report 列为 Date, Competitor/Keyword, Summary, Link 共 4 列；不强制日期格式"}
+      ]
+    },
+    {
+      "case_id": "C-POS-KEYWORD-ONLY",
+      "kind": "positive",
+      "fixture_ids": ["F-CONFIG-KEYWORD-ONLY"],
+      "mock_ids": ["M-GSHEETS-CONFIG-KEYWORD", "M-SCRAPE-KEYWORD", "M-LLM-SUMMARY", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-KEYWORD-TWICE", "target": "mock.M-SCRAPE-KEYWORD.call_count", "operator": "equals", "expected": 2, "rationale": "两个 keyword 目标各抓取一次"},
+        {"assertion_id": "A-APPENDED-TWO", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 2, "rationale": "两个 keyword 目标各追加一行"},
+        {"assertion_id": "A-ALL-KEYWORD-ROWS", "target": "mock.M-GSHEETS-APPEND.requests[1].row[1]", "operator": "contains", "expected": "LangChain", "rationale": "无 competitor 目标时行内容均为 keyword 目标文本（第 2 行为 LangChain）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-EMPTY-CONFIG",
+      "kind": "boundary",
+      "fixture_ids": ["F-CONFIG-EMPTY"],
+      "mock_ids": ["M-GSHEETS-CONFIG-EMPTY", "M-LLM-SUMMARY", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-NO-APPEND", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 0, "rationale": "无监控目标时不追加任何报告行"},
+        {"assertion_id": "A-NO-SUMMARY", "target": "mock.M-LLM-SUMMARY.call_count", "operator": "equals", "expected": 0, "rationale": "无目标时不调用摘要生成"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-FEWER-THAN-3",
+      "kind": "boundary",
+      "fixture_ids": ["F-CONFIG-MIXED", "F-POSTS-FEWER-THAN-3"],
+      "mock_ids": ["M-GSHEETS-CONFIG-MIXED", "M-SCRAPE-KEYWORD", "M-SCRAPE-FEWER", "M-LLM-SUMMARY", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-APPEND-COUNT", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 2, "rationale": "两条目标各归档一行（keyword 目标 3 帖、competitor 目标 2 帖）"},
+        {"assertion_id": "A-SUMMARY-COUNT", "target": "mock.M-LLM-SUMMARY.call_count", "operator": "equals", "expected": 2, "rationale": "每个目标仍生成一份摘要"},
+        {"assertion_id": "A-COMPETITOR-ROW-LINK", "target": "mock.M-GSHEETS-APPEND.requests[1].row[3]", "operator": "contains", "expected": "https://reddit.com/r/artificial/post1", "rationale": "抓取结果不足 3 条时合并全部可得帖（2 帖），Link 列含可得帖链接"},
+        {"assertion_id": "A-KEYWORD-ROW-LINK", "target": "mock.M-GSHEETS-APPEND.requests[0].row[3]", "operator": "matches", "expected": "^https://reddit\\.com/", "rationale": "keyword 目标行同样含源链接"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Report 行固定为需求声明的 4 列 [Date, Competitor/Keyword, Summary, Link]，断言按索引定位（row[1]/row[3]）以保证执行器可判定；不强制日期格式。不同配置/抓取数据变体使用独立 mock id。\n核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-KEYWORD-SCRAPED/A-COMPETITOR-SCRAPED（需求'按类型路由双路径'）、A-SUMMARIZED/A-APPENDED（需求'每目标摘要并归档'，数量=fixture 目标数）、A-ROW-LABEL/A-ROW-LINK（需求声明 4 列）、空配置与不足 3 帖边界。\n- 修改：A-ROW-DATE→A-ROW-COLUMNS（删除自创日期格式正则，改为按声明 4 列断言）；A-ALL-KEYWORD-ROWS（删除自创 'keyword' 标签值，改判目标文本 LangChain）；A-LINK-FROM-2ND-POST→A-COMPETITOR-ROW-LINK（索引化 row[3] 并补 M-SCRAPE-KEYWORD 保证两目标输入完整）。\n- 删除：无（补充了 keyword 抓取 mock 以闭合输入）。"
+}

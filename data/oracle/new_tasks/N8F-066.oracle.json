@@ -1,0 +1,350 @@
+{
+  "task_id": "N8F-066",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "9700975ffd6055cbc932eae0bc015bbeb9640ffa5b392ee39ba7a6a63ab963a4",
+  "fixtures": [
+    {
+      "fixture_id": "F-CALL-HIGH",
+      "purpose": "评分 8（达到阈值 7）的通话回调，验证完整提醒链",
+      "input_data": {
+        "call_id": "CALL-0912",
+        "contact_id": "CONTACT-77",
+        "duration_seconds": 540,
+        "transcript": "Customer: we need a solution for 200 seats and asked about onboarding and pricing. They want a proposal this week.",
+        "metadata": {
+          "campaign": "summer-2026"
+        },
+        "score_threshold": 7
+      }
+    },
+    {
+      "fixture_id": "F-CALL-LOW",
+      "purpose": "评分 4（低于阈值 7）的通话回调，验证不触发提醒与任务",
+      "input_data": {
+        "call_id": "CALL-0913",
+        "contact_id": "CONTACT-78",
+        "duration_seconds": 180,
+        "transcript": "Customer asked general questions about the company. No clear interest.",
+        "metadata": {},
+        "score_threshold": 7
+      }
+    },
+    {
+      "fixture_id": "F-CALL-BOUNDARY",
+      "purpose": "评分恰好等于阈值 7 的通话回调，验证边界触发",
+      "input_data": {
+        "call_id": "CALL-0914",
+        "contact_id": "CONTACT-79",
+        "duration_seconds": 300,
+        "transcript": "Customer is interested and wants a follow-up demo next week.",
+        "metadata": {},
+        "score_threshold": 7
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-ANALYZE",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_call",
+      "request_contract": {
+        "input_has_transcript_duration_metadata": true
+      },
+      "response_contract": {
+        "sentiment": "positive",
+        "lead_score": 8,
+        "key_topics": [
+          "pricing",
+          "onboarding"
+        ],
+        "buying_signals": [
+          "asked for proposal"
+        ],
+        "objections": [
+          "budget"
+        ],
+        "action_items": [
+          "send proposal"
+        ],
+        "recommended_next_step": "send proposal and schedule demo"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-LOW",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_call",
+      "request_contract": {
+        "call_id": "CALL-0913"
+      },
+      "response_contract": {
+        "sentiment": "neutral",
+        "lead_score": 4,
+        "key_topics": [
+          "general info"
+        ],
+        "buying_signals": [],
+        "objections": [],
+        "action_items": [],
+        "recommended_next_step": "add to nurture list"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-BOUNDARY",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_call",
+      "request_contract": {
+        "call_id": "CALL-0914"
+      },
+      "response_contract": {
+        "sentiment": "positive",
+        "lead_score": 7,
+        "key_topics": [
+          "demo"
+        ],
+        "buying_signals": [
+          "requested demo"
+        ],
+        "objections": [],
+        "action_items": [
+          "schedule demo"
+        ],
+        "recommended_next_step": "schedule demo"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HUBSPOT-UPDATE",
+      "dependency_type": "hubspot",
+      "operation": "update_contact",
+      "request_contract": {
+        "contact_id_in": [
+          "CONTACT-77",
+          "CONTACT-78",
+          "CONTACT-79"
+        ],
+        "payload_has_enriched_data": true
+      },
+      "response_contract": {
+        "status": "updated",
+        "contact_id": "CONTACT-77"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HUBSPOT-TASK",
+      "dependency_type": "hubspot",
+      "operation": "create_followup_task",
+      "request_contract": {
+        "priority": "high"
+      },
+      "response_contract": {
+        "status": "created",
+        "task_id": "HT-1001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ALERT",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#sales-team",
+        "message_is_high_score_alert": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000004"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "one_row_per_call": true
+      },
+      "response_contract": {
+        "status": "appended",
+        "row": 77
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-HIGH-SCORE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CALL-HIGH"
+      ],
+      "mock_ids": [
+        "M-LLM-ANALYZE",
+        "M-HUBSPOT-UPDATE",
+        "M-HUBSPOT-TASK",
+        "M-SLACK-ALERT",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.analysis.lead_score",
+          "operator": "equals",
+          "expected": 8,
+          "rationale": "线索评分须等于固定分析结果"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.analysis.sentiment",
+          "operator": "exists",
+          "rationale": "分析须含情绪倾向",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.analysis.key_topics",
+          "operator": "exists",
+          "rationale": "分析须含关键话题",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.analysis.buying_signals",
+          "operator": "exists",
+          "rationale": "分析须含购买信号",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.analysis.objections",
+          "operator": "exists",
+          "rationale": "分析须含客户异议",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.analysis.action_items",
+          "operator": "exists",
+          "rationale": "分析须含待办事项",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.analysis.recommended_next_step",
+          "operator": "exists",
+          "rationale": "分析须含推荐的下一步动作，七类字段齐备才满足契约",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.hubspot.contact_updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "补充数据必须同步到 HubSpot 更新联系人记录"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.slack_alert",
+          "operator": "exists",
+          "rationale": "评分 8 ≥ 阈值 7，须向销售团队发送 Slack 提醒",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-10",
+          "target": "output.hubspot.followup_task",
+          "operator": "exists",
+          "rationale": "评分达标时须在 HubSpot 创建优先跟进任务",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-11",
+          "target": "output.sheets_logged",
+          "operator": "exists",
+          "rationale": "每一次通话都必须记录到 Google Sheets",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-LOW-SCORE",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CALL-LOW"
+      ],
+      "mock_ids": [
+        "M-LLM-ANALYZE-LOW",
+        "M-HUBSPOT-UPDATE",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.slack_alert",
+          "operator": "not_exists",
+          "rationale": "评分 4 < 阈值 7，不发送 Slack 提醒",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.hubspot.followup_task",
+          "operator": "not_exists",
+          "rationale": "评分未达阈值时不创建优先跟进任务",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.hubspot.contact_updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "无论评分高低，通话数据都须同步更新 HubSpot 联系人"
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.sheets_logged",
+          "operator": "exists",
+          "rationale": "低分通话同样须记录到 Google Sheets",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-AT-THRESHOLD",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CALL-BOUNDARY"
+      ],
+      "mock_ids": [
+        "M-LLM-ANALYZE-BOUNDARY",
+        "M-HUBSPOT-UPDATE",
+        "M-HUBSPOT-TASK",
+        "M-SLACK-ALERT",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.slack_alert",
+          "operator": "exists",
+          "rationale": "评分恰好等于阈值 7 时按\"达到设定阈值\"处理，触发提醒与任务",
+          "expected": true
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "通话回调、LLM 分析、HubSpot 更新/建任务、Slack、Sheets 均为固定模拟。评分阈值固定为 7，是否触发提醒/任务、联系人是否更新、是否记录通话均可由固定输入程序判定。"
+}

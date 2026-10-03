@@ -1,0 +1,24 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-064",
+  "case_id": "C-NEG-API-FAILURE",
+  "kind": "negative",
+  "input_data": {
+    "watchlist": {
+      "indices": [
+        "SPY",
+        "QQQ"
+      ],
+      "forex": [
+        "EUR/USD"
+      ],
+      "commodities": [
+        "XAU",
+        "CL"
+      ]
+    },
+    "report_recipient": "trader@example.com",
+    "rate_limit_batch_seconds": 15
+  },
+  "input_sha256": "AA2E4A51179BFA5992F2720510E1049CAF611B5256705557D619EE9274F11B01"
+}

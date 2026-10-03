@@ -1,0 +1,194 @@
+{
+  "task_id": "N8F-101",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "5a67c53da6298958cb9f283ff6ab8efb72121a8b2560a4835f6bc19e8b10a5c1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收对话入口的自然语言问题",
+      "node_type": "code",
+      "operation_family": "input_reception",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "question",
+          "type": "string",
+          "description": "用户通过对话入口用自然语言提出的表格问题，如“哪个月最好？”"
+        }
+      ],
+      "native_evidence": ["When You Ask About the Sheet", "Conversation Memory"],
+      "requirement_evidence": [
+        "通过对话入口，用户用自然语言就表格提出问题（例如“哪个月最好？”、“按国家拆分收入？”、“哪些行缺少邮箱？”）。"
+      ],
+      "rationale": "从对话入口接收自然语言问题属确定性触发动作，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取 Google Sheets 实时数据行",
+      "node_type": "code",
+      "operation_family": "data_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "sheet_rows",
+          "type": "array",
+          "description": "从 Google Sheets 读取的实时数据行"
+        }
+      ],
+      "native_evidence": ["Read the Sheet for Answers"],
+      "requirement_evidence": [
+        "智能体读取 Google Sheets 中的实时数据行，基于真实数据计算并给出答案，而不是凭记忆猜测"
+      ],
+      "rationale": "读取表格中的实时数据行属确定性外部查询动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "基于真实数据计算答案",
+      "node_type": "semantic",
+      "operation_family": "data_analysis",
+      "inputs": [
+        {
+          "name": "question",
+          "type": "string",
+          "description": "用户的自然语言问题"
+        },
+        {
+          "name": "sheet_rows",
+          "type": "array",
+          "description": "表格中的实时数据行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer_data",
+          "type": "object",
+          "description": "基于真实数据计算得到的答案，含实际数字"
+        }
+      ],
+      "native_evidence": ["Spreadsheet Assistant", "Conversation Memory"],
+      "requirement_evidence": [
+        "智能体读取 Google Sheets 中的实时数据行，基于真实数据计算并给出答案，而不是凭记忆猜测",
+        "对话记忆保留上下文，使“那之前一个月呢？”这类追问能够正常衔接"
+      ],
+      "rationale": "结合问题与实时数据行计算答案属开放语义理解与推理任务，需语言模型能力，判为 semantic；对话记忆作为上下文输入，支持追问衔接。"
+    },
+    {
+      "node_id": "n4",
+      "label": "组织对话回复消息",
+      "node_type": "code",
+      "operation_family": "response_assembly",
+      "inputs": [
+        {
+          "name": "answer_data",
+          "type": "object",
+          "description": "含实际数字的答案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reply_message",
+          "type": "string",
+          "description": "将答案连同实际数字组织好的对话回复消息"
+        }
+      ],
+      "native_evidence": ["Answer the Question in Chat"],
+      "requirement_evidence": [
+        "答案连同实际数字在对话中返回"
+      ],
+      "rationale": "将答案连同实际数字组织为对话回复消息属确定性编排动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "在对话中返回答案",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "reply_message",
+          "type": "string",
+          "description": "组织好的对话回复消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Answer the Question in Chat"],
+      "requirement_evidence": [
+        "答案连同实际数字在对话中返回"
+      ],
+      "rationale": "在对话中向用户返回带实际数字的答案，是用户可见的完成动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收问题后读取表格实时数据。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取到数据行后交由智能体计算答案。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "计算完成后组织对话回复。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复组织完成后在对话中返回。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "question",
+      "condition": null,
+      "rationale": "用户问题传给智能体用于计算答案。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "sheet_rows",
+      "condition": null,
+      "rationale": "实时数据行传给智能体作为计算依据。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "answer_data",
+      "condition": null,
+      "rationale": "计算得到的答案传给回复组织节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "reply_message",
+      "condition": null,
+      "rationale": "组织好的回复消息传给对话返回节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n5"],
+  "confidence": 0.92,
+  "notes": "按冻结需求仅建模问答流程：接收问题→读取实时数据→智能体基于真实数据计算答案→组织回复→对话返回。原生图中的修改审批、审计日志等流程未在冻结需求中声明，未建模；Conversation Memory 作为智能体计算答案时的上下文输入折叠进节点契约，未单列。"
+}

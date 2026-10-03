@@ -1,0 +1,366 @@
+{
+  "task_id": "N8F-103",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "cc1e695af4b66c1a73a2c139e5da181f3986679c107db1a4420c5aa50f3e9e9b",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时调度启动",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "每天上午 8:00（或自定义时间）的调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件，启动 Pinterest 分析流程"
+        }
+      ],
+      "native_evidence": [
+        "8:00am Morning Scheduled Trigger"
+      ],
+      "requirement_evidence": [
+        "按计划在每天上午 8:00（或自定义时间）启动"
+      ],
+      "rationale": "需求声明按计划在每天上午 8:00（或自定义时间）启动，为确定性定时调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取近期 Pin 表现数据",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pin_metrics",
+          "type": "array",
+          "description": "近期 Pin 表现数据，含展示量、点击量、收藏量与互动率"
+        }
+      ],
+      "native_evidence": [
+        "Pull List of Pinterest Pins From Account"
+      ],
+      "requirement_evidence": [
+        "从 Pinterest API 获取近期的 Pin 表现数据，包括展示量、点击量、收藏量与互动率"
+      ],
+      "rationale": "需求声明从 Pinterest API 获取近期 Pin 表现数据，为确定性外部数据获取，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "标注流量来源并整理记录",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "pin_metrics",
+          "type": "array",
+          "description": "Pin 表现数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pin_records",
+          "type": "array",
+          "description": "标注自然流量或付费广告来源的 Pin 记录"
+        }
+      ],
+      "native_evidence": [
+        "Update Data Field To Include Organic"
+      ],
+      "requirement_evidence": [
+        "并确保自然流量与付费广告数据被正确标注以便区分"
+      ],
+      "rationale": "需求声明确保自然流量与付费广告数据被正确标注区分，为确定性字段标注与整理，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "记录并归类存入 Airtable",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "pin_records",
+          "type": "array",
+          "description": "标注来源的 Pin 记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stored_records",
+          "type": "array",
+          "description": "已归类存储到 Airtable 的 Pin 记录，供后续分析引用"
+        }
+      ],
+      "native_evidence": [
+        "Create Record Within Pinterest Data Table"
+      ],
+      "requirement_evidence": [
+        "将这些 Pin 记录并归类存入 Airtable，以供后续分析"
+      ],
+      "rationale": "需求声明将 Pin 记录并归类存入 Airtable 以供后续分析，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型审阅数据识别趋势",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "stored_records",
+          "type": "array",
+          "description": "Airtable 中存储的 Pin 数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trend_insights",
+          "type": "object",
+          "description": "识别出的热门话题与关键词、互动规律、受众兴趣与行为变化、最佳发布时段与内容形式"
+        }
+      ],
+      "native_evidence": [
+        "Pinterest Analysis AI Agent",
+        "OpenAI Chat Model",
+        "Airtable2"
+      ],
+      "requirement_evidence": [
+        "随后由语言模型审阅最新的 Pinterest 数据，识别热门话题与关键词、互动规律、受众兴趣与行为变化，以及最佳发布时段与内容形式"
+      ],
+      "rationale": "需求声明由语言模型审阅数据并识别趋势规律，需开放数据分析与模式归纳能力，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型生成创意与日历建议",
+      "node_type": "semantic",
+      "operation_family": "llm_suggestion",
+      "inputs": [
+        {
+          "name": "trend_insights",
+          "type": "object",
+          "description": "识别出的数据趋势与规律"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "suggestions",
+          "type": "object",
+          "description": "新的 Pin 创意与内容日历更新建议，含创意形式、话题标签与发布时机调整"
+        }
+      ],
+      "native_evidence": [
+        "Pinterest Analysis AI Agent",
+        "OpenAI Chat Model"
+      ],
+      "requirement_evidence": [
+        "接着由智能体给出新的 Pin 创意与内容日历更新建议，建议包含创意形式、话题标签与发布时机调整"
+      ],
+      "rationale": "需求声明由智能体基于趋势洞察给出新的 Pin 创意与内容日历建议，需开放创意生成与策略建议能力，判 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成简明总结报告",
+      "node_type": "semantic",
+      "operation_family": "llm_summarization",
+      "inputs": [
+        {
+          "name": "pin_records",
+          "type": "array",
+          "description": "近期 Pin 表现概览数据"
+        },
+        {
+          "name": "trend_insights",
+          "type": "object",
+          "description": "趋势洞察"
+        },
+        {
+          "name": "suggestions",
+          "type": "object",
+          "description": "智能体建议"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report",
+          "type": "string",
+          "description": "汇总 Pinterest 趋势与可执行的内容策略洞察的简明报告，含近期 Pin 表现概览、热门内容创意、表现最佳的 Pin 形式与智能体建议"
+        }
+      ],
+      "native_evidence": [
+        "Pinterest Data Analysis Summary LLM",
+        "OpenAI Chat Model1"
+      ],
+      "requirement_evidence": [
+        "最后生成一份简明报告，汇总 Pinterest 趋势与可执行的内容策略洞察",
+        "报告包含近期 Pin 表现概览、热门内容创意、表现最佳的 Pin 形式，以及智能体给出的建议"
+      ],
+      "rationale": "需求声明将趋势与建议汇总为简明报告，需开放文本归纳与总结能力，判 semantic。"
+    },
+    {
+      "node_id": "n8",
+      "label": "邮件发送报告给市场负责人",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "report",
+          "type": "string",
+          "description": "汇总后的趋势与分析报告"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Marketing Trends & Pinterest Analysis To Marketing Manager"
+      ],
+      "requirement_evidence": [
+        "并通过邮件发送给市场负责人"
+      ],
+      "rationale": "需求声明将报告通过邮件发送给市场负责人，为确定性外部发送动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后从 Pinterest API 获取 Pin 表现数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据获取后标注自然流量与付费广告来源。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录整理后存入 Airtable。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据存储后由语言模型审阅并识别趋势。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "趋势识别后由智能体生成创意与日历建议。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "建议生成后汇总为简明报告。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后通过邮件发送给市场负责人。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "pin_metrics",
+      "condition": null,
+      "rationale": "Pin 表现数据传给来源标注节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "pin_records",
+      "condition": null,
+      "rationale": "标注后的 Pin 记录传给 Airtable 存储节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "stored_records",
+      "condition": null,
+      "rationale": "已存储的记录供语言模型审阅分析。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "trend_insights",
+      "condition": null,
+      "rationale": "识别出的趋势洞察传给建议生成节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "suggestions",
+      "condition": null,
+      "rationale": "智能体建议传入报告汇总节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "trend_insights",
+      "condition": null,
+      "rationale": "趋势洞察与表现最佳的 Pin 形式信息传入报告节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n3",
+      "target": "n7",
+      "variable": "pin_records",
+      "condition": null,
+      "rationale": "近期 Pin 表现概览数据传入报告节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "report",
+      "condition": null,
+      "rationale": "生成的报告传给邮件发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.93,
+  "notes": "按冻结需求建模：定时调度为 code 入口；获取 Pin 表现数据、来源标注、Airtable 存储、邮件发送均为确定性 code；语言模型审阅数据识别趋势、生成创意与日历建议、汇总简明报告三者为开放语义处理，判 semantic。原生中智能体（Pinterest Analysis AI Agent）同时承担趋势分析与建议生成，按需求叙述拆分为识别趋势与生成建议两个节点，其 Airtable 工具连接（airtableTool）与 OpenAI 模型连接为模型依赖实现细节，并入对应节点证据。"
+}

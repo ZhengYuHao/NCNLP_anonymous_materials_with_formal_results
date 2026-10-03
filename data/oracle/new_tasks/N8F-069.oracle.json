@@ -1,0 +1,372 @@
+{
+  "task_id": "N8F-069",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "cb3fb2565acca31191debd4a5eb05e21849ea9c19c666c8c3da1a17f3872cdf1",
+  "fixtures": [
+    {
+      "fixture_id": "F-EC-REMOTE-SHOPIFY",
+      "purpose": "正常用例：通过接口传入远程图片地址，目标平台为 Shopify，应托管图片、视觉识别生成商品数据、清洗 SKU/价格/库存，并在 Shopify 创建条目",
+      "input_data": {
+        "image_source": {
+          "type": "remote_url",
+          "url": "https://example.com/products/headphones.jpg"
+        },
+        "target_platform": "shopify",
+        "raw_product_data": {
+          "sku": " HP-1001 ",
+          "price": "$129.00",
+          "inventory": "50"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-EC-MOBILE-WOO",
+      "purpose": "正常用例：移动端上传图片文件，目标平台为 WooCommerce，应托管图片并生成带 Yoast SEO 与营销描述的条目",
+      "input_data": {
+        "image_source": {
+          "type": "binary_upload",
+          "file_name": "mug_photo.jpg",
+          "binary": "base64-imagedata"
+        },
+        "target_platform": "woocommerce",
+        "raw_product_data": {
+          "sku": "MUG-207",
+          "price": "19.99",
+          "inventory": "120"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-EC-UPLOAD-FAIL",
+      "purpose": "安全拒绝用例：图片托管服务调用失败，应停止后续流程并向调用方返回结构化错误信息",
+      "input_data": {
+        "image_source": {
+          "type": "remote_url",
+          "url": "https://example.com/broken.jpg"
+        },
+        "target_platform": "shopify",
+        "raw_product_data": {
+          "sku": "X-1",
+          "price": "9.99",
+          "inventory": "5"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-EC-PLATFORM-FAIL",
+      "purpose": "安全拒绝用例：电商平台接口调用失败，应捕获失败并向调用方返回结构化错误信息",
+      "input_data": {
+        "image_source": {
+          "type": "remote_url",
+          "url": "https://example.com/valid.jpg"
+        },
+        "target_platform": "shopify",
+        "raw_product_data": {
+          "sku": "Y-2",
+          "price": "49.99",
+          "inventory": "10"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-EC-UPLOAD",
+      "dependency_type": "n8n-nodes-uploadtourl.uploadToUrl",
+      "operation": "host_image",
+      "request_contract": {
+        "image_url_or_binary_present": true,
+        "binary_present": true
+      },
+      "response_contract": {
+        "permanent_url": "https://mock-cdn.example.com/store/headphones-0001.jpg"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EC-VISION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_product_image",
+      "request_contract": {
+        "image_url": "https://mock-cdn.example.com/store/headphones-0001.jpg"
+      },
+      "response_contract": {
+        "title": "Wireless Noise-Cancelling Headphones",
+        "html_description": "<p>Premium over-ear headphones with active noise cancellation.</p>",
+        "seo_tags": [
+          "wireless",
+          "noise-cancelling",
+          "headphones"
+        ],
+        "suggested_category": "Electronics > Audio",
+        "bullet_features": [
+          "40h battery",
+          "Active ANC",
+          "Bluetooth 5.3",
+          "Foldable design",
+          "Built-in mic"
+        ],
+        "seo_title": "Wireless Noise-Cancelling Headphones | Shop",
+        "handle": "wireless-noise-cancelling-headphones"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EC-SHOPIFY-CREATE",
+      "dependency_type": "n8n-nodes-base.shopify",
+      "operation": "create_product",
+      "request_contract": {
+        "platform": "shopify",
+        "seo_metafields_present": true,
+        "handle": "wireless-noise-cancelling-headphones"
+      },
+      "response_contract": {
+        "product_id": 88001,
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EC-WOO-CREATE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_woocommerce_product",
+      "request_contract": {
+        "platform": "woocommerce",
+        "yoast_seo_present": true
+      },
+      "response_contract": {
+        "product_id": 99001,
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EC-UPLOAD-FAIL",
+      "dependency_type": "n8n-nodes-uploadtourl.uploadToUrl",
+      "operation": "host_image",
+      "request_contract": {
+        "image_url": "https://example.com/broken.jpg"
+      },
+      "response_contract": {
+        "error": "host_failed",
+        "status": "error"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EC-SHOPIFY-FAIL",
+      "dependency_type": "n8n-nodes-base.shopify",
+      "operation": "create_product",
+      "request_contract": {
+        "platform": "shopify"
+      },
+      "response_contract": {
+        "error": "api_rejected",
+        "status": "error"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-REMOTE-SHOPIFY-CREATED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-EC-REMOTE-SHOPIFY"
+      ],
+      "mock_ids": [
+        "M-EC-UPLOAD",
+        "M-EC-VISION",
+        "M-EC-SHOPIFY-CREATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-SH-1",
+          "target": "exec_log.uploadToUrl.host_image.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "商品图片必须先交由图片托管服务托管"
+        },
+        {
+          "assertion_id": "A-SH-2",
+          "target": "exec_log.lmChatOpenAi.analyze_product_image.request.image_url",
+          "operator": "equals",
+          "expected": "https://mock-cdn.example.com/store/headphones-0001.jpg",
+          "rationale": "视觉分析必须使用托管服务返回的固定访问链接"
+        },
+        {
+          "assertion_id": "A-SH-3",
+          "target": "output.enriched.title",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须基于图像识别生成商品标题"
+        },
+        {
+          "assertion_id": "A-SH-4",
+          "target": "output.enriched.bullet_features.length",
+          "operator": "equals",
+          "expected": 5,
+          "rationale": "必须生成五条要点式的产品卖点"
+        },
+        {
+          "assertion_id": "A-SH-5",
+          "target": "output.enriched.seo_title",
+          "operator": "matches",
+          "expected": "^.{1,70}$",
+          "rationale": "SEO 标题长度不得超过 70 字符"
+        },
+        {
+          "assertion_id": "A-SH-6",
+          "target": "output.cleaned.sku",
+          "operator": "equals",
+          "expected": "HP-1001",
+          "rationale": "SKU 必须经过清洗去除首尾空白"
+        },
+        {
+          "assertion_id": "A-SH-7",
+          "target": "exec_log.shopify.create_product.request.platform",
+          "operator": "equals",
+          "expected": "shopify",
+          "rationale": "必须按目标平台 Shopify 格式化并创建商品条目"
+        },
+        {
+          "assertion_id": "A-SH-8",
+          "target": "exec_log.shopify.create_product.request.handle",
+          "operator": "equals",
+          "expected": "wireless-noise-cancelling-headphones",
+          "rationale": "必须生成基于建议商品名称的 URL 友好标识"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MOBILE-WOO-CREATED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-EC-MOBILE-WOO"
+      ],
+      "mock_ids": [
+        "M-EC-UPLOAD",
+        "M-EC-VISION",
+        "M-EC-WOO-CREATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-WO-1",
+          "target": "exec_log.uploadToUrl.host_image.request.binary_present",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "移动端上传的二进制图片文件必须被托管"
+        },
+        {
+          "assertion_id": "A-WO-2",
+          "target": "output.cleaned.price",
+          "operator": "equals",
+          "expected": 19.99,
+          "rationale": "价格数据必须被清洗为数值类型"
+        },
+        {
+          "assertion_id": "A-WO-3",
+          "target": "exec_log.httpRequest.create_woocommerce_product.request.platform",
+          "operator": "equals",
+          "expected": "woocommerce",
+          "rationale": "目标平台为 WooCommerce 时必须走 WooCommerce 创建接口"
+        },
+        {
+          "assertion_id": "A-WO-4",
+          "target": "exec_log.httpRequest.create_woocommerce_product.request.yoast_seo_present",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "WooCommerce 条目必须包含 Yoast SEO 支持"
+        },
+        {
+          "assertion_id": "A-WO-5",
+          "target": "exec_log.shopify.create_product.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "目标平台为 WooCommerce 时不得调用 Shopify 创建接口"
+        }
+      ]
+    },
+    {
+      "case_id": "C-UPLOAD-FAIL-ERROR",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-EC-UPLOAD-FAIL"
+      ],
+      "mock_ids": [
+        "M-EC-UPLOAD-FAIL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-EF-1",
+          "target": "output.error.structured",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "图片上传失败时调用方必须收到结构化错误信息"
+        },
+        {
+          "assertion_id": "A-EF-2",
+          "target": "output.error.code",
+          "operator": "contains",
+          "expected": "host_failed",
+          "rationale": "错误信息必须携带具体的失败原因"
+        },
+        {
+          "assertion_id": "A-EF-3",
+          "target": "exec_log.lmChatOpenAi.analyze_product_image.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "图片托管失败时不得继续视觉识别流程"
+        },
+        {
+          "assertion_id": "A-EF-4",
+          "target": "exec_log.shopify.create_product.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "图片托管失败时不得调用电商平台接口"
+        }
+      ]
+    },
+    {
+      "case_id": "C-PLATFORM-FAIL-ERROR",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-EC-PLATFORM-FAIL"
+      ],
+      "mock_ids": [
+        "M-EC-UPLOAD",
+        "M-EC-VISION",
+        "M-EC-SHOPIFY-FAIL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PF-1",
+          "target": "output.error.structured",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "电商平台接口调用失败时调用方必须收到结构化错误信息"
+        },
+        {
+          "assertion_id": "A-PF-2",
+          "target": "output.error.code",
+          "operator": "contains",
+          "expected": "api_rejected",
+          "rationale": "错误信息必须携带平台拒绝的具体原因"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖远程 URL 与移动端二进制两种图片输入、Shopify/WooCommerce 双平台格式化与创建、SKU/价格/库存清洗、五条卖点与 70 字符 SEO 标题与 handle 生成，以及图片上传失败与平台接口失败两类结构化错误返回。外部依赖（UploadToURL 托管、GPT-4o Vision、Shopify、WooCommerce）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、字段相等、长度比较、存在性与包含检查。"
+}

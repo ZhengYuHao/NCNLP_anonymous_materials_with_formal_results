@@ -1,0 +1,88 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-099",
+  "source_id": "n8n:11052",
+  "workflow_sha256": "8a5fece452f33586bb71398a696fb71baaa2245b85f9c4e9cdb354756e06aaf4",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "34969c87042ec9fe218374afbef1fae036a50a783b37c51e28d2748ed25ae54a",
+  "requirement": {
+    "requirement_text": "客户成功与销售人员在 Slack 中输入斜杠命令 /check-linkedin [全名] 发起查询。系统首先校验所提供的是完整姓名（而非仅有名）；随后检索并定位对应的 LinkedIn 个人主页，抓取其最近发布的 20 条帖子；由语言模型分析发帖频率与节奏模式、主要主题与关注领域，并提炼出带上下文的近期亮点；最后生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱。报告包含最近发帖日期、发帖节奏与主要主题、近期动态概览，以及两个主要议题及其关键词与判断依据。系统不访问 LinkedIn 的非公开内容，也不提供实时更新，结果仅为某一时刻的快照。对于非常常见的姓名，系统可能无法准确定位到正确的 LinkedIn 个人主页。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 204,
+        "text": "This workflow helps Customer Success Managers and customer success professionals quickly gather intelligence on clients or prospects by analyzing their recent LinkedIn activity via a simple Slack command."
+      },
+      {
+        "start": 375,
+        "end": 626,
+        "text": "What it does (and doesn't do)\n✅ It DOES:\nFetch recent LinkedIn posts from any profile\nAnalyze posting frequency and cadence patterns\nIdentify top themes and focus areas\nExtract recent highlights with context\nGenerate a clean HTML report sent via email"
+      },
+      {
+        "start": 628,
+        "end": 766,
+        "text": "❌ It DOESN'T:\nAccess private/non-public LinkedIn content\nProvide real-time updates (it's a snapshot)\nReplace actual researches when needed"
+      },
+      {
+        "start": 893,
+        "end": 1345,
+        "text": "How it works\nSlack command - Type /check-linkedin [Full Name] in Slack\nName validation - AI verifies you provided a full name (not just \"John\")\nProfile discovery - Finds the correct LinkedIn profile via Apify\nContent scraping - Pulls their recent posts (last 20)\nAI analysis - GPT-4.1 analyzes posting patterns, topics, and highlights\nReport generation - Creates a formatted HTML email report\nEmail delivery - Sends the intelligence brief to your inbox"
+      },
+      {
+        "start": 2747,
+        "end": 3053,
+        "text": "Known Limitations\nCommon names have limited accuracy: Very common names (e.g., \"John Smith\") often fail to identify the correct person accurately. An improved version could support company name in the slash command as an additional input to help narrow down results and improve first-try matching accuracy."
+      },
+      {
+        "start": 3780,
+        "end": 4259,
+        "text": "Check your email - Report arrives in 30-90 seconds\nReview the report - Latest post date, cadence, and top themes\nRead Recent Activity Summary - High-level overview of their content\nDive into Detailed Analysis - Two main topics with keywords and rationale\nUse it strategically:\n   Reference their recent posts in your outreach\n   Ask about topics they're clearly passionate about\n   Tailor your pitch to their demonstrated interests\n   Avoid generic \"saw you on LinkedIn\" messages"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Slack 斜杠命令中提供的人员全名",
+        "该人在 LinkedIn 上最近发布的帖子（最近 20 条）"
+      ],
+      "conditions": [
+        "所提供的内容必须是完整姓名，仅提供名时不通过校验",
+        "不访问 LinkedIn 的非公开内容",
+        "结果为某一时刻的快照，不提供实时更新"
+      ],
+      "allowed_actions": [
+        "检索并定位对应的 LinkedIn 个人主页",
+        "抓取该人最近发布的 20 条帖子",
+        "使用语言模型分析发帖频率与节奏模式、主要主题与关注领域、近期亮点",
+        "生成格式化的 HTML 报告",
+        "通过邮件将报告发送到用户邮箱"
+      ],
+      "visible_outcomes": [
+        "邮箱中收到的 HTML 情报简报，包含最近发帖日期、发帖节奏与主要主题、近期动态概览，以及两个主要议题及其关键词与判断依据"
+      ],
+      "failure_behavior": [
+        "非常常见的姓名可能无法准确识别到正确的人"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-099.packet.json",
+    "packet_sha256": "b5fbd44211db905f9d2514d9a4098831bb68d17b82c5788a3183df0c80bb5054",
+    "public_description_sha256": "1b21e944b855ced2f36b295781717df7e83b2239d28e0662bd59710f7814acad"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-099.response.json",
+    "verification_response_sha256": "334cfebb0e8318b1588783e73c9befe9cfc2cd9c6a25fdcb58a87881b2ffe12e",
+    "decision": "accept"
+  },
+  "formal_index": 110
+}

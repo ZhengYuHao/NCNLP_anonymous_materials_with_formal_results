@@ -1,0 +1,470 @@
+{
+  "task_id": "N8F-001",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "bf0e6cb9d26bc81f49ac01847429d56fe627af4d2ab5a1c89d5f5bfb453d95a3",
+  "fixtures": [
+    {
+      "fixture_id": "F-REQ-NOTES",
+      "purpose": "正常用例：notes 模块请求，携带主题、难度、语言与格式四项输入",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "notes",
+          "topic": "Newton's Laws of Motion",
+          "difficulty": "intermediate",
+          "language": "English",
+          "format": "summary"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-YOUTUBE",
+      "purpose": "正常用例：youtube_search 模块请求，携带检索词与语言；上游 YouTube API 固定返回 12 条候选，验证最多返回 10 条",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "youtube_search",
+          "query": "python list comprehension",
+          "language": "en"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-QUIZ",
+      "purpose": "正常用例：quiz 模块请求，指定 5 道单选题",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "quiz",
+          "question_count": 5
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-ROADMAP",
+      "purpose": "正常用例：roadmap 模块请求，携带职业类别与岗位",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "roadmap",
+          "category": "technology",
+          "role": "data scientist"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-ASSIST-NEW",
+      "purpose": "正常用例：assistant 模块请求，使用一个在会话记忆中不存在的新会话 ID，验证新建会话并生成回复",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "assistant",
+          "session_id": "sess-new-901",
+          "message": "Explain backpropagation in one sentence"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-ASSIST-EXIST",
+      "purpose": "正常用例：assistant 模块请求，使用已存在会话 ID（会话记忆含先前关于微积分的上下文），验证复用会话并基于历史回复",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "module": "assistant",
+          "session_id": "sess-exist-001",
+          "message": "Now connect that to gradient descent"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-MISTRAL-NOTES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "generate_structured_notes",
+      "request_contract": {
+        "topic": "Newton's Laws of Motion",
+        "difficulty": "intermediate",
+        "language": "English",
+        "format": "summary"
+      },
+      "response_contract": {
+        "notes": [
+          {
+            "section": "First Law",
+            "content": "An object at rest stays at rest unless acted on by a net force.",
+            "formula": "F_net = 0"
+          },
+          {
+            "section": "Second Law",
+            "content": "Acceleration is proportional to net force and inversely proportional to mass.",
+            "formula": "F = ma"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-SEARCH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "youtube_search_list",
+      "request_contract": {
+        "url": "https://www.googleapis.com/youtube/v3/search",
+        "params": {
+          "q": "python list comprehension",
+          "relevanceLanguage": "en",
+          "maxResults": 10
+        }
+      },
+      "response_contract": {
+        "items": [
+          {
+            "id": {"videoId": "yt-001"},
+            "snippet": {"title": "Python List Comprehension Tutorial", "channelTitle": "TechEd"}
+          },
+          {
+            "id": {"videoId": "yt-002"},
+            "snippet": {"title": "List Comprehensions in 10 Minutes", "channelTitle": "CodeSchool"}
+          },
+          {
+            "id": {"videoId": "yt-003"},
+            "snippet": {"title": "Advanced Python: Comprehensions", "channelTitle": "PyGuru"}
+          },
+          {
+            "id": {"videoId": "yt-004"},
+            "snippet": {"title": "Python Tricks: List Comprehension", "channelTitle": "DevTips"}
+          },
+          {
+            "id": {"videoId": "yt-005"},
+            "snippet": {"title": "Comprehensions Explained", "channelTitle": "AlgoAcademy"}
+          },
+          {
+            "id": {"videoId": "yt-006"},
+            "snippet": {"title": "Python List Comprehension vs Loop", "channelTitle": "TechEd"}
+          },
+          {
+            "id": {"videoId": "yt-007"},
+            "snippet": {"title": "Nested List Comprehension", "channelTitle": "PyGuru"}
+          },
+          {
+            "id": {"videoId": "yt-008"},
+            "snippet": {"title": "List Comprehension with Conditions", "channelTitle": "CodeSchool"}
+          },
+          {
+            "id": {"videoId": "yt-009"},
+            "snippet": {"title": "Python Comprehensions for Beginners", "channelTitle": "DevTips"}
+          },
+          {
+            "id": {"videoId": "yt-010"},
+            "snippet": {"title": "Generator Expressions vs Comprehensions", "channelTitle": "AlgoAcademy"}
+          },
+          {
+            "id": {"videoId": "yt-011"},
+            "snippet": {"title": "List Comprehension Performance", "channelTitle": "PyGuru"}
+          },
+          {
+            "id": {"videoId": "yt-012"},
+            "snippet": {"title": "Comprehensions in Production", "channelTitle": "TechEd"}
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MISTRAL-QUIZ",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "generate_quiz_questions",
+      "request_contract": {
+        "question_count": 5
+      },
+      "response_contract": {
+        "questions": [
+          {
+            "question": "What is a list comprehension?",
+            "options": ["A", "B", "C", "D"],
+            "answer": "A",
+            "explanation": "It is a concise way to build lists."
+          },
+          {
+            "question": "Which keyword starts a comprehension?",
+            "options": ["for", "while", "def", "import"],
+            "answer": "for",
+            "explanation": "Comprehensions use for-clauses."
+          },
+          {
+            "question": "Can comprehensions contain conditions?",
+            "options": ["Yes", "No"],
+            "answer": "Yes",
+            "explanation": "An if-clause can filter items."
+          },
+          {
+            "question": "What does map() do?",
+            "options": ["Applies a function to each item", "Sorts a list", "Merges lists", "Deletes items"],
+            "answer": "Applies a function to each item",
+            "explanation": "map applies a function to every element."
+          },
+          {
+            "question": "What is the result of [x*2 for x in range(3)]?",
+            "options": ["[0, 2, 4]", "[1, 2, 3]", "[2, 4, 6]", "[]"],
+            "answer": "[0, 2, 4]",
+            "explanation": "Doubling each of 0, 1, 2 yields 0, 2, 4."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MISTRAL-ROADMAP",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "generate_roadmap",
+      "request_contract": {
+        "category": "technology",
+        "role": "data scientist"
+      },
+      "response_contract": {
+        "roadmap": {
+          "milestones": [
+            {"title": "Statistics Foundation", "weeks": 4},
+            {"title": "Machine Learning Core", "weeks": 8},
+            {"title": "Deployment", "weeks": 4}
+          ],
+          "resources": [
+            {"name": "Course A", "url": "https://mock/course-a"},
+            {"name": "Book B", "url": "https://mock/book-b"}
+          ],
+          "progress": {
+            "unit": "weeks",
+            "total_weeks": 16,
+            "current_phase": 1
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PG-MEMORY-NEW",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "operation": "get_history",
+      "request_contract": {
+        "session_id": "sess-new-901"
+      },
+      "response_contract": {
+        "messages": [],
+        "session_exists": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PG-MEMORY-EXIST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "operation": "get_history",
+      "request_contract": {
+        "session_id": "sess-exist-001"
+      },
+      "response_contract": {
+        "messages": [
+          {"role": "user", "content": "Please explain calculus"},
+          {"role": "assistant", "content": "Calculus studies change and accumulation; the derivative measures instantaneous change."}
+        ],
+        "session_exists": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MISTRAL-ASSISTANT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "generate_coaching_reply",
+      "request_contract": {
+        "session_id": "sess-exist-001",
+        "message": "Now connect that to gradient descent"
+      },
+      "response_contract": {
+        "message": "Building on the calculus discussion, gradient descent repeatedly uses derivatives to step downhill on a loss surface."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-NOTES-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-NOTES"],
+      "mock_ids": ["M-MISTRAL-NOTES"],
+      "assertions": [
+        {
+          "assertion_id": "A-NOTES-1",
+          "target": "response.body.notes",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求 notes 模块以 JSON 形式返回笔记内容，响应必须包含 notes 字段"
+        },
+        {
+          "assertion_id": "A-NOTES-2",
+          "target": "response.body.notes",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "固定模拟的模型输出包含 2 个章节，返回的笔记条目数必须与模型输出一致"
+        },
+        {
+          "assertion_id": "A-NOTES-3",
+          "target": "response.body.notes[0].section",
+          "operator": "equals",
+          "expected": "First Law",
+          "rationale": "返回内容必须忠实传递模型生成的章节标题，不得丢弃或改写"
+        }
+      ]
+    },
+    {
+      "case_id": "C-YOUTUBE-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-YOUTUBE"],
+      "mock_ids": ["M-YT-SEARCH"],
+      "assertions": [
+        {
+          "assertion_id": "A-YT-1",
+          "target": "response.body.videos",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求以 JSON 形式返回规整的视频列表，响应必须包含 videos 字段"
+        },
+        {
+          "assertion_id": "A-YT-2",
+          "target": "response.body.videos",
+          "operator": "length_equals",
+          "expected": 10,
+          "rationale": "上游固定返回 12 条候选，需求规定最多返回 10 个匹配视频，正确实现必须截断为 10 条"
+        },
+        {
+          "assertion_id": "A-YT-3",
+          "target": "response.body.videos[0].title",
+          "operator": "contains",
+          "expected": "Python",
+          "rationale": "视频列表必须保留上游返回的标题内容，首条应为检索相关视频"
+        }
+      ]
+    },
+    {
+      "case_id": "C-QUIZ-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-QUIZ"],
+      "mock_ids": ["M-MISTRAL-QUIZ"],
+      "assertions": [
+        {
+          "assertion_id": "A-QUIZ-1",
+          "target": "response.body.questions",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "需求规定生成的单选题数量与请求指定数量一致，请求 5 道则必须返回 5 道"
+        },
+        {
+          "assertion_id": "A-QUIZ-2",
+          "target": "response.body.questions[0].options",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每道题必须包含选项字段"
+        },
+        {
+          "assertion_id": "A-QUIZ-3",
+          "target": "response.body.questions[0].answer",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每道题必须包含答案字段"
+        },
+        {
+          "assertion_id": "A-QUIZ-4",
+          "target": "response.body.questions[0].explanation",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每道题必须包含解析字段"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROADMAP-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-ROADMAP"],
+      "mock_ids": ["M-MISTRAL-ROADMAP"],
+      "assertions": [
+        {
+          "assertion_id": "A-RM-1",
+          "target": "response.body.roadmap.milestones",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "路线图对象必须包含里程碑字段"
+        },
+        {
+          "assertion_id": "A-RM-2",
+          "target": "response.body.roadmap.resources",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "路线图对象必须包含学习资源字段"
+        },
+        {
+          "assertion_id": "A-RM-3",
+          "target": "response.body.roadmap.progress.total_weeks",
+          "operator": "equals",
+          "expected": 16,
+          "rationale": "进度安排必须忠实传递模型生成的总周数"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ASSIST-NEW-SESSION",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-ASSIST-NEW"],
+      "mock_ids": ["M-PG-MEMORY-NEW", "M-MISTRAL-ASSISTANT"],
+      "assertions": [
+        {
+          "assertion_id": "A-AN-1",
+          "target": "response.body.message",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "assistant 模块必须返回助手消息字段"
+        },
+        {
+          "assertion_id": "A-AN-2",
+          "target": "exec_log.memory.get_history.session_exists",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "新会话 ID 在会话记忆存储中不存在，正确实现应创建新会话而非复用"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ASSIST-EXIST-SESSION",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-ASSIST-EXIST"],
+      "mock_ids": ["M-PG-MEMORY-EXIST", "M-MISTRAL-ASSISTANT"],
+      "assertions": [
+        {
+          "assertion_id": "A-AE-1",
+          "target": "exec_log.memory.get_history.session_exists",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "已有会话 ID 必须被复用，先读取历史上下文再生成回复"
+        },
+        {
+          "assertion_id": "A-AE-2",
+          "target": "response.body.message",
+          "operator": "contains",
+          "expected": "derivative",
+          "rationale": "回复必须结合会话记忆中的历史上下文（先前讨论了微积分/导数），若未结合历史则说明记忆未接入"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 Webhook 五类分发：notes/youtube_search/quiz/roadmap 各一个正常用例，assistant 区分新建与复用会话两个正常用例，外加未知模块负例。外部依赖（Mistral、YouTube API、Postgres 会话记忆）全部采用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为可计算的字段存在性、数量相等、内容包含与调用次数检查。冻结需求的 failure_behavior 为空、未规定任何错误码与错误字段，故未知模块负例不断言具体状态码或错误字段，仅断言不进入五个已定义模块的任何输出形态且不触发外部服务调用。"
+}

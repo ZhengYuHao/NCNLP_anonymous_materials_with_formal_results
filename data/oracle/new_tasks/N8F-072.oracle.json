@@ -1,0 +1,214 @@
+{
+  "task_id": "N8F-072",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "f415c02058cb4cfcbc2caf2c2daf32c93fe47ba9a25927b50d31c2eb2edfc636",
+  "fixtures": [
+    {
+      "fixture_id": "F-URL-CHECK",
+      "purpose": "业务用户提交的待检测网址与目标 Telegram 会话",
+      "input_data": {
+        "url": "http://example.com/click?id=123",
+        "telegram_chat_id": "123456789"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-VT-SCAN",
+      "dependency_type": "httpRequest",
+      "operation": "virus_total_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "reputation": "malicious",
+        "malicious_votes": 8,
+        "clean_votes": 2,
+        "scan_metadata": {
+          "scan_date": "2026-09-02",
+          "engine_count": 20
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-URLSCAN-OK",
+      "dependency_type": "urlScanIo",
+      "operation": "urlscan_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "success": true,
+        "domains": [
+          "example.com",
+          "cdn.example.com"
+        ],
+        "requests": 12,
+        "resources": [
+          "script1.js",
+          "img1.png"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-URLSCAN-FAIL",
+      "dependency_type": "urlScanIo",
+      "operation": "urlscan_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "success": false,
+        "error": "blocked_by_robots"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM",
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "123456789"
+      },
+      "response_contract": {
+        "ok": true,
+        "message_id": 900
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-BOTH-OK",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-URL-CHECK"
+      ],
+      "mock_ids": [
+        "M-VT-SCAN",
+        "M-URLSCAN-OK",
+        "M-TELEGRAM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.summary.sources",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "两次检测均成功时汇总双方面发现"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.summary.sources",
+          "operator": "contains",
+          "expected": "VirusTotal",
+          "rationale": "汇总包含 VirusTotal 来源"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.summary.sources",
+          "operator": "contains",
+          "expected": "urlscan.io",
+          "rationale": "汇总包含 urlscan.io 来源"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.summary.text",
+          "operator": "contains",
+          "expected": "malicious",
+          "rationale": "汇总含 VirusTotal 信誉/标记"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.summary.text",
+          "operator": "contains",
+          "expected": "cdn.example.com",
+          "rationale": "汇总含 urlscan.io 行为细节（域名）"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.telegram.chat_id",
+          "operator": "equals",
+          "expected": "123456789",
+          "rationale": "汇总发送到指定 Telegram 会话"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.telegram.message_id",
+          "operator": "equals",
+          "expected": 900,
+          "rationale": "Telegram 消息发送成功"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-URLSCAN-FAIL",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-URL-CHECK"
+      ],
+      "mock_ids": [
+        "M-VT-SCAN",
+        "M-URLSCAN-FAIL",
+        "M-TELEGRAM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-URLSCAN-FAIL",
+          "target": "output.summary.sources",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "urlscan.io 失败时仅依据 VirusTotal"
+        },
+        {
+          "assertion_id": "A-2-NEG-URLSCAN-FAIL",
+          "target": "output.summary.sources",
+          "operator": "contains",
+          "expected": "VirusTotal",
+          "rationale": "汇总来源仅 VirusTotal"
+        },
+        {
+          "assertion_id": "A-3-NEG-URLSCAN-FAIL",
+          "target": "output.summary.text",
+          "operator": "contains",
+          "expected": "blocked/failed",
+          "rationale": "汇总明确标注 urlscan.io 检测被阻断/失败"
+        },
+        {
+          "assertion_id": "A-4-NEG-URLSCAN-FAIL",
+          "target": "output.summary.text",
+          "operator": "contains",
+          "expected": "VirusTotal",
+          "rationale": "明确说明结论仅依据 VirusTotal"
+        },
+        {
+          "assertion_id": "A-5-NEG-URLSCAN-FAIL",
+          "target": "output.summary.urlscan_data",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "urlscan 失败数据不被编入汇总"
+        },
+        {
+          "assertion_id": "A-6-NEG-URLSCAN-FAIL",
+          "target": "output.telegram.message_id",
+          "operator": "equals",
+          "expected": 900,
+          "rationale": "urlscan 失败时仍向用户发送完整报告"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；VirusTotal/urlscan.io/Telegram 均固定模拟，无真实副作用；urlscan 成功/失败两条分支分别以固定响应覆盖；输出按 output.* JSON 路径表达。"
+}

@@ -1,0 +1,148 @@
+{
+  "pilot_id": "N8C-009",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "ad23729667221cf032ce1bf020aa57a64e8a7d764167ef2975d2c8309974156d",
+  "fixtures": [
+    {
+      "fixture_id": "F-GMAIL-EMAILS-MULTI",
+      "purpose": "多封邮件：一封含 2 个附件、一封含 1 个附件、一封无附件（应跳过）",
+      "input_data": {
+        "query": "invoice OR bill OR receipt",
+        "emails": [
+          {"message_id": "msg-1", "subject": "Invoice INV-2026-100", "attachment_count": 2, "attachments": ["att-1", "att-2"]},
+          {"message_id": "msg-2", "subject": "Receipt RCP-2026-200", "attachment_count": 1, "attachments": ["att-3"]},
+          {"message_id": "msg-3", "subject": "No attachment note", "attachment_count": 0, "attachments": []}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-GMAIL-EMAILS-SINGLE",
+      "purpose": "单封邮件单个附件的边界",
+      "input_data": {
+        "query": "invoice OR bill OR receipt",
+        "emails": [
+          {"message_id": "msg-1", "subject": "Invoice INV-2026-100", "attachment_count": 1, "attachments": ["att-1"]}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-INVOICE-TEXTS",
+      "purpose": "各附件的 PDF 文本内容（含千分位金额，用于数值转换边界）",
+      "input_data": {
+        "pdf_texts": {
+          "att-1": "INVOICE INV-2026-100 VENDOR: Northwind Supplies TOTAL: 1234.56 TAX: 99.00 DATE: 2026-08-20",
+          "att-2": "BILL BIL-2026-300 VENDOR: City Power TOTAL: 456.78 TAX: 36.54 DATE: 2026-08-21",
+          "att-3": "RECEIPT RCP-2026-200 VENDOR: Office Mart TOTAL: 1,234.56 TAX: 99.00 DATE: 2026-08-22"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GMAIL-SEARCH",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "search_messages",
+      "request_contract": {"query": "invoice OR bill OR receipt", "has_attachment": true},
+      "response_contract": {"message_ids": ["msg-1", "msg-2", "msg-3"], "searched": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-GET",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "get_message_and_split_attachments",
+      "request_contract": {"message_id": "msg-1|msg-2|msg-3"},
+      "response_contract": {
+        "messages": {
+          "msg-1": {"message_id": "msg-1", "attachments": ["att-1", "att-2"]},
+          "msg-2": {"message_id": "msg-2", "attachments": ["att-3"]},
+          "msg-3": {"message_id": "msg-3", "attachments": []}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PDF-EXTRACT",
+      "dependency_type": "pdf_text_extraction",
+      "operation": "extract_pdf_text",
+      "request_contract": {"attachment_id": "att-1|att-2|att-3"},
+      "response_contract": {
+        "texts": {
+          "att-1": "INVOICE INV-2026-100 VENDOR: Northwind Supplies TOTAL: 1234.56 TAX: 99.00 DATE: 2026-08-20",
+          "att-2": "BILL BIL-2026-300 VENDOR: City Power TOTAL: 456.78 TAX: 36.54 DATE: 2026-08-21",
+          "att-3": "RECEIPT RCP-2026-200 VENDOR: Office Mart TOTAL: 1,234.56 TAX: 99.00 DATE: 2026-08-22"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-INVOICE",
+      "dependency_type": "language_model",
+      "operation": "extract_invoice_json",
+      "request_contract": {"pdf_text": "extracted PDF text"},
+      "response_contract": {
+        "invoices": {
+          "att-1": {"invoice_number": "INV-2026-100", "date": "2026-08-20", "vendor": "Northwind Supplies", "total": "1234.56", "tax": "99.00"},
+          "att-2": {"invoice_number": "BIL-2026-300", "date": "2026-08-21", "vendor": "City Power", "total": "456.78", "tax": "36.54"},
+          "att-3": {"invoice_number": "RCP-2026-200", "date": "2026-08-22", "vendor": "Office Mart", "total": "1,234.56", "tax": "99.00"}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_invoice_record",
+      "request_contract": {"sheet": "Invoices", "match_column": "invoice_number", "record": "normalized invoice record"},
+      "response_contract": {"appended": true, "row_number": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-SPLIT-AND-APPEND",
+      "kind": "positive",
+      "fixture_ids": ["F-GMAIL-EMAILS-MULTI", "F-INVOICE-TEXTS"],
+      "mock_ids": ["M-GMAIL-SEARCH", "M-GMAIL-GET", "M-PDF-EXTRACT", "M-LLM-INVOICE", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-SEARCH-QUERY", "target": "mock.M-GMAIL-SEARCH.requests[0].query", "operator": "equals", "expected": "invoice OR bill OR receipt", "rationale": "需求声明按查询词 'invoice OR bill OR receipt' 搜索 Gmail"},
+        {"assertion_id": "A-SPLIT-PER-ATTACHMENT", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明每封邮件拆分、每个附件单独处理；fixture 共 3 个附件"},
+        {"assertion_id": "A-SKIP-NO-ATTACHMENT", "target": "mock.M-GSHEETS-APPEND.requests", "operator": "length_equals", "expected": 3, "rationale": "需求声明跳过无附件邮件（msg-3 不产生追加，故仅 3 条而非 4 条）"},
+        {"assertion_id": "A-INVOICE-NUMBER", "target": "mock.M-GSHEETS-APPEND.requests[0].record.invoice_number", "operator": "equals", "expected": "INV-2026-100", "rationale": "需求声明规范化记录含 invoice_number（取值来自确定性 mock）"},
+        {"assertion_id": "A-MATCH-COLUMN", "target": "mock.M-GSHEETS-APPEND.requests[0].match_column", "operator": "equals", "expected": "invoice_number", "rationale": "需求条件声明以 invoice_number 作为匹配列"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-NUMERIC-CONVERSION",
+      "kind": "boundary",
+      "fixture_ids": ["F-GMAIL-EMAILS-MULTI", "F-INVOICE-TEXTS"],
+      "mock_ids": ["M-GMAIL-SEARCH", "M-GMAIL-GET", "M-PDF-EXTRACT", "M-LLM-INVOICE", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-TOTAL-CONVERTED", "target": "mock.M-GSHEETS-APPEND.requests[2].record.total", "operator": "equals", "expected": 1234.56, "rationale": "需求声明转换数值；千分位字符串 1,234.56 转为数值 1234.56（total 字段名出自需求 schema 示例'for example ... totals'）"},
+        {"assertion_id": "A-TAX-CONVERTED", "target": "mock.M-GSHEETS-APPEND.requests[2].record.tax", "operator": "equals", "expected": 99.0, "rationale": "税值 99.00 转为数值（tax 字段名出自需求 schema 示例）"},
+        {"assertion_id": "A-PLAIN-TOTAL", "target": "mock.M-GSHEETS-APPEND.requests[0].record.total", "operator": "equals", "expected": 1234.56, "rationale": "无格式数字同样规范化为数值"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-SINGLE",
+      "kind": "boundary",
+      "fixture_ids": ["F-GMAIL-EMAILS-SINGLE", "F-INVOICE-TEXTS"],
+      "mock_ids": ["M-GMAIL-SEARCH", "M-GMAIL-GET", "M-PDF-EXTRACT", "M-LLM-INVOICE", "M-GSHEETS-APPEND"],
+      "assertions": [
+        {"assertion_id": "A-SINGLE-APPEND", "target": "mock.M-GSHEETS-APPEND.call_count", "operator": "equals", "expected": 1, "rationale": "单封邮件单个附件追加 1 条"},
+        {"assertion_id": "A-SINGLE-VENDOR", "target": "mock.M-GSHEETS-APPEND.requests[0].record.vendor", "operator": "equals", "expected": "Northwind Supplies", "rationale": "记录包含供应商信息（vendor 字段名出自需求 schema 示例'vendor details'）"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：全部断言。A-SEARCH-QUERY（需求查询词）、A-SPLIT-PER-ATTACHMENT/A-SKIP-NO-ATTACHMENT（需求'按附件拆分/跳过无附件'）、A-MATCH-COLUMN（需求条件 invoice_number 匹配列）、A-*-CONVERTED（需求'转换数值'；字段 total/tax/vendor/invoice_number 出自需求 schema 示例原文）。\n- 修改：无。\n- 删除：无。"
+}

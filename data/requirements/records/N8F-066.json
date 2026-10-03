@@ -1,0 +1,65 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-066",
+  "source_id": "n8n:14331",
+  "workflow_sha256": "fe2d8aa9ede7e0d6b1f8fd2abfcff08590d80c9f5504f62a3cac7648ca717949",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "9700975ffd6055cbc932eae0bc015bbeb9640ffa5b392ee39ba7a6a63ab963a4",
+  "requirement": {
+    "requirement_text": "当一通语音通话结束时，语音呼叫平台向系统发送通话分析回调。系统解析该通话的转写文本、通话时长与元数据，并将这些内容交给语言模型进行分析。语言模型返回结构化的分析结果，包括情绪倾向、线索评分（1–10 分）、关键话题、购买信号、客户异议、待办事项以及推荐的下一步动作。这些补充后的数据被同步到 HubSpot，用于更新对应的联系人记录。若线索评分达到设定阈值，系统会在 Slack 中向销售团队发出提醒，并在 HubSpot 中创建一条优先跟进任务。每一次通话都会被记录到 Google Sheets 中用于追踪。",
+    "source_spans": [
+      {
+        "start": 283,
+        "end": 623,
+        "text": "When a Retell AI voice call ends, the platform sends a call_analyzed webhook to this workflow. It parses the transcript, call duration, and metadata, then sends everything to OpenAI for analysis. The AI returns structured data: sentiment, lead score (1-10), key topics, buying signals, objections, action items, and a recommended next step."
+      },
+      {
+        "start": 625,
+        "end": 880,
+        "text": "The enriched data is synced to HubSpot, updating the contact record. If the lead score meets your threshold, the workflow alerts your sales team on Slack and creates a priority follow-up task in HubSpot. Every call is logged to Google Sheets for tracking."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "语音呼叫平台在通话结束时发送的通话分析回调，包含通话转写文本、通话时长与元数据"
+      ],
+      "conditions": [
+        "线索评分达到设定阈值时触发 Slack 提醒与优先跟进任务"
+      ],
+      "allowed_actions": [
+        "解析通话转写文本、通话时长与元数据",
+        "交由语言模型产出结构化分析结果（情绪倾向、线索评分、关键话题、购买信号、客户异议、待办事项、推荐下一步）",
+        "将补充后的数据同步到 HubSpot 并更新联系人记录",
+        "在 Slack 向销售团队发出提醒",
+        "在 HubSpot 创建优先跟进任务",
+        "将每一次通话记录写入 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "HubSpot 中对应联系人记录被更新",
+        "评分达标时 Slack 收到销售提醒且 HubSpot 生成一条优先跟进任务",
+        "Google Sheets 中新增一条通话记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-066.packet.json",
+    "packet_sha256": "c769061f92733f2daabc2a6062d0df83e3c8650290846609ea1d07d492d0a29f",
+    "public_description_sha256": "6f16cadb1cc869ffbe6dc3e29e5b546b11b6d20e07482440a055d6cada656cfa"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-066.response.json",
+    "verification_response_sha256": "84890b50f9a69b93069b820e2024134bdfb6542054adb11f1554857b8e50aeb3",
+    "decision": "accept"
+  },
+  "formal_index": 77
+}

@@ -1,0 +1,543 @@
+{
+  "task_id": "N8F-020",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "70c8914053352c45808e664db3347279263e40d8380563559787145176569f77",
+  "fixtures": [
+    {
+      "fixture_id": "F-manual",
+      "purpose": "手动触发生成当日内容，固定当日日期 2026-09-02",
+      "input_data": {
+        "trigger": "manual",
+        "today": "2026-09-02"
+      }
+    },
+    {
+      "fixture_id": "F-db-existing",
+      "purpose": "已存在的电子表格状态：Topics 含一条状态为“新”的选题，Published 含已发布标题用于去重",
+      "input_data": {
+        "db_exists": true,
+        "spreadsheet_id": "spread_001",
+        "sheets": {
+          "Topics": [
+            {
+              "id": "T1",
+              "title": "Тема про космос",
+              "status": "新"
+            },
+            {
+              "id": "T2",
+              "title": "已发布选题一",
+              "status": "就绪"
+            }
+          ],
+          "Published": [
+            {
+              "title": "已发布选题一",
+              "doc_url": "https://docs.google.com/document/d/doc_000"
+            }
+          ],
+          "Images": [],
+          "State": []
+        }
+      }
+    },
+    {
+      "fixture_id": "F-wikipedia",
+      "purpose": "维基百科 API 返回的固定随机女性主题分类",
+      "input_data": {
+        "category": "Category:Women_in_computer_science",
+        "members": [
+          "Ada Lovelace",
+          "Grace Hopper",
+          "Radia Perlman"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-llm-topics-out",
+      "purpose": "语言模型生成的俄文选题：3 条中 1 条（已发布选题一）与已发布标题重复，应被过滤",
+      "input_data": {
+        "topics": [
+          "Тема про космос",
+          "Тема про искусство",
+          "已发布选题一"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-llm-scenes-one",
+      "purpose": "文章仅含 1 个配图场景，用于验证配图数量上限（最多 2 幅）",
+      "input_data": {
+        "scenes": [
+          {
+            "scene": "космос",
+            "prompt_en": "Astronaut floating in space"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-drive-search",
+      "dependency_type": "google_drive",
+      "operation": "search_file",
+      "request_contract": {
+        "query": "Zen_Content_DB"
+      },
+      "response_contract": {
+        "found": true,
+        "file_id": "spread_001",
+        "kind": "spreadsheet"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-read-topics",
+      "dependency_type": "google_sheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "sheet": "Topics"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "id": "T1",
+            "title": "Тема про космос",
+            "status": "新"
+          },
+          {
+            "id": "T2",
+            "title": "已发布选题一",
+            "status": "就绪"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-read-published",
+      "dependency_type": "google_sheets",
+      "operation": "read_titles",
+      "request_contract": {
+        "sheet": "Published"
+      },
+      "response_contract": {
+        "titles": [
+          "已发布选题一"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-wikipedia",
+      "dependency_type": "wikipedia",
+      "operation": "query_random_category",
+      "request_contract": {
+        "topic": "women"
+      },
+      "response_contract": {
+        "category": "Category:Women_in_computer_science",
+        "members": [
+          "Ada Lovelace",
+          "Grace Hopper",
+          "Radia Perlman"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-topics",
+      "dependency_type": "llm",
+      "operation": "generate_russian_topics",
+      "request_contract": {
+        "category": "Category:Women_in_computer_science"
+      },
+      "response_contract": {
+        "topics": [
+          "Тема про космос",
+          "Тема про искусство",
+          "已发布选题一"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-draft",
+      "dependency_type": "llm",
+      "operation": "draft_article",
+      "request_contract": {
+        "topic": "Тема про космос"
+      },
+      "response_contract": {
+        "article_ru": "Статья о космосе и женщинах-учёных в истории науки."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "article_ru": "Статья о космосе и женщинах-учёных в истории науки."
+      },
+      "response_contract": {
+        "final_ru": "Окончательная версия статьи о космосе и женщинах-учёных."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-create-folder",
+      "dependency_type": "google_drive",
+      "operation": "create_folder",
+      "request_contract": {
+        "name": "article_Тема_про_космос"
+      },
+      "response_contract": {
+        "folder_id": "folder_art_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-create-doc",
+      "dependency_type": "google_docs",
+      "operation": "create_document",
+      "request_contract": {
+        "folder_id": "folder_art_001"
+      },
+      "response_contract": {
+        "doc_id": "doc_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-write-doc",
+      "dependency_type": "google_docs",
+      "operation": "write_document_text",
+      "request_contract": {
+        "doc_id": "doc_001"
+      },
+      "response_contract": {
+        "ok": true,
+        "char_count": 45
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-share",
+      "dependency_type": "google_drive",
+      "operation": "share_public",
+      "request_contract": {
+        "file_id": "doc_001"
+      },
+      "response_contract": {
+        "link": "https://docs.google.com/document/d/doc_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-scenes",
+      "dependency_type": "llm",
+      "operation": "extract_scenes",
+      "request_contract": {
+        "article_ru": "Окончательная версия статьи о космосе и женщинах-учёных."
+      },
+      "response_contract": {
+        "scenes": [
+          {
+            "scene": "космос",
+            "prompt_en": "Astronaut floating in space"
+          },
+          {
+            "scene": "искусство",
+            "prompt_en": "Gallery of modern art"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-scenes-one",
+      "dependency_type": "llm",
+      "operation": "extract_scenes",
+      "request_contract": {
+        "article_ru": "Окончательная версия статьи о космосе и женщинах-учёных. (single scene)"
+      },
+      "response_contract": {
+        "scenes": [
+          {
+            "scene": "космос",
+            "prompt_en": "Astronaut floating in space"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-image-gen",
+      "dependency_type": "image_generation",
+      "operation": "generate_image",
+      "request_contract": {
+        "prompt_en": ""
+      },
+      "response_contract": {
+        "image_url": "https://img.example/zen_1.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-upload-image",
+      "dependency_type": "google_drive",
+      "operation": "upload_image",
+      "request_contract": {
+        "folder_id": "folder_art_001"
+      },
+      "response_contract": {
+        "file_id": "img_001",
+        "link": "https://drive.google.com/file/d/img_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-topics",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "Topics"
+      },
+      "response_contract": {
+        "appended": 2,
+        "first_row": 5
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-images",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "Images"
+      },
+      "response_contract": {
+        "appended": 2,
+        "first_row": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-published",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "Published"
+      },
+      "response_contract": {
+        "appended": 1,
+        "first_row": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-update-topic",
+      "dependency_type": "google_sheets",
+      "operation": "update_row",
+      "request_contract": {
+        "sheet": "Topics",
+        "row_id": "T1"
+      },
+      "response_contract": {
+        "updated": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-manual",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-manual",
+        "F-db-existing",
+        "F-wikipedia",
+        "F-llm-topics-out"
+      ],
+      "mock_ids": [
+        "M-drive-search",
+        "M-sheets-read-topics",
+        "M-sheets-read-published",
+        "M-wikipedia",
+        "M-llm-topics",
+        "M-llm-draft",
+        "M-llm-rewrite",
+        "M-drive-create-folder",
+        "M-drive-create-doc",
+        "M-drive-write-doc",
+        "M-drive-share",
+        "M-llm-scenes",
+        "M-image-gen",
+        "M-drive-upload-image",
+        "M-sheets-append-topics",
+        "M-sheets-append-images",
+        "M-sheets-append-published",
+        "M-sheets-update-topic"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.article.doc_link",
+          "operator": "exists",
+          "rationale": "须为文章创建 Google 文档并生成共享链接",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.article.doc_link",
+          "operator": "contains",
+          "expected": "doc_001",
+          "rationale": "共享链接应指向固定模拟返回的文档 doc_001"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.images",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每篇文章最多生成两幅配图，固定模拟返回 2 个场景对应 2 幅图"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.images[].link",
+          "operator": "exists",
+          "rationale": "每幅配图须上传到 Google Drive 并通过链接共享",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets.images_appended",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "图片元数据须记录到 Images 工作表，共 2 条"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sheets.published_appended",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "文章条目须追加到 Published 工作表，共 1 条"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.topic.status",
+          "operator": "equals",
+          "expected": "就绪",
+          "rationale": "选题行状态须更新为“就绪”"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.topic.doc_link",
+          "operator": "contains",
+          "expected": "doc_001",
+          "rationale": "选题行须附带 Google 文档链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-dedup",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-manual",
+        "F-db-existing",
+        "F-wikipedia",
+        "F-llm-topics-out"
+      ],
+      "mock_ids": [
+        "M-drive-search",
+        "M-sheets-read-topics",
+        "M-sheets-read-published",
+        "M-wikipedia",
+        "M-llm-topics",
+        "M-sheets-append-topics"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-dedup",
+          "target": "output.topics_appended",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "生成 3 条选题中 1 条与已发布/已排队标题重复，过滤后应只追加 2 条"
+        },
+        {
+          "assertion_id": "A-2-bnd-dedup",
+          "target": "output.topics_appended[0].title",
+          "operator": "equals",
+          "expected": "Тема про космос",
+          "rationale": "过滤后追加的第 1 条选题应为生成顺序中的第 1 条非重复选题"
+        },
+        {
+          "assertion_id": "A-3-bnd-dedup",
+          "target": "output.topics_appended[1].title",
+          "operator": "equals",
+          "expected": "Тема про искусство",
+          "rationale": "第 2 条应为第 2 条非重复选题；结合 A-1（总数 2）与两条位置断言，追加集合被唯一确定为 {Тема про космос, Тема про искусство}，从而验证重复选题（已发布选题一）未被写入 Topics 工作表"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-image-cap",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-manual",
+        "F-db-existing",
+        "F-llm-scenes-one"
+      ],
+      "mock_ids": [
+        "M-drive-search",
+        "M-sheets-read-topics",
+        "M-llm-draft",
+        "M-llm-rewrite",
+        "M-drive-create-folder",
+        "M-drive-create-doc",
+        "M-drive-write-doc",
+        "M-drive-share",
+        "M-llm-scenes-one",
+        "M-image-gen",
+        "M-drive-upload-image",
+        "M-sheets-append-images"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-image-cap",
+          "target": "output.images",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "文章仅抽取 1 个配图场景时只生成 1 幅图，满足“最多两幅”的上限约束"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "状态值按冻结需求中文文本使用“新”/“就绪”；仅对状态为“新”的选题生成内容。触发方式（手动 vs 每周一 09:00 计划）仅影响是否刷新选题队列，本响应以手动触发主流程，计划触发的周期间隔 7 天可另行断言 schedule 配置。"
+}

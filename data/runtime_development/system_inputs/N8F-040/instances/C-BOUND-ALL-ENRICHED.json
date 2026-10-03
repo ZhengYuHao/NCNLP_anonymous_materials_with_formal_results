@@ -1,0 +1,16 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-040",
+  "case_id": "C-BOUND-ALL-ENRICHED",
+  "kind": "boundary",
+  "input_data": {
+    "rows": [
+      {
+        "company_name": "Globex Ltd",
+        "website": "https://globex.example.io",
+        "enriched": "Yes"
+      }
+    ]
+  },
+  "input_sha256": "51F570B16351490F020CDA4F72E95AD6FD93F2801E0B40C9C830B5D52EB22062"
+}

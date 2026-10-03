@@ -1,0 +1,603 @@
+{
+  "task_id": "N8F-018",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "55dde59b84d452dbb29c4831be7016f4283ea5931f5082d900a146a89a33bc07",
+  "fixtures": [
+    {
+      "fixture_id": "F-NEWS-PAYLOAD",
+      "purpose": "新闻数据源固定返回的8篇文章，覆盖排除源、缺图、主题重复、已发布、Yahoo 同意页、图片防盗链等情形",
+      "input_data": {
+        "articles": [
+          {
+            "title": "AI Startup Raises $50M Series B",
+            "source": {
+              "name": "TechCrunch"
+            },
+            "url": "https://techcrunch.com/ai-startup-raises-50m",
+            "urlToImage": "https://img.example.com/a1.jpg",
+            "description": "The company will use the funds to expand its platform.",
+            "publishedAt": "2026-09-02T06:00:00Z",
+            "domain": "techcrunch.com"
+          },
+          {
+            "title": "AI Startup Raises $50M Series B",
+            "source": {
+              "name": "The Verge"
+            },
+            "url": "https://theverge.com/ai-startup-50m",
+            "urlToImage": "https://img.example.com/a2.jpg",
+            "description": "Duplicate of the TechCrunch story.",
+            "publishedAt": "2026-09-02T05:30:00Z",
+            "domain": "theverge.com"
+          },
+          {
+            "title": "Markets rally on new Fed guidance",
+            "source": {
+              "name": "Biztoc"
+            },
+            "url": "https://biztoc.com/x/markets",
+            "urlToImage": "https://img.example.com/a3.jpg",
+            "description": "Aggregated content.",
+            "publishedAt": "2026-09-02T04:00:00Z",
+            "domain": "biztoc.com"
+          },
+          {
+            "title": "Startup launches free tier",
+            "source": {
+              "name": "Some Blog"
+            },
+            "url": "https://someblog.example.com/free-tier",
+            "urlToImage": null,
+            "description": "No image available.",
+            "publishedAt": "2026-09-02T03:00:00Z",
+            "domain": "someblog.example.com"
+          },
+          {
+            "title": "Quantum chip breakthrough",
+            "source": {
+              "name": "Quantum Daily"
+            },
+            "url": "https://quantumdaily.example.com/qchip",
+            "urlToImage": "https://img.example.com/a5.jpg",
+            "description": null,
+            "publishedAt": "2026-09-02T02:00:00Z",
+            "domain": "quantumdaily.example.com"
+          },
+          {
+            "title": "Yahoo consent redirect",
+            "source": {
+              "name": "Yahoo"
+            },
+            "url": "https://consent.yahoo.com/collectConsent",
+            "urlToImage": "https://img.example.com/a6.jpg",
+            "description": "Consent page.",
+            "publishedAt": "2026-09-02T01:00:00Z",
+            "domain": "consent.yahoo.com"
+          },
+          {
+            "title": "Already posted article",
+            "source": {
+              "name": "Old News"
+            },
+            "url": "https://oldnews.example.com/posted",
+            "urlToImage": "https://img.example.com/a7.jpg",
+            "description": "Was posted before.",
+            "publishedAt": "2026-09-01T23:00:00Z",
+            "domain": "oldnews.example.com"
+          },
+          {
+            "title": "Image blocked article",
+            "source": {
+              "name": "Blocked Site"
+            },
+            "url": "https://blocked.example.com/img-blocked",
+            "urlToImage": "https://img.example.com/blocked.jpg",
+            "description": "Hotlinking blocked.",
+            "publishedAt": "2026-09-01T22:00:00Z",
+            "domain": "blocked.example.com"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-POSTED-TITLES",
+      "purpose": "已发布标题记录，用于标题去重",
+      "input_data": {
+        "titles": [
+          "Already posted article"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-NEWS-MAX10",
+      "purpose": "12 篇全部有效且不重复的文章，验证最多取 10 条的上限",
+      "input_data": {
+        "articles": [
+          {
+            "title": "News article 01",
+            "source": {
+              "name": "Src 01"
+            },
+            "url": "https://news01.example.com/1",
+            "urlToImage": "https://img.example.com/n01.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T11:00:00Z",
+            "domain": "news01.example.com"
+          },
+          {
+            "title": "News article 02",
+            "source": {
+              "name": "Src 02"
+            },
+            "url": "https://news02.example.com/2",
+            "urlToImage": "https://img.example.com/n02.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T10:00:00Z",
+            "domain": "news02.example.com"
+          },
+          {
+            "title": "News article 03",
+            "source": {
+              "name": "Src 03"
+            },
+            "url": "https://news03.example.com/3",
+            "urlToImage": "https://img.example.com/n03.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T09:00:00Z",
+            "domain": "news03.example.com"
+          },
+          {
+            "title": "News article 04",
+            "source": {
+              "name": "Src 04"
+            },
+            "url": "https://news04.example.com/4",
+            "urlToImage": "https://img.example.com/n04.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T08:00:00Z",
+            "domain": "news04.example.com"
+          },
+          {
+            "title": "News article 05",
+            "source": {
+              "name": "Src 05"
+            },
+            "url": "https://news05.example.com/5",
+            "urlToImage": "https://img.example.com/n05.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T07:00:00Z",
+            "domain": "news05.example.com"
+          },
+          {
+            "title": "News article 06",
+            "source": {
+              "name": "Src 06"
+            },
+            "url": "https://news06.example.com/6",
+            "urlToImage": "https://img.example.com/n06.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T06:00:00Z",
+            "domain": "news06.example.com"
+          },
+          {
+            "title": "News article 07",
+            "source": {
+              "name": "Src 07"
+            },
+            "url": "https://news07.example.com/7",
+            "urlToImage": "https://img.example.com/n07.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T05:00:00Z",
+            "domain": "news07.example.com"
+          },
+          {
+            "title": "News article 08",
+            "source": {
+              "name": "Src 08"
+            },
+            "url": "https://news08.example.com/8",
+            "urlToImage": "https://img.example.com/n08.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T04:00:00Z",
+            "domain": "news08.example.com"
+          },
+          {
+            "title": "News article 09",
+            "source": {
+              "name": "Src 09"
+            },
+            "url": "https://news09.example.com/9",
+            "urlToImage": "https://img.example.com/n09.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T03:00:00Z",
+            "domain": "news09.example.com"
+          },
+          {
+            "title": "News article 10",
+            "source": {
+              "name": "Src 10"
+            },
+            "url": "https://news10.example.com/10",
+            "urlToImage": "https://img.example.com/n10.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T02:00:00Z",
+            "domain": "news10.example.com"
+          },
+          {
+            "title": "News article 11",
+            "source": {
+              "name": "Src 11"
+            },
+            "url": "https://news11.example.com/11",
+            "urlToImage": "https://img.example.com/n11.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T01:00:00Z",
+            "domain": "news11.example.com"
+          },
+          {
+            "title": "News article 12",
+            "source": {
+              "name": "Src 12"
+            },
+            "url": "https://news12.example.com/12",
+            "urlToImage": "https://img.example.com/n12.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-01T23:00:00Z",
+            "domain": "news12.example.com"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-NEWS-ALL-FILTERED",
+      "purpose": "全部被排除/跳过的文章，验证无任何发布",
+      "input_data": {
+        "articles": [
+          {
+            "title": "Aggregator story",
+            "source": {
+              "name": "Techmeme"
+            },
+            "url": "https://techmeme.com/x",
+            "urlToImage": "https://img.example.com/f1.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T06:00:00Z",
+            "domain": "techmeme.com"
+          },
+          {
+            "title": "No image story",
+            "source": {
+              "name": "Plain Site"
+            },
+            "url": "https://plain.example.com/x",
+            "urlToImage": null,
+            "description": "d",
+            "publishedAt": "2026-09-02T05:00:00Z",
+            "domain": "plain.example.com"
+          },
+          {
+            "title": "Yahoo consent",
+            "source": {
+              "name": "Yahoo"
+            },
+            "url": "https://consent.yahoo.com/c",
+            "urlToImage": "https://img.example.com/f3.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T04:00:00Z",
+            "domain": "consent.yahoo.com"
+          },
+          {
+            "title": "Posted before",
+            "source": {
+              "name": "Old"
+            },
+            "url": "https://old.example.com/p",
+            "urlToImage": "https://img.example.com/f4.jpg",
+            "description": "d",
+            "publishedAt": "2026-09-02T03:00:00Z",
+            "domain": "old.example.com"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-FIRESTORE-GET",
+      "dependency_type": "googleFirebaseCloudFirestore",
+      "operation": "get_document",
+      "request_contract": {
+        "document": "asma/x20"
+      },
+      "response_contract": {
+        "titles": [
+          "Already posted article"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NEWSAPI",
+      "dependency_type": "httpRequest",
+      "operation": "get_recent_news",
+      "request_contract": {
+        "window_hours": "24-48",
+        "search_in": "title",
+        "sort_by": "publishedAt"
+      },
+      "response_contract": {
+        "articles": "see fixture F-NEWS-PAYLOAD"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-RICH",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_post_with_description",
+      "request_contract": {
+        "input_has_description": true,
+        "style": "casual_english_no_emoji_no_markdown_no_link",
+        "hashtags": "2-3"
+      },
+      "response_contract": {
+        "text": "Exciting news: AI startup just raised $50M to expand its platform. #AI #Startup"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SHORT",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_post_without_description",
+      "request_contract": {
+        "input_has_description": false,
+        "style": "short_casual_english_no_emoji_no_markdown_no_link",
+        "hashtags": "2-3"
+      },
+      "response_contract": {
+        "text": "Quantum chip breakthrough. Big moment. #Tech #Quantum"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IMG-DL-OK",
+      "dependency_type": "httpRequest",
+      "operation": "download_image",
+      "request_contract": {
+        "url_must_have_image": true
+      },
+      "response_contract": {
+        "status": "ok",
+        "content_type": "image/jpeg",
+        "size_bytes": 20480
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IMG-DL-FAIL",
+      "dependency_type": "httpRequest",
+      "operation": "download_image",
+      "request_contract": {
+        "url": "https://img.example.com/blocked.jpg"
+      },
+      "response_contract": {
+        "status": "error",
+        "status_code": 403
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINKEDIN",
+      "dependency_type": "linkedIn",
+      "operation": "create_post",
+      "request_contract": {
+        "post_must_have_text": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "post_id": "LI-1001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FIRESTORE-WRITE",
+      "dependency_type": "googleFirebaseCloudFirestore",
+      "operation": "set_document",
+      "request_contract": {
+        "document": "asma/x20",
+        "value_is_posted_title": true
+      },
+      "response_contract": {
+        "status": "written"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FILTER-DEDUP",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-NEWS-PAYLOAD",
+        "F-POSTED-TITLES"
+      ],
+      "mock_ids": [
+        "M-FIRESTORE-GET",
+        "M-NEWSAPI",
+        "M-LLM-RICH",
+        "M-LLM-SHORT",
+        "M-IMG-DL-OK",
+        "M-IMG-DL-FAIL",
+        "M-LINKEDIN",
+        "M-FIRESTORE-WRITE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.posts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "仅 3 篇通过：TechCrunch 代表篇、无摘要的量子篇、图片防盗链回退篇；Biztoc 排除、缺图跳过、主题重复去重、Yahoo 跳过、已发布跳过"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.posts[0].title",
+          "operator": "contains",
+          "expected": "AI Startup Raises $50M",
+          "rationale": "按发布时间排序，最新文章排首位"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.posts[0].with_media",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "图片下载成功时带图发布"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.posts[2].with_media",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "图片下载失败（403）时改为纯文本发布"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.posts[0].text",
+          "operator": "contains",
+          "expected": "#Startup",
+          "rationale": "有摘要的文案为更丰富的变体且含话题标签"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.posts[0].text",
+          "operator": "matches",
+          "expected": "^(?!.*https?).*$",
+          "rationale": "文案不得包含链接"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.posts[1].text",
+          "operator": "equals",
+          "expected": "Quantum chip breakthrough. Big moment. #Tech #Quantum",
+          "rationale": "无摘要时使用简短文案变体，内容固定"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.posts[*].text",
+          "operator": "matches",
+          "expected": "^([^#]*#[^#]*){2,3}$",
+          "rationale": "每条文案恰含 2-3 个话题标签（以#计）"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.published_titles",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "发布成功后每篇文章标题写入已发布记录"
+        },
+        {
+          "assertion_id": "A-POS-10",
+          "target": "output.published_titles",
+          "operator": "contains",
+          "expected": "AI Startup Raises $50M Series B",
+          "rationale": "成功发布的标题必须被记录"
+        },
+        {
+          "assertion_id": "A-POS-11",
+          "target": "output.skipped_articles",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "被排除/跳过 5 篇：主题重复(The Verge)、排除源(Biztoc)、缺图(Some Blog)、Yahoo 同意页、已发布(Old News)"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-MAX10",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-NEWS-MAX10",
+        "F-POSTED-TITLES"
+      ],
+      "mock_ids": [
+        "M-FIRESTORE-GET",
+        "M-NEWSAPI",
+        "M-LLM-RICH",
+        "M-IMG-DL-OK",
+        "M-LINKEDIN",
+        "M-FIRESTORE-WRITE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.posts",
+          "operator": "length_equals",
+          "expected": 10,
+          "rationale": "12 篇有效文章按规则最多取 10 条"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.published_titles",
+          "operator": "length_equals",
+          "expected": 10,
+          "rationale": "只发布上限内的文章标题"
+        },
+        {
+          "assertion_id": "A-BND-03",
+          "target": "output.skipped_articles",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "超出 10 条上限的多余 2 篇不再发布"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-ALL-FILTERED",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-NEWS-ALL-FILTERED",
+        "F-POSTED-TITLES"
+      ],
+      "mock_ids": [
+        "M-FIRESTORE-GET",
+        "M-NEWSAPI"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.posts",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "全部条目被排除/跳过时不得发布任何内容"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.published_titles",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无发布则无标题写入记录"
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.firestore_writes",
+          "operator": "not_exists",
+          "rationale": "未发布任何文章时不得写入已发布记录",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "新闻源、Firestore、图片下载、LinkedIn 均为固定模拟。已发布标题固定，因此排除源、缺图、主题去重、标题去重、图片回退与 10 条上限的结果均为可精确计算的常数。"
+}

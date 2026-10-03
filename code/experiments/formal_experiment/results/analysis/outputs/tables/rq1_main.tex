@@ -1,0 +1,23 @@
+% RQ1 main table (recomputed from results/rq1 records)
+\begin{table}[!htbp]
+\centering
+\caption{RQ1: stage conversion correctness and error containment after checking (recomputed).}
+\label{tab:rq1-main}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lllrl@{}}
+\toprule
+Stage & Metric & Count & Rate (\%) & 95\% CI (\%) \\
+\midrule
+Recovery & Constraint retention & 80/80 & 100.00 & [95.42, 100.00] \\
+Recovery & Typed entities (EM) & 79/80 & 98.75 & [93.25, 99.78] \\
+Recovery & Fact set (EM) & 79/80 & 98.75 & [93.25, 99.78] \\
+Assign/compile & Node assignment (EM) & 78/80 & 97.50 & [91.34, 99.31] \\
+Assign/compile & Workflow relations (EM) & 77/80 & 96.25 & [89.55, 98.72] \\
+Assign/compile & Compilation + behavior & 76/80 & 95.00 & [87.84, 98.04] \\
+Execution & Actions + states (round 1) & 74/80 & 92.50 & [84.59, 96.52] \\
+\midrule
+Checking & HFER & 9/412 & 2.18 & [0.95, 3.69] \\
+Checking & FPR & 1/80 & 1.25 & [0.00, 3.75] \\
+\bottomrule
+\end{tabular*}
+\end{table}

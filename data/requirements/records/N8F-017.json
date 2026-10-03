@@ -1,0 +1,88 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-017",
+  "source_id": "n8n:6813",
+  "workflow_sha256": "a642243d59a71534b071a461a8487451e15d2a3234dfa1cc549bab841a030a1f",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "ec7ac7fd3aacef7cd59d9bdea976028d7c65575e52e726e2e74d09fe213c23c7",
+  "requirement": {
+    "requirement_text": "该需求面向 Telegram 机器人上的多模态助理：能够理解并处理文本、语音消息、图片和文档，可搜索网页、抓取网站、生成图像、执行计算并引用已上传的文档，以文本或音频形式给出结合上下文的回复。\n\n流程在 Telegram 机器人收到一条消息时启动，并按消息类型分别处理：文本消息经格式化后直接交给主智能助理；语音消息先从 Telegram 下载音频文件，再转写为文本；图片消息下载后由视觉理解能力分析其内容；文档消息下载后，其内容被存入临时向量库，使其可被检索。\n\n处理后的输入交给核心智能助理，该助理结合语言模型、会话记忆以及一组工具（网页搜索、网页抓取、图像生成、计算、文档向量库）来形成回复。最后判断初始消息是否为语音留言：若是，则生成语音回复；否则以文本消息的形式把答案发回给用户。",
+    "source_spans": [
+      {
+        "start": 63,
+        "end": 236,
+        "text": "This workflow transforms your Telegram bot into J.A.R.V.I.S., a powerful, multimodal AI assistant. It can understand and process text, voice messages, images, and documents."
+      },
+      {
+        "start": 237,
+        "end": 444,
+        "text": "The assistant can search the web, scrape websites, generate images, perform calculations, and reference uploaded documents to provide comprehensive and context-aware responses in either text or audio format."
+      },
+      {
+        "start": 794,
+        "end": 862,
+        "text": "The workflow begins when a message is received by your Telegram bot."
+      },
+      {
+        "start": 927,
+        "end": 1321,
+        "text": "Text:** The message is formatted and sent directly to the main AI agent.\nVoice:** The audio file is downloaded from Telegram and transcribed into text using the OpenAI API.\nImage:** The image is downloaded and analyzed by an OpenAI vision model to understand its content.\nDocument:** The file is downloaded and its content is stored in a temporary vector store, making it searchable for the AI."
+      },
+      {
+        "start": 1397,
+        "end": 1587,
+        "text": "This agent uses an OpenAI model, conversational memory, and a suite of tools (Google Search, Web Scraper, Image Generator, Calculator, and the document vector store) to formulate a response."
+      },
+      {
+        "start": 1588,
+        "end": 1763,
+        "text": "Finally, the workflow checks if the initial message was a voice note; if so, it generates an audio response. Otherwise, it sends the answer as a text message back to the user."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Telegram 机器人收到的用户消息（文本、语音、图片或文档）",
+        "会话记忆中的历史对话"
+      ],
+      "conditions": [
+        "按消息类型分别处理：文本、语音、图片、文档",
+        "仅当初始消息为语音留言时才生成音频回复，其余情况以文本消息回复"
+      ],
+      "allowed_actions": [
+        "从 Telegram 下载语音、图片或文档文件",
+        "将语音转写为文本",
+        "用视觉理解能力分析图片内容",
+        "将文档内容存入临时向量库使其可被检索",
+        "调用网页搜索、网页抓取、图像生成、计算与文档向量库等工具",
+        "结合会话记忆形成回复",
+        "生成音频回复或文本回复并发送回用户"
+      ],
+      "visible_outcomes": [
+        "用户在 Telegram 中收到一条文本消息形式的答案，或一条音频回复",
+        "回复内容可来自网页搜索、网页抓取、图像生成、计算或已上传文档的检索结果"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-017.packet.json",
+    "packet_sha256": "c2c8f8c0bba234740811ae81c976e11d899f380747072cecb4af417230dbd2a5",
+    "public_description_sha256": "3f676e66804ab0d381142b96a0d9a5ff31ef3ab71c77a75e9e5684051db4b847"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-017.response.json",
+    "verification_response_sha256": "c38b8cca0f70d5778ee68efe1d0137845513018200ae73f5a6fefc1712ced693",
+    "decision": "accept"
+  },
+  "formal_index": 28
+}

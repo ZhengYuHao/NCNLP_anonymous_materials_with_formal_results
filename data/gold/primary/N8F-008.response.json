@@ -1,0 +1,552 @@
+{
+  "task_id": "N8F-008",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "0d8092e139b1fcb82853a17bb96fae354b6e8640d231b9b4bf84f52b9ed049cf",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收触发评论",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "trigger_comment",
+          "type": "object",
+          "description": "用户在 GitLab 合并请求讨论区发布的触发评论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trigger_comment",
+          "type": "object",
+          "description": "含讨论区、合并请求与评论内容的触发评论"
+        }
+      ],
+      "native_evidence": [
+        "GitLab Discussion Webhook"
+      ],
+      "requirement_evidence": [
+        "当用户在 GitLab 合并请求（merge request）讨论区发布触发评论时，启动代码审查流程"
+      ],
+      "rationale": "需求声明由用户在 MR 讨论区发布的触发评论启动流程，为确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "加载合并请求变更内容",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "trigger_comment",
+          "type": "object",
+          "description": "触发评论，含项目与合并请求标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "merge_request_changes",
+          "type": "object",
+          "description": "该合并请求的变更内容（差异）"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Merge Request Changes"
+      ],
+      "requirement_evidence": [
+        "系统据此加载该合并请求的变更内容"
+      ],
+      "rationale": "需求声明依据触发评论加载合并请求变更内容，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按文件拆分差异并过滤",
+      "node_type": "code",
+      "operation_family": "data_preparation",
+      "inputs": [
+        {
+          "name": "merge_request_changes",
+          "type": "object",
+          "description": "合并请求的变更差异"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_diff_entry",
+          "type": "array",
+          "description": "按变更文件拆分的差异条目，已跳过不适合行内评审的文件"
+        }
+      ],
+      "native_evidence": [
+        "Split Changed Files",
+        "Filter Supported Diffs"
+      ],
+      "requirement_evidence": [
+        "将变更差异按每个变更文件拆分为一个条目，跳过不适合行内评审的文件"
+      ],
+      "rationale": "需求声明按文件拆分差异并跳过不适合行内评审的文件，为确定性变换与过滤，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "缺陷维度审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_diff_entry",
+          "type": "array",
+          "description": "单个变更文件的差异条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bug_findings",
+          "type": "array",
+          "description": "针对缺陷的审查结论"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Bugs"
+      ],
+      "requirement_evidence": [
+        "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+      ],
+      "rationale": "需求声明由语言模型针对缺陷维度审查文件，需开放文本理解与判断，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "安全维度审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_diff_entry",
+          "type": "array",
+          "description": "单个变更文件的差异条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "security_findings",
+          "type": "array",
+          "description": "针对安全的审查结论"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Security Risks"
+      ],
+      "requirement_evidence": [
+        "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+      ],
+      "rationale": "需求声明由语言模型针对安全维度审查文件，需开放文本理解与判断，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "可维护性维度审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_diff_entry",
+          "type": "array",
+          "description": "单个变更文件的差异条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "maintainability_findings",
+          "type": "array",
+          "description": "针对可维护性的审查结论"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Maintainability Risks"
+      ],
+      "requirement_evidence": [
+        "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+      ],
+      "rationale": "需求声明由语言模型针对可维护性维度审查文件，需开放文本理解与判断，判 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "汇总并复核审查结论",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "bug_findings",
+          "type": "array",
+          "description": "缺陷审查结论"
+        },
+        {
+          "name": "security_findings",
+          "type": "array",
+          "description": "安全审查结论"
+        },
+        {
+          "name": "maintainability_findings",
+          "type": "array",
+          "description": "可维护性审查结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "verified_findings",
+          "type": "array",
+          "description": "复核后的结论，已剔除力度不足或重复项并统一严重程度与置信度表示"
+        }
+      ],
+      "native_evidence": [
+        "Merge Reviewer Results",
+        "Combine Findings",
+        "Verify Findings",
+        "Normalize Verified Findings"
+      ],
+      "requirement_evidence": [
+        "汇总三个审查者的结论，再由语言模型进行复核：剔除力度不足或重复的结论，并统一严重程度与置信度的表示"
+      ],
+      "rationale": "需求声明先汇总三个审查者结论、再由语言模型复核并归一化，复核环节需开放语义判断，判 semantic。"
+    },
+    {
+      "node_id": "n8",
+      "label": "筛选达到阈值的结论",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "verified_findings",
+          "type": "array",
+          "description": "复核后的结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "置信度达到配置阈值的审查结论"
+        }
+      ],
+      "native_evidence": [
+        "Filter Publishable Findings"
+      ],
+      "requirement_evidence": [
+        "仅发布置信度达到配置阈值的审查结论"
+      ],
+      "rationale": "需求声明仅保留置信度达到配置阈值的结论，为确定性阈值过滤，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "解析 GitLab 差异位置",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "可发布的审查结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positioned_findings",
+          "type": "array",
+          "description": "已解析差异位置或标记无法定位的结论"
+        }
+      ],
+      "native_evidence": [
+        "Resolve GitLab Diff Position",
+        "Check Inline Position"
+      ],
+      "requirement_evidence": [
+        "若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论"
+      ],
+      "rationale": "需求声明判断能否解析到有效差异位置以决定发布方式，为确定性位置解析与判断，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "创建行内评审评论",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "positioned_findings",
+          "type": "array",
+          "description": "能定位到差异位置的审查结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Inline Review Comment"
+      ],
+      "requirement_evidence": [
+        "在对应位置创建行内评审评论"
+      ],
+      "rationale": "需求声明在有效差异位置创建行内评审评论，为面向 GitLab 的完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n11",
+      "label": "在讨论区回复评论",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "positioned_findings",
+          "type": "array",
+          "description": "无法定位差异位置的审查结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Fallback Reply"
+      ],
+      "requirement_evidence": [
+        "否则退化为在触发评论所在的讨论区中回复评论"
+      ],
+      "rationale": "需求声明无法定位差异位置时退化为讨论区回复，为面向 GitLab 的完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n12",
+      "label": "发布总结性回复",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "可发布的审查结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Summary Reply"
+      ],
+      "requirement_evidence": [
+        "同时发布一条总结性回复，标记本次审查已完成"
+      ],
+      "rationale": "需求声明发布总结性回复标记审查完成，为完成动作且与评论发布并行、无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": "评论内容等于配置的触发短语",
+      "rationale": "需求声明仅当发布触发评论时启动，故接收后需判断触发条件再加载变更内容。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "加载变更内容后按文件拆分差异。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "拆分后的每个文件进入缺陷审查。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "拆分后的每个文件进入安全审查。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "拆分后的每个文件进入可维护性审查。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "缺陷审查结论进入汇总复核。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "安全审查结论进入汇总复核。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "可维护性审查结论进入汇总复核。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "复核完成后按置信度阈值筛选。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "可发布结论进入差异位置解析。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": "能解析到有效的 GitLab 差异位置",
+      "rationale": "解析成功时创建行内评审评论。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n9",
+      "target": "n11",
+      "variable": null,
+      "condition": "无法解析到有效的 GitLab 差异位置",
+      "rationale": "解析失败时退化为讨论区回复。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n8",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选完成后并行发布总结性回复，标记审查完成。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "trigger_comment",
+      "condition": null,
+      "rationale": "触发评论传给加载变更内容节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "merge_request_changes",
+      "condition": null,
+      "rationale": "变更内容传给拆分过滤节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "file_diff_entry",
+      "condition": null,
+      "rationale": "文件差异条目传给缺陷审查节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "file_diff_entry",
+      "condition": null,
+      "rationale": "文件差异条目传给安全审查节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n3",
+      "target": "n6",
+      "variable": "file_diff_entry",
+      "condition": null,
+      "rationale": "文件差异条目传给可维护性审查节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n4",
+      "target": "n7",
+      "variable": "bug_findings",
+      "condition": null,
+      "rationale": "缺陷审查结论传给汇总复核节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n5",
+      "target": "n7",
+      "variable": "security_findings",
+      "condition": null,
+      "rationale": "安全审查结论传给汇总复核节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "maintainability_findings",
+      "condition": null,
+      "rationale": "可维护性审查结论传给汇总复核节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n7",
+      "target": "n8",
+      "variable": "verified_findings",
+      "condition": null,
+      "rationale": "复核后结论传给阈值筛选节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n8",
+      "target": "n9",
+      "variable": "publishable_findings",
+      "condition": null,
+      "rationale": "可发布结论传给位置解析节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n9",
+      "target": "n10",
+      "variable": "positioned_findings",
+      "condition": null,
+      "rationale": "已定位的结论传给行内评论创建节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n9",
+      "target": "n11",
+      "variable": "positioned_findings",
+      "condition": null,
+      "rationale": "未定位的结论传给退化回复节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n8",
+      "target": "n12",
+      "variable": "publishable_findings",
+      "condition": null,
+      "rationale": "可发布结论的状态传给总结性回复节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n10",
+    "n11",
+    "n12"
+  ],
+  "confidence": 0.92,
+  "notes": "需求声明三个并行审查者，故拆为缺陷、安全、可维护性三个语义节点并联汇入复核；复核（含剔除弱结论与归一化严重度/置信度）为语义节点，阈值筛选为确定性过滤。审查开始回复、无问题消息、正常化行号等原生实现细节未在需求中声明，未纳入。总结性回复与评论发布建模为并行终止分支。"
+}

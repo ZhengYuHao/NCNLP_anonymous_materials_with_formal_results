@@ -1,0 +1,289 @@
+{
+  "task_id": "N8F-093",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "731c09cfb7871925b1187b84f09c1bfd427085b56351894ead46d50e5e3314f6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动触发任务",
+      "node_type": "code",
+      "operation_family": "input_reception",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": ["When clicking ‘Execute workflow’"],
+      "requirement_evidence": [
+        "手动执行时，从 YouTube 频道的 RSS 订阅源获取最新视频"
+      ],
+      "rationale": "需求声明任务由手动执行触发，属确定性触发动作，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取并解析 RSS 提取最新视频",
+      "node_type": "code",
+      "operation_family": "rss_parsing",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "latest_video",
+          "type": "object",
+          "description": "最新视频信息，含标题、描述、缩略图地址与链接"
+        }
+      ],
+      "native_evidence": ["Download YouTube feed", "Parse feed XML", "Latest video"],
+      "requirement_evidence": [
+        "从 YouTube 频道的 RSS 订阅源获取最新视频，解析出该视频的标题、描述、缩略图地址与链接"
+      ],
+      "rationale": "下载 RSS 源并解析提取最新视频信息属确定性数据获取与解析动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "下载缩略图并上传至 Posta 生成媒体素材",
+      "node_type": "code",
+      "operation_family": "media_upload",
+      "inputs": [
+        {
+          "name": "latest_video",
+          "type": "object",
+          "description": "含缩略图地址的最新视频信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "media_asset",
+          "type": "object",
+          "description": "上传至 Posta 后生成的可复用媒体素材"
+        }
+      ],
+      "native_evidence": ["Download thumbnail", "Upload media"],
+      "requirement_evidence": [
+        "下载该视频的缩略图并上传至 Posta，生成可复用的媒体素材"
+      ],
+      "rationale": "下载缩略图并上传至媒体托管属确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "取出社交账号并筛选启用且按平台去重",
+      "node_type": "code",
+      "operation_family": "account_selection",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "target_accounts",
+          "type": "array",
+          "description": "启用状态且按平台去重后的社交账号列表"
+        }
+      ],
+      "native_evidence": ["Get many social accounts", "Keep active accounts", "One post per platform"],
+      "requirement_evidence": [
+        "从 Posta 取出社交账号列表，只保留处于启用状态的账号，并按平台去重，使每个平台只保留一个账号"
+      ],
+      "rationale": "取出账号并按启用状态筛选、按平台去重属确定性过滤与去重逻辑，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型为每个平台撰写推广文案",
+      "node_type": "semantic",
+      "operation_family": "caption_generation",
+      "inputs": [
+        {
+          "name": "latest_video",
+          "type": "object",
+          "description": "最新视频信息"
+        },
+        {
+          "name": "target_accounts",
+          "type": "array",
+          "description": "去重后的目标平台账号列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "captions",
+          "type": "array",
+          "description": "为每个目标平台生成的定制化推广文案"
+        }
+      ],
+      "native_evidence": ["Combine video + platforms", "Basic LLM Chain"],
+      "requirement_evidence": [
+        "将最新视频信息与每个目标平台组合，交由语言模型为每个平台撰写一条定制化的推广文案"
+      ],
+      "rationale": "为各平台撰写定制化推广文案属开放内容生成任务，需语言模型能力，判为 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "标注平台并合并到对应社交账号",
+      "node_type": "code",
+      "operation_family": "data_merging",
+      "inputs": [
+        {
+          "name": "captions",
+          "type": "array",
+          "description": "为每个平台生成的推广文案"
+        },
+        {
+          "name": "target_accounts",
+          "type": "array",
+          "description": "去重后的目标平台账号列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tagged_posts",
+          "type": "array",
+          "description": "标注所属平台并与对应 Posta 社交账号合并后的草稿帖数据"
+        }
+      ],
+      "native_evidence": ["Tag captions with platform", "Post per active account"],
+      "requirement_evidence": [
+        "为每条文案标注其所属平台，并与对应的 Posta 社交账号合并"
+      ],
+      "rationale": "为文案标注平台并与账号合并属确定性数据变换，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "为每个账号创建 Posta 草稿帖",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "tagged_posts",
+          "type": "array",
+          "description": "标注平台并合并账号后的草稿帖数据"
+        },
+        {
+          "name": "media_asset",
+          "type": "object",
+          "description": "已上传的缩略图媒体素材"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Create a post"],
+      "requirement_evidence": [
+        "为每个选中的账号在 Posta 中创建一篇草稿帖，附上已上传的缩略图、该平台专属的文案以及视频链接"
+      ],
+      "rationale": "为每个选中账号创建草稿帖是用户可见的完成动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发后获取并解析 RSS。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发后并行取出社交账号。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析出缩略图地址后下载并上传媒体。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "媒体素材就绪后汇合进入文案生成。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "账号列表就绪后汇合进入文案生成。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成文案后标注平台并合并账号。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "合并完成后为每个账号创建草稿帖。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "latest_video",
+      "condition": null,
+      "rationale": "最新视频的缩略图地址传给下载上传节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n5",
+      "variable": "latest_video",
+      "condition": null,
+      "rationale": "最新视频信息传给文案生成节点与平台组合。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "target_accounts",
+      "condition": null,
+      "rationale": "去重后的账号列表传给文案生成节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "captions",
+      "condition": null,
+      "rationale": "各平台推广文案传给标注合并节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "target_accounts",
+      "condition": null,
+      "rationale": "账号列表传给标注合并节点用于合并。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n3",
+      "target": "n7",
+      "variable": "media_asset",
+      "condition": null,
+      "rationale": "已上传的缩略图素材传给草稿帖创建节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "tagged_posts",
+      "condition": null,
+      "rationale": "标注并合并后的草稿帖数据传给创建节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7"],
+  "confidence": 0.9,
+  "notes": "按需求建模为 7 节点：手动触发后并行执行 RSS 解析与账号选择两条链，缩略图下载上传与账号去重完成后汇合，经语言模型生成各平台文案、标注合并，最后为每个账号创建草稿帖。原生图中的 Combine thumbnail + video data、Combine video + platforms、Post per active account 等合并节点为数据汇合的实现细节，折叠进对应节点契约，未单列。"
+}

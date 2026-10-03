@@ -1,0 +1,95 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-001",
+  "source_id": "n8n:18235",
+  "workflow_sha256": "d9f8ae2db6af78cc8f28024afe2dc166cbaf100943643d34f0df0d1afd9ee750",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "ae6a943021b8ea90a27f3bca8a8a5a8638de1fb12217ecb04b878c0469bdf64c",
+  "requirement": {
+    "pilot_id": "N8C-001",
+    "requirement_text": "The system runs on demand: it starts manually, or optionally when a new client row is added to a Google Sheets queue. Inputs: client configuration and sector guidance; source evidence documents stored in Google Drive; and Google Sheets data containing RACI, tools inventory, KPI snapshot, and benchmarks. The system shall: (1) load the client configuration and sector guidance, download the source evidence from Google Drive, and read the RACI, tools inventory, KPI snapshot, and benchmarks from Google Sheets; (2) normalize and score the collected evidence into a single structured current-state dataset with basic data-quality signals; (3) use a language model to analyze inefficiencies and generate AI/automation recommendations aligned to the selected sector and compliance needs; (4) use a language model to generate a future-state target operating model (org design, technology architecture, roadmap, and a new RACI) and calculate cautious/hybrid/aggressive ROI scenarios; (5) build Mermaid diagrams and generate an executive transformation report plus an internal consultant rationale, then assemble a final payload. Visible outcomes: the structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) are written to Google Sheets, and a consolidated text report is uploaded to Google Drive. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 316,
+        "text": "This workflow runs on demand to collect operating-model evidence from Google Drive and Google Sheets, analyzes inefficiencies and AI opportunities with OpenAI, and produces a target operating model, ROI scenarios, Mermaid diagrams, and an executive report saved back to Google Sheets and Google Drive."
+      },
+      {
+        "start": 331,
+        "end": 419,
+        "text": "Starts manually (or optionally when a new client row is added to a Google Sheets queue)."
+      },
+      {
+        "start": 420,
+        "end": 598,
+        "text": "Loads client configuration and sector guidance, then downloads source evidence from Google Drive and reads RACI, tools inventory, KPI snapshot, and benchmarks from Google Sheets."
+      },
+      {
+        "start": 599,
+        "end": 723,
+        "text": "Normalizes and scores the collected evidence into a single structured current-state dataset with basic data-quality signals."
+      },
+      {
+        "start": 724,
+        "end": 857,
+        "text": "Uses OpenAI to analyze inefficiencies and generate AI/automation recommendations aligned to the selected sector and compliance needs."
+      },
+      {
+        "start": 858,
+        "end": 1039,
+        "text": "Uses OpenAI to generate a future-state target operating model (org design, technology architecture, roadmap, and a new RACI) and calculates cautious/hybrid/aggressive ROI scenarios."
+      },
+      {
+        "start": 1040,
+        "end": 1183,
+        "text": "Builds Mermaid diagrams and generates an executive transformation report plus an internal consultant rationale, then assembles a final payload."
+      },
+      {
+        "start": 1184,
+        "end": 1392,
+        "text": "Writes the structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) to Google Sheets and uploads a consolidated text report to Google Drive."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Manual start (or optionally a new client row added to a Google Sheets queue)",
+        "Client configuration and sector guidance",
+        "Source evidence documents stored in Google Drive",
+        "Google Sheets data: RACI, tools inventory, KPI snapshot, and benchmarks"
+      ],
+      "conditions": [
+        "Runs on demand: starts manually, or optionally when a new client row is added to a Google Sheets queue"
+      ],
+      "allowed_actions": [
+        "Download source evidence from Google Drive and read RACI, tools inventory, KPI snapshot, and benchmarks from Google Sheets",
+        "Normalize and score the collected evidence into a single structured current-state dataset with basic data-quality signals",
+        "Use a language model to analyze inefficiencies and generate AI/automation recommendations aligned to the selected sector and compliance needs",
+        "Use a language model to generate a future-state target operating model (org design, technology architecture, roadmap, and a new RACI) and calculate cautious/hybrid/aggressive ROI scenarios",
+        "Build Mermaid diagrams and generate an executive transformation report plus an internal consultant rationale, then assemble a final payload",
+        "Write the structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) to Google Sheets",
+        "Upload a consolidated text report to Google Drive"
+      ],
+      "visible_outcomes": [
+        "Structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) written to Google Sheets",
+        "A consolidated text report uploaded to Google Drive"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 1
+}

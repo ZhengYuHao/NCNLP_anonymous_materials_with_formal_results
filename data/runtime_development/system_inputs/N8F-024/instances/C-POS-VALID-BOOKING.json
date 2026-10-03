@@ -1,0 +1,15 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-024",
+  "case_id": "C-POS-VALID-BOOKING",
+  "kind": "positive",
+  "input_data": {
+    "guest_name": "Alice Chen",
+    "guest_email": "alice.chen@example.com",
+    "property": "Sunny Villa",
+    "check_in": "2026-09-10",
+    "check_out": "2026-09-13",
+    "host_email": "host@example.com"
+  },
+  "input_sha256": "3247DCA8CAAFF60AF108150A5CF2056278BD7548214D2649A9204F4BEC2F2AD2"
+}

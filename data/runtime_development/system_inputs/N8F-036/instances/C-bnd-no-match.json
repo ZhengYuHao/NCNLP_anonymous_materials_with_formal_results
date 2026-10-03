@@ -1,0 +1,32 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-036",
+  "case_id": "C-bnd-no-match",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-no-match": {
+        "lead": {
+          "id": "L3",
+          "name": "Cara Wu",
+          "email": "cara@x.com",
+          "budget": 100000,
+          "prefs": {
+            "city": "Austin",
+            "bedrooms": 5
+          }
+        }
+      },
+      "F-decks": {
+        "decks": [
+          {
+            "listing_id": "P1",
+            "file_id": "deck_P1",
+            "url": "https://drive.example/deck_P1.pdf"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "3D110FFB9ECBDC79E8EB589829B61C6360E0EE6D7F27BFFED798151755D9C75A"
+}

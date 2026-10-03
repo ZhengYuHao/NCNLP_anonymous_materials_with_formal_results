@@ -1,0 +1,203 @@
+{
+  "task_id": "N8F-067",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "4c2d929f22e617cccf94800be9fe9fc3885ba014c22e00b8f0d0ebd6230840e6",
+  "fixtures": [
+    {
+      "fixture_id": "F-SCHEDULED-CONTENT",
+      "purpose": "正常用例：2 条排期内容，1 条已到发布时间可发布，1 条在未来不可发布",
+      "input_data": {
+        "content_items": [
+          {
+            "item_id": "I001",
+            "raw_text": "We just shipped v2 with a faster dashboard.",
+            "scheduled_at": "2026-09-01T09:00:00Z",
+            "now": "2026-09-01T10:00:00Z"
+          },
+          {
+            "item_id": "I002",
+            "raw_text": "Upcoming webinar about data pipelines.",
+            "scheduled_at": "2026-09-05T09:00:00Z",
+            "now": "2026-09-01T10:00:00Z"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_scheduled_content",
+      "request_contract": {
+        "sheet": "scheduled_posts"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "item_id": "I001",
+            "raw_text": "We just shipped v2 with a faster dashboard.",
+            "scheduled_at": "2026-09-01T09:00:00Z"
+          },
+          {
+            "item_id": "I002",
+            "raw_text": "Upcoming webinar about data pipelines.",
+            "scheduled_at": "2026-09-05T09:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-OPTIMIZE",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "optimize_post",
+      "request_contract": {
+        "item_id": "string",
+        "raw_text": "string"
+      },
+      "response_contract": {
+        "optimized": {
+          "I001": {
+            "twitter": "Shipped v2 with a faster dashboard 🚀",
+            "linkedin": "We are excited to announce the release of version 2, featuring a significantly faster dashboard for all users.",
+            "hashtags": ["#product", "#v2"],
+            "engagement_tips": "Ask followers about their favorite feature."
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TWITTER-POST",
+      "dependency_type": "twitter",
+      "operation": "post_tweet",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "tweet_id": "tw-fixed-001",
+        "url": "https://twitter.com/example/status/tw-fixed-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINKEDIN-POST",
+      "dependency_type": "linkedIn",
+      "operation": "post_update",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "post_id": "li-fixed-001",
+        "url": "https://linkedin.com/feed/update/li-fixed-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-WRITEBACK",
+      "dependency_type": "googleSheets",
+      "operation": "update_rows",
+      "request_contract": {
+        "item_id": "string",
+        "fields": "object"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-SUMMARY",
+      "dependency_type": "slack",
+      "operation": "post_summary",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed-002",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-PUBLISH-READY",
+      "kind": "positive",
+      "fixture_ids": ["F-SCHEDULED-CONTENT"],
+      "mock_ids": ["M-SHEETS-READ", "M-LLM-OPTIMIZE", "M-TWITTER-POST", "M-LINKEDIN-POST", "M-SHEETS-WRITEBACK", "M-SLACK-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-TWITTER-POST-COUNT",
+          "target": "twitter.post_tweet.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅 1 条排期内容已到发布时间，应只在 Twitter 发布 1 条"
+        },
+        {
+          "assertion_id": "A-LINKEDIN-POST-COUNT",
+          "target": "linkedin.post_update.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "已到发布时间的内容应同时在 LinkedIn 发布 1 条"
+        },
+        {
+          "assertion_id": "A-TWITTER-LENGTH",
+          "target": "twitter.post_tweet.calls[0].text",
+          "operator": "matches",
+          "expected": "^.{1,280}$",
+          "rationale": "Twitter 版本受字符数限制，长度不得超过 280 字符"
+        },
+        {
+          "assertion_id": "A-VERSIONS-DIFFER",
+          "target": "twitter.post_tweet.calls[0].text",
+          "operator": "not_equals",
+          "expected": "We are excited to announce the release of version 2, featuring a significantly faster dashboard for all users.",
+          "rationale": "Twitter 版与 LinkedIn 版应为不同内容（后者更正式详实）"
+        },
+        {
+          "assertion_id": "A-HASHTAGS-GENERATED",
+          "target": "llm_optimize.output.optimized.I001.hashtags",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求要求生成相关话题标签，模拟生成 2 个"
+        },
+        {
+          "assertion_id": "A-WRITEBACK-URLS",
+          "target": "sheets_writeback.update_rows.calls[0].fields",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "发布完成后应把线上链接回写到 Google Sheets"
+        },
+        {
+          "assertion_id": "A-WRITEBACK-ITEM",
+          "target": "sheets_writeback.update_rows.calls[0].item_id",
+          "operator": "equals",
+          "expected": "I001",
+          "rationale": "回写对象应为已发布的内容条目 I001"
+        },
+        {
+          "assertion_id": "A-SLACK-SUMMARY-ONE",
+          "target": "slack.post_summary.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "需求要求向 Slack 发送一份发布情况摘要"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。固定排期内容覆盖已到发布与未到发布两种状态；语言模型优化、Twitter/LinkedIn 发布、Sheets 回写、Slack 摘要全部确定性模拟。断言可计算：发布次数、Twitter 文本长度 ≤280、两平台版本不同、话题标签数量、回写对象与摘要通知条数。"
+}

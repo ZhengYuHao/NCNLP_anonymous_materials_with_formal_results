@@ -1,0 +1,68 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-060",
+  "source_id": "n8n:12119",
+  "workflow_sha256": "7250252f6d0bd6a34157a0889929602dd71fea80403096f9e4da0ab05e0a813f",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "fdd7e19785cc8344ddc914dd2fcb4ba9c922651b27199254db761917d1aca607",
+  "requirement": {
+    "requirement_text": "系统根据用户的照片与名人参考图，生成写实合照图像，并进一步生成过渡视频。\n\n第一部分：图像生成\n1）通过网页表单收集用户的人脸照片，以及最多 4 张名人参考图。\n2）由语言模型生成用于真实感合照构图的优化提示词。\n3）由图像生成服务据此生成照片级真实的合照图像。\n4）所有生成结果自动保存到 Google Sheets。\n\n第二部分：视频生成\n5）将生成的合照图像两两配对（名人 1 → 名人 2）。\n6）由视频生成服务据此生成平滑的行走过渡视频。\n7）将生成的视频连同元数据一并保存回 Google Sheets。",
+    "source_spans": [
+      {
+        "start": 302,
+        "end": 548,
+        "text": "Collects your face image + up to 4 celebrity reference images via web form\nGPT-4 generates optimized prompts for realistic selfie composition\nSeedDream v4.5 AI creates photo-realistic selfie images\nAll results automatically saved to Google Sheets"
+      },
+      {
+        "start": 577,
+        "end": 733,
+        "text": "Pairs generated selfie images (Celebrity 1 → Celebrity 2)\nKling AI creates smooth walking transition videos\nVideos saved back to Google Sheets with metadata"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "网页表单提交的用户人脸照片与最多 4 张名人参考图",
+        "生成出的合照图像"
+      ],
+      "conditions": [
+        "名人参考图数量上限为 4 张",
+        "视频由两张合照图像配对生成（名人 1 → 名人 2）"
+      ],
+      "allowed_actions": [
+        "使用语言模型生成构图提示词",
+        "调用图像生成服务生成合照图像",
+        "调用视频生成服务生成行走过渡视频",
+        "将结果与元数据保存到 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中保存生成的合照图像结果",
+        "Google Sheets 中保存生成的视频及其元数据"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-060.packet.json",
+    "packet_sha256": "42057bb4a5d8ce199834a263f1af074032650f588fb46511d5e77297aba25cb6",
+    "public_description_sha256": "ba7814a1d4425890f4f770eaff5189a0e8ba72258f56c48d12bdeff7d3456f28"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-060.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-060.revision.json",
+    "revision_record_sha256": "d3eb5c7b20dfaa2fc49c8c632492fa1e0cb52cdb3703c760124721c271a37fdc",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-05/responses/N8F-060.response.json",
+    "final_confirmation_sha256": "50c705c6231fcd1d15ae1040a6adba747243e82c7b5ee5ae4d12f40157d8228d",
+    "decision": "accept"
+  },
+  "formal_index": 71
+}

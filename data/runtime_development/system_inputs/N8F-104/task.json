@@ -1,0 +1,307 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-104",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "b10cbe9f5c9e07d38d66b0d30ef524a4f82b52c6d329c87b956e860ae8e2e9e6",
+  "natural_language_requirement": "为 WordPress 文章自动打标签：获取文章正文与元数据；使用语言模型生成与上下文相关的标签；核对 WordPress 中已存在的标签，必要时创建新标签；随后用准确且经过优化的标签自动更新文章。文章内容来源可以是 RSS 订阅源或手动输入。",
+  "public_interfaces": [
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_tags",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "article": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "article"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "tags"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "rssFeedReadTrigger",
+      "operation": "read_feed",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "post_id": {
+                  "type": "integer"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "content",
+                "post_id",
+                "title"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "wordpress",
+      "operation": "create_tag",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tag": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "tag"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "wordpress",
+      "operation": "list_tags",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tags": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "tags"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "wordpress",
+      "operation": "update_post",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "post_id": {
+            "type": "integer"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        },
+        "required": [
+          "post_id",
+          "tags"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "post": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "tags"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "post"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "generated_tags",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": "语言模型生成的与上下文相关的标签",
+        "requirement_evidence": [
+          "使用语言模型生成与上下文相关的标签"
+        ],
+        "source_operations": [
+          "generate_tags"
+        ],
+        "design_sources": [
+          "n2.generated_tags"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "created_tags",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "在 WordPress 中新建的标签",
+        "requirement_evidence": [
+          "必要时创建新标签"
+        ],
+        "source_operations": [
+          "create_tag"
+        ],
+        "design_sources": [
+          "n4.created_tags"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "updated_post",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          "required": [
+            "id",
+            "tags"
+          ],
+          "additionalProperties": false
+        },
+        "description": "用准确且经过优化的标签自动更新的文章",
+        "requirement_evidence": [
+          "随后用准确且经过优化的标签自动更新文章"
+        ],
+        "source_operations": [
+          "update_post"
+        ],
+        "design_sources": [
+          "n5"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "D56A2D5D32657487CEF45DB2823F2EC170603F75BC6F37E1AA36971F7AD1B050",
+  "public_interface_sha256": "46077DCF738E53D7C922639C694907FF295754A40F6013CBEFEA137D0D63C223",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

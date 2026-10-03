@@ -1,0 +1,11 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-107",
+  "case_id": "C-NEG-STRING-SCHEMA",
+  "kind": "negative",
+  "input_data": {
+    "prompt": "Scrape product prices",
+    "output_schema": "oops"
+  },
+  "input_sha256": "1555285F0E317BE9B546F72B1F4E473D2A9139597051D1D33C6700300B644D46"
+}

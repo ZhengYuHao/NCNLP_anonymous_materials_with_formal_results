@@ -1,0 +1,26 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-080",
+  "case_id": "C-BOUND-100-CAP",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-POST-120": {
+        "post": {
+          "id": "post-3",
+          "message": "Big post",
+          "reactions": 5,
+          "comment_count": 120
+        }
+      },
+      "F-SCHEDULE": {
+        "schedule": "daily 10:00",
+        "page_id": "page-1",
+        "sheet_tab": "SentimentMetrics",
+        "outlook_recipient": "team@example.com",
+        "slack_channel": "#pr-alerts"
+      }
+    }
+  },
+  "input_sha256": "CEFD32688AB2A2485CAA20975CAD0ED4F41D111AA931F8083DDDA94573BC4CC1"
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-104",
+  "source_id": "n8n:2816",
+  "workflow_sha256": "97b6f503c525f4cf0e89f6ffbe2bbae274daac47825f05bb4e1459957fa7b191",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "b10cbe9f5c9e07d38d66b0d30ef524a4f82b52c6d329c87b956e860ae8e2e9e6",
+  "requirement": {
+    "requirement_text": "为 WordPress 文章自动打标签：获取文章正文与元数据；使用语言模型生成与上下文相关的标签；核对 WordPress 中已存在的标签，必要时创建新标签；随后用准确且经过优化的标签自动更新文章。文章内容来源可以是 RSS 订阅源或手动输入。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 75,
+        "text": "How it works:\nThis workflow automates tagging for WordPress posts using AI:"
+      },
+      {
+        "start": 77,
+        "end": 289,
+        "text": "Fetch blog post content and metadata.\nGenerate contextually relevant tags using AI.\nVerify existing tags in WordPress and create new ones if necessary.\nAutomatically update posts with accurate and optimized tags."
+      },
+      {
+        "start": 396,
+        "end": 457,
+        "text": "Connect your content source (e.g., RSS feed or manual input)."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "WordPress 文章的正文与元数据",
+        "内容来源：RSS 订阅源或手动输入",
+        "WordPress 中已有的标签"
+      ],
+      "conditions": [
+        "仅当 WordPress 中不存在该标签时才创建新标签"
+      ],
+      "allowed_actions": [
+        "获取文章正文与元数据",
+        "使用语言模型生成与上下文相关的标签",
+        "核对 WordPress 中已有标签，必要时创建新标签",
+        "使用生成的标签更新文章"
+      ],
+      "visible_outcomes": [
+        "WordPress 文章被更新为带有准确且经过优化的标签",
+        "WordPress 中新增了此前不存在的标签"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-104.packet.json",
+    "packet_sha256": "0ce37c6ba542f43698da19ecc64678425fe7aeee8c8936e304c4e96329a1248d",
+    "public_description_sha256": "f60fcfc0d0e7691c8573953f6974500d2e7a23a3f123e8637fb10d04a7166929"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-104.response.json",
+    "verification_response_sha256": "1343d226222d884ad1a1e43906e5c2a59c7aa72fc06e7dbe71b71af6b4757d3d",
+    "decision": "accept"
+  },
+  "formal_index": 115
+}

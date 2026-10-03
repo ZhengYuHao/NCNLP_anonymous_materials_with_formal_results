@@ -1,0 +1,90 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-046",
+  "source_id": "n8n:18311",
+  "workflow_sha256": "0236c6a3228ac985482e7edd32a8a39e15588e4ed822fd64ac21418c100a9282",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "24f7a2f31482da327d5a0675a9620f3e1e4c1851355eef433237aee98fb5d3fe",
+  "requirement": {
+    "requirement_text": "系统每天定时执行一次，按州与关键词采集美国商家线索并生成开发信，结果写回 Google Sheets。\n\n1）每天 07:00 触发一次执行。\n2）从 Google Sheets 的“States”标签页读取配置，仅保留标记为 Active 的行。\n3）将每个生效的州按已配置关键词展开为多个搜索词，并按“关键词 in 州”的形式组合。\n4）对每个搜索词调用 Google Maps 商家搜索服务；若搜索服务返回错误，将错误记录到 Google Sheets 的“Errors”标签页；将返回的本地商家结果拆分为单条线索。\n5）对每条线索规范化名称、电话、网站、地址、州、关键词；过滤信息不完整的条目；按“名称+电话”的去重键去除重复线索。\n6）若线索包含网站，则抓取该网站的联系页面，并从页面中提取第一个有效邮箱地址。\n7）使用语言模型为每条线索生成一封简洁的 B2B 开发信，并将线索明细、提取到的联系邮箱与生成的开发信追加写入 Google Sheets 的“Leads”标签页。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 281,
+        "text": "This workflow runs daily and uses SerpAPI Google Maps results to scrape US business leads by state and keyword from Google Sheets, enriches them with contact emails from websites, generates an outreach email with OpenAI, and appends the leads to a Google Sheets tab."
+      },
+      {
+        "start": 296,
+        "end": 422,
+        "text": "Runs every day at 7:00 AM via a schedule trigger.\nReads the \"States\" tab from Google Sheets and keeps only rows marked Active."
+      },
+      {
+        "start": 423,
+        "end": 729,
+        "text": "Expands each active state into multiple search queries using the configured keywords and formats them as “{keyword} in {state}”.\nCalls SerpAPI (Google Maps engine) for each query, logs any SerpAPI errors to an \"Errors\" tab in Google Sheets, and splits the returned local results into individual lead items."
+      },
+      {
+        "start": 730,
+        "end": 999,
+        "text": "Normalizes each lead (name, phone, website, address, state, keyword), filters out incomplete entries, and removes duplicates using a name+phone dedupe key.\nIf a lead has a website, fetches the /contact page and extracts the first valid email address from the page HTML."
+      },
+      {
+        "start": 1000,
+        "end": 1171,
+        "text": "Uses OpenAI to generate a concise B2B outreach email for each lead and appends the lead details, extracted contact email, and AI email to the \"Leads\" tab in Google Sheets."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets“States”标签页中的州配置行（含 Active 标记）",
+        "已配置的关键词",
+        "Google Maps 商家搜索服务返回的本地商家结果",
+        "线索网站的联系页面内容"
+      ],
+      "conditions": [
+        "每天 07:00 定时触发",
+        "仅处理 States 标签页中标记为 Active 的行",
+        "搜索词按“关键词 in 州”的形式组合",
+        "过滤信息不完整的线索",
+        "按“名称+电话”的去重键去除重复线索",
+        "仅当线索包含网站时才抓取联系页面并提取邮箱"
+      ],
+      "allowed_actions": [
+        "读取 Google Sheets 配置",
+        "按州与关键词展开搜索词",
+        "调用 Google Maps 商家搜索服务",
+        "规范化、过滤与去重线索",
+        "抓取线索网站的联系页面并提取第一个有效邮箱地址",
+        "使用语言模型生成 B2B 开发信",
+        "追加写入 Google Sheets 标签页"
+      ],
+      "visible_outcomes": [
+        "“Leads”标签页新增线索明细、提取到的联系邮箱与生成的开发信",
+        "“Errors”标签页记录商家搜索服务返回的错误"
+      ],
+      "failure_behavior": [
+        "商家搜索服务返回错误时，将错误记录到“Errors”标签页"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-046.packet.json",
+    "packet_sha256": "5bc83f747a4357bad43eb3fda0a342b39196f70bdef200f1df90b81debe0f85a",
+    "public_description_sha256": "962bd91f087dcb3ca23056bde565369c9d7297def2c302d6c2ad25f72e3a4f48"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-046.response.json",
+    "verification_response_sha256": "7463f296e6d929d07667b3bf5e230eb13d4a0146def783c57f965d814335b637",
+    "decision": "accept"
+  },
+  "formal_index": 57
+}

@@ -1,0 +1,164 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-068",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-pdf-extract",
+      "dependency_type": "pdf_extractor",
+      "operation": "extract_document",
+      "request_contract": {
+        "filename": "release.pdf"
+      },
+      "response_contract": {
+        "content": "PDF text: Company X launches new product on September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-word-extract",
+      "dependency_type": "word_extractor",
+      "operation": "extract_text",
+      "request_contract": {
+        "filename": "release.docx"
+      },
+      "response_contract": {
+        "content": "DOCX text: Company X announces partnership with Company Y."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "PDF text: Company X launches new product on September 1."
+      },
+      "response_contract": {
+        "article": "# Company X Launches New Product\n\nCompany X today announced the launch of its new product. The product will be available from September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite-word",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "DOCX text: Company X announces partnership with Company Y."
+      },
+      "response_contract": {
+        "article": "# Company X Announces Partnership\n\nCompany X has announced a strategic partnership with Company Y."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite-inline",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "Inline press release text about new product launch on September 1."
+      },
+      "response_contract": {
+        "article": "# Product Launch\n\nInline press release text about new product launch on September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-assess",
+      "dependency_type": "llm",
+      "operation": "self_assess",
+      "request_contract": {
+        "source_content": "PDF text: Company X launches new product on September 1."
+      },
+      "response_contract": {
+        "score": 0.9,
+        "feedback": "Accurate transformation, good structure.",
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-assess-other",
+      "dependency_type": "llm",
+      "operation": "self_assess",
+      "request_contract": {
+        "source_content_not_pdf": true
+      },
+      "response_contract": {
+        "score": 0.85,
+        "feedback": "Accurate transformation.",
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-reply",
+      "dependency_type": "gmail",
+      "operation": "send_reply",
+      "request_contract": {
+        "to": "pr@company.com"
+      },
+      "response_contract": {
+        "message_id": "reply_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-pos-pdf",
+      "fixture_ids": [
+        "F-email-pdf"
+      ],
+      "mock_ids": [
+        "M-pdf-extract",
+        "M-llm-rewrite",
+        "M-llm-assess",
+        "M-gmail-reply"
+      ]
+    },
+    {
+      "case_id": "C-pos-word",
+      "fixture_ids": [
+        "F-email-word"
+      ],
+      "mock_ids": [
+        "M-word-extract",
+        "M-llm-rewrite-word",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ]
+    },
+    {
+      "case_id": "C-pos-inline",
+      "fixture_ids": [
+        "F-email-inline"
+      ],
+      "mock_ids": [
+        "M-llm-rewrite-inline",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ]
+    },
+    {
+      "case_id": "C-bnd-all-filtered",
+      "fixture_ids": [
+        "F-email-all-jpg"
+      ],
+      "mock_ids": [
+        "M-llm-rewrite-inline",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ]
+    }
+  ]
+}

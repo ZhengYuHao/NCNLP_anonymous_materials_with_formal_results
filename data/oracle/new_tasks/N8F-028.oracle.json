@@ -1,0 +1,794 @@
+{
+  "task_id": "N8F-028",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "205c715ae0d09f101e0f7417aaddf964ebd44400957f03880ecd0f44fc468ba7",
+  "fixtures": [
+    {
+      "fixture_id": "F-leads",
+      "purpose": "HubSpot 返回 25 条线索：前 20 条中 5 条为 bad_timing，后 5 条中 1 条为 bad_timing（用于验证单次最多取 20 条）",
+      "input_data": {
+        "leads": [
+          {
+            "id": "lead1",
+            "name": "Alice Chen",
+            "email": "alice@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead2",
+            "name": "Bob Li",
+            "email": "bob@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead3",
+            "name": "Carol Wu",
+            "email": "carol@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead4",
+            "name": "Dan Xu",
+            "email": "dan@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead5",
+            "name": "Eva Sun",
+            "email": "eva@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active3",
+            "name": "Henry Gao",
+            "email": "henry@example.com",
+            "status": "active",
+            "lifecycle_stage": "customer",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active4",
+            "name": "Ivy Zhang",
+            "email": "ivy@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active5",
+            "name": "Jack Zhou",
+            "email": "jack@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active6",
+            "name": "Kate Hu",
+            "email": "kate@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active7",
+            "name": "Leo Pan",
+            "email": "leo@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active8",
+            "name": "Mia Tang",
+            "email": "mia@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active9",
+            "name": "Nick Ren",
+            "email": "nick@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active10",
+            "name": "Olive Ye",
+            "email": "olive@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active11",
+            "name": "Paul Qiao",
+            "email": "paul@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active12",
+            "name": "Quinn Bao",
+            "email": "quinn@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active13",
+            "name": "Rita He",
+            "email": "rita@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active14",
+            "name": "Sam Jiao",
+            "email": "sam@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active15",
+            "name": "Tina Kong",
+            "email": "tina@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "late1",
+            "name": "Uma Guo",
+            "email": "uma@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late2",
+            "name": "Vera Lei",
+            "email": "vera@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late3",
+            "name": "Will Feng",
+            "email": "will@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late4",
+            "name": "Xena Shao",
+            "email": "xena@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late5",
+            "name": "Yuki Luo",
+            "email": "yuki@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-owners",
+      "purpose": "线索负责人信息映射",
+      "input_data": {
+        "owner_a": {
+          "owner_id": "owner_a",
+          "name": "Alpha Manager",
+          "email": "alpha@corp.com"
+        },
+        "owner_b": {
+          "owner_id": "owner_b",
+          "name": "Beta Manager",
+          "email": "beta@corp.com"
+        },
+        "owner_c": {
+          "owner_id": "owner_c",
+          "name": "Gamma Manager",
+          "email": "gamma@corp.com"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-leads-zero",
+      "purpose": "前 20 条中不含 bad_timing 线索的场景，验证无合格线索时不产生任何草稿与通知",
+      "input_data": {
+        "leads": [
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-hubspot-search",
+      "dependency_type": "hubspot",
+      "operation": "search_leads",
+      "request_contract": {
+        "max_results": 20,
+        "properties": [
+          "activity",
+          "lifecycle"
+        ]
+      },
+      "response_contract": {
+        "results": [
+          {
+            "id": "lead1",
+            "name": "Alice Chen",
+            "email": "alice@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead2",
+            "name": "Bob Li",
+            "email": "bob@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead3",
+            "name": "Carol Wu",
+            "email": "carol@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead4",
+            "name": "Dan Xu",
+            "email": "dan@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead5",
+            "name": "Eva Sun",
+            "email": "eva@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active3",
+            "name": "Henry Gao",
+            "email": "henry@example.com",
+            "status": "active",
+            "lifecycle_stage": "customer",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active4",
+            "name": "Ivy Zhang",
+            "email": "ivy@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active5",
+            "name": "Jack Zhou",
+            "email": "jack@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active6",
+            "name": "Kate Hu",
+            "email": "kate@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active7",
+            "name": "Leo Pan",
+            "email": "leo@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active8",
+            "name": "Mia Tang",
+            "email": "mia@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active9",
+            "name": "Nick Ren",
+            "email": "nick@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active10",
+            "name": "Olive Ye",
+            "email": "olive@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active11",
+            "name": "Paul Qiao",
+            "email": "paul@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active12",
+            "name": "Quinn Bao",
+            "email": "quinn@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active13",
+            "name": "Rita He",
+            "email": "rita@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active14",
+            "name": "Sam Jiao",
+            "email": "sam@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active15",
+            "name": "Tina Kong",
+            "email": "tina@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "late1",
+            "name": "Uma Guo",
+            "email": "uma@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late2",
+            "name": "Vera Lei",
+            "email": "vera@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late3",
+            "name": "Will Feng",
+            "email": "will@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late4",
+            "name": "Xena Shao",
+            "email": "xena@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late5",
+            "name": "Yuki Luo",
+            "email": "yuki@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email",
+      "dependency_type": "llm",
+      "operation": "generate_followup_email",
+      "request_contract": {
+        "lead_status": "bad_timing"
+      },
+      "response_contract": {
+        "subject": "Quick follow-up",
+        "body": "Hi, just checking in — no pressure at all. Happy to help whenever the timing works for you.",
+        "to_email": "alice@example.com",
+        "owner_id": "owner_a"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-draft",
+      "dependency_type": "gmail",
+      "operation": "create_draft",
+      "request_contract": {
+        "to_email": "alice@example.com"
+      },
+      "response_contract": {
+        "draft_id": "draft_001",
+        "created": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-notify",
+      "dependency_type": "slack",
+      "operation": "post_owner_notification",
+      "request_contract": {
+        "owner_id": "owner_a"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1111.2222"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-fail",
+      "dependency_type": "llm",
+      "operation": "generate_followup_email",
+      "request_contract": {
+        "fail": true
+      },
+      "response_contract": {
+        "error": "LLMError: context window exceeded"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-alert",
+      "dependency_type": "slack",
+      "operation": "post_error_alert",
+      "request_contract": {
+        "lead_id": "lead1"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "2222.3333"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.fetched_leads",
+          "operator": "length_equals",
+          "expected": 20,
+          "rationale": "单次最多拉取 20 条线索，虽然 mock 返回 25 条，处理集合不得超过 20"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.processed_leads",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "前 20 条中仅 5 条为 bad_timing，第 21 条（late1）虽为 bad_timing 但超出 20 条上限不应被处理"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.processed_leads[].status",
+          "operator": "equals",
+          "expected": "bad_timing",
+          "rationale": "仅处理因时机不当被暂停的线索，处理集合中不应出现 active 等其它状态"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.processed_leads[0].id",
+          "operator": "equals",
+          "expected": "lead1",
+          "rationale": "处理集合按拉取顺序保留 bad_timing 线索，首条应为 lead1；结合 A-2（数量 5）与 A-3（全部为 bad_timing），处理集合被唯一确定为 {lead1..lead5}，从而验证 active 状态线索（如 active1）与第 21 条起的 late1 均未被处理"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.drafts",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "每个合格线索须在 Gmail 中创建一封草稿"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sent_emails",
+          "operator": "not_exists",
+          "rationale": "流程不自动发送邮件，只创建草稿供人工审阅",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.slack_notifications",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "每个合格线索须向负责人发送一次 Slack 通知"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-normalize",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-normalize",
+          "target": "output.drafts[0].subject",
+          "operator": "exists",
+          "rationale": "草稿须整理出主题字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-2-pos-normalize",
+          "target": "output.drafts[0].body",
+          "operator": "exists",
+          "rationale": "草稿须整理出正文（简短友好、无 CRM 标签、无推销口吻）",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-3-pos-normalize",
+          "target": "output.drafts[0].to_email",
+          "operator": "equals",
+          "expected": "alice@example.com",
+          "rationale": "收件人邮箱应来自线索记录"
+        },
+        {
+          "assertion_id": "A-4-pos-normalize",
+          "target": "output.drafts[0].owner_id",
+          "operator": "exists",
+          "rationale": "负责人信息须随草稿一起输出",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-neg-llm-fail",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-leads",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-fail",
+        "M-slack-alert"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-neg-llm-fail",
+          "target": "output.drafts",
+          "operator": "not_exists",
+          "rationale": "语言模型生成失败时不创建草稿",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-2-neg-llm-fail",
+          "target": "output.slack_alert.text",
+          "operator": "contains",
+          "expected": "Alice Chen",
+          "rationale": "告警须附上线索姓名以便转为人工跟进"
+        },
+        {
+          "assertion_id": "A-3-neg-llm-fail",
+          "target": "output.slack_alert.text",
+          "operator": "contains",
+          "expected": "alice@example.com",
+          "rationale": "告警须附上线索邮箱"
+        },
+        {
+          "assertion_id": "A-4-neg-llm-fail",
+          "target": "output.slack_alert.text",
+          "operator": "contains",
+          "expected": "LLMError",
+          "rationale": "告警须包含语言模型生成错误信息"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-zero-qualified",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-leads-zero",
+        "F-owners"
+      ],
+      "mock_ids": [
+        "M-hubspot-search",
+        "M-llm-email",
+        "M-gmail-draft",
+        "M-slack-notify"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-zero-qualified",
+          "target": "output.processed_leads",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "拉取范围内无 bad_timing 线索时，处理集合应为空"
+        },
+        {
+          "assertion_id": "A-2-bnd-zero-qualified",
+          "target": "output.drafts",
+          "operator": "not_exists",
+          "rationale": "无合格线索时不创建任何草稿",
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "bad_timing 状态为判断线索是否被暂停的唯一依据（冻结需求 conditions）；单次拉取上限 20 条按最近活动排序取前 20；邮件只建草稿不发送，Gmail 与 Slack 均为固定模拟响应。"
+}

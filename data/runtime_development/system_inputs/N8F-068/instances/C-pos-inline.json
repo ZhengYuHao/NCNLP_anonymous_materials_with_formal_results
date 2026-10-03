@@ -1,0 +1,13 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-068",
+  "case_id": "C-pos-inline",
+  "kind": "positive",
+  "input_data": {
+    "from": "pr@company.com",
+    "subject": "Press release: launch",
+    "body": "Inline press release text about new product launch on September 1.",
+    "attachments": []
+  },
+  "input_sha256": "FDF0D00D7215430B636D99926263FFF943FE831422799DC186E57FE04C915EAE"
+}

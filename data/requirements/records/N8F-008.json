@@ -1,0 +1,91 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-008",
+  "source_id": "n8n:14338",
+  "workflow_sha256": "741791cdb94734d3298db80b8dd045d2608ca4eb4dde3ef0bc7532a9a47b6e55",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "0d8092e139b1fcb82853a17bb96fae354b6e8640d231b9b4bf84f52b9ed049cf",
+  "requirement": {
+    "requirement_text": "当用户在 GitLab 合并请求（merge request）讨论区发布触发评论时，启动代码审查流程。\n输入：用户在 GitLab 合并请求讨论区发布的触发评论；系统据此加载该合并请求的变更内容。\n处理过程：\n1. 将变更差异按每个变更文件拆分为一个条目，跳过不适合行内评审的文件；\n2. 由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件；\n3. 汇总三个审查者的结论，再由语言模型进行复核：剔除力度不足或重复的结论，并统一严重程度与置信度的表示；\n4. 仅发布置信度达到配置阈值的审查结论。\n输出与分支：\n- 若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论；\n- 否则退化为在触发评论所在的讨论区中回复评论；\n- 同时发布一条总结性回复，标记本次审查已完成。",
+    "source_spans": [
+      {
+        "start": 26,
+        "end": 361,
+        "text": "This template is for teams that use GitLab merge requests and want a practical AI-assisted review workflow in n8n. It is useful for engineering teams that want faster first-pass reviews, consistent review comments, and a simple way to separate likely bugs, security risks, and maintainability issues before a human reviewer takes over."
+      },
+      {
+        "start": 377,
+        "end": 612,
+        "text": "This workflow starts when a user posts a trigger comment in a GitLab merge request discussion. It loads the merge request changes, splits the diff into one item per changed file, and skips files that are not suitable for inline review."
+      },
+      {
+        "start": 614,
+        "end": 858,
+        "text": "Each file is then reviewed in parallel by three AI reviewers focused on bugs, security, and maintainability. Their findings are merged and sent to a verifier step, which removes weak or duplicate findings and normalizes severity and confidence."
+      },
+      {
+        "start": 860,
+        "end": 1162,
+        "text": "Only findings that pass the configured confidence threshold are posted. If a valid GitLab diff position can be resolved, the workflow creates an inline review comment. Otherwise, it falls back to a reply comment in the trigger discussion. A summary reply is also posted to mark the review as completed."
+      },
+      {
+        "start": 1594,
+        "end": 1747,
+        "text": "GitLab project with merge request discussions enabled\nn8n credentials for GitLab API access\nAI chat model credentials for the reviewer and verifier nodes"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户在 GitLab 合并请求讨论区发布的触发评论",
+        "该合并请求的变更内容（差异）"
+      ],
+      "conditions": [
+        "仅当用户在合并请求讨论区发布触发评论时启动",
+        "跳过不适合行内评审的文件",
+        "仅发布置信度达到配置阈值的审查结论",
+        "能解析到有效的 GitLab 差异位置时创建行内评论，否则退化为讨论区回复"
+      ],
+      "allowed_actions": [
+        "加载合并请求的变更内容",
+        "按变更文件拆分差异条目",
+        "由语言模型针对缺陷、安全、可维护性三个维度并行审查每个文件",
+        "由语言模型汇总并复核三个审查者的结论",
+        "剔除力度不足或重复的结论并统一严重程度与置信度表示",
+        "创建行内评审评论",
+        "在触发评论所在讨论区回复评论",
+        "发布标记审查已完成的总结性回复"
+      ],
+      "visible_outcomes": [
+        "GitLab 合并请求中对应代码位置的行内评审评论",
+        "触发讨论区中的回复评论（含无法定位差异位置时的退化评论）",
+        "标记本次审查已完成的总结性回复"
+      ],
+      "failure_behavior": [
+        "无法解析到有效的 GitLab 差异位置时，退化为在触发评论所在讨论区中回复评论"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-008.packet.json",
+    "packet_sha256": "441786a5bb191c10a7110787b2808be7164bb0e8834823abe2cb3a433c145220",
+    "public_description_sha256": "1da24885a37728b7bd115e37ecd5e5f803db7055cedc632d2cee5aa7a934e09c"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-008.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/batch_01_revision_01/revision_records/N8F-008.revision.json",
+    "revision_record_sha256": "1c70a08966af78f0ea2f22d78b54215e53182f21348712e3701fe67cf0ccc8c1",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/batch_01_revision_01/verifier_confirmation/responses/N8F-008.response.json",
+    "final_confirmation_sha256": "82ccb2921d749426090a1883b1b927b15eea7ad8bc1962623df778a47e5c120a",
+    "decision": "accept"
+  },
+  "formal_index": 19
+}

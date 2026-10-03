@@ -1,0 +1,467 @@
+{
+  "task_id": "N8F-036",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "d78112c8019072dbe0e17440d8a7a7c077e3619f6d595b461e64e8a36dfb683c",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收来自表单、落地页或 CRM 系统的购房意向线索",
+      "node_type": "code",
+      "operation_family": "external_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "接收到的购房意向线索"
+        }
+      ],
+      "native_evidence": [
+        "🔔 Buyer Lead Webhook1 (webhook, trigger)"
+      ],
+      "requirement_evidence": [
+        "系统通过外部请求入口接收来自表单、落地页或 CRM 系统的购房意向线索"
+      ],
+      "rationale": "需求声明的外部请求入口（线索接收车道入口），为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语言模型将新线索与既有客户记录比对并判定是否重复",
+      "node_type": "semantic",
+      "operation_family": "llm_classification",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "待比对的新线索"
+        },
+        {
+          "name": "customer_records",
+          "type": "array",
+          "description": "既有客户记录（比对基准）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dedup_status",
+          "type": "string",
+          "description": "去重判定结果（duplicate 或 new）"
+        }
+      ],
+      "native_evidence": [
+        "🤖 AI Dedup & CRM Check Agent1 (agent)",
+        "🧠 Azure OpenAI – Dedup Model1 (lmChatAzureOpenAi)",
+        "📋 Read CRM Sheet for Dedup1 (googleSheetsTool)"
+      ],
+      "requirement_evidence": [
+        "先由语言模型将新线索与既有客户记录比对，识别并去除重复线索"
+      ],
+      "rationale": "需求声明由语言模型比对既有客户记录判定重复，判 semantic；既有客户记录为契约输入，读取方式为实现细节不展开。"
+    },
+    {
+      "node_id": "n3",
+      "label": "将去重后的新线索写入 Google Sheets 用于管线跟踪",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "去重后的新线索"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📝 Save New Lead to CRM Sheet1 (googleSheets, appendOrUpdate)"
+      ],
+      "requirement_evidence": [
+        "去重后的线索写入 Google Sheets 用于管线跟踪"
+      ],
+      "rationale": "需求声明的写入动作，为线索接收车道的最终交付，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n4",
+      "label": "去除重复线索（不进入管线）",
+      "node_type": "terminal",
+      "operation_family": "discard",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "判定为重复的线索"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "🔀 Route: Duplicate or New Lead?1 (if, duplicate 分支)"
+      ],
+      "requirement_evidence": [
+        "识别并去除重复线索"
+      ],
+      "rationale": "重复线索被去除、流程终止；需求未声明重复告警邮件等后续动作，故不建模，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n5",
+      "label": "检测到新增的待匹配线索行",
+      "node_type": "code",
+      "operation_family": "event_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "新写入的待匹配线索"
+        }
+      ],
+      "native_evidence": [
+        "📊 New Buyer Row Trigger1 (googleSheetsTrigger)"
+      ],
+      "requirement_evidence": [
+        "随后系统依据买家偏好与房源库进行匹配"
+      ],
+      "rationale": "需求声明去重写入后系统继续执行匹配，以新线索行触发为匹配车道入口，为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型依据买家偏好与房源库匹配房源",
+      "node_type": "semantic",
+      "operation_family": "llm_retrieval",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "买家偏好信息"
+        },
+        {
+          "name": "property_inventory",
+          "type": "array",
+          "description": "房源库（匹配候选）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "matched_properties",
+          "type": "array",
+          "description": "匹配到的房源列表"
+        }
+      ],
+      "native_evidence": [
+        "🤖 AI Property Matching Agent1 (agent)",
+        "🧠 Azure OpenAI – Matching Model1 (lmChatAzureOpenAi)",
+        "📋 Read Available Properties Sheet1 (googleSheetsTool)"
+      ],
+      "requirement_evidence": [
+        "系统依据买家偏好与房源库进行匹配"
+      ],
+      "rationale": "需求声明依据买家偏好匹配房源，需要语言模型开放理解偏好与房源，判 semantic；房源库为契约输入。"
+    },
+    {
+      "node_id": "n7",
+      "label": "从 Google Drive 获取匹配房源的资料文件",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "matched_properties",
+          "type": "array",
+          "description": "匹配到的房源列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "property_decks",
+          "type": "array",
+          "description": "匹配房源的资料文件"
+        }
+      ],
+      "native_evidence": [
+        "🤖 AI Property Deck Search Agent1 (agent)",
+        "📂 Search Property Deck in Google Drive1 (googleDriveTool)"
+      ],
+      "requirement_evidence": [
+        "从 Google Drive 取出匹配房源的资料文件"
+      ],
+      "rationale": "需求声明的外部取文件动作，为确定性外部操作，判 code；原生 agent 如何定位文件为实现细节不展开。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过 Gmail 向买家发送个性化房源资料",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "买家信息（收件对象）"
+        },
+        {
+          "name": "property_decks",
+          "type": "array",
+          "description": "匹配房源的资料文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "interaction_record",
+          "type": "object",
+          "description": "本次发送产生的互动记录"
+        }
+      ],
+      "native_evidence": [
+        "📧 Send Property Deck to Buyer1 (gmail)"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 将个性化的房源资料发送给买家"
+      ],
+      "rationale": "需求声明的邮件发送动作，为确定性外部操作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "将与买家的互动记录回写至 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "interaction_record",
+          "type": "object",
+          "description": "待回写的互动记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📝 Log Deck Send Event to Sheet1 (googleSheets, appendOrUpdate)"
+      ],
+      "requirement_evidence": [
+        "与买家的互动记录回写至 Google Sheets"
+      ],
+      "rationale": "需求声明的回写动作，为房源交付车道的最终交付，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n10",
+      "label": "周期触发买家互动成交分析",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "⏰ Deal Scoring Cron Trigger1 (cron)"
+      ],
+      "requirement_evidence": [
+        "系统还需按周期对买家互动情况做成交分析"
+      ],
+      "rationale": "需求声明的周期触发（成交分析车道入口），判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "语言模型预测成交概率并给出阶段判断",
+      "node_type": "semantic",
+      "operation_family": "llm_prediction",
+      "inputs": [
+        {
+          "name": "engagement_records",
+          "type": "array",
+          "description": "买家互动记录（分析依据）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "deal_assessment",
+          "type": "object",
+          "description": "成交概率、阶段判断与建议后续动作"
+        }
+      ],
+      "native_evidence": [
+        "🤖 AI Deal Scoring Agent1 (agent)",
+        "🧠 Azure OpenAI – Deal Scoring Model1 (lmChatAzureOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型预测成交概率并给出阶段判断"
+      ],
+      "rationale": "需求声明由语言模型预测成交概率并生成阶段判断，判 semantic；互动记录为契约输入。"
+    },
+    {
+      "node_id": "n12",
+      "label": "将建议的后续动作与成交优先级通知销售团队",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "deal_assessment",
+          "type": "object",
+          "description": "成交概率、阶段判断与建议后续动作"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📧 Send Deal Score to Sales Team1 (gmail)"
+      ],
+      "requirement_evidence": [
+        "最后将建议的后续动作与成交优先级通知销售团队"
+      ],
+      "rationale": "需求声明的通知动作，为成交分析车道的最终交付，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收线索后进入去重比对"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "dedup_status == 'new'",
+      "rationale": "判定为新线索则写入 Google Sheets"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "dedup_status == 'duplicate'",
+      "rationale": "判定为重复则去除，流程终止"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "检测到新线索行后启动匹配"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "匹配完成后获取资料文件"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得资料后通过 Gmail 发送"
+    },
+    {
+      "edge_id": "cfg_e7",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送后回写互动记录"
+    },
+    {
+      "edge_id": "cfg_e8",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "周期触发后分析买家互动"
+    },
+    {
+      "edge_id": "cfg_e9",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "预测完成后通知销售团队"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "去重比对基于接收到的线索"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "写入使用去重后的新线索"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "去除重复基于判定为重复的线索"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "匹配基于新线索中的买家偏好"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "matched_properties",
+      "condition": null,
+      "rationale": "取资料基于匹配到的房源"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "property_decks",
+      "condition": null,
+      "rationale": "发送使用匹配房源的资料文件"
+    },
+    {
+      "edge_id": "dfg_d7",
+      "source": "n5",
+      "target": "n8",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "邮件需按买家信息发送"
+    },
+    {
+      "edge_id": "dfg_d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "interaction_record",
+      "condition": null,
+      "rationale": "回写使用本次发送产生的互动记录"
+    },
+    {
+      "edge_id": "dfg_d9",
+      "source": "n11",
+      "target": "n12",
+      "variable": "deal_assessment",
+      "condition": null,
+      "rationale": "通知内容使用预测结果与建议动作"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n5",
+    "n10"
+  ],
+  "terminal_nodes": [
+    "n3",
+    "n4",
+    "n9",
+    "n12"
+  ],
+  "confidence": 0.88,
+  "notes": "三车道建模：线索接收与去重链（n1→n4）、房源匹配与资料交付链（n5→n9）、周期成交分析链（n10→n12）。既有客户记录、房源库、互动记录为契约输入，由语言模型直接消费，读取方式不展开。原生 Send Duplicate Follow-Up Alert、Save Matched Properties to Sheet、各 Normalize code 节点及模型依赖节点为需求未声明的实现细节，未纳入。"
+}

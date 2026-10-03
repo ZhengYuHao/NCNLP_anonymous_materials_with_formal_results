@@ -1,0 +1,611 @@
+{
+  "task_id": "N8F-029",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "5ae844aec8f80c6fc0e88f2eeb9abb61a87a8c1ae64efc0c89970cf39c1cc560",
+  "fixtures": [
+    {
+      "fixture_id": "F-CS-EMAIL-QA",
+      "purpose": "正常用例：邮件渠道收到有依据的客户问题，应检索知识库、生成答复并经邮件回复（保留原主题加 Re: 前缀），同时记录会话",
+      "input_data": {
+        "channel": "email",
+        "normalized_message": {
+          "user_id": "cust-1001",
+          "body": "How do I reset my password?",
+          "subject": "Password reset help",
+          "from": "cust-1001@example.com"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-CHAT-GREETING",
+      "purpose": "正常用例：在线聊天渠道收到问候语，应短路置信度判定而不判失败、不生成工单，并在原渠道返回问候响应",
+      "input_data": {
+        "channel": "live_chat",
+        "normalized_message": {
+          "user_id": "chat-2002",
+          "body": "Hello!",
+          "thread_id": null
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-SLACK-ESCALATE",
+      "purpose": "升级用例：Slack 渠道消息含负面情绪，应升级为人工处理并创建工单，工单含升级原因、AI 简短说明与按情绪推导的优先级",
+      "input_data": {
+        "channel": "slack",
+        "normalized_message": {
+          "user_id": "slack-3003",
+          "body": "This is terrible, I want my money back!",
+          "thread_ts": "1680000000.000300",
+          "sentiment": "negative"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-CHAT-EMPTY",
+      "purpose": "安全拒绝用例：在线聊天渠道收到空内容消息，应在任何模型调用前被前置检查拒绝，并立即向调用方返回响应",
+      "input_data": {
+        "channel": "live_chat",
+        "normalized_message": {
+          "user_id": "chat-2004",
+          "body": ""
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-CHAT-OVERSIZED",
+      "purpose": "安全拒绝用例：在线聊天渠道收到超过最大消息长度的消息，应在前置检查阶段拒绝并立即返回响应",
+      "input_data": {
+        "channel": "live_chat",
+        "normalized_message": {
+          "user_id": "chat-2005",
+          "body": "x"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 10
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-DISCORD-HANDOVER",
+      "purpose": "升级用例：Discord 渠道消息以德语明确请求转人工，应在任何模型调用前被六语言转人工检查命中，直接升级并创建工单",
+      "input_data": {
+        "channel": "discord",
+        "normalized_message": {
+          "user_id": "discord-4006",
+          "body": "Bitte verbinden Sie mich mit einem Mitarbeiter"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-SLACK-QA",
+      "purpose": "正常用例：Slack 渠道收到有依据且无负面情绪的问题，应检索知识库生成答复，并在会话线程内自动回复（不升级）",
+      "input_data": {
+        "channel": "slack",
+        "normalized_message": {
+          "user_id": "slack-6008",
+          "body": "How do I reset my password?",
+          "thread_ts": "1680000000.000300",
+          "sentiment": "neutral"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CS-WA-UNGROUNDED",
+      "purpose": "升级用例：WhatsApp 渠道问题经知识库检索无任何返回（文档未导入或未命中），置信度为零，应路由到人工处理，这是预期的兜底行为",
+      "input_data": {
+        "channel": "whatsapp",
+        "normalized_message": {
+          "user_id": "wa-5007",
+          "body": "What is your refund policy?",
+          "phone": "+15551234567"
+        },
+        "config": {
+          "confidence_threshold": 0.7,
+          "max_message_length": 4000
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-CS-KB-FOUND",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "vector_search",
+      "request_contract": {
+        "query": "How do I reset my password?"
+      },
+      "response_contract": {
+        "results": [
+          {
+            "content": "To reset your password, go to Settings and click Reset Password.",
+            "score": 0.92
+          }
+        ],
+        "returned_any": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-KB-EMPTY",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "vector_search",
+      "request_contract": {
+        "query": "What is your refund policy?"
+      },
+      "response_contract": {
+        "results": [],
+        "returned_any": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-LLM-ANSWER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_answer",
+      "request_contract": {
+        "prompt_contains": "How do I reset my password?"
+      },
+      "response_contract": {
+        "answer": "Go to Settings and click Reset Password to change your password.",
+        "retrieved_documents": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-MEMORY-LOAD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "operation": "load_history",
+      "request_contract": {
+        "user_id": "cust-1001"
+      },
+      "response_contract": {
+        "history": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-EMAIL-REPLY",
+      "dependency_type": "n8n-nodes-base.emailSend",
+      "operation": "send_reply",
+      "request_contract": {
+        "to": "cust-1001@example.com",
+        "subject_prefix": "Re:",
+        "subject": "Re: Password reset help"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "msg-reply-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-CHAT-REPLY",
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "respond_live_chat",
+      "request_contract": {
+        "respond_immediately": true
+      },
+      "response_contract": {
+        "status_code": 200
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-SLACK-REPLY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_thread_reply",
+      "request_contract": {
+        "thread_ts": "1680000000.000300"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1680000100.000400"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-ZENDESK-CREATE",
+      "dependency_type": "n8n-nodes-base.zendesk",
+      "operation": "create_ticket",
+      "request_contract": {
+        "escalation_reason_exists": true,
+        "priority_from_sentiment": true,
+        "escalation_reason": "handover_request",
+        "priority": "high",
+        "body": "AI note: escalated for human review, please check the conversation history."
+      },
+      "response_contract": {
+        "ticket_id": 900001,
+        "status": "open"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CS-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_log_row",
+      "request_contract": {
+        "required_fields": [
+          "user_id",
+          "channel",
+          "message",
+          "category",
+          "sentiment",
+          "timestamp",
+          "answer",
+          "confidence",
+          "escalated",
+          "escalation_reason"
+        ],
+        "escalated": false
+      },
+      "response_contract": {
+        "row_appended": true,
+        "row_number": 42
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-EMAIL-ANSWERED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CS-EMAIL-QA"
+      ],
+      "mock_ids": [
+        "M-CS-KB-FOUND",
+        "M-CS-LLM-ANSWER",
+        "M-CS-MEMORY-LOAD",
+        "M-CS-EMAIL-REPLY",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-EMAIL-1",
+          "target": "exec_log.supabase.vector_search.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "有依据的问题必须先检索知识库，检索调用应发生一次"
+        },
+        {
+          "assertion_id": "A-EMAIL-2",
+          "target": "exec_log.emailSend.send_reply.request.subject",
+          "operator": "matches",
+          "expected": "^Re: Password reset help$",
+          "rationale": "邮件回复必须沿用客户原始主题并加 Re: 前缀"
+        },
+        {
+          "assertion_id": "A-EMAIL-3",
+          "target": "exec_log.emailSend.send_reply.request.to",
+          "operator": "equals",
+          "expected": "cust-1001@example.com",
+          "rationale": "回复必须发送到客户原始邮箱地址"
+        },
+        {
+          "assertion_id": "A-EMAIL-4",
+          "target": "exec_log.googleSheets.append_log_row.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每次会话（无论是否升级）都必须记录到 Google Sheets"
+        },
+        {
+          "assertion_id": "A-EMAIL-5",
+          "target": "exec_log.googleSheets.append_log_row.request.escalated",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "有依据且置信度达标的自动回复不应标记为升级"
+        },
+        {
+          "assertion_id": "A-EMAIL-6",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "正常自动回复的会话不应创建工单"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CHAT-GREETING",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CS-CHAT-GREETING"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-GREET-1",
+          "target": "exec_log.respondToWebhook.respond_live_chat.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "在线聊天渠道必须立即返回响应，使调用方不会停留在未关闭的连接上"
+        },
+        {
+          "assertion_id": "A-GREET-2",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "问候语应短路置信度判定而不是判为失败，普通礼貌用语不得触发工单"
+        },
+        {
+          "assertion_id": "A-GREET-3",
+          "target": "exec_log.googleSheets.append_log_row.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "问候会话同样需要分类并记录"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SLACK-ESCALATED",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CS-SLACK-ESCALATE"
+      ],
+      "mock_ids": [
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-ESC-1",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "存在负面情绪时必须升级为人工处理并创建工单"
+        },
+        {
+          "assertion_id": "A-ESC-2",
+          "target": "exec_log.zendesk.create_ticket.request.escalation_reason",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "工单必须携带升级原因，且原因应直接取自已有判断"
+        },
+        {
+          "assertion_id": "A-ESC-3",
+          "target": "exec_log.zendesk.create_ticket.request.priority",
+          "operator": "equals",
+          "expected": "high",
+          "rationale": "工单优先级必须按情绪推导，负面情绪对应高优先级"
+        },
+        {
+          "assertion_id": "A-ESC-4",
+          "target": "exec_log.zendesk.create_ticket.request.body",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "工单正文中必须包含由语言模型为人工客服写的简短说明"
+        },
+        {
+          "assertion_id": "A-ESC-5",
+          "target": "exec_log.googleSheets.append_log_row.request.escalated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "升级会话记录必须标记为已升级"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CHAT-EMPTY-REJECTED",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-CS-CHAT-EMPTY"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-EMPTY-1",
+          "target": "exec_log.respondToWebhook.respond_live_chat.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "空内容被前置检查拒绝后，在线聊天仍必须立即返回响应"
+        },
+        {
+          "assertion_id": "A-EMPTY-2",
+          "target": "exec_log.supabase.vector_search.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "五项前置检查必须在任何模型调用之前执行，空内容不得触发知识库检索"
+        },
+        {
+          "assertion_id": "A-EMPTY-3",
+          "target": "exec_log.lmChatOpenAi.generate_answer.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "空内容不得触发语言模型调用"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CHAT-OVERSIZED-REJECTED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CS-CHAT-OVERSIZED"
+      ],
+      "mock_ids": [
+        "M-CS-CHAT-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BIG-1",
+          "target": "exec_log.respondToWebhook.respond_live_chat.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "超长消息被拒绝后在线聊天必须立即返回响应"
+        },
+        {
+          "assertion_id": "A-BIG-2",
+          "target": "exec_log.lmChatOpenAi.generate_answer.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "超过最大消息长度的消息不得产生任何模型调用成本"
+        }
+      ]
+    },
+    {
+      "case_id": "C-DISCORD-HANDOVER",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-CS-DISCORD-HANDOVER"
+      ],
+      "mock_ids": [
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-HAND-1",
+          "target": "exec_log.lmChatOpenAi.generate_answer.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "六语言明确转人工请求必须在前置检查阶段拦截，不产生模型调用"
+        },
+        {
+          "assertion_id": "A-HAND-2",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "明确转人工请求必须直接升级并创建工单"
+        },
+        {
+          "assertion_id": "A-HAND-3",
+          "target": "exec_log.zendesk.create_ticket.request.escalation_reason",
+          "operator": "contains",
+          "expected": "handover",
+          "rationale": "升级原因必须为转人工请求命中，而非重新判定"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SLACK-ANSWERED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CS-SLACK-QA"
+      ],
+      "mock_ids": [
+        "M-CS-KB-FOUND",
+        "M-CS-LLM-ANSWER",
+        "M-CS-SLACK-REPLY",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-SLK-1",
+          "target": "exec_log.supabase.vector_search.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "有依据的问题必须先检索知识库，置信度以检索依据评估"
+        },
+        {
+          "assertion_id": "A-SLK-2",
+          "target": "exec_log.slack.post_thread_reply.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "置信度达到阈值且无负面情绪时，答复必须通过原始渠道（Slack）返回"
+        },
+        {
+          "assertion_id": "A-SLK-3",
+          "target": "exec_log.slack.post_thread_reply.request.thread_ts",
+          "operator": "equals",
+          "expected": "1680000000.000300",
+          "rationale": "Slack 渠道的答复必须在客户消息所在的会话线程内回复"
+        },
+        {
+          "assertion_id": "A-SLK-4",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "置信度达标且无负面情绪的会话不应升级创建工单"
+        },
+        {
+          "assertion_id": "A-SLK-5",
+          "target": "exec_log.googleSheets.append_log_row.request.escalated",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "正常自动回复的会话记录必须标记为未升级"
+        }
+      ]
+    },
+    {
+      "case_id": "C-WA-UNGROUNDED-FALLBACK",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CS-WA-UNGROUNDED"
+      ],
+      "mock_ids": [
+        "M-CS-KB-EMPTY",
+        "M-CS-ZENDESK-CREATE",
+        "M-CS-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-UG-1",
+          "target": "exec_log.supabase.vector_search.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "问题应先检索知识库，检索发生一次"
+        },
+        {
+          "assertion_id": "A-UG-2",
+          "target": "exec_log.zendesk.create_ticket.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "知识库无返回时置信度为零，必须路由到人工，这是预期的兜底行为"
+        },
+        {
+          "assertion_id": "A-UG-3",
+          "target": "exec_log.zendesk.create_ticket.request.priority",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "升级工单必须携带按情绪推导的优先级"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖五渠道接入（邮件/在线聊天/Slack/Discord/WhatsApp）、五项前置检查（空内容、超长消息、六语言转人工）、知识库检索依据评估、问候短路、Slack 线程内自动回复、负面情绪升级、无依据兜底路由人工。外部依赖（向量检索、LLM、会话记忆、邮件/Slack 回复、Zendesk 工单、Sheets 记录）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言均为调用次数、请求字段相等、正则匹配与存在性检查。"
+}

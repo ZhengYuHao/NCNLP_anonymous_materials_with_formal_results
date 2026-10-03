@@ -1,0 +1,762 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-080",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-FB-POSTS",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_page_posts",
+      "request_contract": {
+        "page_id": "page-1"
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "id": "post-1",
+            "message": "New feature launch!",
+            "reactions": 150
+          },
+          {
+            "id": "post-2",
+            "message": "We are hiring",
+            "reactions": 20
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FB-POST-120",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_page_posts",
+      "request_contract": {
+        "page_id": "page-1"
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "id": "post-3",
+            "message": "Big post",
+            "reactions": 5
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FB-COMMENTS-P1",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_post_comments",
+      "request_contract": {
+        "post_id": "post-1",
+        "limit": 100
+      },
+      "response_contract": {
+        "comments": [
+          {
+            "id": "c1",
+            "text": "This is terrible"
+          },
+          {
+            "id": "c2",
+            "text": "Love it"
+          },
+          {
+            "id": "c3",
+            "text": "Why so slow?"
+          },
+          {
+            "id": "c4",
+            "text": "Great work"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FB-COMMENTS-P2",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_post_comments",
+      "request_contract": {
+        "post_id": "post-2",
+        "limit": 100
+      },
+      "response_contract": {
+        "comments": [
+          {
+            "id": "c5",
+            "text": "Nice"
+          },
+          {
+            "id": "c6",
+            "text": "Interesting"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FB-COMMENTS-P3",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_post_comments",
+      "request_contract": {
+        "post_id": "post-3",
+        "limit": 100
+      },
+      "response_contract": {
+        "comments": [
+          {
+            "id": "c-001",
+            "text": "comment 1"
+          },
+          {
+            "id": "c-002",
+            "text": "comment 2"
+          },
+          {
+            "id": "c-003",
+            "text": "comment 3"
+          },
+          {
+            "id": "c-004",
+            "text": "comment 4"
+          },
+          {
+            "id": "c-005",
+            "text": "comment 5"
+          },
+          {
+            "id": "c-006",
+            "text": "comment 6"
+          },
+          {
+            "id": "c-007",
+            "text": "comment 7"
+          },
+          {
+            "id": "c-008",
+            "text": "comment 8"
+          },
+          {
+            "id": "c-009",
+            "text": "comment 9"
+          },
+          {
+            "id": "c-010",
+            "text": "comment 10"
+          },
+          {
+            "id": "c-011",
+            "text": "comment 11"
+          },
+          {
+            "id": "c-012",
+            "text": "comment 12"
+          },
+          {
+            "id": "c-013",
+            "text": "comment 13"
+          },
+          {
+            "id": "c-014",
+            "text": "comment 14"
+          },
+          {
+            "id": "c-015",
+            "text": "comment 15"
+          },
+          {
+            "id": "c-016",
+            "text": "comment 16"
+          },
+          {
+            "id": "c-017",
+            "text": "comment 17"
+          },
+          {
+            "id": "c-018",
+            "text": "comment 18"
+          },
+          {
+            "id": "c-019",
+            "text": "comment 19"
+          },
+          {
+            "id": "c-020",
+            "text": "comment 20"
+          },
+          {
+            "id": "c-021",
+            "text": "comment 21"
+          },
+          {
+            "id": "c-022",
+            "text": "comment 22"
+          },
+          {
+            "id": "c-023",
+            "text": "comment 23"
+          },
+          {
+            "id": "c-024",
+            "text": "comment 24"
+          },
+          {
+            "id": "c-025",
+            "text": "comment 25"
+          },
+          {
+            "id": "c-026",
+            "text": "comment 26"
+          },
+          {
+            "id": "c-027",
+            "text": "comment 27"
+          },
+          {
+            "id": "c-028",
+            "text": "comment 28"
+          },
+          {
+            "id": "c-029",
+            "text": "comment 29"
+          },
+          {
+            "id": "c-030",
+            "text": "comment 30"
+          },
+          {
+            "id": "c-031",
+            "text": "comment 31"
+          },
+          {
+            "id": "c-032",
+            "text": "comment 32"
+          },
+          {
+            "id": "c-033",
+            "text": "comment 33"
+          },
+          {
+            "id": "c-034",
+            "text": "comment 34"
+          },
+          {
+            "id": "c-035",
+            "text": "comment 35"
+          },
+          {
+            "id": "c-036",
+            "text": "comment 36"
+          },
+          {
+            "id": "c-037",
+            "text": "comment 37"
+          },
+          {
+            "id": "c-038",
+            "text": "comment 38"
+          },
+          {
+            "id": "c-039",
+            "text": "comment 39"
+          },
+          {
+            "id": "c-040",
+            "text": "comment 40"
+          },
+          {
+            "id": "c-041",
+            "text": "comment 41"
+          },
+          {
+            "id": "c-042",
+            "text": "comment 42"
+          },
+          {
+            "id": "c-043",
+            "text": "comment 43"
+          },
+          {
+            "id": "c-044",
+            "text": "comment 44"
+          },
+          {
+            "id": "c-045",
+            "text": "comment 45"
+          },
+          {
+            "id": "c-046",
+            "text": "comment 46"
+          },
+          {
+            "id": "c-047",
+            "text": "comment 47"
+          },
+          {
+            "id": "c-048",
+            "text": "comment 48"
+          },
+          {
+            "id": "c-049",
+            "text": "comment 49"
+          },
+          {
+            "id": "c-050",
+            "text": "comment 50"
+          },
+          {
+            "id": "c-051",
+            "text": "comment 51"
+          },
+          {
+            "id": "c-052",
+            "text": "comment 52"
+          },
+          {
+            "id": "c-053",
+            "text": "comment 53"
+          },
+          {
+            "id": "c-054",
+            "text": "comment 54"
+          },
+          {
+            "id": "c-055",
+            "text": "comment 55"
+          },
+          {
+            "id": "c-056",
+            "text": "comment 56"
+          },
+          {
+            "id": "c-057",
+            "text": "comment 57"
+          },
+          {
+            "id": "c-058",
+            "text": "comment 58"
+          },
+          {
+            "id": "c-059",
+            "text": "comment 59"
+          },
+          {
+            "id": "c-060",
+            "text": "comment 60"
+          },
+          {
+            "id": "c-061",
+            "text": "comment 61"
+          },
+          {
+            "id": "c-062",
+            "text": "comment 62"
+          },
+          {
+            "id": "c-063",
+            "text": "comment 63"
+          },
+          {
+            "id": "c-064",
+            "text": "comment 64"
+          },
+          {
+            "id": "c-065",
+            "text": "comment 65"
+          },
+          {
+            "id": "c-066",
+            "text": "comment 66"
+          },
+          {
+            "id": "c-067",
+            "text": "comment 67"
+          },
+          {
+            "id": "c-068",
+            "text": "comment 68"
+          },
+          {
+            "id": "c-069",
+            "text": "comment 69"
+          },
+          {
+            "id": "c-070",
+            "text": "comment 70"
+          },
+          {
+            "id": "c-071",
+            "text": "comment 71"
+          },
+          {
+            "id": "c-072",
+            "text": "comment 72"
+          },
+          {
+            "id": "c-073",
+            "text": "comment 73"
+          },
+          {
+            "id": "c-074",
+            "text": "comment 74"
+          },
+          {
+            "id": "c-075",
+            "text": "comment 75"
+          },
+          {
+            "id": "c-076",
+            "text": "comment 76"
+          },
+          {
+            "id": "c-077",
+            "text": "comment 77"
+          },
+          {
+            "id": "c-078",
+            "text": "comment 78"
+          },
+          {
+            "id": "c-079",
+            "text": "comment 79"
+          },
+          {
+            "id": "c-080",
+            "text": "comment 80"
+          },
+          {
+            "id": "c-081",
+            "text": "comment 81"
+          },
+          {
+            "id": "c-082",
+            "text": "comment 82"
+          },
+          {
+            "id": "c-083",
+            "text": "comment 83"
+          },
+          {
+            "id": "c-084",
+            "text": "comment 84"
+          },
+          {
+            "id": "c-085",
+            "text": "comment 85"
+          },
+          {
+            "id": "c-086",
+            "text": "comment 86"
+          },
+          {
+            "id": "c-087",
+            "text": "comment 87"
+          },
+          {
+            "id": "c-088",
+            "text": "comment 88"
+          },
+          {
+            "id": "c-089",
+            "text": "comment 89"
+          },
+          {
+            "id": "c-090",
+            "text": "comment 90"
+          },
+          {
+            "id": "c-091",
+            "text": "comment 91"
+          },
+          {
+            "id": "c-092",
+            "text": "comment 92"
+          },
+          {
+            "id": "c-093",
+            "text": "comment 93"
+          },
+          {
+            "id": "c-094",
+            "text": "comment 94"
+          },
+          {
+            "id": "c-095",
+            "text": "comment 95"
+          },
+          {
+            "id": "c-096",
+            "text": "comment 96"
+          },
+          {
+            "id": "c-097",
+            "text": "comment 97"
+          },
+          {
+            "id": "c-098",
+            "text": "comment 98"
+          },
+          {
+            "id": "c-099",
+            "text": "comment 99"
+          },
+          {
+            "id": "c-100",
+            "text": "comment 100"
+          },
+          {
+            "id": "c-101",
+            "text": "comment 101"
+          },
+          {
+            "id": "c-102",
+            "text": "comment 102"
+          },
+          {
+            "id": "c-103",
+            "text": "comment 103"
+          },
+          {
+            "id": "c-104",
+            "text": "comment 104"
+          },
+          {
+            "id": "c-105",
+            "text": "comment 105"
+          },
+          {
+            "id": "c-106",
+            "text": "comment 106"
+          },
+          {
+            "id": "c-107",
+            "text": "comment 107"
+          },
+          {
+            "id": "c-108",
+            "text": "comment 108"
+          },
+          {
+            "id": "c-109",
+            "text": "comment 109"
+          },
+          {
+            "id": "c-110",
+            "text": "comment 110"
+          },
+          {
+            "id": "c-111",
+            "text": "comment 111"
+          },
+          {
+            "id": "c-112",
+            "text": "comment 112"
+          },
+          {
+            "id": "c-113",
+            "text": "comment 113"
+          },
+          {
+            "id": "c-114",
+            "text": "comment 114"
+          },
+          {
+            "id": "c-115",
+            "text": "comment 115"
+          },
+          {
+            "id": "c-116",
+            "text": "comment 116"
+          },
+          {
+            "id": "c-117",
+            "text": "comment 117"
+          },
+          {
+            "id": "c-118",
+            "text": "comment 118"
+          },
+          {
+            "id": "c-119",
+            "text": "comment 119"
+          },
+          {
+            "id": "c-120",
+            "text": "comment 120"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SENT-P1",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_sentiment",
+      "request_contract": {
+        "post_id": "post-1"
+      },
+      "response_contract": {
+        "post_id": "post-1",
+        "tone": "neutral",
+        "sentiment": "negative",
+        "confidence": 0.9,
+        "explanation": "Multiple negative comments",
+        "comments": [
+          {
+            "comment_id": "c1",
+            "sentiment": "negative",
+            "confidence": 0.95
+          },
+          {
+            "comment_id": "c2",
+            "sentiment": "positive",
+            "confidence": 0.9
+          },
+          {
+            "comment_id": "c3",
+            "sentiment": "negative",
+            "confidence": 0.8
+          },
+          {
+            "comment_id": "c4",
+            "sentiment": "positive",
+            "confidence": 0.85
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SENT-P2",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_sentiment",
+      "request_contract": {
+        "post_id": "post-2"
+      },
+      "response_contract": {
+        "post_id": "post-2",
+        "tone": "positive",
+        "sentiment": "positive",
+        "confidence": 0.8,
+        "explanation": "Positive audience reaction",
+        "comments": [
+          {
+            "comment_id": "c5",
+            "sentiment": "positive",
+            "confidence": 0.85
+          },
+          {
+            "comment_id": "c6",
+            "sentiment": "positive",
+            "confidence": 0.9
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-METRICS",
+      "dependency_type": "googleSheets",
+      "operation": "append_metrics",
+      "request_contract": {
+        "tab": "SentimentMetrics"
+      },
+      "response_contract": {
+        "appended_rows": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OUTLOOK",
+      "dependency_type": "microsoftOutlook",
+      "operation": "send_email",
+      "request_contract": {},
+      "response_contract": {
+        "message_id": "o-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK",
+      "dependency_type": "slack",
+      "operation": "send_message",
+      "request_contract": {},
+      "response_contract": {
+        "ok": true,
+        "ts": "123"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FB-FAIL",
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_page_posts",
+      "request_contract": {
+        "page_id": "page-1"
+      },
+      "response_contract": {
+        "error": {
+          "code": 190,
+          "message": "Session expired"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-REPORT",
+      "fixture_ids": [
+        "F-POSTS",
+        "F-SCHEDULE"
+      ],
+      "mock_ids": [
+        "M-FB-POSTS",
+        "M-FB-COMMENTS-P1",
+        "M-FB-COMMENTS-P2",
+        "M-LLM-SENT-P1",
+        "M-LLM-SENT-P2",
+        "M-APPEND-METRICS",
+        "M-OUTLOOK",
+        "M-SLACK"
+      ]
+    },
+    {
+      "case_id": "C-BOUND-100-CAP",
+      "fixture_ids": [
+        "F-POST-120",
+        "F-SCHEDULE"
+      ],
+      "mock_ids": [
+        "M-FB-POST-120",
+        "M-FB-COMMENTS-P3",
+        "M-APPEND-METRICS",
+        "M-OUTLOOK",
+        "M-SLACK"
+      ]
+    },
+    {
+      "case_id": "C-NEG-FB-FAILURE",
+      "fixture_ids": [
+        "F-SCHEDULE"
+      ],
+      "mock_ids": [
+        "M-FB-FAIL",
+        "M-SLACK"
+      ]
+    }
+  ]
+}

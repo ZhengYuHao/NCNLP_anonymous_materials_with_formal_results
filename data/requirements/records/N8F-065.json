@@ -1,0 +1,57 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-065",
+  "source_id": "n8n:13543",
+  "workflow_sha256": "cd4c7a1de9d915b27f4993dd6da2734cfdca9ee2420c1310ef86df910953485a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "efc2ae969276737075e2a8ea81403a1a78b85eae4dfa3f07dd3a82195586a6f7",
+  "requirement": {
+    "requirement_text": "当 WordPress 中的一篇文章被创建或更新时，系统被触发启动。系统从 WordPress 接口获取该文章的原始内容数据。随后由语言模型分析其中一段文本，判定原文的准确语种，据此只把内容路由并翻译到尚缺译文的目标语言，以避免重复翻译。系统从文章的标准字段和自定义字段（ACF 字段）中提取待翻译文本，批量提交给机器翻译服务完成翻译，翻译过程中保留原有的 HTML 格式。翻译完成后，系统按原文的数据结构重建内容，并将译文作为一篇与原文章建立关联的新翻译草稿写回 WordPress。",
+    "source_spans": [
+      {
+        "start": 342,
+        "end": 1018,
+        "text": "When a post is created or updated, WordPress triggers a webhook to start the workflow. The workflow fetches the raw post JSON directly from the WordPress REST API. An OpenAI node analyzes a text snippet to detect the exact source language, ensuring it only routes and translates into missing target languages to prevent duplication. A code node then recursively extracts text from both standard fields and specific ACF fields into a single array. These strings are translated in bulk via DeepL, maintaining HTML formatting. Finally, the workflow rebuilds the original JSON structure with the translated text and pushes it back to WordPress as a newly linked translation draft."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "WordPress 文章被创建或更新时触发的事件",
+        "从 WordPress 接口获取的该文章原始内容数据（含标准字段与 ACF 自定义字段）"
+      ],
+      "conditions": [
+        "仅针对尚缺译文的目标语言进行翻译，避免重复翻译"
+      ],
+      "allowed_actions": [
+        "由语言模型分析文本片段判定原文语种",
+        "从标准字段与 ACF 自定义字段中提取待翻译文本",
+        "批量调用机器翻译服务翻译文本并保留 HTML 格式",
+        "按原文结构重建译文内容并写回 WordPress"
+      ],
+      "visible_outcomes": [
+        "WordPress 中新增一篇与原文建立关联的新翻译草稿"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-065.packet.json",
+    "packet_sha256": "99d97177a08ba64ed14992f4bb7ccbe18fef05633fd4f2cbbf6f0bf8f0591634",
+    "public_description_sha256": "01cc978affd14d575c392b20dd5993ffb3b216b64d3c3ea69dfad9aaa233679c"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-065.response.json",
+    "verification_response_sha256": "ebe049152ca81f8e248481d778bf7a3dede064238a43852f77a8b414de15ea42",
+    "decision": "accept"
+  },
+  "formal_index": 76
+}

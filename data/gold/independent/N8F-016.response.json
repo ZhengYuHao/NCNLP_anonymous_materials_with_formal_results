@@ -1,0 +1,374 @@
+{
+  "task_id": "N8F-016",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "c6a751b24d681e139ef84b27a4f1b40564d70a59a5b824001ac9cc8afa9aa893",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每 2 小时定时触发",
+      "node_type": "code",
+      "operation_family": "定时触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_tick",
+          "type": "event",
+          "description": "每 2 小时在指定分钟的触发信号"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "每 2 小时在指定分钟触发一次"
+      ],
+      "rationale": "按固定间隔启动的确定性事件源，属代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成话题标签",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "语言模型生成的 AI/BPA 类话题标签"
+        }
+      ],
+      "native_evidence": [
+        "Generate Random Hashtag (agent)",
+        "OpenAI Chat Model (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成一个真实的 AI/BPA 类话题标签"
+      ],
+      "rationale": "生成真实感话题标签是开放式文本生成，属语义处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "抓取标签下最近帖子",
+      "node_type": "code",
+      "operation_family": "外部数据采集",
+      "inputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "语言模型生成的 AI/BPA 类话题标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_posts",
+          "type": "list",
+          "description": "该标签下最近的帖子（最多设定条数）"
+        }
+      ],
+      "native_evidence": [
+        "Launch Agent (phantombuster)",
+        "Get Posts (phantombuster)"
+      ],
+      "requirement_evidence": [
+        "通过抓取服务获取该话题标签下最近的帖子，最多取设定条数"
+      ],
+      "rationale": "对抓取服务的确定性调用（含异步启动后等待结果的折叠），属代码处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "随机选取一条帖子",
+      "node_type": "code",
+      "operation_family": "选择与去重",
+      "inputs": [
+        {
+          "name": "recent_posts",
+          "type": "list",
+          "description": "该标签下最近的帖子（最多设定条数）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "被选中待评论的帖子"
+        }
+      ],
+      "native_evidence": [
+        "Get Random Post (code)",
+        "Check if in List (code)",
+        "If (if)"
+      ],
+      "requirement_evidence": [
+        "从中随机选择一条帖子",
+        "同一帖子链接不得重复评论"
+      ],
+      "rationale": "随机选择为需求明确声明的确定性选择行为；选取时对照已评论记录（读取折叠进本节点契约）剔除已评论过的帖子链接，避免重复评论。属代码处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "撰写评论回复",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "被选中待评论的帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comment_text",
+          "type": "string",
+          "description": "不超过 150 字符的评论回复"
+        }
+      ],
+      "native_evidence": [
+        "Create Comment (agent)",
+        "OpenAI Chat Model1 (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型以设定语言撰写一条不超过 150 字符的回复"
+      ],
+      "rationale": "结合帖子内容以设定语言撰写相关评论是开放式文本生成，属语义处理；长度约束作为输出契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成待评论清单文件并上传 SharePoint",
+      "node_type": "code",
+      "operation_family": "文件生成与上传",
+      "inputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "被选中待评论的帖子"
+        },
+        {
+          "name": "comment_text",
+          "type": "string",
+          "description": "不超过 150 字符的评论回复"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comment_task_file",
+          "type": "string",
+          "description": "SharePoint 中待评论帖子清单文件的引用"
+        }
+      ],
+      "native_evidence": [
+        "Create CSV Binary (code)",
+        "Convert to File (convertToFile)",
+        "Upload CSV (microsoftSharePoint)"
+      ],
+      "requirement_evidence": [
+        "生成待评论帖子清单文件并上传到 SharePoint"
+      ],
+      "rationale": "文件生成与上传均为确定性动作，属代码处理。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发布评论到所选帖子",
+      "node_type": "code",
+      "operation_family": "外部动作",
+      "inputs": [
+        {
+          "name": "comment_task_file",
+          "type": "string",
+          "description": "SharePoint 中待评论帖子清单文件的引用"
+        },
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "被选中待评论的帖子"
+        },
+        {
+          "name": "comment_text",
+          "type": "string",
+          "description": "不超过 150 字符的评论回复"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "published_comment",
+          "type": "object",
+          "description": "已发布评论的信息"
+        }
+      ],
+      "native_evidence": [
+        "Get Autocomment Agent (phantombuster)",
+        "Launch AC Agent (phantombuster)",
+        "Get Response (phantombuster)"
+      ],
+      "requirement_evidence": [
+        "发起自动评论动作，将该回复发布到所选帖子下",
+        "整体发布速率被节流到约每天 80 条"
+      ],
+      "rationale": "通过自动评论服务发布回复为确定性外部动作；每日约 80 条的速率节流作为发布契约的一部分在本节点内执行。属代码处理。"
+    },
+    {
+      "node_id": "n8",
+      "label": "写入已评论记录",
+      "node_type": "terminal",
+      "operation_family": "记录写入",
+      "inputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "被选中待评论的帖子"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Prepare Updated Data (code)",
+        "Update file (microsoftSharePoint)"
+      ],
+      "requirement_evidence": [
+        "发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论"
+      ],
+      "rationale": "已评论记录新增帖子链接是需求声明的可见产出，是发布后收尾动作且其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后生成话题标签"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "标签生成后抓取其下最近帖子"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后随机选取一条"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "选定帖子后撰写回复"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复完成后生成清单文件并上传"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "清单上传后发起自动评论"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布成功后写入已评论记录"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n2",
+      "target": "n3",
+      "variable": "hashtag",
+      "condition": null,
+      "rationale": "抓取目标由生成的标签决定"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n3",
+      "target": "n4",
+      "variable": "recent_posts",
+      "condition": null,
+      "rationale": "从最近帖子中随机选取"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n4",
+      "target": "n5",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "回复围绕被选中帖子撰写"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n4",
+      "target": "n6",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "清单文件记录被选中帖子"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n5",
+      "target": "n6",
+      "variable": "comment_text",
+      "condition": null,
+      "rationale": "清单文件记录待发布回复"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n6",
+      "target": "n7",
+      "variable": "comment_task_file",
+      "condition": null,
+      "rationale": "自动评论动作基于上传的清单文件"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n5",
+      "target": "n7",
+      "variable": "comment_text",
+      "condition": null,
+      "rationale": "发布的内容即撰写的回复"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n4",
+      "target": "n7",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "评论发布到被选中的帖子下"
+    },
+    {
+      "edge_id": "d09",
+      "source": "n4",
+      "target": "n8",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "写入记录的是被选中帖子的链接"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.85,
+  "notes": "随机选帖与重复评论防护均为需求明确声明，故纳入；全部候选帖子均已评论时的行为需求未声明，未建模额外分支。原生图中的 Instagram 会话 Cookie 选择、Phantombuster 代理启动/结果获取等实现细节未被冻结需求声明，仅作为佐证。每日约 80 条的速率节流折叠进评论发布节点契约。"
+}

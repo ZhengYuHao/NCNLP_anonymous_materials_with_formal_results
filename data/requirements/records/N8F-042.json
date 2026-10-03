@@ -1,0 +1,72 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-042",
+  "source_id": "n8n:16227",
+  "workflow_sha256": "3e1b175cf6042ad8719e993cb88ba011ccd8f53e8602aba1c1a83a6e79e8c31a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "70ca8c516e6bb3ccde619606af855c798fab25e05d6b506d7cc03301a5d5eace",
+  "requirement": {
+    "requirement_text": "系统通过外部请求接收会议数据，或按每 30 分钟一次的频率执行。系统先规范化会议元数据（标题、日期、参会人、音频地址与转录文本），并校验音频地址可用，或转录文本已达到最低可处理长度；二者至少满足一项才继续处理。仅提供音频地址时，先用语音转写服务生成转录文本并合并回会议上下文。随后将转录文本与会议元数据交由语言模型，提取结构化的会议摘要、关键议题、决议、风险，以及带负责人与截止日期的行动项。系统校验并整理该结构化结果，补充计数与时间戳，再将行动项拆分为独立记录，在 Asana 中为每条行动项创建对应任务；同时在 Google Sheets 追加一行会议日志，并通过邮件发送会议摘要，最后向调用方返回处理状态结果。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 291,
+        "text": "Quick Overview\nThis workflow ingests meeting audio or transcripts via a webhook or a 30-minute schedule, uses OpenAI (Whisper and GPT-4.1-mini) to extract summaries, decisions, and action items, creates tasks in Asana, logs each meeting to Google Sheets, and emails a recap through SendGrid."
+      },
+      {
+        "start": 293,
+        "end": 1206,
+        "text": "How it works\nReceives meeting data from a webhook request or runs every 30 minutes on a schedule.\nNormalizes meeting metadata (title, date, participants, audio URL, and transcript) and validates that either an audio URL or a sufficiently long transcript is present.\nIf only audio is provided, sends the audio URL to OpenAI Whisper to generate a transcript and merges it back into the meeting context.\nSends the transcript and metadata to OpenAI GPT-4.1-mini to extract a structured JSON summary, key topics, decisions, risks, and action items with owners and due dates.\nParses the AI JSON safely, adds counts and timestamps, and waits at a review buffer before continuing.\nSplits action items into individual records and creates corresponding tasks in Asana for each one.\nAppends a meeting log row to Google Sheets and sends a summary email via SendGrid, then returns a JSON status response to the webhook caller."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "会议数据：标题、日期、参会人、音频地址与转录文本",
+        "外部触发请求"
+      ],
+      "conditions": [
+        "通过外部请求触发，或按每 30 分钟一次的频率执行",
+        "音频地址可用，或转录文本已达到最低可处理长度；二者至少满足一项才继续处理",
+        "仅提供音频地址时先生成转录文本"
+      ],
+      "allowed_actions": [
+        "规范化会议元数据并校验输入完整性",
+        "将音频转为转录文本并合并回会议上下文",
+        "提取结构化摘要、关键议题、决议、风险与带负责人和截止日期的行动项",
+        "补充计数与时间戳",
+        "将行动项拆分为独立记录",
+        "在 Asana 中为每条行动项创建任务",
+        "在 Google Sheets 追加一行会议日志",
+        "通过邮件发送会议摘要",
+        "向调用方返回处理状态结果"
+      ],
+      "visible_outcomes": [
+        "Asana 中新增与行动项一一对应的任务",
+        "Google Sheets 中新增一行会议日志",
+        "收件人收到会议摘要邮件",
+        "调用方收到处理状态结果"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-042.packet.json",
+    "packet_sha256": "2c29eec6f344d11d3494d593400acfda8658266ab29364f152dce1619886cee9",
+    "public_description_sha256": "8dd9a9fcc81fcb3539e2b80021353daaaf76392165819ada9d3aeb8970ed46c6"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-042.response.json",
+    "verification_response_sha256": "3300efe9643498a924b8f3bf7b189f1fbb7f6b23fdeeece22252902dd8442f4a",
+    "decision": "accept"
+  },
+  "formal_index": 53
+}

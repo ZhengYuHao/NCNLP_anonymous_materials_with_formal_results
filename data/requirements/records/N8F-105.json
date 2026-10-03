@@ -1,0 +1,69 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-105",
+  "source_id": "n8n:9823",
+  "workflow_sha256": "5227add22d5de15f8d50f5cd9ef37b4991b600389f701f326bf6030bb4bb0572",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cc1568b94f2a03963283bff7fac129b1b831380f6c5bbbe13a5c714a3ef4afea",
+  "requirement": {
+    "requirement_text": "为 Telegram 机器人提供视觉理解与图像生成能力：机器人接收用户发来的图片或文本消息，并按内容类型分派处理。图片类消息进入图像分析路径：下载该图片，交由具备视觉理解能力的语言模型进行分析；文本类消息进入图像生成路径：以该文本作为提示词，调用图像生成能力生成图片。两条路径的处理结果汇总后，通过 Gmail 将结果以格式化报告的形式发送到邮箱。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 175,
+        "text": "Introduction\nTransform your Telegram bot into an AI vision system using GPT-4o-Mini and NVIDIA Stable Diffusion 3. Perfect for content moderators, researchers, and developers."
+      },
+      {
+        "start": 177,
+        "end": 496,
+        "text": "Workflow Explanatory\nAt start: Processes Telegram messages: images→analysis, text→image generation\nAt Router: Routes by content type\nUpper path: Analyzes images using Nvidia Vila + GPT-4o-Mini\nLower path: Generates images from text via Stable Diffusion 3\nAt Merge: Combines AI results\nAt Gmail: Emails processed results"
+      },
+      {
+        "start": 498,
+        "end": 839,
+        "text": "How It Works\nTelegram Trigger listens for messages (images, text, documents)\nContent Router directs images → AI analysis, text → image generation\nImage Analysis: Downloads image → GPT-4o-Mini vision analysis → Email results\nImage Generation: Text prompt → Stable Diffusion 3 → Email generated image\nGmail Notifications send formatted reports"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Telegram 机器人收到的用户消息（图片或文本）"
+      ],
+      "conditions": [
+        "按消息内容类型分派：图片进入图像分析，文本进入图像生成"
+      ],
+      "allowed_actions": [
+        "下载图片类消息中的图片",
+        "使用具备视觉理解能力的语言模型分析图片",
+        "使用图像生成能力根据文本提示词生成图片",
+        "汇总两条路径的处理结果",
+        "通过 Gmail 发送格式化报告邮件"
+      ],
+      "visible_outcomes": [
+        "邮箱中收到包含图片分析结果的格式化报告",
+        "邮箱中收到包含所生成图片的报告"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-105.packet.json",
+    "packet_sha256": "3370fe25266331cfb9331909d31901b3b6e43f944f2ecb8a8bf234bc1ae1bc52",
+    "public_description_sha256": "a46fff9348591e2b834717ac00af402d6629054bedd6c08cef7ac11852253c68"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-105.response.json",
+    "verification_response_sha256": "309ef5b88618dba725c40ca48b1f0406155ca97816ed178e9e65ce25b054355a",
+    "decision": "accept"
+  },
+  "formal_index": 116
+}

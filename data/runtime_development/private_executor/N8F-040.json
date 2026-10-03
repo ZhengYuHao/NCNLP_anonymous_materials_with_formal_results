@@ -1,0 +1,166 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-040",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-READ-SOURCE",
+      "dependency_type": "googleSheets",
+      "operation": "read_source_rows",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "company_name": "Acme Corp",
+            "website": "https://acme.example.com",
+            "enriched": "No"
+          },
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          },
+          {
+            "company_name": "Initech Co",
+            "website": "https://initech.example.org",
+            "enriched": "No"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-SOURCE-ALL",
+      "dependency_type": "googleSheets",
+      "operation": "read_source_rows",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "company_name": "Globex Ltd",
+            "website": "https://globex.example.io",
+            "enriched": "Yes"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SERPAPI-ACME",
+      "dependency_type": "toolSerpApi",
+      "operation": "web_search",
+      "request_contract": {
+        "query": "Acme Corp"
+      },
+      "response_contract": {
+        "snippets": [
+          {
+            "title": "Acme Corp official",
+            "url": "https://acme.example.com"
+          },
+          {
+            "title": "Acme Corp news",
+            "url": "https://news.example.com/acme"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SERPAPI-INITECH",
+      "dependency_type": "toolSerpApi",
+      "operation": "web_search",
+      "request_contract": {
+        "query": "Initech Co"
+      },
+      "response_contract": {
+        "snippets": [
+          {
+            "title": "Initech Co homepage",
+            "url": "https://initech.example.org"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ENRICH",
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "enrich_company",
+      "request_contract": {},
+      "response_contract": {
+        "industry": "Software",
+        "description": "Acme builds workflow tools.",
+        "target_customers": [
+          "SMB",
+          "Enterprise"
+        ],
+        "headquarters": "San Francisco",
+        "estimated_size": "50-200"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-OUTPUT",
+      "dependency_type": "googleSheets",
+      "operation": "append_enriched",
+      "request_contract": {
+        "tab": "output"
+      },
+      "response_contract": {
+        "appended_rows": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-UPDATE-SOURCE",
+      "dependency_type": "googleSheets",
+      "operation": "update_source_enriched",
+      "request_contract": {
+        "tab": "source"
+      },
+      "response_contract": {
+        "updated_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-ENRICH",
+      "fixture_ids": [
+        "F-SOURCE-ROWS"
+      ],
+      "mock_ids": [
+        "M-READ-SOURCE",
+        "M-SERPAPI-ACME",
+        "M-SERPAPI-INITECH",
+        "M-LLM-ENRICH",
+        "M-APPEND-OUTPUT",
+        "M-UPDATE-SOURCE"
+      ]
+    },
+    {
+      "case_id": "C-BOUND-ALL-ENRICHED",
+      "fixture_ids": [
+        "F-SOURCE-ALL-ENRICHED"
+      ],
+      "mock_ids": [
+        "M-READ-SOURCE-ALL",
+        "M-APPEND-OUTPUT",
+        "M-UPDATE-SOURCE"
+      ]
+    }
+  ]
+}

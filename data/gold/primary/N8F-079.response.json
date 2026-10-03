@@ -1,0 +1,773 @@
+{
+  "task_id": "N8F-079",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "cd0ef16acce8695b3ff74e922e5b70a4dca4654e7de8644113918afe00c41d21",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 新消息",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "telegram_message",
+          "type": "object",
+          "description": "用户发来的 Telegram 新消息，含会话标识与消息文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "消息所属的会话标识"
+        },
+        {
+          "name": "message_text",
+          "type": "string",
+          "description": "用户发送的消息文本"
+        }
+      ],
+      "native_evidence": [
+        "When Telegram Message Received",
+        "Parse Telegram Message"
+      ],
+      "requirement_evidence": [
+        "收到用户发来的 Telegram 新消息，取其中的会话标识与消息文本"
+      ],
+      "rationale": "需求声明收到 Telegram 新消息时被触发并提取会话标识与消息文本，为确定性入站接收与规范化，判 code，为预约受理分支入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语言模型解析预约信息",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "message_text",
+          "type": "string",
+          "description": "用户消息文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "appointment_info",
+          "type": "object",
+          "description": "结构化预约信息，含标题、开始与结束时间、地点与备注"
+        }
+      ],
+      "native_evidence": [
+        "Appointment Booking Agent",
+        "Google Gemini Model"
+      ],
+      "requirement_evidence": [
+        "由语言模型把消息解析为结构化的预约信息，包括标题、开始与结束时间、地点与备注"
+      ],
+      "rationale": "需求声明由语言模型把自然语言消息解析为结构化预约信息，需开放文本理解与信息抽取，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "校验并补全预约信息",
+      "node_type": "code",
+      "operation_family": "data_validation",
+      "inputs": [
+        {
+          "name": "appointment_info",
+          "type": "object",
+          "description": "语言模型解析出的预约信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_appointment",
+          "type": "object",
+          "description": "校验补全后的预约信息，缺少结束时间时默认时长为 60 分钟"
+        }
+      ],
+      "native_evidence": [
+        "Validate Appointment Input"
+      ],
+      "requirement_evidence": [
+        "对解析结果做校验；缺少结束时间时默认时长为 60 分钟"
+      ],
+      "rationale": "需求声明对解析结果做确定性校验并补全默认时长，规则固定可穷举，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "判断是否需要追问澄清",
+      "node_type": "code",
+      "operation_family": "control_branch",
+      "inputs": [
+        {
+          "name": "validated_appointment",
+          "type": "object",
+          "description": "校验补全后的预约信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clarification_decision",
+          "type": "string",
+          "description": "判定结果：需要澄清或信息齐备"
+        }
+      ],
+      "native_evidence": [
+        "If Needs Clarification"
+      ],
+      "requirement_evidence": [
+        "日期或时间缺失或含糊时，通过 Telegram 向用户追问澄清",
+        "仅当必备信息齐备时才创建日程"
+      ],
+      "rationale": "需求声明按日期时间是否缺失或含糊进行分支判断，为确定性条件路由，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "通过 Telegram 追问澄清",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "clarification_decision",
+          "type": "string",
+          "description": "需要澄清的判定结果"
+        },
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "消息所属的会话标识"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Clarification Request"
+      ],
+      "requirement_evidence": [
+        "日期或时间缺失或含糊时，通过 Telegram 向用户追问澄清"
+      ],
+      "rationale": "需求声明通过 Telegram 向用户发送澄清追问，为确定性外部发送动作；追问后等待用户再次发送消息，该分支结束，判 terminal。"
+    },
+    {
+      "node_id": "n6",
+      "label": "在 Google Calendar 创建日程事件",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "validated_appointment",
+          "type": "object",
+          "description": "必备信息齐备的预约信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "calendar_event",
+          "type": "object",
+          "description": "创建成功的日程事件，含事件标识"
+        }
+      ],
+      "native_evidence": [
+        "Create Appointment Event"
+      ],
+      "requirement_evidence": [
+        "必备信息齐备后，在 Google Calendar 中创建日程事件"
+      ],
+      "rationale": "需求声明在 Google Calendar 中创建日程事件，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "格式化预约记录",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "calendar_event",
+          "type": "object",
+          "description": "创建成功的日程事件"
+        },
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "消息所属的会话标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "appointment_record",
+          "type": "object",
+          "description": "含事件标识与会话标识的预约记录"
+        }
+      ],
+      "native_evidence": [
+        "Format Appointment Record"
+      ],
+      "requirement_evidence": [
+        "把含事件标识与会话标识的预约记录追加到 Google Sheets 的“Appointments”工作表"
+      ],
+      "rationale": "需求声明把事件标识与会话标识组装为预约记录，为确定性数据格式化，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "追加预约记录到 Appointments 表",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "appointment_record",
+          "type": "object",
+          "description": "含事件标识与会话标识的预约记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append Appointment in Sheets"
+      ],
+      "requirement_evidence": [
+        "把含事件标识与会话标识的预约记录追加到 Google Sheets 的“Appointments”工作表"
+      ],
+      "rationale": "需求声明将预约记录追加到 Google Sheets 的“Appointments”工作表，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送预约确认消息",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "appointment_record",
+          "type": "object",
+          "description": "已登记的预约记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Confirmation via Telegram"
+      ],
+      "requirement_evidence": [
+        "并通过 Telegram 向用户发送确认消息"
+      ],
+      "rationale": "需求声明通过 Telegram 向用户发送预约确认消息，为确定性外部发送动作且无后续依赖，判 terminal。"
+    },
+    {
+      "node_id": "n10",
+      "label": "定时调度提醒流程",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "每 15 分钟一次的调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件，启动提醒分支"
+        }
+      ],
+      "native_evidence": [
+        "Every 15 Minutes"
+      ],
+      "requirement_evidence": [
+        "每 15 分钟运行一次"
+      ],
+      "rationale": "需求声明提醒流程每 15 分钟运行一次，为确定性定时调度入口，判 code，为提醒分支入口。"
+    },
+    {
+      "node_id": "n11",
+      "label": "检索未来 25 小时内事件",
+      "node_type": "code",
+      "operation_family": "external_data_read",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "upcoming_events",
+          "type": "array",
+          "description": "Google Calendar 中未来 25 小时内即将开始的事件"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Upcoming Events"
+      ],
+      "requirement_evidence": [
+        "检索 Google Calendar 中未来 25 小时内即将开始的事件"
+      ],
+      "rationale": "需求声明从 Google Calendar 检索未来 25 小时内的事件，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "筛选提醒窗口事件",
+      "node_type": "code",
+      "operation_family": "data_filtering",
+      "inputs": [
+        {
+          "name": "upcoming_events",
+          "type": "array",
+          "description": "未来 25 小时内的日程事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "due_events",
+          "type": "array",
+          "description": "距开始约 24 小时或 1 小时、需要提醒的事件"
+        }
+      ],
+      "native_evidence": [
+        "Filter Due Reminders"
+      ],
+      "requirement_evidence": [
+        "筛选出大约距开始 24 小时或 1 小时的事件"
+      ],
+      "rationale": "需求声明按距开始 24 小时或 1 小时的窗口筛选事件，为确定性过滤规则，判 code。"
+    },
+    {
+      "node_id": "n13",
+      "label": "查询 ReminderLog 已发送记录",
+      "node_type": "code",
+      "operation_family": "external_data_read",
+      "inputs": [
+        {
+          "name": "due_events",
+          "type": "array",
+          "description": "需要提醒的事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reminder_log",
+          "type": "array",
+          "description": "Google Sheets“ReminderLog”工作表中已发送提醒的记录"
+        }
+      ],
+      "native_evidence": [
+        "Read Reminder Log in Sheets"
+      ],
+      "requirement_evidence": [
+        "先查询 Google Sheets 的“ReminderLog”工作表，确认该事件在该提醒窗口是否已发送过提醒"
+      ],
+      "rationale": "需求声明查询“ReminderLog”工作表读取已发送提醒记录，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n14",
+      "label": "评估事件提醒状态",
+      "node_type": "code",
+      "operation_family": "data_validation",
+      "inputs": [
+        {
+          "name": "due_events",
+          "type": "array",
+          "description": "需要提醒的事件"
+        },
+        {
+          "name": "reminder_log",
+          "type": "array",
+          "description": "已发送提醒的记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reminder_assessment",
+          "type": "object",
+          "description": "事件在当前提醒窗口是否已发送过提醒的评估结果"
+        }
+      ],
+      "native_evidence": [
+        "Assess Reminder State"
+      ],
+      "requirement_evidence": [
+        "确认该事件在该提醒窗口是否已发送过提醒"
+      ],
+      "rationale": "需求声明比对日志判断事件是否已在该窗口发送过提醒，为确定性比对校验，判 code。"
+    },
+    {
+      "node_id": "n15",
+      "label": "判断是否需要发送提醒",
+      "node_type": "code",
+      "operation_family": "control_branch",
+      "inputs": [
+        {
+          "name": "reminder_assessment",
+          "type": "object",
+          "description": "事件提醒状态评估结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "send_decision",
+          "type": "string",
+          "description": "判定结果：需要发送或已发送过"
+        }
+      ],
+      "native_evidence": [
+        "If Reminder Not Sent"
+      ],
+      "requirement_evidence": [
+        "未发送过则通过 Telegram 发送提醒，并登记该次提醒以避免重复发送"
+      ],
+      "rationale": "需求声明按是否已发送过提醒进行分支判断，为确定性条件路由；已发送过的分支流程自然结束（无出边），判 code。"
+    },
+    {
+      "node_id": "n16",
+      "label": "构建提醒消息",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "send_decision",
+          "type": "string",
+          "description": "需要发送提醒的判定结果"
+        },
+        {
+          "name": "reminder_assessment",
+          "type": "object",
+          "description": "事件详情及提醒窗口信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reminder_message",
+          "type": "string",
+          "description": "待发送的 Telegram 提醒消息文本"
+        }
+      ],
+      "native_evidence": [
+        "Build Reminder Message",
+        "Read Owner from Sheets"
+      ],
+      "requirement_evidence": [
+        "未发送过则通过 Telegram 发送提醒"
+      ],
+      "rationale": "需求声明生成提醒消息文本，为确定性文本拼装；原生中查询预约人联系方式的读取步骤为发送提醒前的实现细节，并入本节点，判 code。"
+    },
+    {
+      "node_id": "n17",
+      "label": "发送 Telegram 提醒",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "reminder_message",
+          "type": "string",
+          "description": "提醒消息文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Reminder via Telegram"
+      ],
+      "requirement_evidence": [
+        "未发送过则通过 Telegram 发送提醒"
+      ],
+      "rationale": "需求声明通过 Telegram 向用户发送提醒，为确定性外部发送动作，判 code。"
+    },
+    {
+      "node_id": "n18",
+      "label": "登记提醒日志到 ReminderLog",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "reminder_message",
+          "type": "string",
+          "description": "本次提醒内容及对应事件信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append Log in Sheets"
+      ],
+      "requirement_evidence": [
+        "并登记该次提醒以避免重复发送"
+      ],
+      "rationale": "需求声明把本次提醒登记到“ReminderLog”工作表以避免重复发送，为确定性外部写入动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到 Telegram 新消息后由语言模型解析预约信息。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析完成后对预约信息进行校验补全。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "校验完成后判断是否需要追问澄清。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "日期或时间缺失或含糊",
+      "rationale": "信息不齐备时向用户追问澄清，等待用户再次发送消息。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "必备信息齐备",
+      "rationale": "信息齐备时进入日程创建流程。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "日程创建成功后格式化预约记录。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录格式化后追加到 Appointments 工作表。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录登记完成后向用户发送确认消息。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "每 15 分钟调度触发后检索未来事件。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "事件检索完成后筛选提醒窗口。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选出待提醒事件后查询已发送记录。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "日志查询完成后评估事件提醒状态。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "评估完成后判断是否发送提醒。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": "未发送过提醒",
+      "rationale": "未发送过时构建提醒消息；已发送过的分支无后续动作，流程结束。"
+    },
+    {
+      "edge_id": "cfg-15",
+      "source": "n16",
+      "target": "n17",
+      "variable": null,
+      "condition": null,
+      "rationale": "消息构建完成后发送 Telegram 提醒。"
+    },
+    {
+      "edge_id": "cfg-16",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "提醒发送后登记日志以避免重复。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "message_text",
+      "condition": null,
+      "rationale": "消息文本传给语言模型节点用于解析。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n5",
+      "variable": "chat_id",
+      "condition": null,
+      "rationale": "会话标识传给澄清追问节点以定位会话。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "appointment_info",
+      "condition": null,
+      "rationale": "解析出的预约信息传给校验补全节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "validated_appointment",
+      "condition": null,
+      "rationale": "校验后的预约信息传给分支判断节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "clarification_decision",
+      "condition": null,
+      "rationale": "需要澄清的判定结果传给追问节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n3",
+      "target": "n6",
+      "variable": "validated_appointment",
+      "condition": null,
+      "rationale": "校验并补全后的预约信息传给日程创建节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "calendar_event",
+      "condition": null,
+      "rationale": "创建出的日程事件传给记录格式化节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "appointment_record",
+      "condition": null,
+      "rationale": "格式化后的预约记录传给追加写入节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n7",
+      "target": "n9",
+      "variable": "appointment_record",
+      "condition": null,
+      "rationale": "预约记录传给确认消息节点用于组织确认内容。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n11",
+      "target": "n12",
+      "variable": "upcoming_events",
+      "condition": null,
+      "rationale": "检索到的事件传给筛选节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n12",
+      "target": "n13",
+      "variable": "due_events",
+      "condition": null,
+      "rationale": "待提醒事件传给日志查询节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n13",
+      "target": "n14",
+      "variable": "reminder_log",
+      "condition": null,
+      "rationale": "已发送记录传给状态评估节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n12",
+      "target": "n14",
+      "variable": "due_events",
+      "condition": null,
+      "rationale": "待提醒事件同时传给状态评估节点用于比对。"
+    },
+    {
+      "edge_id": "dfg-14",
+      "source": "n14",
+      "target": "n15",
+      "variable": "reminder_assessment",
+      "condition": null,
+      "rationale": "评估结果传给分支判断节点。"
+    },
+    {
+      "edge_id": "dfg-15",
+      "source": "n14",
+      "target": "n16",
+      "variable": "reminder_assessment",
+      "condition": null,
+      "rationale": "事件详情与窗口信息传给消息构建节点。"
+    },
+    {
+      "edge_id": "dfg-16",
+      "source": "n16",
+      "target": "n17",
+      "variable": "reminder_message",
+      "condition": null,
+      "rationale": "提醒消息文本传给发送节点。"
+    },
+    {
+      "edge_id": "dfg-17",
+      "source": "n16",
+      "target": "n18",
+      "variable": "reminder_message",
+      "condition": null,
+      "rationale": "提醒内容同时传给日志登记节点用于记录本次提醒。"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n10"
+  ],
+  "terminal_nodes": [
+    "n5",
+    "n9",
+    "n18"
+  ],
+  "confidence": 0.93,
+  "notes": "按冻结需求建模为两条独立流程：预约受理（Telegram 消息触发）与提醒（每 15 分钟调度触发）。受理分支：消息接收为 code 入口，语言模型解析预约信息判 semantic，校验补全、分支判断、日历创建、记录格式化与追加、确认发送均为确定性 code；追问澄清与确认发送为 terminal。提醒分支：定时调度为 code 入口，检索、筛选、日志查询、状态评估、分支判断、消息构建、发送与登记均为确定性 code，登记日志为 terminal。原生中的 Sticky Note 注释、模型连接（Gemini 模型作为 Agent 的语言模型依赖）、已发送分支无动作的 IF 空分支等实现细节未单独建模。"
+}

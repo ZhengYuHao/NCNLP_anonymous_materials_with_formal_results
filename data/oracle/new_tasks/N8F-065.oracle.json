@@ -1,0 +1,370 @@
+{
+  "task_id": "N8F-065",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "efc2ae969276737075e2a8ea81403a1a78b85eae4dfa3f07dd3a82195586a6f7",
+  "fixtures": [
+    {
+      "fixture_id": "F-POST-NEW-TRANSLATION",
+      "purpose": "正常用例：英文文章触发创建事件，目标语言含 es 与 fr 且均缺译文，验证语种判定与两种语言的翻译草稿",
+      "input_data": {
+        "event": "post_created",
+        "post_id": 5,
+        "target_languages": ["es", "fr"],
+        "existing_translation_languages": []
+      }
+    },
+    {
+      "fixture_id": "F-POST-PARTIAL-TRANSLATION",
+      "purpose": "边界用例：已有 es 译文、仅缺 fr 译文，验证只翻译缺失语言避免重复翻译",
+      "input_data": {
+        "event": "post_updated",
+        "post_id": 6,
+        "target_languages": ["es", "fr"],
+        "existing_translation_languages": ["es"]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-WP-GET-POST-5",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_post_raw",
+      "request_contract": {
+        "post_id": 5
+      },
+      "response_contract": {
+        "post": {
+          "id": 5,
+          "status": "publish",
+          "title": "Welcome to my tech blog",
+          "content": "<p>This post explains the architecture of modern web applications.</p>",
+          "excerpt": "A short introduction to web app architecture.",
+          "acf": {
+            "subtitle": "Architecture basics",
+            "meta_description": "Learn how modern web apps are built."
+          },
+          "_links": {
+            "self": "https://mock-wp.example/wp-json/wp/v2/posts/5"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-GET-POST-6",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_post_raw",
+      "request_contract": {
+        "post_id": 6
+      },
+      "response_contract": {
+        "post": {
+          "id": 6,
+          "status": "publish",
+          "title": "Scaling databases in production",
+          "content": "<p>Sharding and replication are the two pillars of horizontal scaling.</p>",
+          "excerpt": "Database scaling strategies explained.",
+          "acf": {
+            "subtitle": "Production scaling",
+            "meta_description": "A practical guide to scaling databases."
+          },
+          "_links": {
+            "self": "https://mock-wp.example/wp-json/wp/v2/posts/6"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LANG-DETECT-5",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_source_language",
+      "request_contract": {
+        "snippet": "This post explains the architecture of modern web applications."
+      },
+      "response_contract": {
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LANG-DETECT-6",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_source_language",
+      "request_contract": {
+        "snippet": "Sharding and replication are the two pillars of horizontal scaling."
+      },
+      "response_contract": {
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-ES",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "es",
+        "texts": [
+          "Welcome to my tech blog",
+          "<p>This post explains the architecture of modern web applications.</p>",
+          "A short introduction to web app architecture.",
+          "Architecture basics",
+          "Learn how modern web apps are built."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Bienvenido a mi blog de tecnología",
+          "<p>Esta publicación explica la arquitectura de las aplicaciones web modernas.</p>",
+          "Una breve introducción a la arquitectura de aplicaciones web.",
+          "Conceptos básicos de arquitectura",
+          "Aprende cómo se construyen las aplicaciones web modernas."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-FR",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "fr",
+        "texts": [
+          "Welcome to my tech blog",
+          "<p>This post explains the architecture of modern web applications.</p>",
+          "A short introduction to web app architecture.",
+          "Architecture basics",
+          "Learn how modern web apps are built."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Bienvenue sur mon blog technique",
+          "<p>Cet article explique l'architecture des applications web modernes.</p>",
+          "Une brève introduction à l'architecture des applications web.",
+          "Notions de base sur l'architecture",
+          "Apprenez comment les applications web modernes sont construites."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-FR-ONLY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "fr",
+        "texts": [
+          "Scaling databases in production",
+          "<p>Sharding and replication are the two pillars of horizontal scaling.</p>",
+          "Database scaling strategies explained.",
+          "Production scaling",
+          "A practical guide to scaling databases."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Mise à l'échelle des bases de données en production",
+          "<p>Le partitionnement et la réplication sont les deux piliers de la mise à l'échelle horizontale.</p>",
+          "Stratégies de mise à l'échelle des bases de données expliquées.",
+          "Mise à l'échelle en production",
+          "Un guide pratique pour mettre à l'échelle les bases de données."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-ES",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 5,
+        "lang": "es",
+        "title": "Bienvenido a mi blog de tecnología",
+        "content": "<p>Esta publicación explica la arquitectura de las aplicaciones web modernas.</p>",
+        "linked_post_id": 5
+      },
+      "response_contract": {
+        "id": 51,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/51"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-FR",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 5,
+        "lang": "fr",
+        "title": "Bienvenue sur mon blog technique",
+        "content": "<p>Cet article explique l'architecture des applications web modernes.</p>",
+        "linked_post_id": 5
+      },
+      "response_contract": {
+        "id": 52,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/52"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-FR-ONLY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 6,
+        "lang": "fr",
+        "title": "Mise à l'échelle des bases de données en production",
+        "content": "<p>Le partitionnement et la réplication sont les deux piliers de la mise à l'échelle horizontale.</p>",
+        "linked_post_id": 6
+      },
+      "response_contract": {
+        "id": 61,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/61"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-NEW-TRANSLATION-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-POST-NEW-TRANSLATION"],
+      "mock_ids": [
+        "M-WP-GET-POST-5",
+        "M-LLM-LANG-DETECT-5",
+        "M-DEEPL-BULK-ES",
+        "M-DEEPL-BULK-FR",
+        "M-WP-CREATE-DRAFT-ES",
+        "M-WP-CREATE-DRAFT-FR"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEW-1",
+          "target": "exec_log.mock_calls.M-WP-GET-POST-5.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "触发后必须从 WordPress 接口获取文章原始内容"
+        },
+        {
+          "assertion_id": "A-NEW-2",
+          "target": "exec_log.mock_calls.M-LLM-LANG-DETECT-5.response_contract.language",
+          "operator": "equals",
+          "expected": "en",
+          "rationale": "语言模型判定的原文语种必须为 en"
+        },
+        {
+          "assertion_id": "A-NEW-3",
+          "target": "exec_log.mock_calls.M-DEEPL-BULK-ES.request_contract.texts",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "标准字段（标题/正文/摘要）与 ACF 字段（subtitle/meta_description）共提取 5 段待翻译文本，必须全部提交翻译"
+        },
+        {
+          "assertion_id": "A-NEW-4",
+          "target": "exec_log.mock_calls.M-DEEPL-BULK-ES.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "目标语言 es 缺译文时必须发起一次批量翻译"
+        },
+        {
+          "assertion_id": "A-NEW-5",
+          "target": "exec_log.mock_calls.M-DEEPL-BULK-FR.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "目标语言 fr 缺译文时必须发起一次批量翻译"
+        },
+        {
+          "assertion_id": "A-NEW-6",
+          "target": "exec_log.mock_calls.M-WP-CREATE-DRAFT-ES.request_contract.content",
+          "operator": "contains",
+          "expected": "<p>",
+          "rationale": "翻译结果必须保留原有 HTML 格式，正文内容必须仍含 <p> 标签"
+        },
+        {
+          "assertion_id": "A-NEW-7",
+          "target": "exec_log.mock_calls.M-WP-CREATE-DRAFT-ES.request_contract.linked_post_id",
+          "operator": "equals",
+          "expected": 5,
+          "rationale": "新建翻译草稿必须与原文章建立关联"
+        },
+        {
+          "assertion_id": "A-NEW-8",
+          "target": "exec_log.mock_calls.M-WP-CREATE-DRAFT-ES.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "es 缺译文时必须创建一篇翻译草稿"
+        },
+        {
+          "assertion_id": "A-NEW-9",
+          "target": "exec_log.mock_calls.M-WP-CREATE-DRAFT-FR.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "fr 缺译文时必须创建一篇翻译草稿"
+        }
+      ]
+    },
+    {
+      "case_id": "C-PARTIAL-TRANSLATION-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": ["F-POST-PARTIAL-TRANSLATION"],
+      "mock_ids": [
+        "M-WP-GET-POST-6",
+        "M-LLM-LANG-DETECT-6",
+        "M-DEEPL-BULK-FR-ONLY",
+        "M-WP-CREATE-DRAFT-FR-ONLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PART-1",
+          "target": "exec_log.mock_calls.M-DEEPL-BULK-FR-ONLY.request_contract.target_lang",
+          "operator": "equals",
+          "expected": "fr",
+          "rationale": "仅缺 fr 译文时必须只翻译 fr"
+        },
+        {
+          "assertion_id": "A-PART-2",
+          "target": "exec_log.mock_calls.M-DEEPL-BULK-FR-ONLY.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "只发起一次 fr 批量翻译"
+        },
+        {
+          "assertion_id": "A-PART-3",
+          "target": "exec_log.mock_calls.M-WP-CREATE-DRAFT-FR-ONLY.request_contract.lang",
+          "operator": "equals",
+          "expected": "fr",
+          "rationale": "仅创建 fr 翻译草稿，不重复创建已有 es 译文"
+        },
+        {
+          "assertion_id": "A-PART-4",
+          "target": "result.created_drafts",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "本次处理只应产生 1 篇新翻译草稿"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖全量翻译（es+fr 均缺失）与部分翻译（仅缺 fr）两个场景。WordPress REST、语种判定 LLM 与 DeepL 批量翻译全部固定模拟；断言验证语种判定、5 段文本（标准字段+ACF 字段）的提取数量、HTML 保留（<p> 标签包含）、草稿与原文章关联（linked_post_id）以及避免重复翻译（仅缺译语言才触发请求）。"
+}

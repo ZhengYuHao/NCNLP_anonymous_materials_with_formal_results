@@ -1,0 +1,360 @@
+{
+  "task_id": "N8F-003",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "af6ddb89e8a9cd4d63d8cb449a919dd4902c7215f96690be16a9347c5323b08f",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "本次自动执行的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "系统每天定时执行一次",
+        "Automated daily monitoring of specified news topics"
+      ],
+      "rationale": "需求声明系统按天自动执行，原生图中 Schedule Trigger 为唯一入口触发节点，映射为定时触发代码节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "加载待监测新闻主题列表",
+      "node_type": "code",
+      "operation_family": "load_source",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "news_topics",
+          "type": "array",
+          "description": "预先指定的待监测新闻主题列表（如 Bitcoin、Nvidia 等）"
+        }
+      ],
+      "native_evidence": [
+        "News to Monitor",
+        "Schedule Trigger -> News to Monitor"
+      ],
+      "requirement_evidence": [
+        "监测对象为预先指定的新闻主题（例如 Bitcoin、Nvidia 等）",
+        "Automated daily monitoring of specified news topics"
+      ],
+      "rationale": "需求声明监测预先指定的新闻主题，原生图中 Schedule Trigger 后接 News to Monitor（Google Sheets）读取主题列表，映射为确定性读取配置主题的代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "研究负责人分析主题并生成内容大纲",
+      "node_type": "semantic",
+      "operation_family": "content_planning",
+      "inputs": [
+        {
+          "name": "news_topics",
+          "type": "array",
+          "description": "预先指定的待监测新闻主题列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "outline",
+          "type": "string",
+          "description": "基于监测主题生成的内容大纲"
+        }
+      ],
+      "native_evidence": [
+        "Research Leader 🔬",
+        "Settings -> Switch -> Research Leader 🔬"
+      ],
+      "requirement_evidence": [
+        "研究负责人（Research Leader）分析主题并生成内容大纲",
+        "Research Leader: Analyzes topics and creates content outline"
+      ],
+      "rationale": "需求明确声明研究负责人分析主题并生成内容大纲，需开放文本理解与规划能力，判为语义节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "项目规划将研究工作拆解为具体任务",
+      "node_type": "semantic",
+      "operation_family": "task_decomposition",
+      "inputs": [
+        {
+          "name": "outline",
+          "type": "string",
+          "description": "研究负责人生成的内容大纲"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "research_tasks",
+          "type": "array",
+          "description": "拆解得到的子主题研究任务列表"
+        }
+      ],
+      "native_evidence": [
+        "Project Planner",
+        "Research Leader 🔬 -> Project Planner"
+      ],
+      "requirement_evidence": [
+        "项目规划（Project Planner）将研究工作拆解为具体任务",
+        "Project Planner: Breaks down research into specific tasks"
+      ],
+      "rationale": "需求明确声明项目规划将研究工作拆解为具体任务，属开放语义规划，判为语义节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "研究助理按子主题开展详细研究",
+      "node_type": "semantic",
+      "operation_family": "research",
+      "inputs": [
+        {
+          "name": "research_tasks",
+          "type": "array",
+          "description": "拆解得到的子主题研究任务列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "subtopic_research",
+          "type": "array",
+          "description": "各子主题的研究要点与检索需求"
+        }
+      ],
+      "native_evidence": [
+        "Delegate to Research Assistants",
+        "Research Assistant",
+        "Project Planner -> Delegate to Research Assistants"
+      ],
+      "requirement_evidence": [
+        "研究助理（Research Assistants）对分配到的子主题开展详细研究",
+        "Research Assistants: Conduct detailed research on assigned subtopics"
+      ],
+      "rationale": "需求声明研究助理对分配的子主题开展详细研究，需理解子主题并形成研究内容，判为语义节点；检索动作由后续独立节点承担。"
+    },
+    {
+      "node_id": "n6",
+      "label": "信息检索服务实时检索并生成引用",
+      "node_type": "code",
+      "operation_family": "information_retrieval",
+      "inputs": [
+        {
+          "name": "subtopic_research",
+          "type": "array",
+          "description": "各子主题的研究要点与检索需求"
+        },
+        {
+          "name": "time_window",
+          "type": "string",
+          "description": "检索时间窗口（天/周/月），可配置输入"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "retrieved_sources",
+          "type": "array",
+          "description": "带自动引用信息的检索资料，支持来源核验"
+        }
+      ],
+      "native_evidence": [
+        "Perplexity API",
+        "Perplexity_tool",
+        "Perplexity_tool1",
+        "Execute Workflow Trigger -> Perplexity API"
+      ],
+      "requirement_evidence": [
+        "通过信息检索服务实时收集资料",
+        "系统在收集信息时自动生成引用信息以支持来源核验",
+        "检索时可按天、周或月的时间窗口进行筛选",
+        "Real-time information gathering using Perplexity AI",
+        "Auto-citation functionality for source verification",
+        "Flexible time window filtering (day/week/month)"
+      ],
+      "rationale": "需求声明通过信息检索服务实时收集资料、自动生成引用并按时间窗口筛选；调用外部检索服务为确定性契约的外部动作，判为代码节点，时间窗口作为输入参数。"
+    },
+    {
+      "node_id": "n7",
+      "label": "编辑汇总研究结果并按报告形式润色成稿",
+      "node_type": "semantic",
+      "operation_family": "content_composition",
+      "inputs": [
+        {
+          "name": "retrieved_sources",
+          "type": "array",
+          "description": "带自动引用信息的检索资料"
+        },
+        {
+          "name": "report_form",
+          "type": "string",
+          "description": "报告形式偏好（详细版/简版），可配置输入"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "newsletter",
+          "type": "string",
+          "description": "按所选报告形式生成的最终时事通讯稿件"
+        }
+      ],
+      "native_evidence": [
+        "Merge chapters title and text",
+        "Final article text",
+        "Editor",
+        "Final article text -> Editor"
+      ],
+      "requirement_evidence": [
+        "编辑（Editor）汇总各项研究结果并润色形成最终稿件",
+        "成稿可选择详细版或简版两种报告形式",
+        "Editor: Combines research and polishes final output",
+        "Options for detailed or simple reports"
+      ],
+      "rationale": "需求声明编辑汇总研究结果并润色成稿，且成稿可选用详细版或简版；润色与形式选择需开放文本生成，判为语义节点，报告形式作为输入参数（原生图中 Switch 简版分支 News Reporter 属需求未声明的实现细节，不纳入）。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过电子邮件投递时事通讯",
+      "node_type": "terminal",
+      "operation_family": "delivery",
+      "inputs": [
+        {
+          "name": "newsletter",
+          "type": "string",
+          "description": "最终时事通讯稿件"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Gmail1",
+        "Gmail2",
+        "Title1 -> Gmail1"
+      ],
+      "requirement_evidence": [
+        "完成的时事通讯通过电子邮件直接投递",
+        "Direct email delivery of completed newsletters"
+      ],
+      "rationale": "需求声明时事通讯通过电子邮件直接投递，为整个流程的最终可见结果（用户收到邮件）与终止出口，无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每日定时触发后加载待监测主题。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "主题列表就绪后由研究负责人分析生成大纲。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "大纲生成后由项目规划拆解研究任务。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "任务拆解后由研究助理按子主题开展研究。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "研究要点形成后调用信息检索服务收集资料。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "检索资料就绪后由编辑汇总润色成稿。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "成稿完成后通过电子邮件投递，流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "news_topics",
+      "condition": null,
+      "rationale": "主题列表由加载节点产出，供研究负责人分析使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "outline",
+      "condition": null,
+      "rationale": "内容大纲由研究负责人产出，供项目规划拆解使用。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "research_tasks",
+      "condition": null,
+      "rationale": "研究任务由项目规划产出，供研究助理执行。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "subtopic_research",
+      "condition": null,
+      "rationale": "子主题研究要点由研究助理产出，供信息检索节点使用。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "retrieved_sources",
+      "condition": null,
+      "rationale": "带引用的检索资料由检索节点产出，供编辑汇总润色。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "newsletter",
+      "condition": null,
+      "rationale": "最终稿件由编辑产出，供电子邮件投递（semantic→terminal 有类型数据边）。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模每日定时触发→加载主题→四角色研究流水线→邮件投递。信息检索与引用生成合并为代码节点（外部检索服务+自动引用为确定性契约），时间窗口作为检索输入、报告形式作为成稿输入；原生图中 Switch 简版分支（News Reporter）、Loop Over Items 等为需求未声明的实现细节，未纳入。"
+}

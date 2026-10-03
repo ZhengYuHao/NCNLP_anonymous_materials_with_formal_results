@@ -1,0 +1,143 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-006",
+  "source_id": "n8n:6713",
+  "workflow_sha256": "d33bc807dcfab655f1f3721eb61e85a592a2172d7fa8ab598eaedda29e6e96bc",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "1b7d36a355f2add7005add2bb7b20f81584596b28d7b97e2927ac2ffe141122e",
+  "requirement": {
+    "pilot_id": "N8C-006",
+    "requirement_text": "The system runs on a 6-hour schedule (a manual trigger is also available for testing and one-off runs). It pulls fresh content from The Verge, TechCrunch, and Ars Technica RSS feeds, with smart filtering ensuring only new, unposted articles are processed. For each new article the system shall: (1) transform the RSS content into an engaging Medium-style article using AI models; (2) automatically generate a relevant image prompt for cover visuals and generate professional marketing-style cover images; (3) create a Google Doc with the formatted article for easy review; (4) send a preview to a Slack channel/DM for human approval and wait for explicit approval before publishing. Upon approval, the system shall auto-publish the article to Medium, send the formatted content via Gmail, store everything in Google Drive for archiving, and update Google Sheets to prevent duplicates. If the content is rejected, the system sends a clean rejection notification via Slack and does not publish the content.",
+    "source_spans": [
+      {
+        "start": 357,
+        "end": 617,
+        "text": "This template creates a complete content pipeline that pulls fresh tech news from RSS feeds, transforms it into engaging Medium articles using AI, generates matching cover images, and handles the entire approval-to-publishing process through Slack integration."
+      },
+      {
+        "start": 1008,
+        "end": 1103,
+        "text": "Pulls fresh content from The Verge, TechCrunch, and Ars Technica RSS feeds on a 6-hour schedule"
+      },
+      {
+        "start": 1104,
+        "end": 1169,
+        "text": "Smart filtering ensures only new, unposted articles are processed"
+      },
+      {
+        "start": 1195,
+        "end": 1282,
+        "text": "Groq and Google Gemini models transform RSS content into engaging Medium-style articles"
+      },
+      {
+        "start": 1283,
+        "end": 1347,
+        "text": "Automatic image prompt generation creates relevant cover visuals"
+      },
+      {
+        "start": 1348,
+        "end": 1409,
+        "text": "Pollinations AI generates professional marketing-style images"
+      },
+      {
+        "start": 1435,
+        "end": 1492,
+        "text": "Creates Google Doc with formatted article for easy review"
+      },
+      {
+        "start": 1493,
+        "end": 1545,
+        "text": "Sends preview to Slack channel/DM for human approval"
+      },
+      {
+        "start": 1546,
+        "end": 1591,
+        "text": "Waits for explicit approval before publishing"
+      },
+      {
+        "start": 1619,
+        "end": 1657,
+        "text": "Auto-publishes to Medium upon approval"
+      },
+      {
+        "start": 1658,
+        "end": 1691,
+        "text": "Sends formatted content via Gmail"
+      },
+      {
+        "start": 1692,
+        "end": 1739,
+        "text": "Stores everything in Google Drive for archiving"
+      },
+      {
+        "start": 1740,
+        "end": 1783,
+        "text": "Updates Google Sheets to prevent duplicates"
+      },
+      {
+        "start": 1804,
+        "end": 1843,
+        "text": "Clean rejection notifications via Slack"
+      },
+      {
+        "start": 1844,
+        "end": 1891,
+        "text": "No publishing if content doesn't meet standards"
+      },
+      {
+        "start": 2724,
+        "end": 2777,
+        "text": "Manual trigger available for testing and one-off runs"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Fresh content from The Verge, TechCrunch, and Ars Technica RSS feeds"
+      ],
+      "conditions": [
+        "Runs on a 6-hour schedule; a manual trigger is available for testing and one-off runs",
+        "Smart filtering ensures only new, unposted articles are processed",
+        "Publishing happens only upon explicit human approval via Slack"
+      ],
+      "allowed_actions": [
+        "Pull fresh content from The Verge, TechCrunch, and Ars Technica RSS feeds",
+        "Transform RSS content into engaging Medium-style articles using AI models",
+        "Automatically generate image prompts for relevant cover visuals",
+        "Generate professional marketing-style cover images",
+        "Create a Google Doc with the formatted article for easy review",
+        "Send a preview to a Slack channel/DM for human approval and wait for explicit approval before publishing",
+        "Auto-publish to Medium upon approval",
+        "Send the formatted content via Gmail",
+        "Store everything in Google Drive for archiving",
+        "Update Google Sheets to prevent duplicates"
+      ],
+      "visible_outcomes": [
+        "A Google Doc with the formatted article for review",
+        "A Slack preview message for human approval",
+        "The article published on Medium upon approval",
+        "Formatted content sent via Gmail",
+        "Content archived in Google Drive and tracked in Google Sheets"
+      ],
+      "failure_behavior": [
+        "Clean rejection notifications via Slack",
+        "No publishing if content doesn't meet standards"
+      ]
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 5
+}

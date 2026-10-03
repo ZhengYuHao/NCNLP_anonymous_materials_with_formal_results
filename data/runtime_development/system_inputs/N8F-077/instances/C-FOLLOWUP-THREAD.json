@@ -1,0 +1,24 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-077",
+  "case_id": "C-FOLLOWUP-THREAD",
+  "kind": "positive",
+  "input_data": {
+    "slack_thread_ts": "1700000000.000100",
+    "channel": "C123456",
+    "question": "Now show me only the top 5",
+    "target_table": "sales",
+    "warehouse_id": "wh-main",
+    "thread_history": [
+      {
+        "role": "user",
+        "content": "What was the total revenue in Q3?"
+      },
+      {
+        "role": "assistant",
+        "content": "The total revenue for Q3 was $4.2M."
+      }
+    ]
+  },
+  "input_sha256": "38EC46B4BC84C6E2CAE161C6D71A0ACC102059811584D2EB1449876459854170"
+}

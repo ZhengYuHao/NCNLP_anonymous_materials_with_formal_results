@@ -1,0 +1,105 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-015",
+  "source_id": "n8n:6777",
+  "workflow_sha256": "77c0825686cd83b8a60632d6f65d0ef34b0076399be52dc3b3c14e087fe07435",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "9aea94aaa6e9f94e3d765e32edbe853dbc5db5539ccdc3412305c844c447ef90",
+  "requirement": {
+    "requirement_text": "系统根据用户提交的创意或现成文稿自动生成完整视频。\n输入：用户通过表单提交以下内容：\n- 主题或现成文稿；\n- 期望的视频时长；\n- 选定的语音合成音色；\n- 视觉风格（例如 Pixar、Lego、Cyberpunk）；\n- 图像生成服务的选择。\n处理过程：\n1. 脚本生成：使用语言模型生成吸引人的标题、描述、开场钩子、完整脚本和行动号召；\n2. 语音合成：按选定的音色将脚本转换为音频，同时生成带时间戳的字幕；\n3. 场景切分：将脚本切分为 5–6 秒的场景片段，用于可视化的分镜规划；\n4. 图像提示词生成：按选定的视觉风格，将每个场景转换为图像生成提示词；\n5. 图像生成：将提示词提交给图像生成服务，生成各场景图片；\n6. 片段制作：依据脚本时间，将每张图片制作成带有 Ken Burns 式缩放效果的短视频片段；\n7. 视频合成：将所有片段拼接为一个完整视频，并按此前生成的时间戳叠加字幕。\n输出：最终视频上传到 Google Drive 与 Telegram，相关链接保存到 Google Sheets。",
+    "source_spans": [
+      {
+        "start": 510,
+        "end": 631,
+        "text": "Main topic or transcript\nDesired duration\nTTS voice\nVisual style (e.g., Pixar, Lego, Cyberpunk)\nImage generation provider"
+      },
+      {
+        "start": 633,
+        "end": 735,
+        "text": "AI generates a script: A catchy title, description, hook, full script, and CTA using a language model."
+      },
+      {
+        "start": 737,
+        "end": 853,
+        "text": "Text-to-Speech (TTS): The script is turned into audio using the selected voice, with timestamped captions generated."
+      },
+      {
+        "start": 855,
+        "end": 945,
+        "text": "Scene Segmentation: The script is split into 5–6 second segments for visual storyboarding."
+      },
+      {
+        "start": 947,
+        "end": 1078,
+        "text": "Image Prompt Creation: Each scene is converted into an image prompt in the selected style (e.g., \"anime close-up of a racing car\")."
+      },
+      {
+        "start": 1080,
+        "end": 1159,
+        "text": "Image Generation: Prompts are sent to together.ai or fal.ai to generate scenes."
+      },
+      {
+        "start": 1161,
+        "end": 1267,
+        "text": "Clip Creation: Each image is turned into a short video clip (Ken Burns-style zoom) based on script timing."
+      },
+      {
+        "start": 1286,
+        "end": 1474,
+        "text": "All clips are concatenated into a single video.\nCaptions are overlaid using the earlier timestamps.\nFinal Output is uploaded to Google Drive, Telegram and links are saved in Google Sheets."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "表单提交的主题或现成文稿",
+        "期望的视频时长",
+        "选定的语音合成音色",
+        "选定的视觉风格",
+        "选定的图像生成服务"
+      ],
+      "conditions": [
+        "脚本按 5–6 秒切分为场景片段",
+        "图像提示词须采用选定的视觉风格",
+        "字幕依据语音合成阶段生成的时间戳叠加",
+        "视频片段采用 Ken Burns 式缩放效果"
+      ],
+      "allowed_actions": [
+        "使用语言模型生成标题、描述、开场钩子、完整脚本与行动号召",
+        "按选定音色将脚本合成为音频并生成带时间戳的字幕",
+        "切分场景并生成对应的图像提示词",
+        "调用图像生成服务生成各场景图片",
+        "按脚本时间将图片制作为短视频片段",
+        "拼接所有片段并按时间戳叠加字幕",
+        "将最终视频上传到 Google Drive 与 Telegram",
+        "将视频链接保存到 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "Google Drive 中的最终视频",
+        "Telegram 中的最终视频",
+        "Google Sheets 中保存的视频链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-015.packet.json",
+    "packet_sha256": "402064eaa043a7330b0b462fc9002a0725c63488d372978a0e9e5f47b42b9ebe",
+    "public_description_sha256": "d305bbc419116b7d93f7a7b3a955ec87a03c9b4f2b155e2556a7740470eee0fd"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-015.response.json",
+    "verification_response_sha256": "98e53d49dba0026bcbb65544fa625ee229ab865fc16dc0176e5e245d4158b180",
+    "decision": "accept"
+  },
+  "formal_index": 26
+}

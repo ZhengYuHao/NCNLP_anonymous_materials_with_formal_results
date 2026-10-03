@@ -1,0 +1,447 @@
+{
+  "task_id": "N8F-087",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "75225bf9174935e25b2784c55430a653af8ea548a72e03cab84a3198ad49eecb",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定期调度启动",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "每日定时调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件，启动博客发布流程"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger1"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 中读取博客文章的编排数据"
+      ],
+      "rationale": "需求声明按编排计划自动处理博客文章，原生以定时调度触发流程，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取博客编排数据",
+      "node_type": "code",
+      "operation_family": "external_data_read",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_schedule",
+          "type": "object",
+          "description": "博客编排数据，含标题、关键词、计划发布日期、服务地区、字数、风格、行动号召、标识、内链与外链等"
+        }
+      ],
+      "native_evidence": [
+        "Get post information from Spreadsheet"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 中读取博客文章的编排数据，包括标题、关键词、计划发布日期、服务地区、字数、风格、行动号召、标识以及内链与外链等"
+      ],
+      "rationale": "需求声明从 Google Sheets 读取博客编排数据，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "判断是否为预定发布日期",
+      "node_type": "code",
+      "operation_family": "control_branch",
+      "inputs": [
+        {
+          "name": "post_schedule",
+          "type": "object",
+          "description": "博客编排数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_decision",
+          "type": "string",
+          "description": "判定结果：当日为预定发布日期或不是"
+        }
+      ],
+      "native_evidence": [
+        "Compare date of spreadsheet and todays"
+      ],
+      "requirement_evidence": [
+        "将计划发布日期与当天比较，确保文章只在其预定日期发布"
+      ],
+      "rationale": "需求声明将计划发布日期与当天比较、仅在预定日期发布，为确定性条件路由；非预定日期分支流程结束（无出边），判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型生成 SEO 文章内容",
+      "node_type": "semantic",
+      "operation_family": "llm_content_generation",
+      "inputs": [
+        {
+          "name": "post_schedule",
+          "type": "object",
+          "description": "编排数据中的标题、关键词、字数、风格、行动号召、内链与外链等"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_content",
+          "type": "object",
+          "description": "含标题与副标题、约 60 词引言、分章节正文、约 60 词结论、4 至 6 组问答的常见问题，以及 URL 别名与元信息"
+        },
+        {
+          "name": "seo_meta",
+          "type": "object",
+          "description": "面向搜索的 URL 别名与元信息"
+        }
+      ],
+      "native_evidence": [
+        "Generate all the necessary information of post"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成面向搜索优化的内容，包括标题与副标题、约 60 词的引言、分章节且逻辑连贯的正文、约 60 词的结论、4 至 6 组问答的常见问题段落，以及面向搜索的 URL 别名与元信息",
+        "章节中自然地融入内链、外链、服务地区与行动号召"
+      ],
+      "rationale": "需求声明由语言模型生成结构化文章内容并融入内链外链、服务地区与行动号召，需开放文本生成与组织能力，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成文章封面图",
+      "node_type": "code",
+      "operation_family": "image_processing",
+      "inputs": [
+        {
+          "name": "post_schedule",
+          "type": "object",
+          "description": "编排数据中的标题与关键词等"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "feature_image",
+          "type": "object",
+          "description": "用于 WordPress 上传的文章封面图"
+        }
+      ],
+      "native_evidence": [
+        "GET image",
+        "Code in JavaScript1",
+        "Edit Feature Image"
+      ],
+      "requirement_evidence": [
+        "生成用于 WordPress 上传的文章封面图"
+      ],
+      "rationale": "需求声明生成文章封面图供上传使用，为确定性的图像获取与加工处理，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "组装 HTML 排版文章",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "article_content",
+          "type": "object",
+          "description": "语言模型生成的文章内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_html",
+          "type": "string",
+          "description": "可直接使用的 HTML 排版文章，适配常见 WordPress 主题与页面编辑器"
+        }
+      ],
+      "native_evidence": [
+        "Design the post"
+      ],
+      "requirement_evidence": [
+        "可按需生成可直接使用的 HTML 排版文章，适配常见 WordPress 主题与页面编辑器"
+      ],
+      "rationale": "需求声明按需将文章组装为可直接使用的 HTML 排版，为确定性模板化组装，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "创建 WordPress 文章并上传特色图片",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "article_html",
+          "type": "string",
+          "description": "排版好的文章内容"
+        },
+        {
+          "name": "feature_image",
+          "type": "object",
+          "description": "文章封面图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_id",
+          "type": "string",
+          "description": "WordPress 中创建的文章标识"
+        },
+        {
+          "name": "post_link",
+          "type": "string",
+          "description": "发布文章的链接"
+        }
+      ],
+      "native_evidence": [
+        "Send to Wordpress2",
+        "Upload feature image"
+      ],
+      "requirement_evidence": [
+        "在 WordPress 中创建文章、上传图片、设置特色图片"
+      ],
+      "rationale": "需求声明在 WordPress 中创建文章并上传、设置特色图片，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "写入文章摘要与 SEO 元信息",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "post_id",
+          "type": "string",
+          "description": "WordPress 文章标识"
+        },
+        {
+          "name": "seo_meta",
+          "type": "object",
+          "description": "面向搜索的 URL 别名与元信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_summary",
+          "type": "string",
+          "description": "文章摘要，用于邮件通知"
+        }
+      ],
+      "native_evidence": [
+        "Added post excerpt",
+        "Post feature image meta information",
+        "Added feature image meta information",
+        "Added meta title, meta description and meta image for post"
+      ],
+      "requirement_evidence": [
+        "并写入面向搜索与社交分享的元信息"
+      ],
+      "rationale": "需求声明写入面向搜索与社交分享的元信息（含文章摘要），为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送邮件通知",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "post_title",
+          "type": "string",
+          "description": "文章标题"
+        },
+        {
+          "name": "post_link",
+          "type": "string",
+          "description": "文章链接"
+        },
+        {
+          "name": "post_summary",
+          "type": "string",
+          "description": "文章摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a Email to admin"
+      ],
+      "requirement_evidence": [
+        "文章发布后，向团队成员或客户发送邮件通知，其中包含文章标题、链接与摘要"
+      ],
+      "rationale": "需求声明发布后向团队成员或客户发送含标题、链接与摘要的邮件通知，为确定性外部发送动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "调度触发后读取博客编排数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "编排数据读取后比较发布日期与当天。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "计划发布日期与当天一致",
+      "rationale": "仅当当日为预定发布日期时进入内容生成；非预定日期分支无后续动作，流程结束。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章内容生成后生成封面图。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章内容生成后按需组装 HTML 排版。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "封面图就绪后进入 WordPress 发布。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "HTML 排版完成后创建文章并上传特色图片。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章创建后写入摘要与 SEO 元信息。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "元信息写入后发送邮件通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "post_schedule",
+      "condition": null,
+      "rationale": "编排数据传给日期比较节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n4",
+      "variable": "post_schedule",
+      "condition": null,
+      "rationale": "标题、关键词、字数、风格、行动号召、内链与外链等传给内容生成节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n5",
+      "variable": "post_schedule",
+      "condition": null,
+      "rationale": "标题与关键词传给封面图生成节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "article_content",
+      "condition": null,
+      "rationale": "生成的文章内容传给 HTML 排版节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "article_html",
+      "condition": null,
+      "rationale": "排版后的文章传给 WordPress 创建节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "feature_image",
+      "condition": null,
+      "rationale": "封面图传给上传与特色图设置节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "post_id",
+      "condition": null,
+      "rationale": "文章标识传给元信息写入节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n4",
+      "target": "n8",
+      "variable": "seo_meta",
+      "condition": null,
+      "rationale": "面向搜索的元信息传给写入节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "post_summary",
+      "condition": null,
+      "rationale": "文章摘要传给邮件通知节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n7",
+      "target": "n9",
+      "variable": "post_link",
+      "condition": null,
+      "rationale": "文章链接传给邮件通知节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.92,
+  "notes": "按冻结需求建模：定时调度为 code 入口；从 Google Sheets 读取编排数据、日期比较分支、封面图生成、HTML 排版组装、WordPress 创建文章与上传特色图片、摘要与 SEO 元信息写入、邮件通知均为确定性 code；仅语言模型生成文章内容判 semantic。原生中从站点地图抓取内链（GET information from sitemap、XML 解析、Split Out、Aggregate）属于需求未声明的实现细节（需求声明内链外链来自编排数据），未单独建模。"
+}

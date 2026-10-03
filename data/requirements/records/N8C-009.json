@@ -1,0 +1,89 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-009",
+  "source_id": "n8n:18268",
+  "workflow_sha256": "56cdd9b67f709dc03ac32e24a08dd9a8f32d7e2400c33f1ef8d3e4637422a42a",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "ad23729667221cf032ce1bf020aa57a64e8a7d764167ef2975d2c8309974156d",
+  "requirement": {
+    "pilot_id": "N8C-009",
+    "requirement_text": "The system runs every hour and searches Gmail for messages that have attachments and match the query 'invoice OR bill OR receipt'. It skips emails with no attachments and splits each email into individual items so each attachment is processed separately. For each PDF attachment the system shall: (1) extract the text from the PDF; (2) send the extracted text to an AI agent that returns invoice data as JSON; (3) parse and normalize the JSON into a consistent schema (for example invoice number, dates, vendor details, totals, and tax) and convert numeric values; (4) append the normalized invoice record to a Google Sheets tracker, using invoice_number as the matching column. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 294,
+        "text": "This workflow checks Gmail everyday for emails with invoice-related keywords and PDF attachments, extracts the PDF text, uses OpenAI (gpt-4.1-mini) to turn the content into structured invoice fields, normalizes the result, and appends the invoice data to a Google Sheets tracker."
+      },
+      {
+        "start": 309,
+        "end": 426,
+        "text": "Runs every hour and searches Gmail for messages that have attachments and match the query invoice OR bill OR receipt."
+      },
+      {
+        "start": 427,
+        "end": 547,
+        "text": "Skips emails with no attachments and splits each email into individual items so each attachment is processed separately."
+      },
+      {
+        "start": 548,
+        "end": 587,
+        "text": "Extracts text from each PDF attachment."
+      },
+      {
+        "start": 588,
+        "end": 693,
+        "text": "Sends the extracted PDF text to an OpenAI-powered AI Agent (gpt-4.1-mini) to return invoice data as JSON."
+      },
+      {
+        "start": 694,
+        "end": 847,
+        "text": "Parses and normalizes the JSON into a consistent schema (for example invoice number, dates, vendor details, totals, and tax) and converts numeric values."
+      },
+      {
+        "start": 848,
+        "end": 948,
+        "text": "Appends the normalized invoice record to Google Sheets, using invoice_number as the matching column."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Gmail messages that have PDF attachments and match the query invoice OR bill OR receipt"
+      ],
+      "conditions": [
+        "Runs every hour",
+        "Only Gmail messages with attachments matching the query invoice OR bill OR receipt are processed",
+        "Emails with no attachments are skipped",
+        "Each email is split into individual items so each attachment is processed separately",
+        "invoice_number is used as the matching column when appending to Google Sheets"
+      ],
+      "allowed_actions": [
+        "Search Gmail for messages with attachments matching the query invoice OR bill OR receipt",
+        "Skip emails with no attachments",
+        "Extract text from each PDF attachment",
+        "Send the extracted PDF text to an AI agent to return invoice data as JSON",
+        "Parse and normalize the JSON into a consistent schema (for example invoice number, dates, vendor details, totals, and tax) and convert numeric values",
+        "Append the normalized invoice record to a Google Sheets tracker, using invoice_number as the matching column"
+      ],
+      "visible_outcomes": [
+        "Normalized invoice records appended to the Google Sheets tracker"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 8
+}

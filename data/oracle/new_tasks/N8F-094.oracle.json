@@ -1,0 +1,156 @@
+{
+  "task_id": "N8F-094",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "ceb7b933bbf5013a05008a2c2ef7f5c31083a5b0113cd16b68a187163e716c54",
+  "fixtures": [
+    {
+      "fixture_id": "F-URL-PRODUCT",
+      "purpose": "正常用例：用户手动执行并传入一个商品页 URL，验证抓取、结构化提取、摘要合并与写入 Sheets",
+      "input_data": {
+        "url": "https://mock-products.example.com/item/42"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DECODO-SCRAPE",
+      "dependency_type": "@decodo/n8n-nodes-decodo.decodo",
+      "operation": "scrape_webpage",
+      "request_contract": {
+        "url": "https://mock-products.example.com/item/42"
+      },
+      "response_contract": {
+        "content": "Aurora Headphones - $129.99 - Noise cancelling wireless over-ear headphones. Released 2025."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "extract_structured_data",
+      "request_contract": {
+        "scraped_content": "Aurora Headphones - $129.99"
+      },
+      "response_contract": {
+        "structured": {
+          "product_name": "Aurora Headphones",
+          "price": 129.99,
+          "category": "electronics",
+          "in_stock": true
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "generate_factual_summary",
+      "request_contract": {
+        "scraped_content": "Aurora Headphones - $129.99"
+      },
+      "response_contract": {
+        "summary": "Aurora Headphones is a wireless over-ear model priced at $129.99 with noise cancelling."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-WRITE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_or_update_record",
+      "request_contract": {
+        "url": "https://mock-products.example.com/item/42",
+        "structured": "parsed_structured_data",
+        "summary": "summary_text"
+      },
+      "response_contract": {
+        "row_number": 7,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-URL-PRODUCT-FULL",
+      "kind": "positive",
+      "fixture_ids": ["F-URL-PRODUCT"],
+      "mock_ids": ["M-DECODO-SCRAPE", "M-LLM-EXTRACT", "M-LLM-SUMMARY", "M-SHEETS-WRITE"],
+      "assertions": [
+        {
+          "assertion_id": "A-UP-1",
+          "target": "exec_log.decodo.scraped_content",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求通过网页抓取服务获取网页内容，执行日志必须包含抓取内容"
+        },
+        {
+          "assertion_id": "A-UP-2",
+          "target": "final_output.structured.product_name",
+          "operator": "equals",
+          "expected": "Aurora Headphones",
+          "rationale": "结构化数据必须包含从网页内容提取的产品名称"
+        },
+        {
+          "assertion_id": "A-UP-3",
+          "target": "final_output.structured.price",
+          "operator": "equals",
+          "expected": 129.99,
+          "rationale": "结构化数据必须包含从网页内容提取的价格"
+        },
+        {
+          "assertion_id": "A-UP-4",
+          "target": "final_output.structured.category",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "结构化数据必须为统一的机器可读记录，字段应完整保留模型输出"
+        },
+        {
+          "assertion_id": "A-UP-5",
+          "target": "final_output.summary",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求生成简洁事实性摘要，最终输出必须包含摘要字段"
+        },
+        {
+          "assertion_id": "A-UP-6",
+          "target": "final_output.summary",
+          "operator": "contains",
+          "expected": "129.99",
+          "rationale": "摘要必须基于抓取内容且包含其中的事实性数据"
+        },
+        {
+          "assertion_id": "A-UP-7",
+          "target": "final_output.merged",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求将结构化数据与摘要合并为统一记录，合并标记必须为 true"
+        },
+        {
+          "assertion_id": "A-UP-8",
+          "target": "exec_log.sheets.write.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "最终结果必须写入 Google Sheets"
+        },
+        {
+          "assertion_id": "A-UP-9",
+          "target": "exec_log.sheets.write.url",
+          "operator": "equals",
+          "expected": "https://mock-products.example.com/item/42",
+          "rationale": "写入记录必须保留原始输入 URL 以便关联"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖有效 URL 完整路径（Decodo 抓取、Gemini 结构化提取与摘要、清洗解析、合并、写入 Sheets）。需求仅规定传入有效 URL 的正常流程，未规定无效 URL 的处理策略，故不设错误分支用例。Decodo、Gemini、Google Sheets 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为字段存在、数值相等、内容包含与调用次数等可计算条件。"
+}

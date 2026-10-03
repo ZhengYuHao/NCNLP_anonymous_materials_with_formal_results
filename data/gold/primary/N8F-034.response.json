@@ -1,0 +1,415 @@
+{
+  "task_id": "N8F-034",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "fff929bc124d0c0495a69c576e26196036258342ec64411b851abd3aa76200b9",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发并按主题检索、筛选上升趋势帖子",
+      "node_type": "code",
+      "operation_family": "trigger_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trending_posts",
+          "type": "object[]",
+          "description": "筛选后的上升趋势 Reddit 帖子"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger",
+        "Split Topics into Items",
+        "Search Posts",
+        "Upvotes Requirement Filtering",
+        "Remove Duplicates"
+      ],
+      "requirement_evidence": [
+        "系统按周定期执行：围绕指定主题在 Reddit 检索相关帖子，并按互动表现（如点赞数等条件）筛选出处于上升趋势的帖子"
+      ],
+      "rationale": "检索并按互动条件确定性筛选去重"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取帖子评论并按评分取前 30 条（逐帖循环）",
+      "node_type": "code",
+      "operation_family": "fetch_transform",
+      "inputs": [
+        {
+          "name": "trending_posts",
+          "type": "object[]",
+          "description": "筛选后的上升趋势 Reddit 帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "top_comments",
+          "type": "object[]",
+          "description": "每篇帖子的前 30 条评论"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over Items",
+        "Get Comments",
+        "Extract Top Comments",
+        "Format Comments"
+      ],
+      "requirement_evidence": [
+        "对每篇入选帖子，系统获取其评论，按评分取排名前 30 条评论"
+      ],
+      "rationale": "逐帖获取评论并取前 30；循环折叠进契约，max_iterations<=20"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型分析评论（情绪、叙事、受众洞察、公关启示）",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "top_comments",
+          "type": "object[]",
+          "description": "每篇帖子的前 30 条评论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comments_analysis",
+          "type": "object",
+          "description": "评论分析结果"
+        }
+      ],
+      "native_evidence": [
+        "Comments Analysis",
+        "Anthropic Chat Model"
+      ],
+      "requirement_evidence": [
+        "使用语言模型分析这些评论，得出整体情绪、主要叙事、受众洞察以及对公关工作的启示"
+      ],
+      "rationale": "评论语义分析需语言模型"
+    },
+    {
+      "node_id": "n4",
+      "label": "获取帖子所链接文章的内容",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "trending_posts",
+          "type": "object[]",
+          "description": "筛选后的上升趋势 Reddit 帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_content",
+          "type": "object[]",
+          "description": "链接文章正文"
+        }
+      ],
+      "native_evidence": [
+        "Get News Content"
+      ],
+      "requirement_evidence": [
+        "同时使用网页正文抽取服务获取帖子所链接文章的内容"
+      ],
+      "rationale": "调用正文抽取服务确定性获取内容"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型识别文章核心要素与叙事机会",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "article_content",
+          "type": "object[]",
+          "description": "链接文章正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_analysis",
+          "type": "object",
+          "description": "文章内容分析结果"
+        }
+      ],
+      "native_evidence": [
+        "News Analysis",
+        "Anthropic Chat Model1"
+      ],
+      "requirement_evidence": [
+        "识别其中的核心故事要素、技术层面要素、叙事机会与可传播要素"
+      ],
+      "rationale": "文章要素识别需语言模型"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型生成综合报告（机会、选题、优先级、路线图、策略）",
+      "node_type": "semantic",
+      "operation_family": "text_generation",
+      "inputs": [
+        {
+          "name": "comments_analysis",
+          "type": "object",
+          "description": "评论分析结果"
+        },
+        {
+          "name": "content_analysis",
+          "type": "object",
+          "description": "文章内容分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "story_report",
+          "type": "object",
+          "description": "每篇帖子的综合报告"
+        }
+      ],
+      "native_evidence": [
+        "Stories Report",
+        "Anthropic Chat Model2",
+        "Set Final Report"
+      ],
+      "requirement_evidence": [
+        "综合评论与内容两方面的分析，系统为每篇帖子生成报告，内容包括首发式报道机会、趋势放大型选题、优先级排序、执行路线图与策略建议"
+      ],
+      "rationale": "报告生成需语言模型综合两路分析"
+    },
+    {
+      "node_id": "n7",
+      "label": "将报告转为文本文件并打包为压缩包",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "story_report",
+          "type": "object",
+          "description": "每篇帖子的综合报告"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_archive",
+          "type": "object",
+          "description": "报告压缩包"
+        }
+      ],
+      "native_evidence": [
+        "Convert to File",
+        "Compress files",
+        "Merge Binary Files"
+      ],
+      "requirement_evidence": [
+        "报告被整理为文本文件并打包为压缩包"
+      ],
+      "rationale": "确定性转换与压缩"
+    },
+    {
+      "node_id": "n8",
+      "label": "上传压缩包至 Google Drive",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "report_archive",
+          "type": "object",
+          "description": "报告压缩包"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "drive_link",
+          "type": "string",
+          "description": "压缩包链接"
+        }
+      ],
+      "native_evidence": [
+        "Google Drive6",
+        "Google Drive7"
+      ],
+      "requirement_evidence": [
+        "打包为压缩包上传至 Google Drive"
+      ],
+      "rationale": "上传为确定性外部动作"
+    },
+    {
+      "node_id": "n9",
+      "label": "通过 Mattermost 分享压缩包链接给团队成员",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "drive_link",
+          "type": "string",
+          "description": "压缩包链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send files to Mattermost3"
+      ],
+      "requirement_evidence": [
+        "随后通过 Mattermost 将压缩包链接分享给团队成员"
+      ],
+      "rationale": "Mattermost 分享为最终用户可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "帖子筛选后进入评论采集"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "评论取前 30 后进入分析"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "帖子筛选后并行抽取文章正文"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "正文抽取后进入内容分析"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "评论分析汇入综合报告"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "内容分析汇入综合报告"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后转文件打包"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "打包后上传 Drive"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "上传完成后分享链接"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "trending_posts",
+      "condition": null,
+      "rationale": "帖子供评论采集"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "top_comments",
+      "condition": null,
+      "rationale": "评论供分析"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "trending_posts",
+      "condition": null,
+      "rationale": "帖子中的文章链接供正文抽取"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "article_content",
+      "condition": null,
+      "rationale": "正文供内容分析"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n6",
+      "variable": "comments_analysis",
+      "condition": null,
+      "rationale": "评论分析汇入报告"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "content_analysis",
+      "condition": null,
+      "rationale": "内容分析汇入报告"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "story_report",
+      "condition": null,
+      "rationale": "报告用于转换打包"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "report_archive",
+      "condition": null,
+      "rationale": "压缩包用于上传"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "drive_link",
+      "condition": null,
+      "rationale": "链接用于 Mattermost 分享"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "周定时→按主题检索并筛选→评论取前30与文章正文抽取并行→分别 LLM 分析→LLM 综合报告→转文件打包→上传 Drive→Mattermost 分享。逐帖循环折叠进节点契约（max_iterations<=20）。"
+}

@@ -1,0 +1,349 @@
+{
+  "task_id": "N8F-007",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "2342bd3405f63d6a15eaaafbcd0b03931b09cb117aa583147693614e307e8b9b",
+  "fixtures": [
+    {
+      "fixture_id": "F-CONFIG-TIKTOK",
+      "purpose": "统一配置：话题列表与全部阈值参数（每话题取样帖数、最低播放量、提升幅度、冷却期）",
+      "input_data": {
+        "topics": ["fitness", "cooking"],
+        "posts_per_topic": 50,
+        "min_plays": 10000,
+        "lift": 1.2,
+        "cooldown_days": 7,
+        "slack_channel": "#marketing-digest",
+        "schedule": "weekly"
+      }
+    },
+    {
+      "fixture_id": "F-HISTORY-SHEETS",
+      "purpose": "Google Sheets 中已记录的标签与配乐（含冷却窗口内的旧记录，用于验证剔除逻辑）",
+      "input_data": {
+        "reported_tags": [
+          {"tag": "#mealprep", "reported_at": "2026-08-31"},
+          {"tag": "#oldcampaign", "reported_at": "2026-07-01"}
+        ],
+        "reported_sounds": [
+          {"sound": "Old Song", "reported_at": "2026-08-30"}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BD-SCRAPE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bright_data_tiktok_discovery_scrape",
+      "request_contract": {
+        "endpoint": "/tiktok/discovery",
+        "topic": "fitness",
+        "posts": 50
+      },
+      "response_contract": {
+        "snapshot_id": "snap-fitness-001",
+        "status": "pending",
+        "poll_url": "https://mock-brightdata/poll/snap-fitness-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-READY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bright_data_poll_progress",
+      "request_contract": {
+        "poll_url": "https://mock-brightdata/poll/snap-fitness-001"
+      },
+      "response_contract": {
+        "snapshot_id": "snap-fitness-001",
+        "ready": true,
+        "download_url": "https://mock-brightdata/download/snap-fitness-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POSTS-FITNESS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_scraped_posts",
+      "request_contract": {
+        "download_url": "https://mock-brightdata/download/snap-fitness-001"
+      },
+      "response_contract": {
+        "posts": [
+          {"id": "p01", "views": 200000, "likes": 14000, "comments": 4000, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "10 min home HIIT", "url": "https://tiktok.com/@best/video/1"},
+          {"id": "p02", "views": 180000, "likes": 12000, "comments": 3600, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Leg day essentials", "url": "https://tiktok.com/@best/video/2"},
+          {"id": "p03", "views": 150000, "likes": 9000, "comments": 3000, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Beginner core routine", "url": "https://tiktok.com/@best/video/3"},
+          {"id": "p04", "views": 220000, "likes": 15400, "comments": 4400, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Full body with dumbbells", "url": "https://tiktok.com/@best/video/4"},
+          {"id": "p05", "views": 160000, "likes": 12800, "comments": 3200, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Stretch and mobility", "url": "https://tiktok.com/@best/video/5"},
+          {"id": "p06", "views": 140000, "likes": 11200, "comments": 2800, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Morning wake-up flow", "url": "https://tiktok.com/@best/video/6"},
+          {"id": "p07", "views": 130000, "likes": 10400, "comments": 2600, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Posture fix routine", "url": "https://tiktok.com/@best/video/7"},
+          {"id": "p08", "views": 120000, "likes": 9600, "comments": 2400, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Cardio burnout", "url": "https://tiktok.com/@best/video/8"},
+          {"id": "p09", "views": 110000, "likes": 8800, "comments": 2200, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Core and balance", "url": "https://tiktok.com/@best/video/9"},
+          {"id": "p10", "views": 100000, "likes": 8000, "comments": 2000, "hashtags": ["#fitlife"], "sound": "Workout Mix", "caption": "Quick lunchtime workout", "url": "https://tiktok.com/@best/video/10"},
+          {"id": "p11", "views": 120000, "likes": 2400, "comments": 600, "hashtags": ["#diet"], "sound": "Chill Beat", "caption": "Meal prep ideas", "url": "https://tiktok.com/@best/video/11"},
+          {"id": "p12", "views": 110000, "likes": 2200, "comments": 550, "hashtags": ["#diet"], "sound": "Chill Beat", "caption": "Low carb snacks", "url": "https://tiktok.com/@best/video/12"},
+          {"id": "p13", "views": 100000, "likes": 2000, "comments": 500, "hashtags": ["#diet"], "sound": "Chill Beat", "caption": "Protein shake recipe", "url": "https://tiktok.com/@best/video/13"},
+          {"id": "p14", "views": 90000, "likes": 1800, "comments": 450, "hashtags": ["#diet"], "sound": "Chill Beat", "caption": "Keto basics", "url": "https://tiktok.com/@best/video/14"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-SCRAPE-COOKING",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bright_data_tiktok_discovery_scrape",
+      "request_contract": {
+        "endpoint": "/tiktok/discovery",
+        "topic": "cooking",
+        "posts": 50
+      },
+      "response_contract": {
+        "snapshot_id": "snap-cooking-001",
+        "status": "pending",
+        "poll_url": "https://mock-brightdata/poll/snap-cooking-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-COOKING-READY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bright_data_poll_progress",
+      "request_contract": {
+        "poll_url": "https://mock-brightdata/poll/snap-cooking-001"
+      },
+      "response_contract": {
+        "snapshot_id": "snap-cooking-001",
+        "ready": true,
+        "download_url": "https://mock-brightdata/download/snap-cooking-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POSTS-COOKING",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_scraped_posts",
+      "request_contract": {
+        "download_url": "https://mock-brightdata/download/snap-cooking-001"
+      },
+      "response_contract": {
+        "posts": [
+          {"id": "c01", "views": 300000, "likes": 24000, "comments": 6000, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Sunday meal prep", "url": "https://tiktok.com/@chef/video/1"},
+          {"id": "c02", "views": 280000, "likes": 22400, "comments": 5600, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "5 day lunch prep", "url": "https://tiktok.com/@chef/video/2"},
+          {"id": "c03", "views": 260000, "likes": 20800, "comments": 5200, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Budget meal prep", "url": "https://tiktok.com/@chef/video/3"},
+          {"id": "c04", "views": 240000, "likes": 19200, "comments": 4800, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "High protein prep", "url": "https://tiktok.com/@chef/video/4"},
+          {"id": "c05", "views": 220000, "likes": 17600, "comments": 4400, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Freezer meals", "url": "https://tiktok.com/@chef/video/5"},
+          {"id": "c06", "views": 210000, "likes": 16800, "comments": 4200, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Overnight oats prep", "url": "https://tiktok.com/@chef/video/6"},
+          {"id": "c07", "views": 200000, "likes": 16000, "comments": 4000, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Sheet pan prep", "url": "https://tiktok.com/@chef/video/7"},
+          {"id": "c08", "views": 190000, "likes": 15200, "comments": 3800, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Smoothie prep", "url": "https://tiktok.com/@chef/video/8"},
+          {"id": "c09", "views": 180000, "likes": 14400, "comments": 3600, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Veggie prep", "url": "https://tiktok.com/@chef/video/9"},
+          {"id": "c10", "views": 170000, "likes": 13600, "comments": 3400, "hashtags": ["#mealprep"], "sound": "Cooking Vibes", "caption": "Snack prep", "url": "https://tiktok.com/@chef/video/10"},
+          {"id": "c11", "views": 150000, "likes": 3000, "comments": 750, "hashtags": ["#quickrecipes"], "sound": "Old Song", "caption": "5 min pasta", "url": "https://tiktok.com/@chef/video/11"},
+          {"id": "c12", "views": 140000, "likes": 2800, "comments": 700, "hashtags": ["#quickrecipes"], "sound": "Old Song", "caption": "Quick stir fry", "url": "https://tiktok.com/@chef/video/12"},
+          {"id": "c13", "views": 130000, "likes": 2600, "comments": 650, "hashtags": ["#quickrecipes"], "sound": "Old Song", "caption": "Fast soup", "url": "https://tiktok.com/@chef/video/13"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "extract_content_style_and_rank",
+      "request_contract": {
+        "best_post_captions": ["10 min home HIIT", "Full body with dumbbells", "Beginner core routine"]
+      },
+      "response_contract": {
+        "content_format": "tutorial",
+        "angle": "beginner-friendly",
+        "topics": ["home workout", "HIIT", "dumbbells"],
+        "ranked_list": ["#fitlife", "Workout Mix"],
+        "strategy_brief": "Focus on short-form HIIT tutorials with beginner angles; pair with upbeat workout tracks."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "selected_tags",
+        "rows": [
+          {"tag_or_sound": "#fitlife", "type": "hashtag", "engagement_rate": 0.08, "plays": 200000, "best_post_url": "https://tiktok.com/@best/video/1"},
+          {"tag_or_sound": "Workout Mix", "type": "sound", "engagement_rate": 0.08, "plays": 200000, "best_post_url": "https://tiktok.com/@best/video/1"}
+        ]
+      },
+      "response_contract": {
+        "appended_rows": 2,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-SEND",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_contract": {
+        "channel": "#marketing-digest"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1767300000.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-TIMEOUT",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bright_data_poll_progress",
+      "request_contract": {
+        "poll_url": "https://mock-brightdata/poll/snap-cooking-001"
+      },
+      "response_contract": {
+        "snapshot_id": "snap-cooking-001",
+        "ready": false,
+        "timed_out": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TIKTOK-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-CONFIG-TIKTOK", "F-HISTORY-SHEETS"],
+      "mock_ids": ["M-BD-SCRAPE", "M-BD-POLL-READY", "M-BD-POSTS-FITNESS", "M-BD-SCRAPE-COOKING", "M-BD-POLL-COOKING-READY", "M-BD-POSTS-COOKING", "M-LLM-EXTRACT", "M-SHEETS-APPEND", "M-SLACK-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-007-1",
+          "target": "exec_log.brightdata.scrape_count",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "配置中有 fitness 与 cooking 两个话题，每个话题必须各发起一次发现式抓取"
+        },
+        {
+          "assertion_id": "A-007-2",
+          "target": "exec_log.brightdata.poll_ready",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "两个快照在固定模拟中均轮询就绪，流程必须等待快照就绪后再下载帖子"
+        },
+        {
+          "assertion_id": "A-007-3",
+          "target": "exec_log.googleSheets.append.rows",
+          "operator": "equals",
+          "expected": ["#fitlife", "Workout Mix"],
+          "rationale": "互动率超过中位数×1.2 且帖子数足够的入选项为 #fitlife 标签与 Workout Mix 配乐；#diet 互动率不达标、#mealprep 与 Old Song 处于冷却期，均不得入选"
+        },
+        {
+          "assertion_id": "A-007-4",
+          "target": "exec_log.googleSheets.append.row_count",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "每个入选的标签或配乐在 Google Sheets 中追加一行，入选 2 项则必须追加 2 行"
+        },
+        {
+          "assertion_id": "A-007-5",
+          "target": "exec_log.slack.send.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求要求向配置的 Slack 频道发送一份排名摘要，只应发送一次"
+        },
+        {
+          "assertion_id": "A-007-6",
+          "target": "exec_log.slack.send.message",
+          "operator": "contains",
+          "expected": "https://tiktok.com/@best/video/1",
+          "rationale": "Slack 摘要必须包含表现最好帖子的链接，链接来自入选 #fitlife 分组中的最佳帖子"
+        },
+        {
+          "assertion_id": "A-007-7",
+          "target": "exec_log.slack.send.message",
+          "operator": "contains",
+          "expected": "#fitlife",
+          "rationale": "Slack 摘要必须包含入选的排名标签，验证摘要内容与最终列表一致"
+        },
+        {
+          "assertion_id": "A-007-8",
+          "target": "exec_log.slack.send.message",
+          "operator": "contains",
+          "expected": "0.08",
+          "rationale": "Slack 摘要必须包含指标数据（互动率），0.08 为 #fitlife 分组的固定互动率"
+        }
+      ]
+    },
+    {
+      "case_id": "C-TIKTOK-COOLDOWN-EXCLUDED",
+      "kind": "negative",
+      "fixture_ids": ["F-CONFIG-TIKTOK", "F-HISTORY-SHEETS"],
+      "mock_ids": ["M-BD-SCRAPE", "M-BD-POLL-READY", "M-BD-POSTS-FITNESS", "M-BD-SCRAPE-COOKING", "M-BD-POLL-COOKING-READY", "M-BD-POSTS-COOKING", "M-LLM-EXTRACT", "M-SHEETS-APPEND", "M-SLACK-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-007-9",
+          "target": "exec_log.googleSheets.append.rows",
+          "operator": "not_equals",
+          "expected": ["#mealprep", "Old Song", "#fitlife", "Workout Mix"],
+          "rationale": "冷却期内已报送的 #mealprep（2 天前报送）与 Old Song（3 天前报送）必须被剔除，不得进入追加列表"
+        },
+        {
+          "assertion_id": "A-007-10",
+          "target": "exec_log.googleSheets.read.reported_tags",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求先读取 Google Sheets 中已记录的标签，执行日志必须包含对历史记录的读取动作"
+        },
+        {
+          "assertion_id": "A-007-11",
+          "target": "exec_log.googleSheets.append.rows",
+          "operator": "not_equals",
+          "expected": ["#diet", "#quickrecipes", "#fitlife", "Workout Mix"],
+          "rationale": "#diet 分组互动率约 0.025，低于中位数×1.2（约 0.048）；#quickrecipes 帖子数仅 3 不足，两者均不得入选"
+        }
+      ]
+    },
+    {
+      "case_id": "C-TIKTOK-POLL-TIMEOUT",
+      "kind": "boundary",
+      "fixture_ids": ["F-CONFIG-TIKTOK"],
+      "mock_ids": ["M-BD-SCRAPE", "M-BD-POLL-READY", "M-BD-POSTS-FITNESS", "M-BD-SCRAPE-COOKING", "M-BD-POLL-TIMEOUT", "M-LLM-EXTRACT", "M-SHEETS-APPEND", "M-SLACK-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-007-12",
+          "target": "exec_log.brightdata.poll_aborted",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "cooking 话题的快照轮询超时，按需求不得继续等待该快照"
+        },
+        {
+          "assertion_id": "A-007-13",
+          "target": "exec_log.brightdata.downloaded_snapshots",
+          "operator": "equals",
+          "expected": ["snap-fitness-001"],
+          "rationale": "超时的快照不得下载，只有就绪的 fitness 快照被下载"
+        },
+        {
+          "assertion_id": "A-007-14",
+          "target": "exec_log.googleSheets.append.rows",
+          "operator": "equals",
+          "expected": ["#fitlife", "Workout Mix"],
+          "rationale": "cooking 话题因超时被跳过，最终仅 fitness 话题的入选项被追加"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖三条路径：正常流程（两话题抓取→轮询→下载→互动率聚合→冷却期过滤→LLM 提取→Sheets 追加→Slack 摘要）、冷却期/不达标分组剔除（#mealprep、Old Song 冷却期内，#diet 未达提升幅度，#quickrecipes 帖子数不足）、轮询超时（不再等待该快照并跳过该话题）。所有外部依赖（Bright Data 抓取/轮询/下载、OpenAI、Sheets 读/追加、Slack）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、数组完全相等与内容包含检查。"
+}

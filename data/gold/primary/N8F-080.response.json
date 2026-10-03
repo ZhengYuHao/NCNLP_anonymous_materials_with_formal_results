@@ -1,0 +1,370 @@
+{
+  "task_id": "N8F-080",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "77f818bf1ec8145636ff44019ff0ac818389f898256042df22b1aa44ede782a0",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日定时触发",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "每天上午 10 点触发的调度事件"
+        }
+      ],
+      "native_evidence": [
+        "Trigger - Daily Sentiment Analysis"
+      ],
+      "requirement_evidence": [
+        "每天上午 10 点运行一次"
+      ],
+      "rationale": "需求声明每天上午 10 点定时运行，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "抓取 Facebook 帖子与评论",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_facebook_data",
+          "type": "object",
+          "description": "抓取的最新帖子及其正文、互动量与每条最多 100 条评论"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Recent Facebook Posts"
+      ],
+      "requirement_evidence": [
+        "通过 Facebook 的 Graph API 抓取最新的帖子，并提取帖子正文、互动量以及每条帖子最多 100 条评论"
+      ],
+      "rationale": "需求声明通过 Graph API 抓取帖子与评论，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "结构化与清洗数据",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "raw_facebook_data",
+          "type": "object",
+          "description": "抓取的原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clean_data",
+          "type": "object",
+          "description": "结构化与清洗后的数据，供情感判定使用"
+        }
+      ],
+      "native_evidence": [
+        "Format Facebook Data (Code Node)"
+      ],
+      "requirement_evidence": [
+        "对抓取到的 Facebook 数据结构化与清洗，供情感判定使用"
+      ],
+      "rationale": "需求声明对抓取数据做结构化与清洗，为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "判定帖子语气与评论情感",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "clean_data",
+          "type": "object",
+          "description": "清洗后的数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sentiment_metrics",
+          "type": "object",
+          "description": "情感倾向、置信度与说明，含正面比例与互动数据"
+        },
+        {
+          "name": "negative_sentiment",
+          "type": "object",
+          "description": "判定为负面的情感结果"
+        }
+      ],
+      "native_evidence": [
+        "💬 Agent - Sentiment & Tone Evaluator"
+      ],
+      "requirement_evidence": [
+        "由语言模型对帖子语气与评论情感进行判定，输出情感倾向、置信度与说明"
+      ],
+      "rationale": "需求声明由语言模型判定帖子语气与评论情感并输出置信度与说明，需开放语义判断，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "记录情感指标到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "sentiment_metrics",
+          "type": "object",
+          "description": "情感指标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "logged_metrics",
+          "type": "object",
+          "description": "写入 Google Sheets 的情感指标记录"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Data for Google Sheets",
+        "Update Google Sheet - Sentiment Log"
+      ],
+      "requirement_evidence": [
+        "把全部情感指标（含正面比例与互动数据）记录到 Google Sheets"
+      ],
+      "rationale": "需求声明把情感指标记录到 Google Sheets，为确定性外部写入，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成 HTML 情感汇总报告",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "logged_metrics",
+          "type": "object",
+          "description": "已记录的情感指标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "带颜色标记的 HTML 情感汇总报告"
+        }
+      ],
+      "native_evidence": [
+        "Format HTML Email Report (Code Node)"
+      ],
+      "requirement_evidence": [
+        "生成带颜色标记的 HTML 情感汇总报告"
+      ],
+      "rationale": "需求声明生成带颜色标记的 HTML 汇总报告，为确定性格式化，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "通过 Outlook 发送报告",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "HTML 情感汇总报告"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Sentiment Report (Outlook)"
+      ],
+      "requirement_evidence": [
+        "并通过 Outlook 以邮件发送"
+      ],
+      "rationale": "需求声明通过 Outlook 邮件发送报告，为主流程末尾的完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送负面情感提醒到 Slack",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "negative_sentiment",
+          "type": "object",
+          "description": "判定为负面的结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Route Based on Sentiment Score",
+        "Slack Alert - Negative Sentiment"
+      ],
+      "requirement_evidence": [
+        "判定为负面的结果会发送到 Slack，以便及时响应"
+      ],
+      "rationale": "需求声明负面结果发送到 Slack，为分支完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送处理失败告警",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "error_event",
+          "type": "object",
+          "description": "由全局错误处理机制在任一环节失败时产生的失败事件；源头为原生 Error Handler Trigger（全局错误触发器），非主流程业务节点的输出"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Error Handler Trigger",
+        "Slack: Send Error Alert"
+      ],
+      "requirement_evidence": [
+        "若处理过程中任一环节失败，同样向 Slack 发送告警"
+      ],
+      "rationale": "需求声明任一环节失败时向 Slack 发送告警，为全局失败出口且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后抓取帖子与评论。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取后结构化与清洗。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "清洗后交由语言模型判定情感。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "判定后记录情感指标。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录后生成 HTML 汇总报告。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后通过 Outlook 发送。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n4",
+      "target": "n8",
+      "variable": null,
+      "condition": "情感判定为负面",
+      "rationale": "负面结果并行发送到 Slack 以便及时响应。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n1",
+      "target": "n9",
+      "variable": null,
+      "condition": "任一处理环节失败",
+      "rationale": "全局失败出口：处理过程中任一环节失败即发送告警（以入口到告警节点的条件边抽象表示）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "schedule_event",
+      "condition": null,
+      "rationale": "触发事件传给抓取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "raw_facebook_data",
+      "condition": null,
+      "rationale": "原始数据传给清洗节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "clean_data",
+      "condition": null,
+      "rationale": "清洗数据传给情感判定节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "sentiment_metrics",
+      "condition": null,
+      "rationale": "情感指标传给记录节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "logged_metrics",
+      "condition": null,
+      "rationale": "已记录指标传给报告生成节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "html_report",
+      "condition": null,
+      "rationale": "HTML 报告传给邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n4",
+      "target": "n8",
+      "variable": "negative_sentiment",
+      "condition": null,
+      "rationale": "负面结果传给 Slack 提醒节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7",
+    "n8",
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "负面情感 Slack 提醒与主流程（记录、报告、发送）并行。错误告警为全局失败出口：原生流程中 error_event 由 Error Handler Trigger（全局错误触发器）产生并传给 Slack 告警节点，该触发器属于 n8n 错误处理机制而非需求声明的业务节点，未建模；n1 定时触发仅产生 schedule_event、不产生 error_event，故 DFG 中不声明 error_event 数据边，CFG 以入口到告警节点的条件边抽象表达（实际由任一环节失败触发）。结构化解析器、内存缓冲等为语言模型实现细节，未纳入。"
+}

@@ -1,0 +1,92 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-098",
+  "source_id": "n8n:11098",
+  "workflow_sha256": "8537c06965164285312d7c84f2095461caf60a2b95edd293b522833b0db372a9",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "62aad480b7dcb753296ee07f9d5fdb33ab4f3558d62bc708275c4c7929514c6e",
+  "requirement": {
+    "requirement_text": "按每日计划或按需运行，对多个目标 URL 进行变更监控：抓取目标网页的内容并截取页面快照，同时为每次变化生成简洁的文字摘要；由语言模型对本次快照与历史快照进行比对，高亮其中有意义的变化；只有满足用户预先定义的关注条件（聚焦特定内容变化、忽略细微差异）的更新才会被记录；将页面快照、比对结果与摘要保存到 Notion 以便查阅；当发生更新时，可通过 Gmail 发送邮件提醒。",
+    "source_spans": [
+      {
+        "start": 416,
+        "end": 510,
+        "text": "Automated Website Monitoring**  \n  Tracks changes on multiple target URLs on a daily schedule."
+      },
+      {
+        "start": 512,
+        "end": 620,
+        "text": "Visual & Text-Based Updates**  \n  Captures screenshots and generates concise text summaries for each change."
+      },
+      {
+        "start": 622,
+        "end": 730,
+        "text": "Notion Integration**  \n  Stores snapshots, comparisons, and summaries directly in Notion for easy reference."
+      },
+      {
+        "start": 732,
+        "end": 826,
+        "text": "GPT-Powered Comparison**  \n  Highlights meaningful changes between snapshots using GPT-5-mini."
+      },
+      {
+        "start": 828,
+        "end": 962,
+        "text": "Change Criteria Input**  \n  Define what type of updates matter to you — focus on specific content changes or ignore minor differences."
+      },
+      {
+        "start": 964,
+        "end": 1069,
+        "text": "Email Alerts via Gmail**  \n  Sends notifications when updates occur, so you never miss important changes."
+      },
+      {
+        "start": 2790,
+        "end": 3211,
+        "text": "Schedule Trigger: Runs daily or on-demand.  \nFetch Pages: Scrapes target websites using Firecrawl.  \nCapture & Compare: Screenshots and text are stored and compared using GPT-5-mini.  \nApply Change Criteria: Only updates that meet your defined criteria are logged.  \nSave Updates: Changes are stored in Notion with visual and text summaries.  \nOptional Alerts: Sends Gmail notifications with updates.  \n\nExample Use Cases"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "一个或多个待监控的目标 URL",
+        "用户定义的变更关注条件（关注哪些内容变化、忽略哪些细微差异）",
+        "每日计划触发或按需触发"
+      ],
+      "conditions": [
+        "只有满足用户定义关注条件的更新才会被记录",
+        "邮件提醒为可选项"
+      ],
+      "allowed_actions": [
+        "抓取目标网页内容并截取页面快照",
+        "为每次变化生成简洁的文字摘要",
+        "使用语言模型比对快照并高亮有意义的变化",
+        "将快照、比对结果与摘要保存到 Notion",
+        "通过 Gmail 发送更新提醒邮件"
+      ],
+      "visible_outcomes": [
+        "Notion 中保存的页面快照、比对结果与文字摘要",
+        "可选：Gmail 中收到的更新提醒邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-098.packet.json",
+    "packet_sha256": "bd2660e79009fe6cab841ee1ca2a3d678a31e684b3450918bb4d3f684b6fad9c",
+    "public_description_sha256": "c2d4b068a529e8f772dd87be3829c78605aa09383277c64f6a16169a8d9717cf"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-098.response.json",
+    "verification_response_sha256": "eeeef2542d233515933897aa14be1fc792a06a6f7565c4e62c5f0b5231f332ac",
+    "decision": "accept"
+  },
+  "formal_index": 109
+}

@@ -1,0 +1,181 @@
+{
+  "task_id": "N8F-101",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "5a67c53da6298958cb9f283ff6ab8efb72121a8b2560a4835f6bc19e8b10a5c1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "对话入口接收用户问题",
+      "node_type": "code",
+      "operation_family": "对话触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户用自然语言提出的表格问题"
+        }
+      ],
+      "native_evidence": [
+        "When You Ask About the Sheet (chatTrigger)"
+      ],
+      "requirement_evidence": [
+        "通过对话入口，用户用自然语言就表格提出问题"
+      ],
+      "rationale": "对话入口为确定性消息接收事件源，属代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取 Google Sheets 实时数据行",
+      "node_type": "code",
+      "operation_family": "外部读取",
+      "inputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户用自然语言提出的表格问题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheet_rows",
+          "type": "list",
+          "description": "Google Sheets 中的实时数据行"
+        }
+      ],
+      "native_evidence": [
+        "Read the Sheet for Answers (googleSheetsTool)"
+      ],
+      "requirement_evidence": [
+        "智能体读取 Google Sheets 中的实时数据行"
+      ],
+      "rationale": "读取表格实时数据为确定性外部读取，属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "基于真实数据计算答案",
+      "node_type": "semantic",
+      "operation_family": "语言模型问答",
+      "inputs": [
+        {
+          "name": "sheet_rows",
+          "type": "list",
+          "description": "Google Sheets 中的实时数据行"
+        },
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户用自然语言提出的表格问题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "基于真实数据计算出的带实际数字的答案"
+        }
+      ],
+      "native_evidence": [
+        "Spreadsheet Assistant (agent)",
+        "Assistant Model (lmChatOpenAi)",
+        "Conversation Memory (memoryBufferWindow)"
+      ],
+      "requirement_evidence": [
+        "基于真实数据计算并给出答案，而不是凭记忆猜测",
+        "对话记忆保留上下文，使'那之前一个月呢？'这类追问能够正常衔接"
+      ],
+      "rationale": "理解问题、对真实数据做计算并组织答案为开放式语义任务；对话记忆与追问衔接折叠进本节点契约。属语义处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "在对话中返回答案",
+      "node_type": "terminal",
+      "operation_family": "对话回复",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "基于真实数据计算出的带实际数字的答案"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Spreadsheet Assistant (agent) 输出"
+      ],
+      "requirement_evidence": [
+        "答案连同实际数字在对话中返回"
+      ],
+      "rationale": "答案在对话中返回是需求声明的最终用户可见产出，其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到问题后读取表格数据"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据就绪后计算答案"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "答案生成后在对话中返回"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "读取范围由问题决定"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n1",
+      "target": "n3",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "计算针对用户提出的问题"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n2",
+      "target": "n3",
+      "variable": "sheet_rows",
+      "condition": null,
+      "rationale": "答案基于表格实时数据行而非记忆"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n3",
+      "target": "n4",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "返回的即计算出的答案"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n4"
+  ],
+  "confidence": 0.85,
+  "notes": "冻结需求仅声明对话问答行为（读实时数据、真实计算、上下文追问、返回带数字答案）。原生图中的表格修改建议、变更预览、Telegram 确认与审计日志等流程未被冻结需求声明，未纳入 Gold。表格读取按需求声明的独立动作建模为 code 节点（原生图为挂在智能体上的 Sheets 工具）。"
+}

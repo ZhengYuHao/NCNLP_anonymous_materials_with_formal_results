@@ -1,0 +1,151 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-103",
+  "source_id": "n8n:2865",
+  "workflow_sha256": "3ab1eaae33227282a613b5f323b0c253c350c7a8792eb7f609df2052825cbf9d",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cc1e695af4b66c1a73a2c139e5da181f3986679c107db1a4420c5aa50f3e9e9b",
+  "requirement": {
+    "requirement_text": "按计划在每天上午 8:00（或自定义时间）启动。从 Pinterest API 获取近期的 Pin 表现数据，包括展示量、点击量、收藏量与互动率，并确保自然流量与付费广告数据被正确标注以便区分；将这些 Pin 记录并归类存入 Airtable，以供后续分析。随后由语言模型审阅最新的 Pinterest 数据，识别热门话题与关键词、互动规律、受众兴趣与行为变化，以及最佳发布时段与内容形式；接着由智能体给出新的 Pin 创意与内容日历更新建议，建议包含创意形式、话题标签与发布时机调整。最后生成一份简明报告，汇总 Pinterest 趋势与可执行的内容策略洞察，并通过邮件发送给市场负责人；报告包含近期 Pin 表现概览、热门内容创意、表现最佳的 Pin 形式，以及智能体给出的建议。",
+    "source_spans": [
+      {
+        "start": 81,
+        "end": 215,
+        "text": "This workflow automates the collection, analysis, and summarization of Pinterest Pin data to help marketers optimize content strategy."
+      },
+      {
+        "start": 216,
+        "end": 362,
+        "text": "It gathers Pinterest Pin performance data, analyzes trends using an AI agent, and delivers actionable insights to the Marketing Manager via email."
+      },
+      {
+        "start": 1415,
+        "end": 1493,
+        "text": "At 8:00 AM (or your preferred time), an automated trigger starts the workflow."
+      },
+      {
+        "start": 1613,
+        "end": 1719,
+        "text": "Retrieve recent Pinterest Pin performance data, including impressions, clicks, saves, and engagement rate."
+      },
+      {
+        "start": 1722,
+        "end": 1794,
+        "text": "Ensure both Organic and Paid Ads data are labeled correctly for clarity."
+      },
+      {
+        "start": 1826,
+        "end": 1903,
+        "text": "Pins are logged and categorized in an Airtable database for further analysis."
+      },
+      {
+        "start": 2432,
+        "end": 2494,
+        "text": "The AI model reviews the latest Pinterest data and identifies:"
+      },
+      {
+        "start": 2497,
+        "end": 2523,
+        "text": "Trending Topics & Keywords"
+      },
+      {
+        "start": 2528,
+        "end": 2547,
+        "text": "Engagement Patterns"
+      },
+      {
+        "start": 2552,
+        "end": 2589,
+        "text": "Audience Interests & Behavior Changes"
+      },
+      {
+        "start": 2594,
+        "end": 2625,
+        "text": "Optimal Posting Times & Formats"
+      },
+      {
+        "start": 2673,
+        "end": 2763,
+        "text": "The AI Agent recommends new Pin ideas and content calendar updates to maximize engagement."
+      },
+      {
+        "start": 2766,
+        "end": 2860,
+        "text": "Suggestions include creative formats, hashtags, and timing adjustments for better performance."
+      },
+      {
+        "start": 2904,
+        "end": 3007,
+        "text": "A concise report is created, summarizing Pinterest trends and actionable insights for content strategy."
+      },
+      {
+        "start": 3059,
+        "end": 3153,
+        "text": "The summary is emailed to the Marketing Manager to assist with content planning and execution."
+      },
+      {
+        "start": 3181,
+        "end": 3216,
+        "text": "Performance Overview of Recent Pins"
+      },
+      {
+        "start": 3221,
+        "end": 3243,
+        "text": "Trending Content Ideas"
+      },
+      {
+        "start": 3248,
+        "end": 3275,
+        "text": "Best Performing Pin Formats"
+      },
+      {
+        "start": 3280,
+        "end": 3308,
+        "text": "AI-Generated Recommendations"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Pinterest API 提供的近期 Pin 表现数据（展示量、点击量、收藏量、互动率）",
+        "每天上午 8:00（或自定义时间）的计划触发"
+      ],
+      "conditions": [
+        "自然流量数据与付费广告数据需分别正确标注"
+      ],
+      "allowed_actions": [
+        "获取近期 Pin 的表现数据",
+        "将 Pin 记录并归类存入 Airtable",
+        "使用语言模型识别热门话题与关键词、互动规律、受众兴趣与行为变化、最佳发布时段与内容形式",
+        "生成新的 Pin 创意与内容日历更新建议，包含创意形式、话题标签与发布时机调整",
+        "生成汇总 Pinterest 趋势与可执行洞察的简明报告",
+        "将报告通过邮件发送给市场负责人"
+      ],
+      "visible_outcomes": [
+        "Airtable 中归类存储的 Pin 记录",
+        "市场负责人收到的邮件报告，包含近期 Pin 表现概览、热门内容创意、表现最佳的 Pin 形式与智能体建议"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-103.packet.json",
+    "packet_sha256": "bd61911c042cb997f5896817e624021d885df044d720b09340ce60f790dc7367",
+    "public_description_sha256": "5a0386bed2a5ec6e07cdab32c2cf709e816a7963204df71eca4695b2f172d9f9"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-103.response.json",
+    "verification_response_sha256": "661164ce516100c6e7a1698f3d7bc7cb181a2f45663ee551c7729ea02d78919b",
+    "decision": "accept"
+  },
+  "formal_index": 114
+}

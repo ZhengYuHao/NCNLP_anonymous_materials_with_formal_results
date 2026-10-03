@@ -1,0 +1,435 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-077",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "7890da3a90dd5b4f0d791afcbfa88c3752f3b7b3fb71714e986a4814cadaf86d",
+  "natural_language_requirement": "一、输入\n用户在 Slack 频道中 @提及机器人并提出问题；系统同时保留该会话线程标识，使同一会话保持连贯。\n\n二、主要处理\n1. 向数据仓库发送描述命令，获取目标表有哪些字段（如价格、日期、门店标识），使后续处理知道可以查询哪些内容。\n2. 由语言模型结合用户问题与表结构决定要执行的 SQL 查询。\n3. 在数据仓库上执行该 SQL 查询并取回真实数据，再由语言模型解读结果并生成会话式回复文本。\n4. 保留同一会话线程中的历史消息，用户可就同一话题继续追问（例如“现在只显示前 5 条”）而无需重复完整上下文。\n\n三、最终结果\n把最终答案（例如“第三季度总营收为 420 万美元”）回复到用户所在的 Slack 会话中。\n若处理未能产出可发送的回复，则向用户发送一条错误提示消息，避免用户空等。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "interpret_results",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "reply": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reply"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "plan_sql",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "schema_present": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "question",
+          "schema_present"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "sql": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sql"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "operation": "load_thread_history",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "thread_ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "thread_ts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "content",
+                "role"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "describe_table",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "table": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "type"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "columns"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "execute_sql",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "sql": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "sql"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "sql_present": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "sql_present"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "error",
+              "status"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "total_revenue": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "total_revenue"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_error_message",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "text"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_reply",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "thread_ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "text",
+          "thread_ts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "sql_query",
+        "schema": {
+          "type": "string"
+        },
+        "description": "语言模型根据问题与表结构决定的 SQL 查询",
+        "requirement_evidence": [
+          "由语言模型结合用户问题与表结构决定要执行的 SQL 查询"
+        ],
+        "source_operations": [
+          "plan_sql"
+        ],
+        "design_sources": [
+          "n3.sql_query"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "answer_text",
+        "schema": {
+          "type": "string"
+        },
+        "description": "解读查询结果后生成的会话式回复文本",
+        "requirement_evidence": [
+          "再由语言模型解读结果并生成会话式回复文本"
+        ],
+        "source_operations": [
+          "interpret_results"
+        ],
+        "design_sources": [
+          "n5.answer_text"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "error_detail",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ]
+        },
+        "description": "未能产出可发送回复时的错误信息",
+        "requirement_evidence": [
+          "若处理未能产出可发送的回复，则向用户发送一条错误提示消息，避免用户空等"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.error_detail"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "post_reply_results",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "ts": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok",
+            "ts"
+          ],
+          "additionalProperties": false
+        },
+        "description": "把最终答案回复到用户所在的 Slack 会话中",
+        "requirement_evidence": [
+          "把最终答案（例如“第三季度总营收为 420 万美元”）回复到用户所在的 Slack 会话中"
+        ],
+        "source_operations": [
+          "post_reply"
+        ],
+        "design_sources": [
+          "n6"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "post_error_message_results",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "ts": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok",
+            "ts"
+          ],
+          "additionalProperties": false
+        },
+        "description": "向用户发送一条错误提示消息，避免用户空等",
+        "requirement_evidence": [
+          "若处理未能产出可发送的回复，则向用户发送一条错误提示消息，避免用户空等"
+        ],
+        "source_operations": [
+          "post_error_message"
+        ],
+        "design_sources": [
+          "n7"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "1ED6DF80420AE7AB15B520138C7674769CF6BC36CC79E73B99413A870B269AAA",
+  "public_interface_sha256": "481DCB05F690DE1FB554ED170E08BD6AC5DC949DD627D3659D99581D03B6ACA7",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

@@ -1,0 +1,263 @@
+{
+  "task_id": "N8F-002",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "e17fac7db51704c8bd8e7a3933e941196fcc1e06167e5e95d1844616ab81ae48",
+  "fixtures": [
+    {
+      "fixture_id": "F-FLOOD-ALERT",
+      "purpose": "一条权威来源的高危洪水预警，用于触发威胁处理流程",
+      "input_data": {
+        "alert_id": "AL-F-001",
+        "alert_type": "flood",
+        "severity": "high",
+        "area_code": "ZONE-A",
+        "issued_at": "2026-09-02T08:00:00Z",
+        "source": "authoritative"
+      }
+    },
+    {
+      "fixture_id": "F-EMPTY-ALERTS",
+      "purpose": "无任何预警，验证未监测到威胁时不触发处理",
+      "input_data": {
+        "alerts": []
+      }
+    },
+    {
+      "fixture_id": "F-PROPERTY-DB",
+      "purpose": "固定房产数据库：ZONE-A 两处、ZONE-B 一处，用于交叉比对与敞口计算",
+      "input_data": {
+        "properties": [
+          {
+            "property_id": "P-001",
+            "area_code": "ZONE-A",
+            "owner_email": "owner1@example.com",
+            "insurer_email": "insurer@example.com",
+            "insured_value": 120000
+          },
+          {
+            "property_id": "P-002",
+            "area_code": "ZONE-A",
+            "owner_email": "owner2@example.com",
+            "insurer_email": "insurer@example.com",
+            "insured_value": 230000
+          },
+          {
+            "property_id": "P-003",
+            "area_code": "ZONE-B",
+            "owner_email": "owner3@example.com",
+            "insurer_email": "insurer2@example.com",
+            "insured_value": 50000
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-ASSESS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_damage_assessment",
+      "request_contract": {
+        "input_contains": "flood",
+        "input_contains_area": "ZONE-A"
+      },
+      "response_contract": {
+        "report": "Flood damage assessment for ZONE-A: 2 properties affected.",
+        "affected_property_ids": [
+          "P-001",
+          "P-002"
+        ],
+        "damage_severity": "high"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "recipient_role": [
+          "property_owner",
+          "insurer"
+        ],
+        "body_must_contain_report": true
+      },
+      "response_contract": {
+        "status": "sent",
+        "message_id": "G-20260902-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CALENDAR-CREATE",
+      "dependency_type": "googleCalendar",
+      "operation": "create_maintenance_schedule",
+      "request_contract": {
+        "summary_must_contain": "maintenance"
+      },
+      "response_contract": {
+        "status": "scheduled",
+        "schedule_id": "SCH-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FLOOD",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-FLOOD-ALERT",
+        "F-PROPERTY-DB"
+      ],
+      "mock_ids": [
+        "M-LLM-ASSESS",
+        "M-GMAIL-SEND",
+        "M-CALENDAR-CREATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.affected_properties",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "洪水预警作用于 ZONE-A，仅两处房产受影响，ZONE-B 房产不应纳入"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.affected_properties[*].property_id",
+          "operator": "contains",
+          "expected": "P-001",
+          "rationale": "受影响房产必须来自与预警区域交叉比对的结果"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.affected_properties[*].property_id",
+          "operator": "contains",
+          "expected": "P-002",
+          "rationale": "P-002 与 P-001 同属 ZONE-A，均应被识别"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.insurance_exposure",
+          "operator": "equals",
+          "expected": 350000,
+          "rationale": "保险风险敞口=受影响房产投保额之和 120000+230000"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.damage_report",
+          "operator": "contains",
+          "expected": "Flood damage assessment for ZONE-A: 2 properties affected.",
+          "rationale": "受损评估报告内容必须来自固定语言模型响应"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.maintenance_schedule.schedule_id",
+          "operator": "equals",
+          "expected": "SCH-0001",
+          "rationale": "维护排期必须已生成并返回固定排期号"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.emails",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "每处受影响房产向所有人与保险公司各发一封即时邮件，2×2=4"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.emails[*].recipient",
+          "operator": "contains",
+          "expected": "owner1@example.com",
+          "rationale": "房产所有人必须收到通知邮件"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.emails[*].body",
+          "operator": "contains",
+          "expected": "Flood damage assessment",
+          "rationale": "邮件必须附带完整的受损评估报告"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-NO-ALERT",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-EMPTY-ALERTS",
+        "F-PROPERTY-DB"
+      ],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.affected_properties",
+          "operator": "not_exists",
+          "rationale": "未监测到威胁时不得执行交叉比对",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.emails",
+          "operator": "not_exists",
+          "rationale": "无威胁时不发送任何通知邮件",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.maintenance_schedule",
+          "operator": "not_exists",
+          "rationale": "无威胁时不生成维护排期",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.damage_report",
+          "operator": "not_exists",
+          "rationale": "无威胁时不调用语言模型生成评估报告",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-EXPOSURE",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-FLOOD-ALERT",
+        "F-PROPERTY-DB"
+      ],
+      "mock_ids": [
+        "M-LLM-ASSESS",
+        "M-GMAIL-SEND",
+        "M-CALENDAR-CREATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.insurance_exposure",
+          "operator": "equals",
+          "expected": 350000,
+          "rationale": "敞口边界校验：恰好等于受影响房产投保额之和，不得包含 ZONE-B 房产"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.affected_properties[*].property_id",
+          "operator": "not_equals",
+          "expected": "P-003",
+          "rationale": "ZONE-B 的 P-003 不在预警区域，不得误判为受影响"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "预警信息、房产数据库与语言模型输出均为固定模拟；邮件与日历为模拟服务，无真实副作用。受影响房产数、保险敞口总和与邮件数量均由固定输入直接决定，可程序计算。"
+}

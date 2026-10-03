@@ -1,0 +1,453 @@
+{
+  "task_id": "N8F-042",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "70ca8c516e6bb3ccde619606af855c798fab25e05d6b506d7cc03301a5d5eace",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收会议数据（外部请求或定时轮询）并规范化元数据",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "normalized_meeting",
+          "type": "object",
+          "description": "规范化后的会议元数据"
+        }
+      ],
+      "native_evidence": [
+        "Webhook - New Meeting Upload",
+        "Poll Scheduled Meetings",
+        "Normalise Meeting Context"
+      ],
+      "requirement_evidence": [
+        "系统通过外部请求接收会议数据，或按每 30 分钟一次的频率执行。系统先规范化会议元数据（标题、日期、参会人、音频地址与转录文本）"
+      ],
+      "rationale": "webhook 与定时轮询两路汇入同一处理流程并规范化"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验输入完整性（音频可用或转录文本达标）",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "normalized_meeting",
+          "type": "object",
+          "description": "规范化后的会议元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_meeting",
+          "type": "object",
+          "description": "通过校验的会议数据"
+        }
+      ],
+      "native_evidence": [
+        "Python - Validate & Route",
+        "Filter Valid Meetings"
+      ],
+      "requirement_evidence": [
+        "并校验音频地址可用，或转录文本已达到最低可处理长度；二者至少满足一项才继续处理"
+      ],
+      "rationale": "确定性校验：至少满足一项输入要求才继续"
+    },
+    {
+      "node_id": "n3",
+      "label": "音频转写并合并回会议上下文（转录缺失时）",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "validated_meeting",
+          "type": "object",
+          "description": "通过校验的会议数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meeting_context",
+          "type": "object",
+          "description": "含转录文本的会议上下文"
+        }
+      ],
+      "native_evidence": [
+        "Route - Audio or Text",
+        "Whisper - Transcribe Audio",
+        "Merge Transcript into Context"
+      ],
+      "requirement_evidence": [
+        "仅提供音频地址时，先用语音转写服务生成转录文本并合并回会议上下文"
+      ],
+      "rationale": "转录缺失时调用语音转写服务并合并"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型提取结构化会议智能",
+      "node_type": "semantic",
+      "operation_family": "extraction",
+      "inputs": [
+        {
+          "name": "meeting_context",
+          "type": "object",
+          "description": "含转录文本的会议上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meeting_intelligence",
+          "type": "object",
+          "description": "结构化会议摘要、关键议题、决议、风险与行动项"
+        }
+      ],
+      "native_evidence": [
+        "AI - Extract Meeting Intelligence",
+        "OpenAI Chat Model"
+      ],
+      "requirement_evidence": [
+        "将转录文本与会议元数据交由语言模型，提取结构化的会议摘要、关键议题、决议、风险，以及带负责人与截止日期的行动项"
+      ],
+      "rationale": "会议智能提取需语言模型"
+    },
+    {
+      "node_id": "n5",
+      "label": "校验并整理结构化结果，补充计数与时间戳",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "meeting_intelligence",
+          "type": "object",
+          "description": "结构化会议智能"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "补充计数与时间戳后的结构化结果"
+        }
+      ],
+      "native_evidence": [
+        "JS - Parse & Structure Output"
+      ],
+      "requirement_evidence": [
+        "系统校验并整理该结构化结果，补充计数与时间戳"
+      ],
+      "rationale": "确定性校验整理与补充元信息"
+    },
+    {
+      "node_id": "n6",
+      "label": "将行动项拆分为独立记录",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "结构化结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "action_items",
+          "type": "object[]",
+          "description": "独立行动项记录"
+        }
+      ],
+      "native_evidence": [
+        "JS - Split Action Items"
+      ],
+      "requirement_evidence": [
+        "再将行动项拆分为独立记录"
+      ],
+      "rationale": "确定性拆分"
+    },
+    {
+      "node_id": "n7",
+      "label": "在 Asana 为每条行动项创建任务",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "action_items",
+          "type": "object[]",
+          "description": "独立行动项记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "asana_tasks",
+          "type": "object[]",
+          "description": "创建的 Asana 任务"
+        }
+      ],
+      "native_evidence": [
+        "Asana - Create Task"
+      ],
+      "requirement_evidence": [
+        "在 Asana 中为每条行动项创建对应任务"
+      ],
+      "rationale": "逐条创建任务折叠为循环，max_iterations<=20"
+    },
+    {
+      "node_id": "n8",
+      "label": "在 Google Sheets 追加一行会议日志",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "结构化结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meeting_log",
+          "type": "object",
+          "description": "会议日志写入结果"
+        }
+      ],
+      "native_evidence": [
+        "Google Sheets - Log Meeting"
+      ],
+      "requirement_evidence": [
+        "同时在 Google Sheets 追加一行会议日志"
+      ],
+      "rationale": "确定性日志写入"
+    },
+    {
+      "node_id": "n9",
+      "label": "通过邮件发送会议摘要并汇总处理状态",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "结构化结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "processing_status",
+          "type": "object",
+          "description": "处理状态结果"
+        }
+      ],
+      "native_evidence": [
+        "Send Summary Notification"
+      ],
+      "requirement_evidence": [
+        "并通过邮件发送会议摘要"
+      ],
+      "rationale": "邮件摘要与状态汇总为确定性外部动作"
+    },
+    {
+      "node_id": "n10",
+      "label": "向调用方返回处理状态结果",
+      "node_type": "terminal",
+      "operation_family": "respond",
+      "inputs": [
+        {
+          "name": "processing_status",
+          "type": "object",
+          "description": "处理状态结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Respond to Webhook"
+      ],
+      "requirement_evidence": [
+        "最后向调用方返回处理状态结果"
+      ],
+      "rationale": "向调用方返回结果为最终动作"
+    },
+    {
+      "node_id": "n11",
+      "label": "输入不满足最低要求时终止处理",
+      "node_type": "terminal",
+      "operation_family": "safe_reject",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Filter Valid Meetings"
+      ],
+      "requirement_evidence": [
+        "二者至少满足一项才继续处理"
+      ],
+      "rationale": "需求声明不满足输入要求则不继续，建模为终止节点"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后进入校验"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "input_complete == true",
+      "rationale": "通过校验后继续处理"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n11",
+      "variable": null,
+      "condition": "input_complete == false",
+      "rationale": "不满足最低输入要求则终止"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写合并后提取会议智能"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取后校验整理"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "整理后拆分行动项"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "拆分后创建 Asana 任务"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "任务创建后写会议日志"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "日志写入后发送邮件"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件发送后返回状态"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "normalized_meeting",
+      "condition": null,
+      "rationale": "会议数据供校验"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "validated_meeting",
+      "condition": null,
+      "rationale": "通过校验的数据供转写合并"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "meeting_context",
+      "condition": null,
+      "rationale": "会议上下文供 LLM 提取"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "meeting_intelligence",
+      "condition": null,
+      "rationale": "提取结果供整理"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "structured_result",
+      "condition": null,
+      "rationale": "整理结果用于拆分"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n8",
+      "variable": "structured_result",
+      "condition": null,
+      "rationale": "会议信息用于日志"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n9",
+      "variable": "structured_result",
+      "condition": null,
+      "rationale": "会议摘要用于邮件"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "action_items",
+      "condition": null,
+      "rationale": "行动项用于创建任务"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "processing_status",
+      "condition": null,
+      "rationale": "状态结果用于回传"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n10",
+    "n11"
+  ],
+  "confidence": 0.9,
+  "notes": "webhook/30分钟双触发→规范化→输入完整性校验（不足则终止）→仅音频时转写合并→LLM 提取→整理补计数/时间戳→拆分行动项→Asana 逐条建任务（循环折叠）→Sheets 日志→邮件摘要→返回状态。双触发合并为单一 entry 契约（同一处理流程）。"
+}

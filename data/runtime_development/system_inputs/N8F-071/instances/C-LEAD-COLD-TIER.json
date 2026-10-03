@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-071",
+  "case_id": "C-LEAD-COLD-TIER",
+  "kind": "negative",
+  "input_data": {
+    "lead": {
+      "name": "Carol White",
+      "email": "carol@smallco.example",
+      "company": "SmallCo",
+      "website": "https://smallco.example",
+      "job_title": "Intern",
+      "phone": "",
+      "message": "Just browsing",
+      "source": "website-form"
+    }
+  },
+  "input_sha256": "397D752983455355DB08E9C2C08261501DCB3589124439E70623B315356666AE"
+}

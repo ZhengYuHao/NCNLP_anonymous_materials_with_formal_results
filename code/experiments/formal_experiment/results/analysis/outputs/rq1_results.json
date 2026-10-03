@@ -1,0 +1,219 @@
+{
+  "schema_version": "rq1-results-v1",
+  "n_tasks": 80,
+  "stage_rows": [
+    {
+      "stage": "Recovery",
+      "metric": "Constraint retention",
+      "count": 80,
+      "total": 80,
+      "rate_pct": 100.0,
+      "wilson_ci": [
+        95.42,
+        100.0
+      ]
+    },
+    {
+      "stage": "Recovery",
+      "metric": "Typed entities (EM)",
+      "count": 79,
+      "total": 80,
+      "rate_pct": 98.75,
+      "wilson_ci": [
+        93.25,
+        99.78
+      ]
+    },
+    {
+      "stage": "Recovery",
+      "metric": "Fact set (EM)",
+      "count": 79,
+      "total": 80,
+      "rate_pct": 98.75,
+      "wilson_ci": [
+        93.25,
+        99.78
+      ]
+    },
+    {
+      "stage": "Assign/compile",
+      "metric": "Node assignment (EM)",
+      "count": 78,
+      "total": 80,
+      "rate_pct": 97.5,
+      "wilson_ci": [
+        91.34,
+        99.31
+      ]
+    },
+    {
+      "stage": "Assign/compile",
+      "metric": "Workflow relations (EM)",
+      "count": 77,
+      "total": 80,
+      "rate_pct": 96.25,
+      "wilson_ci": [
+        89.55,
+        98.72
+      ]
+    },
+    {
+      "stage": "Assign/compile",
+      "metric": "Compilation + behavior",
+      "count": 76,
+      "total": 80,
+      "rate_pct": 95.0,
+      "wilson_ci": [
+        87.84,
+        98.04
+      ]
+    },
+    {
+      "stage": "Execution",
+      "metric": "Actions + states (round 1)",
+      "count": 74,
+      "total": 80,
+      "rate_pct": 92.5,
+      "wilson_ci": [
+        84.59,
+        96.52
+      ]
+    }
+  ],
+  "replay_consistent_among_compiled_behavior": 76,
+  "fault_table": [
+    {
+      "group": "Facts",
+      "label": "Remove threshold",
+      "injected": 80,
+      "silent": 66,
+      "repaired": 50,
+      "refused": 10,
+      "contained": 5,
+      "escaped": 1,
+      "explicit_failure": 8,
+      "unchanged": 6
+    },
+    {
+      "group": "Facts",
+      "label": "Invert comparison",
+      "injected": 80,
+      "silent": 70,
+      "repaired": 52,
+      "refused": 12,
+      "contained": 4,
+      "escaped": 2,
+      "explicit_failure": 6,
+      "unchanged": 4
+    },
+    {
+      "group": "Facts",
+      "label": "Remove action",
+      "injected": 80,
+      "silent": 64,
+      "repaired": 48,
+      "refused": 10,
+      "contained": 5,
+      "escaped": 1,
+      "explicit_failure": 12,
+      "unchanged": 4
+    },
+    {
+      "group": "Assignment",
+      "label": "Corrupt node assignment",
+      "injected": 80,
+      "silent": 58,
+      "repaired": 42,
+      "refused": 12,
+      "contained": 3,
+      "escaped": 1,
+      "explicit_failure": 14,
+      "unchanged": 8
+    },
+    {
+      "group": "Relations",
+      "label": "Remove control/data edge",
+      "injected": 80,
+      "silent": 62,
+      "repaired": 42,
+      "refused": 14,
+      "contained": 5,
+      "escaped": 1,
+      "explicit_failure": 10,
+      "unchanged": 8
+    },
+    {
+      "group": "Types",
+      "label": "Illegal type",
+      "injected": 80,
+      "silent": 20,
+      "repaired": 10,
+      "refused": 10,
+      "contained": 0,
+      "escaped": 0,
+      "explicit_failure": 44,
+      "unchanged": 16
+    },
+    {
+      "group": "DSL",
+      "label": "Undefined variable",
+      "injected": 80,
+      "silent": 0,
+      "repaired": 0,
+      "refused": 0,
+      "contained": 0,
+      "escaped": 0,
+      "explicit_failure": 80,
+      "unchanged": 0
+    },
+    {
+      "group": "DSL",
+      "label": "Invalid syntax",
+      "injected": 80,
+      "silent": 0,
+      "repaired": 0,
+      "refused": 0,
+      "contained": 0,
+      "escaped": 0,
+      "explicit_failure": 80,
+      "unchanged": 0
+    },
+    {
+      "group": "DSL",
+      "label": "Wrong business logic",
+      "injected": 80,
+      "silent": 72,
+      "repaired": 50,
+      "refused": 12,
+      "contained": 7,
+      "escaped": 3,
+      "explicit_failure": 4,
+      "unchanged": 4
+    }
+  ],
+  "totals": {
+    "silent": 412,
+    "repaired": 294,
+    "refused": 80,
+    "contained": 29,
+    "escaped": 9,
+    "explicit_failure": 258,
+    "unchanged": 50
+  },
+  "hfer_pct": 2.18,
+  "hfer_ci": [
+    0.95,
+    3.69
+  ],
+  "fpr_count": 1,
+  "fpr_total": 80,
+  "fpr_pct": 1.25,
+  "fpr_ci": [
+    0.0,
+    3.75
+  ],
+  "natural_errors": {
+    "instances": 20,
+    "reached_erroneous_user_result": 3
+  }
+}

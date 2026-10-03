@@ -1,0 +1,530 @@
+{
+  "task_id": "N8F-089",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "a86a4b6953eaf3853ada863c21c7e4611e536ca25381d88dcd11cf127a25ed14",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 UAT 反馈回调",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "callback_payload",
+          "type": "object",
+          "description": "通过回调接口提交的 UAT 反馈原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_feedback",
+          "type": "object",
+          "description": "来源可为表单、Slack 或内部工具的原始反馈数据"
+        }
+      ],
+      "native_evidence": ["trigger"],
+      "requirement_evidence": ["当 UAT 反馈通过回调接口提交时开始处理，来源可以是表单、Slack 或内部工具"],
+      "rationale": "需求声明通过回调接口接收 UAT 反馈，为确定性入站动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "规范化并清洗反馈数据",
+      "node_type": "code",
+      "operation_family": "data_normalization",
+      "inputs": [
+        {
+          "name": "raw_feedback",
+          "type": "object",
+          "description": "原始反馈数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "规范化后的一致结构（测试人、版本、页面、反馈内容）及清洗后的模型可处理文本"
+        }
+      ],
+      "native_evidence": ["normalize", "clean text"],
+      "requirement_evidence": ["先把传入数据规范化为一致的结构（测试人、版本、页面、反馈内容），并清洗为可供模型处理的文本"],
+      "rationale": "需求声明的数据规范化与文本清洗，为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型分诊分析",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "清洗后的反馈数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "triage_output",
+          "type": "object",
+          "description": "分诊输出：类型（严重缺陷/功能需求/体验改进/无效噪音）、严重程度与情感、摘要与建议标题、置信度评分"
+        }
+      ],
+      "native_evidence": ["AI agent"],
+      "requirement_evidence": ["由语言模型分析反馈，输出以下内容：类型（严重缺陷、功能需求、体验改进或无效噪音）、严重程度与情感、摘要与建议标题、以及置信度评分"],
+      "rationale": "需求声明由语言模型输出类型、严重程度与情感、摘要与建议标题及置信度，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "校验模型输出可靠性",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "triage_output",
+          "type": "object",
+          "description": "语言模型分诊输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "校验并规范化后的分诊结果，含解析状态与置信度"
+        }
+      ],
+      "native_evidence": ["parsing and validation", "manual review"],
+      "requirement_evidence": ["若模型输出不可靠（置信度偏低或解析出错），该反馈自动转人工复核", "置信度充足时按类型分流"],
+      "rationale": "需求声明的模型输出可靠性校验（解析成功与否、置信度阈值）与分流判断，为确定性校验规则，判 code；模型输出解析与字段合法性回退折叠进本节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "转人工复核并通知",
+      "node_type": "code",
+      "operation_family": "human_escalation",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "不可靠的分诊结果"
+        },
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "规范化后的反馈数据"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["email code", "manual review needed", "Send a message"],
+      "requirement_evidence": ["若模型输出不可靠（置信度偏低或解析出错），该反馈自动转人工复核，并通过邮件与 Slack 通知"],
+      "rationale": "需求 failure_behavior 声明不可靠反馈转人工复核并通过邮件与 Slack 通知，为确定性通知动作；因后续仍有闭环响应，判 code 而非终止。"
+    },
+    {
+      "node_id": "n6",
+      "label": "按类型路由分支",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "校验通过的分诊结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["route by triage type"],
+      "requirement_evidence": [
+        "置信度充足时按类型分流：",
+        "严重缺陷：在 Jira 中创建问题，并向工程团队发送 Slack 告警。",
+        "功能需求：进入 Notion 产品路线图。",
+        "体验改进：进入设计或体验跟踪。",
+        "无效噪音：归档，但保留可追溯记录。"
+      ],
+      "rationale": "需求声明的按分诊类型四路分流，为确定性路由，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "创建 Jira 问题",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "严重缺陷的分诊结果"
+        },
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "版本、页面与测试人上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "jira_ticket",
+          "type": "object",
+          "description": "创建的 Jira 问题引用"
+        }
+      ],
+      "native_evidence": ["critical bug"],
+      "requirement_evidence": ["严重缺陷：在 Jira 中创建问题"],
+      "rationale": "需求声明严重缺陷在 Jira 中创建问题，为确定性外部写入动作；因后续仍有工程告警与闭环，判 code 而非终止。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送工程 Slack 告警",
+      "node_type": "code",
+      "operation_family": "notification",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "严重缺陷的分诊结果"
+        },
+        {
+          "name": "jira_ticket",
+          "type": "object",
+          "description": "关联的 Jira 问题引用"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["engeneering alert"],
+      "requirement_evidence": ["并向工程团队发送 Slack 告警"],
+      "rationale": "需求声明向工程团队发送 Slack 告警，为确定性外部通知动作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "写入 Notion 产品路线图",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "功能需求的分诊结果"
+        },
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "测试人与版本上下文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["double check", "if found", "create notion database", "update notion database"],
+      "requirement_evidence": ["功能需求：进入 Notion 产品路线图"],
+      "rationale": "需求声明功能需求进入 Notion 产品路线图，为确定性外部写入动作；原生的重复检查与新建/更新分支为实现细节折叠进本节点契约，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "转入设计或体验跟踪",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "体验改进的分诊结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Append row in sheet"],
+      "requirement_evidence": ["体验改进：进入设计或体验跟踪"],
+      "rationale": "需求声明体验改进转入设计或体验跟踪（如体验跟踪表），为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "归档噪音并保留可追溯记录",
+      "node_type": "code",
+      "operation_family": "record_keeping",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "无效噪音的分诊结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["archive"],
+      "requirement_evidence": ["无效噪音：归档，但保留可追溯记录"],
+      "rationale": "需求声明无效噪音归档并保留可追溯记录，为确定性归档动作，判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "同步留存并闭环通知",
+      "node_type": "terminal",
+      "operation_family": "closed_loop",
+      "inputs": [
+        {
+          "name": "triage",
+          "type": "object",
+          "description": "分诊结果"
+        },
+        {
+          "name": "normalized_feedback",
+          "type": "object",
+          "description": "含测试人联系方式与来源的反馈数据"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Append row in sheet", "slack tester", "tester email", "Webhook response"],
+      "requirement_evidence": ["通过 Slack 或邮件通知提交反馈的测试人，并向原始回调方返回结构化的状态结果", "全部处理在 Jira、Slack、Notion、Google Sheets 与邮件之间保持同步"],
+      "rationale": "需求闭环：Google Sheets 同步留存反馈记录、按测试人来源经 Slack 或邮件通知测试人、向原始回调方返回结构化状态结果；本节点聚合这些闭环动作，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "反馈接收后规范化清洗。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化完成后交语言模型分诊。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "分诊输出后校验可靠性。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "解析失败或置信度低于阈值",
+      "rationale": "模型输出不可靠时转人工复核。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "人工复核通知后进入闭环。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "置信度充足",
+      "rationale": "置信度充足时按类型路由。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "type == 严重缺陷",
+      "rationale": "严重缺陷创建 Jira 问题。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "Jira 问题创建后发送工程告警。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "工程告警后进入闭环。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": "type == 功能需求",
+      "rationale": "功能需求写入 Notion 路线图。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n9",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "路线图写入后进入闭环。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n6",
+      "target": "n10",
+      "variable": null,
+      "condition": "type == 体验改进",
+      "rationale": "体验改进转入设计或体验跟踪。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n10",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "体验跟踪后进入闭环。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n6",
+      "target": "n11",
+      "variable": null,
+      "condition": "type == 无效噪音",
+      "rationale": "无效噪音归档并保留记录。"
+    },
+    {
+      "edge_id": "cfg-15",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "归档完成后进入闭环。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "raw_feedback",
+      "condition": null,
+      "rationale": "原始反馈传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "规范化反馈传给分诊节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "triage_output",
+      "condition": null,
+      "rationale": "分诊输出传给可靠性校验节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入人工复核节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n2",
+      "target": "n5",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "反馈上下文传入人工复核节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n4",
+      "target": "n6",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传给路由节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n4",
+      "target": "n7",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入 Jira 创建节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n2",
+      "target": "n7",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "版本、页面与测试人上下文传入 Jira 创建节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n4",
+      "target": "n8",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入工程告警节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n7",
+      "target": "n8",
+      "variable": "jira_ticket",
+      "condition": null,
+      "rationale": "Jira 问题引用传入告警节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n4",
+      "target": "n9",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入 Notion 路线图节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n2",
+      "target": "n9",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "测试人与版本上下文传入 Notion 节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n4",
+      "target": "n10",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入体验跟踪节点。"
+    },
+    {
+      "edge_id": "dfg-14",
+      "source": "n4",
+      "target": "n11",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入归档节点。"
+    },
+    {
+      "edge_id": "dfg-15",
+      "source": "n4",
+      "target": "n12",
+      "variable": "triage",
+      "condition": null,
+      "rationale": "分诊结果传入闭环节点。"
+    },
+    {
+      "edge_id": "dfg-16",
+      "source": "n2",
+      "target": "n12",
+      "variable": "normalized_feedback",
+      "condition": null,
+      "rationale": "测试人联系方式与来源传入闭环节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n12"],
+  "confidence": 0.9,
+  "notes": "需求为 UAT 反馈多分支分诊：回调接收（表单/Slack/内部工具）、规范化清洗为一致结构、语言模型分诊（类型/严重程度与情感/摘要与标题/置信度）、可靠性校验后分流——不可靠（解析失败或置信度偏低）转人工复核并通过邮件与 Slack 通知；置信度充足按类型路由：严重缺陷创建 Jira 问题并发送工程 Slack 告警、功能需求写入 Notion 路线图、体验改进转入设计或体验跟踪、无效噪音归档保留可追溯记录；各路径汇入闭环：Google Sheets 同步留存、按来源经 Slack 或邮件通知测试人、向回调方返回结构化状态。模型输出解析与字段合法性回退折叠进校验节点契约；Notion 的查重与新建/更新分支折叠进路线图节点契约。闭环（留存+通知+响应）聚合为一个终止节点。"
+}

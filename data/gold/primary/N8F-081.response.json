@@ -1,0 +1,334 @@
+{
+  "task_id": "N8F-081",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "4fddb4581808febff0971090a6bef2f70242cf60156e52874bd2cf7ffc735fca",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单简历提交",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "form_submission",
+          "type": "object",
+          "description": "候选人通过 JotForm 提交的表单数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "解析出的候选人姓名、邮箱与 PDF 简历"
+        }
+      ],
+      "native_evidence": ["JotForm Trigger1"],
+      "requirement_evidence": ["候选人通过 JotForm 表单提交简历信息，包括姓名、邮箱与 PDF 简历"],
+      "rationale": "需求声明通过 JotForm 表单接收姓名、邮箱与 PDF 简历，为确定性入站解析，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "将提交数据存入数据库",
+      "node_type": "code",
+      "operation_family": "record_keeping",
+      "inputs": [
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "候选人提交数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "saved_record",
+          "type": "object",
+          "description": "存入数据库的提交记录"
+        }
+      ],
+      "native_evidence": ["record data for submission"],
+      "requirement_evidence": ["将本次提交的数据存入数据库"],
+      "rationale": "需求声明将本次提交的数据存入数据库，为确定性外部写入动作；因后续仍有分析与分支流程，判 code 而非终止。"
+    },
+    {
+      "node_id": "n2",
+      "label": "PDF 转图片并识别提取文本",
+      "node_type": "code",
+      "operation_family": "document_processing",
+      "inputs": [
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "含 PDF 简历位置的提交数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "resume_text",
+          "type": "string",
+          "description": "经 PDF 转图片与文字识别提取出的简历文本"
+        }
+      ],
+      "native_evidence": ["convert pdf to image", "send images to azure ocr", "extract operation id", "get extracted results", "wait extraction to be completed", "if extraction completed?", "Combine OCR text"],
+      "requirement_evidence": ["将 PDF 简历转换为图片，再通过文字识别提取其中的文本"],
+      "rationale": "需求声明将 PDF 转换为图片并经文字识别提取文本，为确定性外部处理动作，判 code；OCR 异步提交与状态轮询循环折叠进本节点契约，终止条件 status==succeeded、max_iterations<=10。"
+    },
+    {
+      "node_id": "n3",
+      "label": "分析简历并评分",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "resume_text",
+          "type": "string",
+          "description": "提取出的简历文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "简历分析结果，含优势、待改进之处与 1-100 分的评分"
+        }
+      ],
+      "native_evidence": ["Resume Analyzer", "Information Extractor", "OpenAI Chat Model1"],
+      "requirement_evidence": ["由语言模型分析简历，给出优势、待改进之处以及 1 至 100 分的评分"],
+      "rationale": "需求声明由语言模型分析简历并给出优势、待改进之处与评分，需开放文本理解与生成，判 semantic；模型输出解析与评分数值化折叠进本节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "按评分路由分支",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "含评分的简历分析结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["convert score to number", "if score > 58?"],
+      "requirement_evidence": ["评分高于 85 分的简历被添加到 Zoho CRM，并向候选人发送祝贺邮件", "评分未达标的简历则向候选人发送反馈邮件"],
+      "rationale": "需求声明的按评分阈值分流（高于 85 走 CRM 与祝贺分支，未达标走反馈分支），为确定性路由，判 code；评分数值化折叠进本节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "添加高分简历到 Zoho CRM",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "高分简历的分析结果"
+        },
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "候选人姓名与邮箱"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "crm_record",
+          "type": "object",
+          "description": "写入 Zoho CRM 的高分候选人记录"
+        }
+      ],
+      "native_evidence": ["add qualified to zoho crm1"],
+      "requirement_evidence": ["评分高于 85 分的简历被添加到 Zoho CRM"],
+      "rationale": "需求声明将高分简历添加到 Zoho CRM，为确定性外部写入动作；因后续仍有祝贺邮件环节，判 code 而非终止。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送祝贺邮件",
+      "node_type": "terminal",
+      "operation_family": "notification",
+      "inputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "高分简历分析结果"
+        },
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "候选人邮箱"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["send congratulations"],
+      "requirement_evidence": ["并向候选人发送祝贺邮件"],
+      "rationale": "需求声明向高分候选人发送祝贺邮件，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送反馈邮件",
+      "node_type": "terminal",
+      "operation_family": "notification",
+      "inputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "未达标简历的分析结果"
+        },
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "候选人邮箱"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["send feedback for changes"],
+      "requirement_evidence": ["评分未达标的简历则向候选人发送反馈邮件"],
+      "rationale": "需求声明向未达标候选人发送反馈邮件，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交接收后先留存提交数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n4",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据留存后转换并识别简历。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "文本提取完成后分析评分。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后按评分路由。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "score > 85",
+      "rationale": "评分高于 85 时加入 CRM。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "CRM 写入后发送祝贺邮件。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n5",
+      "target": "n8",
+      "variable": null,
+      "condition": "score <= 85",
+      "rationale": "评分未达标时发送反馈邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n4",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "提交数据传给数据库留存节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n2",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "PDF 简历位置传给转换识别节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "resume_text",
+      "condition": null,
+      "rationale": "提取的简历文本传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "analysis",
+      "condition": null,
+      "rationale": "分析结果（含评分）传给路由节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n3",
+      "target": "n6",
+      "variable": "analysis",
+      "condition": null,
+      "rationale": "分析结果传入 CRM 写入节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n1",
+      "target": "n6",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "候选人姓名与邮箱传入 CRM 写入节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n3",
+      "target": "n7",
+      "variable": "analysis",
+      "condition": null,
+      "rationale": "分析结果传入祝贺邮件节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n1",
+      "target": "n7",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "候选人邮箱传入祝贺邮件节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n3",
+      "target": "n8",
+      "variable": "analysis",
+      "condition": null,
+      "rationale": "分析结果传入反馈邮件节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n1",
+      "target": "n8",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "候选人邮箱传入反馈邮件节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7", "n8"],
+  "confidence": 0.93,
+  "notes": "需求为 JotForm 提交简历后的自动化筛选：接收姓名/邮箱/PDF、将提交数据存入数据库、PDF 转图片并经 OCR 提取文本、语言模型分析给出优势/待改进之处/1-100 评分；评分高于 85 时添加到 Zoho CRM 并发送祝贺邮件，未达标时发送反馈邮件。OCR 异步提交与状态轮询循环折叠进提取节点契约（status==succeeded、max_iterations<=10）；模型输出解析与评分数值化为实现细节折叠进分析/路由节点契约。原生的建表节点为一次性设置动作，未纳入；需求未声明失败行为，未建模失败分支。"
+}

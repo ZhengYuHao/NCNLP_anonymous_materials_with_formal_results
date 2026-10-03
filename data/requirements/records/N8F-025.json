@@ -1,0 +1,99 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-025",
+  "source_id": "n8n:11226",
+  "workflow_sha256": "eea4a38ec0dd9a66d100cd3a9406d67f6878aeb002fc34befb7b93fdc349e710",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "25ebbd3d28fcf821ee90f9f78effeadbd5a7a6816ee6a6027b8fd66a7fe2304e",
+  "requirement": {
+    "requirement_text": "针对一篇指定的博客文章，自动完成标签的生成、创建与分配，得到利于检索、风格一致且结构规范的标签集合。\n\n数据获取与准备：根据提供的文章标识获取该篇 WordPress 文章的内容；同时获取站点上已有的全部标签；随后把这两路数据合并为一个数据结构。\n\n标签分析：把合并后的数据（文章内容与已有标签列表）交给语言模型，由其扮演检索优化专家的角色，分析文章的标题、正文与摘要，从已有标签列表中选取最多 4 个相关标签；若不足 4 个，则补充建议新的标签名称，使标签总数达到 4 个。标签需语义相关、面向用户的搜索意图，且遵循命名规范（例如多词形式或缩写形式）；不得包含无关标签或重复标签。\n\n标签处理与创建：把分析结果分为两类处理。已选中的已有标签，其标签标识直接进入最终更新；建议的新标签则逐个处理，对每个新标签调用 WordPress 接口完成创建，并收集新建标签的标识。\n\n最终分配：把已有标签标识与新建标签标识合并为一个列表，通过更新操作写回该篇 WordPress 文章，完成打标签。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 129,
+        "text": "This workflow automates the full process of generating, creating, and assigning optimized WordPress tags to a specific blog post."
+      },
+      {
+        "start": 952,
+        "end": 1071,
+        "text": "A maximum of 4 total tags\nNo irrelevant or duplicate tags\nTags follow naming conventions (e.g., multi-word or acronyms)"
+      },
+      {
+        "start": 2410,
+        "end": 2684,
+        "text": "Data Retrieval & Preparation: The workflow starts by fetching a specific WordPress article using a provided post_id. Simultaneously, it retrieves all existing tags from the WordPress site via the REST API. These two data streams are then merged into a single data structure."
+      },
+      {
+        "start": 2686,
+        "end": 3050,
+        "text": "AI-Powered Tag Analysis: The merged data (article content and existing tag list) is sent to an LLM (Claude Opus 4.5). The AI acts as an \"SEO expert,\" analyzing the article's title, content, and excerpt. It follows a strict set of instructions to select up to 4 relevant tags from the existing list and, if needed, suggests new tag names to reach a total of 4 tags."
+      },
+      {
+        "start": 3052,
+        "end": 3130,
+        "text": "Tag Processing & Creation: The workflow splits the AI's output into two paths:"
+      },
+      {
+        "start": 3135,
+        "end": 3212,
+        "text": "Existing Tags: The list of selected tag IDs is prepared for the final update."
+      },
+      {
+        "start": 3217,
+        "end": 3404,
+        "text": "New Tags: The list of new tag names is processed in a loop. For each new tag, the workflow sends a POST request to the WordPress API to create it. The newly created tag IDs are collected."
+      },
+      {
+        "start": 3406,
+        "end": 3641,
+        "text": "Final Assignment: The existing tag IDs and the newly created tag IDs are merged into a single list. This final list of tag IDs is then sent back to the original WordPress article via an \"Update\" operation, effectively tagging the post."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "提供的文章标识（指定要处理的文章）",
+        "WordPress 站点上已有的标签列表",
+        "该文章的标题、正文与摘要"
+      ],
+      "conditions": [
+        "标签总数最多 4 个",
+        "不得包含无关标签或重复标签",
+        "标签遵循命名规范（例如多词形式或缩写形式）",
+        "已有标签从已有标签列表中选取，不足 4 个时才补充新建标签",
+        "新建标签需逐个创建后再合并"
+      ],
+      "allowed_actions": [
+        "获取指定文章与已有标签列表并合并",
+        "调用语言模型分析文章并选取或建议标签",
+        "对建议的新标签逐个调用接口创建",
+        "合并已有与新建标签标识并通过更新操作写回文章"
+      ],
+      "visible_outcomes": [
+        "该 WordPress 文章被赋予合并后的标签集合",
+        "需要时在 WordPress 中创建了相应的新标签"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-025.packet.json",
+    "packet_sha256": "1736f1f098e0bafba3d5dab0e6d9ef9f1a84a120bc442dcb45973651d42743a9",
+    "public_description_sha256": "b098b9f281e4a573b85c8ea31794df5716bb1bcd18c748542ed7aba21338683e"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-025.response.json",
+    "verification_response_sha256": "a9cca7a5bc018c41710caff1e6ffcbec05f931e40a926dbdaea31b5bcdf0024f",
+    "decision": "accept"
+  },
+  "formal_index": 36
+}

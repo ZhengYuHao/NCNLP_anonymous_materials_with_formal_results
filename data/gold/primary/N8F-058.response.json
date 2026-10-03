@@ -1,0 +1,214 @@
+{
+  "task_id": "N8F-058",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "6cadc7231bcdb08ac2188070d2e9f30745aef53f7b768322f13f504ac6ed35dd",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发并读取关键词与域名配置",
+      "node_type": "code",
+      "operation_family": "trigger_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "search_targets",
+          "type": "object[]",
+          "description": "关键词与域名目标列表"
+        }
+      ],
+      "native_evidence": [
+        "Trigger: Run Daily/Weekly",
+        "Input: Keyword & Domain"
+      ],
+      "requirement_evidence": [
+        "系统自动跟踪关键词在搜索引擎中的排名，用于衡量 SEO 表现并识别优化机会",
+        "自动抓取搜索引擎结果页（SERP）"
+      ],
+      "rationale": "定时触发并加载跟踪目标"
+    },
+    {
+      "node_id": "n2",
+      "label": "通过搜索结果抓取服务获取 SERP 结果",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "search_targets",
+          "type": "object[]",
+          "description": "关键词与域名目标列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "serp_results",
+          "type": "object[]",
+          "description": "搜索结果页数据"
+        }
+      ],
+      "native_evidence": [
+        "SERP Scraper Agent (MCP)",
+        "MCP Client"
+      ],
+      "requirement_evidence": [
+        "通过搜索结果抓取服务获取搜索结果，以避免访问受限"
+      ],
+      "rationale": "确定性抓取：记录排名、竞争对手排名与特殊展现"
+    },
+    {
+      "node_id": "n3",
+      "label": "AI 解析排名数据、跟踪变化并识别优化机会",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "serp_results",
+          "type": "object[]",
+          "description": "搜索结果页数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ranking_insights",
+          "type": "object",
+          "description": "排名解析、变化与优化机会"
+        }
+      ],
+      "native_evidence": [
+        "OpenAI Chat Model",
+        "Auto-fixing Output Parser",
+        "Structured Output Parser1"
+      ],
+      "requirement_evidence": [
+        "使用 AI 解析排名数据、跟踪排名变化，并识别 SEO 优化机会"
+      ],
+      "rationale": "排名数据解析与机会识别需语言模型"
+    },
+    {
+      "node_id": "n4",
+      "label": "构造排名记录（排名、变化与机会）",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "ranking_insights",
+          "type": "object",
+          "description": "排名解析、变化与优化机会"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ranking_records",
+          "type": "object[]",
+          "description": "待写入的排名记录"
+        }
+      ],
+      "native_evidence": [
+        "Format SERP Results"
+      ],
+      "requirement_evidence": [
+        "记录关键词排名、竞争对手排名以及搜索结果中的特殊展现（search features）",
+        "将关键词排名数据及其变化保存到 Google Sheets"
+      ],
+      "rationale": "将保存动作拆为构造记录与写入两步；构造为确定性格式化"
+    },
+    {
+      "node_id": "n5",
+      "label": "将排名数据及变化写入 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "record",
+      "inputs": [
+        {
+          "name": "ranking_records",
+          "type": "object[]",
+          "description": "待写入的排名记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log to Google Sheets"
+      ],
+      "requirement_evidence": [
+        "将关键词排名数据及其变化保存到 Google Sheets"
+      ],
+      "rationale": "写入报表为最终可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "加载目标后抓取 SERP"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取后 AI 解析"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析后构造记录"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "构造后写入 Sheets"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "search_targets",
+      "condition": null,
+      "rationale": "目标供抓取"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "serp_results",
+      "condition": null,
+      "rationale": "SERP 数据供 AI 解析"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "ranking_insights",
+      "condition": null,
+      "rationale": "解析结果用于构造记录"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "ranking_records",
+      "condition": null,
+      "rationale": "记录用于写入 Sheets"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.9,
+  "notes": "定时→抓取 SERP→AI 解析排名/变化/机会→构造排名记录→写入 Sheets。'保存到 Sheets'拆为构造记录与写入两步以形成 semantic→code 数据链；写入为最终动作。"
+}

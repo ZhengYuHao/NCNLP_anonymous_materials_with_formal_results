@@ -1,0 +1,105 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-087",
+  "source_id": "n8n:11135",
+  "workflow_sha256": "b3f9862b55333c06774364ffe22fea8c5408f1ec2087c27201d96ee75697d35b",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "75225bf9174935e25b2784c55430a653af8ea548a72e03cab84a3198ad49eecb",
+  "requirement": {
+    "requirement_text": "一、输入\n从 Google Sheets 中读取博客文章的编排数据，包括标题、关键词、计划发布日期、服务地区、字数、风格、行动号召、标识以及内链与外链等。\n\n二、主要处理\n1. 将计划发布日期与当天比较，确保文章只在其预定日期发布。\n2. 由语言模型生成面向搜索优化的内容，包括标题与副标题、约 60 词的引言、分章节且逻辑连贯的正文、约 60 词的结论、4 至 6 组问答的常见问题段落，以及面向搜索的 URL 别名与元信息。\n3. 章节中自然地融入内链、外链、服务地区与行动号召。\n4. 生成用于 WordPress 上传的文章封面图。\n5. 在 WordPress 中创建文章、上传图片、设置特色图片，并写入面向搜索与社交分享的元信息。\n\n三、最终结果\n1. 文章发布后，向团队成员或客户发送邮件通知，其中包含文章标题、链接与摘要。\n2. 可按需生成可直接使用的 HTML 排版文章，适配常见 WordPress 主题与页面编辑器。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 343,
+        "text": "Description:\nThis workflow fully automates your blog publishing process using n8n, AI, and WordPress. It pulls blog data from Google Sheets, generates SEO-optimized content with AI, creates feature images, sets meta titles & descriptions, uploads everything to WordPress, schedules posts, and sends email notifications—all without manual work."
+      },
+      {
+        "start": 738,
+        "end": 928,
+        "text": "Pulls Blog Data from Google Sheets\n🔹 Fetches blog post info from your Sheet: title, keywords, scheduled date, service areas, word count, style, CTA, logos, internal/external links, and more."
+      },
+      {
+        "start": 930,
+        "end": 1060,
+        "text": "Compares Scheduled Date with Today\n🔹 Ensures posts are published only on their intended date, preventing mistakes and saving time."
+      },
+      {
+        "start": 1062,
+        "end": 1263,
+        "text": "Generates AI SEO Content\n🔹 Title & subtitle\n🔹 Introduction (~60 words)\n🔹 Multi-chapter body with logical flow\n🔹 Conclusions (~60 words)\n🔹 FAQ section (4–6 Q&A)\n🔹 SEO-focused URL slug & meta information"
+      },
+      {
+        "start": 1265,
+        "end": 1350,
+        "text": "Chapters integrate internal links, external links, service areas, and CTAs naturally."
+      },
+      {
+        "start": 1352,
+        "end": 1493,
+        "text": "Creates Feature Images\n🔹 Generates eye-catching blog feature images using dynamic text wrapping and custom fonts, ready for WordPress upload."
+      },
+      {
+        "start": 1495,
+        "end": 1653,
+        "text": "Uploads Everything to WordPress\n🔹 Automates post creation, uploads images, sets featured media, and applies Yoast SEO meta info for Google and social sharing."
+      },
+      {
+        "start": 1655,
+        "end": 1801,
+        "text": "Sends Email Notifications\n🔹 Automatically notifies team members or clients when a blog post is published, including post title, link, and summary."
+      },
+      {
+        "start": 1965,
+        "end": 2097,
+        "text": "Optional HTML Design for Blog Pages\n🔹 Generates HTML-ready posts with clean formatting perfect for Elementor or any WordPress theme."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中的博客编排数据：标题、关键词、计划发布日期、服务地区、字数、风格、行动号召、标识、内链与外链等"
+      ],
+      "conditions": [
+        "计划发布日期与当天一致时才发布该文章",
+        "引言约 60 词，结论约 60 词",
+        "常见问题段落为 4 至 6 组问答",
+        "HTML 排版文章为按需可选项"
+      ],
+      "allowed_actions": [
+        "比较计划发布日期与当天",
+        "由语言模型生成面向搜索优化的标题、副标题、引言、分章节正文、结论、常见问题与元信息",
+        "在章节中融入内链、外链、服务地区与行动号召",
+        "生成文章封面图",
+        "在 WordPress 中创建文章、上传图片、设置特色图片并写入元信息",
+        "发布后发送邮件通知",
+        "按需生成可直接使用的 HTML 排版文章"
+      ],
+      "visible_outcomes": [
+        "WordPress 中按预定日期发布文章，含封面图、特色图片与面向搜索和社交分享的元信息",
+        "团队成员或客户收到含文章标题、链接与摘要的邮件通知",
+        "（按需）产出可直接使用的 HTML 排版文章"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-087.packet.json",
+    "packet_sha256": "f2e3e160162ba15212a90ffad61d9e7672b2c6f6add999081607ede5ea8c737e",
+    "public_description_sha256": "d92ba9c5336ae7097ac2c2accd6a1e41fe20454bcbf4ae2d6a1a662ea989aabc"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-087.response.json",
+    "verification_response_sha256": "a90245cc2add45780dc300160077b885ce8981117452b177d020febb079b9400",
+    "decision": "accept"
+  },
+  "formal_index": 98
+}

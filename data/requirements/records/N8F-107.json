@@ -1,0 +1,87 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-107",
+  "source_id": "n8n:14167",
+  "workflow_sha256": "d7c64a90c4d3e1f2c4c4e9592896f7fe1eb06db65e1f1d177a46bfd3d2daacb8",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "140a964cf62073f331a34c55c77f43f960ee3f146cfdb1f61fbd02fc98037fc3",
+  "requirement": {
+    "requirement_text": "提供一个把自然语言指令转换为结构化网络数据的服务。\n调用方通过 POST 请求提交一条自然语言指令，并可附带一个可选的 JSON Schema，用于描述期望的输出结构。\n服务在把数据交给智能体之前先校验该输出结构：若调用方未提供输出结构或该结构为空，则回退到一个宽松的默认结构；若提供了输出结构，但其不是 JSON 对象（例如是字符串、数组或基本类型），或缺少 type 属性，或 type 属性的取值不是对象、数组、字符串、数字、布尔之一，则返回一条包含说明信息与示例结构的错误响应。\n校验通过后，智能体依据自然语言指令研究并抓取网页数据：检索网页，发现相关页面与信息来源；抓取任意 URL，提取干净的结构化内容；在实时会话中与已抓取的页面交互，点击按钮、填写表单、浏览动态内容，并提取静态抓取无法获取的数据，整个过程无需人工管理会话。智能体可自主决定使用哪些能力，从而具备发现来源、读取页面并与动态内容交互的完整网页浏览能力。\n最后，服务将智能体的输出格式化为与所提供结构或默认结构一致的结果，并把结构化 JSON 返回给调用方；若调用方提供了结构，返回结果符合该结构；若未提供，则返回结构灵活的数据对象。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 218,
+        "text": "Turn any prompt into structured web data. Send a POST request with a natural language prompt and an optional JSON schema, and get back clean, structured results scraped from the web by an AI agent powered by Firecrawl."
+      },
+      {
+        "start": 862,
+        "end": 1672,
+        "text": "Receive Scrape Request receives a POST request with prompt and an optional output_schema.\nValidate Output Schema checks the schema. If none is provided, it falls back to a permissive default. If the schema is malformed, it returns a clear error via Return Schema Error.\nResearch & Extract Web Data takes the prompt and uses the full Firecrawl toolkit to research the web:\n   Search (/search): Finds relevant pages and sources across the web.\n   Scrape (/scrape): Extracts clean, structured content from any URL.\n   Interact (interactContext, interact, interactStop): Lets the agent interact with scraped pages in a live session. After scraping a page, the agent can click buttons, fill forms, navigate dynamic content, and extract data that static scraping cannot reach, all without managing sessions manually."
+      },
+      {
+        "start": 1680,
+        "end": 2035,
+        "text": "This combination gives the AI agent complete web navigation capabilities. It can discover sources, read pages, and interact with dynamic content autonomously.\nFormat Response to Schema (Structured Output Parser) formats the agent's response to match the provided (or default) schema.\nReturn Structured Results sends the structured JSON back to the caller."
+      },
+      {
+        "start": 2839,
+        "end": 2935,
+        "text": "Returns a JSON object matching the provided schema, or a flexible object if no schema was given."
+      },
+      {
+        "start": 7589,
+        "end": 8002,
+        "text": "If output_schema is missing or null, the default permissive schema is used: { \"type\": \"object\", \"additionalProperties\": true }.\nIf output_schema is present, it must be a JSON object (not a string, array, or primitive).\nIt must have a type property with a valid value: object, array, string, number, or boolean.\nIf validation fails, the workflow returns an error response with a helpful message and example schema."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "调用方通过 POST 请求提交的自然语言指令（必填）",
+        "可选的 JSON Schema，用于描述期望的输出结构"
+      ],
+      "conditions": [
+        "未提供输出结构或该结构为空时，回退到宽松的默认结构",
+        "提供了输出结构时，其必须是 JSON 对象，不能是字符串、数组或基本类型",
+        "输出结构必须带有 type 属性，且取值为对象、数组、字符串、数字或布尔之一",
+        "输出结构校验在把数据交给智能体之前完成"
+      ],
+      "allowed_actions": [
+        "校验请求中携带的输出结构",
+        "检索网页，发现相关页面与信息来源",
+        "抓取任意 URL 并提取干净的结构化内容",
+        "在实时会话中与已抓取页面交互：点击按钮、填写表单、浏览动态内容、提取静态抓取无法获取的数据",
+        "将智能体的输出格式化为与所提供结构或默认结构一致的结果",
+        "把结构化 JSON 结果返回给调用方"
+      ],
+      "visible_outcomes": [
+        "调用方收到符合所提供结构的 JSON 结果",
+        "未提供结构时，调用方收到结构灵活的 JSON 数据对象",
+        "输出结构不合法时，调用方收到包含说明信息与示例结构的错误响应"
+      ],
+      "failure_behavior": [
+        "输出结构不合法（不是 JSON 对象、缺少 type 属性或 type 取值非法）时，返回一条包含说明信息与示例结构的错误响应，不进入网页研究与抓取环节"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/packets/N8F-107.packet.json",
+    "packet_sha256": "245fec6007781451ef23b4c59450f061fd288dfe46607ec4a66cd525d263fb59",
+    "public_description_sha256": "0573cc3cf07fc235d1e2e224fba4057d2a450a619c54d0479ba91b649c8773f3"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/responses/N8F-107.response.json",
+    "verification_response_sha256": "83d81437e3a5593c78fb26bfa356bc8715056ab4b8a5b6bd7851fb722401bed0",
+    "decision": "accept"
+  },
+  "formal_index": 118
+}

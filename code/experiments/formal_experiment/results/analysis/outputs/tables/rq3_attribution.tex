@@ -1,0 +1,21 @@
+% RQ3 contrasts (recomputed from results/rq2+rq3 records)
+\begin{table}[!htbp]
+\centering
+\caption{RQ3: eight paired contrasts (recomputed). Intervals are unadjusted; $p$-values are Holm-corrected.}
+\label{tab:rq3-attribution}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrll@{}}
+\toprule
+Comparison & $\Delta$CCR (pp) & 95\% CI & Holm $p$ \\
+\midrule
+Model$-$assign $-$ Full & -10.00 & [-17.50, -3.75] & 0.025 & \\
+Fused $-$ Model$-$assign & -12.50 & [-21.25, -5.00] & 0.025 & \\
+Fused $-$ Full & -22.50 & [-32.50, -12.50] & $<$0.001 & \\
+No$-$check $-$ Full & -5.00 & [-11.25, 0.00] & 0.438 & \\
+Model$-$code $-$ Full & -12.50 & [-20.00, -6.25] & 0.010 & \\
+Rule$-$recover $-$ Full & -40.00 & [-51.25, -30.00] & $<$0.001 & \\
+Model$-$exec $-$ Full & -32.50 & [-42.50, -22.50] & $<$0.001 & \\
+Model$-$exec $-$ Direct LLM & 5.00 & [-11.25, 20.00] & 0.636 & \\
+\bottomrule
+\end{tabular*}
+\end{table}

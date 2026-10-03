@@ -1,0 +1,34 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-016",
+  "case_id": "C-POS-FIRST-RUN",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-SCHEDULE": {
+        "interval_hours": 2,
+        "at_minute": 15,
+        "language": "en",
+        "max_posts_per_hashtag": 5,
+        "daily_comment_cap": 80
+      },
+      "F-POSTS-POOL": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI automation tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA workflow"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "Low-code news"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "88AA5F3CA5A4C7A97F96799FD5383E9339D230A9282D4BA4B36DF7EA4E8961EF"
+}

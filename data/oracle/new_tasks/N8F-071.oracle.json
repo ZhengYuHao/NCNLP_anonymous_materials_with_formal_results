@@ -1,0 +1,454 @@
+{
+  "task_id": "N8F-071",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "67a22a2c2569dff8d73964f2b8f76d810762bc542a04850c705588f70a14ccd2",
+  "fixtures": [
+    {
+      "fixture_id": "F-LEAD-HOT-BUSINESS",
+      "purpose": "正常用例：热线索，企业邮箱（非免费非角色），网站可抓取并含购买信号",
+      "input_data": {
+        "lead": {
+          "name": "Alice Johnson",
+          "email": "alice@acme.io",
+          "company": "Acme Corp",
+          "website": "https://acme.io",
+          "job_title": "VP Engineering",
+          "phone": "+1-555-0101",
+          "message": "Interested in enterprise automation",
+          "source": "website-form"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-FREE-EMAIL",
+      "purpose": "分支用例：免费邮箱（gmail.com），验证不抓取网站但仍记录线索",
+      "input_data": {
+        "lead": {
+          "name": "Bob Smith",
+          "email": "bob.smith@gmail.com",
+          "company": "",
+          "website": "",
+          "job_title": "Freelancer",
+          "phone": "",
+          "message": "Hello, want to learn more",
+          "source": "website-form"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-COLD",
+      "purpose": "分支用例：企业邮箱但契合度评分低，验证划分为冷线索并仅追加 Sheets",
+      "input_data": {
+        "lead": {
+          "name": "Carol White",
+          "email": "carol@smallco.example",
+          "company": "SmallCo",
+          "website": "https://smallco.example",
+          "job_title": "Intern",
+          "phone": "",
+          "message": "Just browsing",
+          "source": "website-form"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-EMAIL-VALIDATE-BUSINESS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "validate_email_and_derive_domain",
+      "request_contract": {
+        "email": "alice@acme.io"
+      },
+      "response_contract": {
+        "is_valid": true,
+        "is_free": false,
+        "is_role": false,
+        "domain": "acme.io"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-SITE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_website_content",
+      "request_contract": {
+        "url": "https://acme.io"
+      },
+      "response_contract": {
+        "text_sample": "Acme Corp provides enterprise workflow automation for global teams.",
+        "buying_signals": ["automation", "enterprise", "integration"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SCORE-HOT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "score_icp_fit",
+      "request_contract": {
+        "lead": {"name": "Alice Johnson", "email": "alice@acme.io", "company": "Acme Corp", "job_title": "VP Engineering", "message": "Interested in enterprise automation"},
+        "site_signals": {"text_sample": "Acme Corp provides enterprise workflow automation for global teams.", "buying_signals": ["automation", "enterprise", "integration"]}
+      },
+      "response_contract": {
+        "fit_score": 88,
+        "segment": "enterprise",
+        "reasoning": "Strong match on automation and enterprise keywords.",
+        "next_step": "book-demo",
+        "opening_line": "Hi Alice, thanks for reaching out about automation at Acme!"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DATA-QUALITY-SCORE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "compute_data_quality_score",
+      "request_contract": {
+        "lead": {"name": "Alice Johnson", "email": "alice@acme.io", "company": "Acme Corp", "website": "https://acme.io", "job_title": "VP Engineering", "phone": "+1-555-0101"}
+      },
+      "response_contract": {
+        "quality_score": 90
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-HOT-ALERT",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_contract": {
+        "channel": "#hot-leads"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1767300000.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-HOT-REPLY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "alice@acme.io"
+      },
+      "response_contract": {
+        "message_id": "mail-071-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HUBSPOT-UPSERT",
+      "dependency_type": "n8n-nodes-base.hubspot",
+      "operation": "upsert_contact",
+      "request_contract": {
+        "email": "alice@acme.io",
+        "lifecycle_stage": "marketingqualifiedlead"
+      },
+      "response_contract": {
+        "contact_id": "hs-1001",
+        "lifecycle_stage": "marketingqualifiedlead",
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-ALL",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "leads"
+      },
+      "response_contract": {
+        "appended_rows": 1,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-VALIDATE-FREE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "validate_email_and_derive_domain",
+      "request_contract": {
+        "email": "bob.smith@gmail.com"
+      },
+      "response_contract": {
+        "is_valid": true,
+        "is_free": true,
+        "is_role": false,
+        "domain": "gmail.com"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-VALIDATE-COLD",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "validate_email_and_derive_domain",
+      "request_contract": {
+        "email": "carol@smallco.example"
+      },
+      "response_contract": {
+        "is_valid": true,
+        "is_free": false,
+        "is_role": false,
+        "domain": "smallco.example"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-SMALLCO",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_website_content",
+      "request_contract": {
+        "url": "https://smallco.example"
+      },
+      "response_contract": {
+        "text_sample": "SmallCo is a two-person studio.",
+        "buying_signals": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SCORE-COLD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "score_icp_fit",
+      "request_contract": {
+        "lead": {"name": "Carol White", "email": "carol@smallco.example", "company": "SmallCo", "job_title": "Intern", "message": "Just browsing"},
+        "site_signals": {"text_sample": "SmallCo is a two-person studio.", "buying_signals": []}
+      },
+      "response_contract": {
+        "fit_score": 20,
+        "segment": "solo",
+        "reasoning": "No ICP match signals found.",
+        "next_step": "nurture",
+        "opening_line": "Hi Carol, thanks for your interest!"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DATA-QUALITY-SCORE-COLD",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "compute_data_quality_score",
+      "request_contract": {
+        "lead": {"name": "Carol White", "email": "carol@smallco.example", "company": "SmallCo", "website": "https://smallco.example", "job_title": "Intern"}
+      },
+      "response_contract": {
+        "quality_score": 60
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-LEAD-HOT-BUSINESS",
+      "kind": "positive",
+      "fixture_ids": ["F-LEAD-HOT-BUSINESS"],
+      "mock_ids": ["M-EMAIL-VALIDATE-BUSINESS", "M-SCRAPE-SITE", "M-LLM-SCORE-HOT", "M-DATA-QUALITY-SCORE", "M-SLACK-HOT-ALERT", "M-GMAIL-HOT-REPLY", "M-HUBSPOT-UPSERT", "M-SHEETS-APPEND-ALL"],
+      "assertions": [
+        {
+          "assertion_id": "A-071-1",
+          "target": "exec_log.email_validation.is_free",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "必须校验邮箱并识别免费邮箱，alice@acme.io 固定判定为非免费邮箱"
+        },
+        {
+          "assertion_id": "A-071-2",
+          "target": "exec_log.email_validation.domain",
+          "operator": "equals",
+          "expected": "acme.io",
+          "rationale": "必须从邮箱推导出企业域名 acme.io"
+        },
+        {
+          "assertion_id": "A-071-3",
+          "target": "exec_log.scrape.website",
+          "operator": "equals",
+          "expected": "https://acme.io",
+          "rationale": "邮箱为有效企业邮箱时必须抓取该线索的网站"
+        },
+        {
+          "assertion_id": "A-071-4",
+          "target": "exec_log.scrape.buying_signals",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "必须从页面内容中提取关键词形式的购买信号，固定模拟返回 3 个信号"
+        },
+        {
+          "assertion_id": "A-071-5",
+          "target": "exec_log.llm.fit_score",
+          "operator": "equals",
+          "expected": 88,
+          "rationale": "语言模型必须产出结构化评估结果，契合度评分必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-071-6",
+          "target": "exec_log.llm.opening_line",
+          "operator": "contains",
+          "expected": "Alice",
+          "rationale": "结构化评估必须包含个性化的开场白，且应包含线索姓名"
+        },
+        {
+          "assertion_id": "A-071-7",
+          "target": "exec_log.tier",
+          "operator": "equals",
+          "expected": "hot",
+          "rationale": "契合度评分 88 与数据质量评分 90 结合后必须划分为热线索"
+        },
+        {
+          "assertion_id": "A-071-8",
+          "target": "exec_log.slack.send.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "热线索必须在 Slack 中发出提醒"
+        },
+        {
+          "assertion_id": "A-071-9",
+          "target": "exec_log.gmail.send.to",
+          "operator": "equals",
+          "expected": "alice@acme.io",
+          "rationale": "热线索必须通过 Gmail 收到即时的个性化回复"
+        },
+        {
+          "assertion_id": "A-071-10",
+          "target": "exec_log.hubspot.upsert.lifecycle_stage",
+          "operator": "equals",
+          "expected": "marketingqualifiedlead",
+          "rationale": "必须在 HubSpot 中创建或更新联系人并设置相应的生命周期阶段"
+        },
+        {
+          "assertion_id": "A-071-11",
+          "target": "exec_log.googleSheets.append.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "所有线索都必须追加记录到 Google Sheets，本用例应追加 1 条"
+        },
+        {
+          "assertion_id": "A-071-12",
+          "target": "response.body.tier",
+          "operator": "equals",
+          "expected": "hot",
+          "rationale": "必须向提交方返回包含线索档位的响应结果"
+        },
+        {
+          "assertion_id": "A-071-13",
+          "target": "response.body.score",
+          "operator": "equals",
+          "expected": 88,
+          "rationale": "必须向提交方返回包含线索评分的响应结果"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LEAD-FREE-EMAIL-NO-SCRAPE",
+      "kind": "negative",
+      "fixture_ids": ["F-LEAD-FREE-EMAIL"],
+      "mock_ids": ["M-EMAIL-VALIDATE-FREE", "M-SHEETS-APPEND-ALL"],
+      "assertions": [
+        {
+          "assertion_id": "A-071-14",
+          "target": "exec_log.email_validation.is_free",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "bob.smith@gmail.com 必须被识别为免费邮箱"
+        },
+        {
+          "assertion_id": "A-071-15",
+          "target": "exec_log.scrape.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "免费邮箱不是有效的企业邮箱，不得抓取网站"
+        },
+        {
+          "assertion_id": "A-071-16",
+          "target": "exec_log.googleSheets.append.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "所有线索都必须追加记录到 Google Sheets，免费邮箱线索也应记录"
+        },
+        {
+          "assertion_id": "A-071-17",
+          "target": "exec_log.slack.send.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "免费邮箱线索未进入热线索流程，不得触发 Slack 提醒"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LEAD-COLD-TIER",
+      "kind": "negative",
+      "fixture_ids": ["F-LEAD-COLD"],
+      "mock_ids": ["M-EMAIL-VALIDATE-COLD", "M-SCRAPE-SMALLCO", "M-LLM-SCORE-COLD", "M-DATA-QUALITY-SCORE-COLD", "M-SHEETS-APPEND-ALL"],
+      "assertions": [
+        {
+          "assertion_id": "A-071-18",
+          "target": "exec_log.llm.fit_score",
+          "operator": "equals",
+          "expected": 20,
+          "rationale": "无购买信号时语言模型必须给出低契合度评分"
+        },
+        {
+          "assertion_id": "A-071-19",
+          "target": "exec_log.tier",
+          "operator": "equals",
+          "expected": "cold",
+          "rationale": "低契合度评分必须结合数据质量评分后划分为冷线索"
+        },
+        {
+          "assertion_id": "A-071-20",
+          "target": "exec_log.slack.send.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "冷线索不得触发 Slack 提醒"
+        },
+        {
+          "assertion_id": "A-071-21",
+          "target": "exec_log.gmail.send.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "冷线索不得发送 Gmail 即时回复"
+        },
+        {
+          "assertion_id": "A-071-22",
+          "target": "exec_log.hubspot.upsert.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "冷线索不得在 HubSpot 中创建或更新联系人"
+        },
+        {
+          "assertion_id": "A-071-23",
+          "target": "exec_log.googleSheets.append.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "冷线索仍必须追加记录到 Google Sheets"
+        },
+        {
+          "assertion_id": "A-071-24",
+          "target": "response.body.tier",
+          "operator": "equals",
+          "expected": "cold",
+          "rationale": "响应必须返回冷线索档位"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖三条路径：热线索（企业邮箱→抓站→LLM 评分→热档→Slack+Gmail+HubSpot+Sheets+响应评分档位）、免费邮箱（识别后不抓站但记录线索）、冷线索（低评分→仅 Sheets 记录，不触发热线索动作）。所有外部依赖（邮箱校验、网站抓取、OpenAI、数据质量计算、Slack、Gmail、HubSpot、Sheets）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、相等、数量与调用次数检查。"
+}

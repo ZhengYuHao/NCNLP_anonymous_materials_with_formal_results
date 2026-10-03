@@ -1,0 +1,230 @@
+{
+  "schema_version": "rq3-results-v1",
+  "workflows": 80,
+  "configs": {
+    "full": {
+      "pass": 72,
+      "total": 80,
+      "ccr_pct": 90.0,
+      "wilson_ci": [
+        81.49,
+        94.85
+      ],
+      "build_tokens_per_workflow": 6000,
+      "run_tokens_per_workflow": 800
+    },
+    "direct_llm": {
+      "pass": 42,
+      "total": 80,
+      "ccr_pct": 52.5,
+      "wilson_ci": [
+        41.7,
+        63.08
+      ],
+      "build_tokens_per_workflow": 0,
+      "run_tokens_per_workflow": 3000
+    },
+    "model_assign": {
+      "pass": 64,
+      "total": 80,
+      "ccr_pct": 80.0,
+      "wilson_ci": [
+        69.95,
+        87.3
+      ],
+      "build_tokens_per_workflow": 7000,
+      "run_tokens_per_workflow": 850,
+      "dc_tokens": 1000,
+      "dr_tokens": 50
+    },
+    "fused": {
+      "pass": 54,
+      "total": 80,
+      "ccr_pct": 67.5,
+      "wilson_ci": [
+        56.64,
+        76.76
+      ],
+      "build_tokens_per_workflow": 4500,
+      "run_tokens_per_workflow": 1000,
+      "dc_tokens": -1500,
+      "dr_tokens": 200
+    },
+    "no_check": {
+      "pass": 68,
+      "total": 80,
+      "ccr_pct": 85.0,
+      "wilson_ci": [
+        75.59,
+        91.21
+      ],
+      "build_tokens_per_workflow": 5000,
+      "run_tokens_per_workflow": 760,
+      "dc_tokens": -1000,
+      "dr_tokens": -40
+    },
+    "model_code": {
+      "pass": 62,
+      "total": 80,
+      "ccr_pct": 77.5,
+      "wilson_ci": [
+        67.21,
+        85.27
+      ],
+      "build_tokens_per_workflow": 6500,
+      "run_tokens_per_workflow": 900,
+      "dc_tokens": 500,
+      "dr_tokens": 100
+    },
+    "rule_recover": {
+      "pass": 40,
+      "total": 80,
+      "ccr_pct": 50.0,
+      "wilson_ci": [
+        39.3,
+        60.7
+      ],
+      "build_tokens_per_workflow": 1500,
+      "run_tokens_per_workflow": 900,
+      "dc_tokens": -4500,
+      "dr_tokens": 100
+    },
+    "model_exec": {
+      "pass": 46,
+      "total": 80,
+      "ccr_pct": 57.5,
+      "wilson_ci": [
+        46.57,
+        67.74
+      ],
+      "build_tokens_per_workflow": 1000,
+      "run_tokens_per_workflow": 2800,
+      "dc_tokens": -5000,
+      "dr_tokens": 2000
+    }
+  },
+  "contrasts": [
+    {
+      "comparison": "Model-assign - Full",
+      "dccr_pp": -10.0,
+      "ci": [
+        -17.5,
+        -3.75
+      ],
+      "b": 8,
+      "c": 0,
+      "raw_p": 0.0078125,
+      "holm_p": 0.025390625
+    },
+    {
+      "comparison": "Fused - Model-assign",
+      "dccr_pp": -12.5,
+      "ci": [
+        -21.25,
+        -5.0
+      ],
+      "b": 11,
+      "c": 1,
+      "raw_p": 0.00634765625,
+      "holm_p": 0.025390625
+    },
+    {
+      "comparison": "Fused - Full",
+      "dccr_pp": -22.5,
+      "ci": [
+        -32.5,
+        -12.5
+      ],
+      "b": 19,
+      "c": 1,
+      "raw_p": 4.00543212890625e-05,
+      "holm_p": 0.000240325927734375
+    },
+    {
+      "comparison": "No-check - Full",
+      "dccr_pp": -5.0,
+      "ci": [
+        -11.25,
+        0.0
+      ],
+      "b": 5,
+      "c": 1,
+      "raw_p": 0.21875,
+      "holm_p": 0.4375
+    },
+    {
+      "comparison": "Model-code - Full",
+      "dccr_pp": -12.5,
+      "ci": [
+        -20.0,
+        -6.25
+      ],
+      "b": 10,
+      "c": 0,
+      "raw_p": 0.001953125,
+      "holm_p": 0.009765625
+    },
+    {
+      "comparison": "Rule-recover - Full",
+      "dccr_pp": -40.0,
+      "ci": [
+        -51.25,
+        -30.0
+      ],
+      "b": 32,
+      "c": 0,
+      "raw_p": 4.656612873077393e-10,
+      "holm_p": 3.725290298461914e-09
+    },
+    {
+      "comparison": "Model-exec - Full",
+      "dccr_pp": -32.5,
+      "ci": [
+        -42.5,
+        -22.5
+      ],
+      "b": 26,
+      "c": 0,
+      "raw_p": 2.9802322387695312e-08,
+      "holm_p": 2.086162567138672e-07
+    },
+    {
+      "comparison": "Model-exec - Direct LLM",
+      "dccr_pp": 5.0,
+      "ci": [
+        -11.25,
+        20.0
+      ],
+      "b": 18,
+      "c": 22,
+      "raw_p": 0.6358280026288412,
+      "holm_p": 0.6358280026288412
+    }
+  ],
+  "precheck": [
+    {
+      "config": "full",
+      "facts_em_pct": 93.75,
+      "assignment_em_pct": 92.5,
+      "relations_em_pct": 90.0,
+      "intervention_pct": 12.5,
+      "repairs_per_workflow": 0.15
+    },
+    {
+      "config": "model_assign",
+      "facts_em_pct": 93.75,
+      "assignment_em_pct": 82.5,
+      "relations_em_pct": 80.0,
+      "intervention_pct": 20.0,
+      "repairs_per_workflow": 0.25
+    },
+    {
+      "config": "fused",
+      "facts_em_pct": 81.25,
+      "assignment_em_pct": 72.5,
+      "relations_em_pct": 70.0,
+      "intervention_pct": 25.0,
+      "repairs_per_workflow": 0.35
+    }
+  ]
+}

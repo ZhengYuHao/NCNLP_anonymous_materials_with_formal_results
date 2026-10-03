@@ -1,0 +1,57 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-059",
+  "source_id": "n8n:16513",
+  "workflow_sha256": "fc8c81f9b1bd950eb060414e51220fc54d1a85c7df3f78591470d3f7775268c5",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "b7d92d61b9f01fd059068e199efb75f8feff3b86559a2cfa63d794a2274fafa8",
+  "requirement": {
+    "requirement_text": "系统对用户提交的创业点子自动生成验证报告并邮件交付。\n\n1）通过在线表单接收创业点子、所属行业与目标受众。\n2）将提交内容交由语言模型生成专业分析，涵盖问题、商业模式与 SWOT 要素。\n3）生成创业可行性评分（当前取 80–100 之间的随机值），并与上述分析一并打包。\n4）将评分与分析交给语言模型，汇编为完整的验证报告，包含执行摘要、市场潜力、建议与最终结论。\n5）通过 Gmail 将生成的验证报告发送给已配置的收件人。",
+    "source_spans": [
+      {
+        "start": 275,
+        "end": 852,
+        "text": "Receives a startup idea, industry, and target audience from an n8n Form trigger.\nSends the submission to Google Gemini to generate a professional analysis covering the problem, business model, and SWOT factors.\nGenerates a startup viability score (currently a random value from 80–100) and packages it with the Gemini analysis.\nSends the score and analysis to Groq (Llama 3.3 70B) to compile a full validation report with an executive summary, market potential, recommendations, and final verdict.\nEmails the generated validation report to the configured recipient using Gmail."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "在线表单提交的创业点子、所属行业与目标受众"
+      ],
+      "conditions": [
+        "可行性评分当前取 80–100 之间的随机值",
+        "验证报告需包含执行摘要、市场潜力、建议与最终结论"
+      ],
+      "allowed_actions": [
+        "使用语言模型生成问题、商业模式与 SWOT 分析",
+        "生成创业可行性评分",
+        "使用语言模型汇编完整验证报告",
+        "通过 Gmail 发送报告"
+      ],
+      "visible_outcomes": [
+        "已配置收件人收到创业点子验证报告邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-059.packet.json",
+    "packet_sha256": "278834b6f1ab84244bb45c4b4f6499d33b1a4ad2c6152cc39531b2a816ef63f4",
+    "public_description_sha256": "14d4db4e7497d1b3ab1bf74773380f138c03549881c3f90b0beea69ffb4345a2"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-059.response.json",
+    "verification_response_sha256": "e24ae627754c3d40413186aacc5b3cce60586c8a15e9afd8e19909151b473c12",
+    "decision": "accept"
+  },
+  "formal_index": 70
+}

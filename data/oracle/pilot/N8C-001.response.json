@@ -1,0 +1,212 @@
+{
+  "pilot_id": "N8C-001",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "ae6a943021b8ea90a27f3bca8a8a5a8638de1fb12217ecb04b878c0469bdf64c",
+  "fixtures": [
+    {
+      "fixture_id": "F-CLIENT-CONFIG",
+      "purpose": "客户端配置与行业指引，供手动启动路径使用",
+      "input_data": {
+        "client_id": "CL-2026-001",
+        "client_name": "Meridian Manufacturing",
+        "sector": "Industrial Manufacturing",
+        "sector_guidance": "Focus on warehouse automation and supply-chain orchestration",
+        "compliance_needs": ["ISO 27001", "SOC 2"]
+      }
+    },
+    {
+      "fixture_id": "F-QUEUE-TRIGGER-ROW",
+      "purpose": "Google Sheets 队列新增客户行，用于可选触发路径",
+      "input_data": {
+        "trigger": "google_sheets_queue_new_row",
+        "queue_sheet": "ClientQueue",
+        "row": {"client_id": "CL-2026-002", "client_name": "Helix Logistics", "sector": "Logistics"}
+      }
+    },
+    {
+      "fixture_id": "F-DRIVE-EVIDENCE",
+      "purpose": "Google Drive 中的源证据文档清单",
+      "input_data": {
+        "evidence_files": [
+          {"file_id": "EV-001", "name": "current_state_narrative.md"},
+          {"file_id": "EV-002", "name": "process_flows.pdf"},
+          {"file_id": "EV-003", "name": "org_chart.xlsx"}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SHEETS-DATA",
+      "purpose": "Google Sheets 中的 RACI、工具清单、KPI 快照与基准数据",
+      "input_data": {
+        "raci": [{"activity": "Order intake", "R": "SalesOps", "A": "OrderMgmt", "C": "Finance", "I": "IT"}],
+        "tools_inventory": [{"tool": "ERP", "purpose": "Order management", "users": 120}],
+        "kpi_snapshot": [{"kpi": "On-time delivery", "value": 0.82, "target": 0.95}],
+        "benchmarks": [{"benchmark": "On-time delivery industry", "value": 0.88}]
+      }
+    },
+    {
+      "fixture_id": "F-SHEETS-DATA-MISSING-KPI",
+      "purpose": "KPI 快照含缺失值的边界数据（验证流程仍完成）",
+      "input_data": {
+        "raci": [{"activity": "Order intake", "R": "SalesOps", "A": "OrderMgmt", "C": "Finance", "I": "IT"}],
+        "tools_inventory": [{"tool": "ERP", "purpose": "Order management", "users": 120}],
+        "kpi_snapshot": [{"kpi": "On-time delivery", "value": null, "target": 0.95}],
+        "benchmarks": [{"benchmark": "On-time delivery industry", "value": 0.88}]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GDRIVE-DOWNLOAD",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "download_evidence",
+      "request_contract": {"file_id": "EV-001|EV-002|EV-003"},
+      "response_contract": {
+        "files": {
+          "EV-001": {"content": "# Current state narrative\nWarehouse picking is manual; order intake uses ERP; on-time delivery 82%.", "mime_type": "text/markdown"},
+          "EV-002": {"content": "Process flows: order intake, warehouse picking, invoicing.", "mime_type": "application/pdf"},
+          "EV-003": {"content": "Org: 120 ERP users; 14 warehouse staff; 3 shifts.", "mime_type": "application/vnd.ms-excel"}
+        },
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-READ",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_range",
+      "request_contract": {"sheet": "RACI|Tools|KPI|Benchmarks|ClientQueue", "range": "A1:Z100"},
+      "response_contract": {
+        "tables": {
+          "RACI": [{"activity": "Order intake", "R": "SalesOps", "A": "OrderMgmt", "C": "Finance", "I": "IT"}],
+          "Tools": [{"tool": "ERP", "purpose": "Order management", "users": 120}],
+          "KPI": [{"kpi": "On-time delivery", "value": 0.82, "target": 0.95}],
+          "Benchmarks": [{"benchmark": "On-time delivery industry", "value": 0.88}],
+          "ClientQueue": [{"client_id": "CL-2026-002", "client_name": "Helix Logistics", "sector": "Logistics", "status": "new"}]
+        },
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-READ-MISSING-KPI",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_range",
+      "request_contract": {"sheet": "RACI|Tools|KPI|Benchmarks", "range": "A1:Z100"},
+      "response_contract": {
+        "tables": {
+          "RACI": [{"activity": "Order intake", "R": "SalesOps", "A": "OrderMgmt", "C": "Finance", "I": "IT"}],
+          "Tools": [{"tool": "ERP", "purpose": "Order management", "users": 120}],
+          "KPI": [{"kpi": "On-time delivery", "value": null, "target": 0.95}],
+          "Benchmarks": [{"benchmark": "On-time delivery industry", "value": 0.88}]
+        },
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE",
+      "dependency_type": "language_model",
+      "operation": "analyze_inefficiencies_and_recommendations",
+      "request_contract": {"evidence": "normalized current-state dataset"},
+      "response_contract": {
+        "inefficiencies": ["Manual warehouse picking", "Order intake data re-entry"],
+        "recommendations": [
+          {"id": "R1", "title": "Deploy warehouse automation", "sector_alignment": "Industrial Manufacturing", "compliance_alignment": ["ISO 27001", "SOC 2"]},
+          {"id": "R2", "title": "Integrate ERP order intake", "sector_alignment": "Industrial Manufacturing"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TARGET",
+      "dependency_type": "language_model",
+      "operation": "generate_target_model_and_roi",
+      "request_contract": {"recommendations": "R1, R2"},
+      "response_contract": {
+        "org_design": {"teams": ["Automation Ops", "Supply Chain CoE"], "headcount": 86},
+        "tech_architecture": {"platforms": ["WMS", "RPA", "Data Lake"]},
+        "roadmap": [{"phase": "P1", "duration_months": 6}, {"phase": "P2", "duration_months": 6}],
+        "new_raci": [{"activity": "Warehouse automation", "R": "Automation Ops", "A": "IT", "C": "Finance", "I": "Executive"}],
+        "roi_scenarios": {
+          "cautious": {"npv": 1200000, "payback_months": 24},
+          "hybrid": {"npv": 2100000, "payback_months": 18},
+          "aggressive": {"npv": 3400000, "payback_months": 12}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-WRITE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "write_structured_outputs",
+      "request_contract": {"sheet": "Outputs", "range": "A1", "values": "structured output rows"},
+      "response_contract": {"updated": true, "updated_range": "Outputs!A1:Z100"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDRIVE-UPLOAD",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "upload_consolidated_report",
+      "request_contract": {"filename": "consolidated text report for the client", "content": "consolidated text report"},
+      "response_contract": {"file_id": "RPT-2026-001", "web_view_link": "https://drive.google.com/file/d/RPT-2026-001/view"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-MANUAL-FULL",
+      "kind": "positive",
+      "fixture_ids": ["F-CLIENT-CONFIG", "F-DRIVE-EVIDENCE", "F-SHEETS-DATA"],
+      "mock_ids": ["M-GDRIVE-DOWNLOAD", "M-GSHEETS-READ", "M-LLM-ANALYZE", "M-LLM-TARGET", "M-GSHEETS-WRITE", "M-GDRIVE-UPLOAD"],
+      "assertions": [
+        {"assertion_id": "A-EVIDENCE-DOWNLOADED", "target": "mock.M-GDRIVE-DOWNLOAD.call_count", "operator": "equals", "expected": 3, "rationale": "需求(1)要求下载 Drive 源证据；3 份文件来自 fixture F-DRIVE-EVIDENCE"},
+        {"assertion_id": "A-SHEETS-READ", "target": "mock.M-GSHEETS-READ.call_count", "operator": "not_equals", "expected": 0, "rationale": "需求(1)要求读取 RACI/工具清单/KPI 快照/基准"},
+        {"assertion_id": "A-CURRENT-STATE", "target": "output.current_state", "operator": "exists", "expected": true, "rationale": "需求(2)要求将证据规范化为单一结构化 current-state 数据集；不强制内部字段名"},
+        {"assertion_id": "A-RECOMMENDATIONS", "target": "output.recommendations", "operator": "length_equals", "expected": 2, "rationale": "需求(3)声明生成 AI/自动化建议，未规定数量；2 条来自确定性 mock M-LLM-ANALYZE 固定响应"},
+        {"assertion_id": "A-ROI-CAUTIOUS", "target": "output.future_state.roi_scenarios", "operator": "contains", "expected": "cautious", "rationale": "需求(4)声明计算 cautious/hybrid/aggressive 三档 ROI 场景"},
+        {"assertion_id": "A-ROI-HYBRID", "target": "output.future_state.roi_scenarios", "operator": "contains", "expected": "hybrid", "rationale": "需求(4)声明 hybrid ROI 场景"},
+        {"assertion_id": "A-ROI-AGGRESSIVE", "target": "output.future_state.roi_scenarios", "operator": "contains", "expected": "aggressive", "rationale": "需求(4)声明 aggressive ROI 场景"},
+        {"assertion_id": "A-MERMAID", "target": "output.payload.diagrams.mermaid", "operator": "contains", "expected": "graph", "rationale": "需求(5)声明构建 Mermaid 图；mermaid 图以 graph 起始作为格式判定"},
+        {"assertion_id": "A-REPORT-UPLOADED", "target": "mock.M-GDRIVE-UPLOAD.call_count", "operator": "equals", "expected": 1, "rationale": "可见产出声明'整合文本报告上传至 Google Drive'"},
+        {"assertion_id": "A-REPORT-FILENAME", "target": "mock.M-GDRIVE-UPLOAD.requests[0].filename", "operator": "contains", "expected": "Meridian Manufacturing", "rationale": "报告归属客户端（客户端名来自 fixture），不强制文件扩展名"},
+        {"assertion_id": "A-OUTPUTS-WRITTEN", "target": "mock.M-GSHEETS-WRITE.requests[0].values", "operator": "exists", "expected": true, "rationale": "可见产出声明'结构化输出写入 Google Sheets'；不规定行内字段格式"}
+      ]
+    },
+    {
+      "case_id": "C-QUEUE-TRIGGER",
+      "kind": "positive",
+      "fixture_ids": ["F-QUEUE-TRIGGER-ROW", "F-DRIVE-EVIDENCE", "F-SHEETS-DATA"],
+      "mock_ids": ["M-GDRIVE-DOWNLOAD", "M-GSHEETS-READ", "M-LLM-ANALYZE", "M-LLM-TARGET", "M-GSHEETS-WRITE", "M-GDRIVE-UPLOAD"],
+      "assertions": [
+        {"assertion_id": "A-QUEUE-READ", "target": "mock.M-GSHEETS-READ.call_count", "operator": "not_equals", "expected": 0, "rationale": "需求条件'可选：Google Sheets 队列新增客户行时启动'，需读取队列中的新增客户行；不强制表名"},
+        {"assertion_id": "A-QUEUE-CLIENT-USED", "target": "mock.M-GDRIVE-UPLOAD.requests[0].filename", "operator": "contains", "expected": "Helix Logistics", "rationale": "应使用队列行中的客户端（来自 fixture F-QUEUE-TRIGGER-ROW）生成报告"},
+        {"assertion_id": "A-QUEUE-OUTPUTS", "target": "mock.M-GSHEETS-WRITE.call_count", "operator": "equals", "expected": 1, "rationale": "队列触发同样产生完整可见产出（写入 Sheets）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-MISSING-KPI",
+      "kind": "boundary",
+      "fixture_ids": ["F-CLIENT-CONFIG", "F-DRIVE-EVIDENCE", "F-SHEETS-DATA-MISSING-KPI"],
+      "mock_ids": ["M-GDRIVE-DOWNLOAD", "M-GSHEETS-READ-MISSING-KPI", "M-LLM-ANALYZE", "M-LLM-TARGET", "M-GSHEETS-WRITE", "M-GDRIVE-UPLOAD"],
+      "assertions": [
+        {"assertion_id": "A-STILL-DATASET", "target": "output.current_state", "operator": "exists", "expected": true, "rationale": "KPI 缺失值边界下仍生成 current-state 数据集（需求(2)）；数据质量信号的内部字段与取值需求未规定，不做强制"},
+        {"assertion_id": "A-STILL-WRITES", "target": "mock.M-GSHEETS-WRITE.call_count", "operator": "equals", "expected": 1, "rationale": "缺失值不阻断结构化输出写入"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "目标路径约定：output.*=最终输出；mock.<id>.call_count=调用次数；mock.<id>.requests[i]=第 i 次请求。需求未命名处的字段（如 current_state、future_state.roi_scenarios、payload.diagrams.mermaid）为本 Oracle 输出契约命名。\n核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-EVIDENCE-DOWNLOADED（依据：需求(1)下载源证据，数量=fixture 3 份）、A-SHEETS-READ（需求(1)）、A-RECOMMENDATIONS（需求(3)；数量=LLM mock 固定响应）、A-ROI-*（需求(4)三档场景）、A-MERMAID（需求(5)）、A-REPORT-UPLOADED（可见产出）、A-QUEUE-CLIENT-USED/A-QUEUE-OUTPUTS（可见产出与队列行输入）。\n- 修改：A-CURRENT-STATE-SECTIONS→A-CURRENT-STATE（删除自创 sections/kpi_snapshot 字段，仅判数据集存在）；A-REPORT-FILENAME（删除 .txt 扩展名正则，仅判含客户端名）；A-OUTPUTS-WRITTEN（删除自创 section= 标记格式，仅判写入载荷存在）；A-QUEUE-READ（删除自创 ClientQueue 表名，改行为级调用判定）。\n- 删除：A-DATA-QUALITY-SIGNALS（clean 用例，需求仅声明 basic data-quality signals 未规定字段/取值）；A-MISSING-FLAGGED（同因，改为 A-STILL-DATASET 存在性判断）。"
+}

@@ -1,0 +1,669 @@
+{
+  "pilot_id": "N8C-002",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "1a632d6022839d1a60138e798410a18df31d4964b3a4c522dd371935aa25b9a6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Daily schedule trigger",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Daily scheduled run signal that starts the monitoring cycle"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "The system runs daily on a schedule."
+      ],
+      "rationale": "Declared scheduled entry point; emits only a start signal."
+    },
+    {
+      "node_id": "n2",
+      "label": "Read monitoring targets from Google Sheet configuration",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the configuration read"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "targets",
+          "type": "array",
+          "description": "Monitoring target rows from the configuration sheet, each carrying a keyword (search term) or a competitor (subreddit name)"
+        }
+      ],
+      "native_evidence": [
+        "GSheets: Read Config"
+      ],
+      "requirement_evidence": [
+        "a Google Sheet configuration listing monitoring targets of two types"
+      ],
+      "rationale": "External read of the declared configuration input; deterministic I/O."
+    },
+    {
+      "node_id": "n3",
+      "label": "Route targets into Competitor and Keyword paths",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "targets",
+          "type": "array",
+          "description": "All monitoring target rows"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_targets",
+          "type": "array",
+          "description": "Target rows whose input type is a topic keyword"
+        },
+        {
+          "name": "competitor_targets",
+          "type": "array",
+          "description": "Target rows whose input type is a competitor subreddit"
+        }
+      ],
+      "native_evidence": [
+        "If: Is Keyword?",
+        "Is Competitor?"
+      ],
+      "requirement_evidence": [
+        "route the task into one of two paths (Competitor vs. Keyword) based on the input type"
+      ],
+      "rationale": "Deterministic routing of each target row into one of the two declared paths based on which input type field is populated."
+    },
+    {
+      "node_id": "n4",
+      "label": "Iterate keyword targets",
+      "node_type": "code",
+      "operation_family": "iteration",
+      "inputs": [
+        {
+          "name": "keyword_targets",
+          "type": "array",
+          "description": "Keyword target rows to process one at a time"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_keyword_target",
+          "type": "object",
+          "description": "The keyword target currently being processed"
+        }
+      ],
+      "native_evidence": [
+        "Loop: Keyword List"
+      ],
+      "requirement_evidence": [
+        "For each target, the system shall"
+      ],
+      "rationale": "Per-target iteration over the keyword list; emits one target per pass and terminates when the list is exhausted (bounded by the configured target count, at most 20 iterations per run)."
+    },
+    {
+      "node_id": "n5",
+      "label": "Scrape keyword search results via cloud browser automation",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "current_keyword_target",
+          "type": "object",
+          "description": "Keyword used to navigate and search Reddit"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_posts",
+          "type": "array",
+          "description": "Latest Reddit posts extracted for the keyword"
+        }
+      ],
+      "native_evidence": [
+        "BrowserAct: Scrape Keywords"
+      ],
+      "requirement_evidence": [
+        "use a cloud browser automation service to navigate to the target Reddit pages and extract the latest posts without getting blocked"
+      ],
+      "rationale": "External scraping action performed by the declared cloud browser automation service; no open-text understanding involved."
+    },
+    {
+      "node_id": "n6",
+      "label": "Clean scraped data and combine top 3 keyword posts",
+      "node_type": "code",
+      "operation_family": "cleaning_and_merging",
+      "inputs": [
+        {
+          "name": "keyword_posts",
+          "type": "array",
+          "description": "Raw scraped posts to clean"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_digest",
+          "type": "object",
+          "description": "Top 3 cleaned posts (title, content, source link) merged into a single prompt block with the target label"
+        }
+      ],
+      "native_evidence": [
+        "Clean Keyword Data",
+        "Format Keyword Digest"
+      ],
+      "requirement_evidence": [
+        "clean the scraped data and combine the top 3 posts for the target"
+      ],
+      "rationale": "Deterministic parsing, field normalization, top-3 selection and merging; fully declared rules."
+    },
+    {
+      "node_id": "n7",
+      "label": "Generate keyword executive summary with AI agent",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "keyword_digest",
+          "type": "object",
+          "description": "Merged top 3 posts for this keyword topic"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_report",
+          "type": "string",
+          "description": "Concise executive summary of the top 3 trending posts with source links, noise filtered out"
+        }
+      ],
+      "native_evidence": [
+        "Keyword Analyst",
+        "Google Gemini Chat Model"
+      ],
+      "requirement_evidence": [
+        "use an AI agent to analyze the data and generate an executive summary for each topic, summarizing the top 3 trending posts into a single concise daily report and filtering out noise"
+      ],
+      "rationale": "Open-text analysis and summarization of posts; cannot be replaced by frozen deterministic rules."
+    },
+    {
+      "node_id": "n8",
+      "label": "Append keyword report row to Report sheet",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "keyword_report_row",
+          "type": "object",
+          "description": "Fully formatted report row (Date, Competitor/Keyword, Summary, Link) ready to be appended"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Archive Keywords"
+      ],
+      "requirement_evidence": [
+        "automatically clean, format, and archive the intelligence with source links into Google Sheets, appending the final reports to the Report sheet"
+      ],
+      "rationale": "User-visible completion action for the keyword path: the formatted daily digest row is appended to the Report sheet; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n14",
+      "label": "Format keyword report row",
+      "node_type": "code",
+      "operation_family": "formatting",
+      "inputs": [
+        {
+          "name": "keyword_report",
+          "type": "string",
+          "description": "AI-generated executive summary text placed in the Summary column"
+        },
+        {
+          "name": "keyword_digest",
+          "type": "object",
+          "description": "Provides the Competitor/Keyword label and source links for the row"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_report_row",
+          "type": "object",
+          "description": "Formatted row (Date, Competitor/Keyword, Summary, Link) for the keyword path"
+        }
+      ],
+      "native_evidence": [
+        "Archive Keywords"
+      ],
+      "requirement_evidence": [
+        "automatically clean, format, and archive the intelligence with source links into Google Sheets, appending the final reports to the Report sheet"
+      ],
+      "rationale": "Deterministic formatting of the AI summary into the declared Report sheet row (Date, Competitor/Keyword, Summary, Link), assembling label and source links from the digest; fully declared column layout, no open-text understanding."
+    },
+    {
+      "node_id": "n9",
+      "label": "Iterate competitor targets",
+      "node_type": "code",
+      "operation_family": "iteration",
+      "inputs": [
+        {
+          "name": "competitor_targets",
+          "type": "array",
+          "description": "Competitor target rows to process one at a time"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_competitor_target",
+          "type": "object",
+          "description": "The competitor subreddit target currently being processed"
+        }
+      ],
+      "native_evidence": [
+        "Loop: Competitor List"
+      ],
+      "requirement_evidence": [
+        "For each target, the system shall"
+      ],
+      "rationale": "Per-target iteration over the competitor list; emits one target per pass and terminates when the list is exhausted (bounded by the configured target count, at most 20 iterations per run)."
+    },
+    {
+      "node_id": "n10",
+      "label": "Scrape competitor subreddit via cloud browser automation",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "current_competitor_target",
+          "type": "object",
+          "description": "Competitor subreddit to navigate to"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "competitor_posts",
+          "type": "array",
+          "description": "Latest posts extracted from the competitor subreddit"
+        }
+      ],
+      "native_evidence": [
+        "BrowserAct: Scrape Subreddit"
+      ],
+      "requirement_evidence": [
+        "use a cloud browser automation service to navigate to the target Reddit pages and extract the latest posts without getting blocked"
+      ],
+      "rationale": "External scraping action performed by the declared cloud browser automation service."
+    },
+    {
+      "node_id": "n11",
+      "label": "Clean scraped data and combine top 3 competitor posts",
+      "node_type": "code",
+      "operation_family": "cleaning_and_merging",
+      "inputs": [
+        {
+          "name": "competitor_posts",
+          "type": "array",
+          "description": "Raw scraped posts to clean"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "competitor_digest",
+          "type": "object",
+          "description": "Top 3 cleaned posts (title, content, source link) merged into a single prompt block with the target label"
+        }
+      ],
+      "native_evidence": [
+        "Clean Competitor Data",
+        "Format Competitor Digest"
+      ],
+      "requirement_evidence": [
+        "clean the scraped data and combine the top 3 posts for the target"
+      ],
+      "rationale": "Deterministic parsing, field normalization, top-3 selection and merging; fully declared rules."
+    },
+    {
+      "node_id": "n12",
+      "label": "Generate competitor executive summary with AI agent",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "competitor_digest",
+          "type": "object",
+          "description": "Merged top 3 posts for this competitor"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "competitor_report",
+          "type": "string",
+          "description": "Concise executive summary of the top 3 trending posts with source links, noise filtered out"
+        }
+      ],
+      "native_evidence": [
+        "Competitor Analyst",
+        "Google Gemini Chat Model1"
+      ],
+      "requirement_evidence": [
+        "use an AI agent to analyze the data and generate an executive summary for each topic, summarizing the top 3 trending posts into a single concise daily report and filtering out noise"
+      ],
+      "rationale": "Open-text analysis and summarization of posts; cannot be replaced by frozen deterministic rules."
+    },
+    {
+      "node_id": "n13",
+      "label": "Append competitor report row to Report sheet",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "competitor_report_row",
+          "type": "object",
+          "description": "Fully formatted report row (Date, Competitor/Keyword, Summary, Link) ready to be appended"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Archive Competitors"
+      ],
+      "requirement_evidence": [
+        "automatically clean, format, and archive the intelligence with source links into Google Sheets, appending the final reports to the Report sheet"
+      ],
+      "rationale": "User-visible completion action for the competitor path: the formatted daily digest row is appended to the Report sheet; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n15",
+      "label": "Format competitor report row",
+      "node_type": "code",
+      "operation_family": "formatting",
+      "inputs": [
+        {
+          "name": "competitor_report",
+          "type": "string",
+          "description": "AI-generated executive summary text placed in the Summary column"
+        },
+        {
+          "name": "competitor_digest",
+          "type": "object",
+          "description": "Provides the Competitor/Keyword label and source links for the row"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "competitor_report_row",
+          "type": "object",
+          "description": "Formatted row (Date, Competitor/Keyword, Summary, Link) for the competitor path"
+        }
+      ],
+      "native_evidence": [
+        "Archive Competitors"
+      ],
+      "requirement_evidence": [
+        "automatically clean, format, and archive the intelligence with source links into Google Sheets, appending the final reports to the Report sheet"
+      ],
+      "rationale": "Deterministic formatting of the AI summary into the declared Report sheet row (Date, Competitor/Keyword, Summary, Link), assembling label and source links from the digest; fully declared column layout, no open-text understanding."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "The daily run starts by reading the configuration."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Targets are routed after being read."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "target row carries a topic keyword (Keyword path)",
+      "rationale": "Keyword-type targets take the keyword branch."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n9",
+      "variable": null,
+      "condition": "target row carries a competitor subreddit (Competitor path)",
+      "rationale": "Competitor-type targets take the competitor branch."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "for each keyword target; iteration ends when the list is exhausted (at most 20 iterations)",
+      "rationale": "Each emitted keyword target is scraped."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scraped posts are cleaned and merged."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "The merged digest is summarized."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "The generated report is formatted into a row."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n14",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "The formatted row is archived."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": "for each competitor target; iteration ends when the list is exhausted (at most 20 iterations)",
+      "rationale": "Each emitted competitor target is scraped."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scraped posts are cleaned and merged."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "The merged digest is summarized."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n12",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "The generated report is formatted into a row."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n15",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "The formatted row is archived."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The configuration read is started by the schedule signal."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "targets",
+      "condition": null,
+      "rationale": "Routing consumes the read target rows."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "keyword_targets",
+      "condition": null,
+      "rationale": "The keyword loop iterates over the routed keyword rows."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n9",
+      "variable": "competitor_targets",
+      "condition": null,
+      "rationale": "The competitor loop iterates over the routed competitor rows."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "current_keyword_target",
+      "condition": null,
+      "rationale": "Scraping uses the current keyword."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "keyword_posts",
+      "condition": null,
+      "rationale": "Cleaning consumes the scraped posts."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "keyword_digest",
+      "condition": null,
+      "rationale": "The AI agent summarizes the merged digest."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n14",
+      "variable": "keyword_report",
+      "condition": null,
+      "rationale": "The formatter consumes the AI-generated report text."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n14",
+      "variable": "keyword_digest",
+      "condition": null,
+      "rationale": "The formatted row takes the Competitor/Keyword label and source links from the digest."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n14",
+      "target": "n8",
+      "variable": "keyword_report_row",
+      "condition": null,
+      "rationale": "The report row is archived in the Report sheet."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n9",
+      "target": "n10",
+      "variable": "current_competitor_target",
+      "condition": null,
+      "rationale": "Scraping targets the current competitor subreddit."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n10",
+      "target": "n11",
+      "variable": "competitor_posts",
+      "condition": null,
+      "rationale": "Cleaning consumes the scraped posts."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n11",
+      "target": "n12",
+      "variable": "competitor_digest",
+      "condition": null,
+      "rationale": "The AI agent summarizes the merged digest."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n12",
+      "target": "n15",
+      "variable": "competitor_report",
+      "condition": null,
+      "rationale": "The formatter consumes the AI-generated report text."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n11",
+      "target": "n15",
+      "variable": "competitor_digest",
+      "condition": null,
+      "rationale": "The formatted row takes the Competitor/Keyword label and source links from the digest."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n15",
+      "target": "n13",
+      "variable": "competitor_report_row",
+      "condition": null,
+      "rationale": "The report row is archived in the Report sheet."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8",
+    "n13"
+  ],
+  "confidence": 0.88,
+  "notes": "The frozen requirement declares a single Report sheet with columns Date, Competitor/Keyword, Summary, Link; the two native archive tabs (Report / Report02) were therefore collapsed into one declared outcome per path rather than treated as separate outcomes. Iteration nodes (n4, n9) model the per-target processing declared by 'For each target'; each terminates when its target list is exhausted and is bounded to at most 20 iterations per run. The two native If nodes carry identical field-presence conditions; they are modelled as one routing node per the requirement's type-based routing declaration. Requirement step (5) declares 'clean, format, and archive intelligence with source links': the deterministic row formatting is therefore modelled as separate code nodes (n14 keyword / n15 competitor) that consume the AI-generated report text (semantic -> code DFG edge), while the native Archive nodes provide evidence for both the formatting and the final append; the terminal nodes (n8, n13) keep the single archive contract."
+}

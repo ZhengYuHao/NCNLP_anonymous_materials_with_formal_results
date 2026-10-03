@@ -1,0 +1,47 @@
+{
+  "schema_version": "n8n-s1-source-admission-freeze-v1",
+  "generated_at": "2026-08-29T21:40:32+08:00",
+  "status": "PASS",
+  "selection_reads_system_outputs": false,
+  "total_shortlist": 150,
+  "inherited_decisions": 12,
+  "new_exact_agreements": 111,
+  "new_third_party_adjudications": 27,
+  "admitted": 148,
+  "excluded": 2,
+  "formal_source_target": 120,
+  "formal_source_selected": 120,
+  "forced_train_dev_pilots": 11,
+  "formal_source_nonpilot": 109,
+  "coverage": {
+    "domains": {
+      "customer_service": 31,
+      "finance": 2,
+      "general": 62,
+      "governance": 19,
+      "industrial": 1,
+      "medical": 5
+    },
+    "native_size_bands": {
+      "native_11_20": 59,
+      "native_1_10": 23,
+      "native_21_40": 29,
+      "native_41_plus": 9
+    },
+    "native_topologies": {
+      "branch_join": 13,
+      "iteration_or_cycle": 41,
+      "multi_branch": 8,
+      "multi_branch_join": 32,
+      "sequence_or_parallel_sequences": 10,
+      "single_branch": 16
+    },
+    "explicit_code": 117,
+    "control_operation": 106,
+    "cross_type_directions": {
+      "bidirectional": 103,
+      "deterministic_to_semantic": 8,
+      "semantic_to_deterministic": 9
+    }
+  }
+}

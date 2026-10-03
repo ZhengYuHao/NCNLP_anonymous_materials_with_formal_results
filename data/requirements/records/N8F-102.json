@@ -1,0 +1,77 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-102",
+  "source_id": "n8n:6737",
+  "workflow_sha256": "ba995869aa4e3411ad6ca40c31e166fd65f47bef6c70a1eb3b8781f6a04da16d",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "b65f08b8d383ead29fe1930b7658208e56a8c5385c8feaa216bf7bacd6f16766",
+  "requirement": {
+    "requirement_text": "每日或手动触发。所有输入（语录、语气、情绪、风格、音色标识）存放在 Google Sheets 中，每次运行只处理一条尚未发布的语录行，以避免重复发布或遗漏。处理过程为：将这条语录转换为一段 8 秒的竖版（1080x1920）电影感短视频；由语言模型撰写分镜脚本，并生成适用于 TikTok、Instagram Reels 与 YouTube Shorts 的文案；为语录生成配音，并生成配乐与视觉画面；渲染出视频后，将配音、视频与文字合成在一起，并对成片做画质提升；随后通过发布服务将视频直接发布到 TikTok、Instagram Reels 与 YouTube Shorts；最后在 Google Sheets 中将该条语录标记为已发布。",
+    "source_spans": [
+      {
+        "start": 84,
+        "end": 360,
+        "text": "Transform a single quote into a fully-rendered cinematic short video — with voice-over, visuals, and music — then publish it directly to TikTok, Instagram Reels, and YouTube Shorts.  \nThis isn’t just automation. It’s a full-stack AI video content engine built entirely in n8n."
+      },
+      {
+        "start": 379,
+        "end": 681,
+        "text": "Converts any quote into an 8-second cinematic video (vertical, 1080x1920)\nAdds AI-generated voice-over, music, and visuals\nGenerates viral-ready captions for TikTok, Reels, and Shorts\nPublishes automatically via Postiz API\nPulls content from Google Sheets — updates status after posting (no duplicates)"
+      },
+      {
+        "start": 699,
+        "end": 1070,
+        "text": "Triggers daily or manually\nFetches one unposted quote row from Google Sheets\nUses Google Gemini + GPT to write scene + captions\nConverts quote to voice with ElevenLabs\nRenders video via Google VEO3\nMerges audio + video + text in Creatomate\nUpscales the final video via Cloudinary\nPublishes directly to all 3 platforms via Postiz\nMarks the quote as “Posted” in the sheet ✅"
+      },
+      {
+        "start": 1101,
+        "end": 1255,
+        "text": "All input (quote, tone, mood, style, voice ID) is stored in a Google Sheet.  \nThe workflow processes one new row per run — no duplicates, no missed posts."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "存放在 Google Sheets 中的语录行（语录、语气、情绪、风格、音色标识）",
+        "每日触发或手动触发"
+      ],
+      "conditions": [
+        "每次运行只处理一条尚未发布的语录行，避免重复与遗漏"
+      ],
+      "allowed_actions": [
+        "将语录渲染为 8 秒的竖版（1080x1920）视频",
+        "使用语言模型撰写分镜脚本与三平台的发布文案",
+        "为语录生成配音，并生成配乐与视觉画面",
+        "将配音、视频与文字合成为成片",
+        "对成片做画质提升",
+        "将视频发布到 TikTok、Instagram Reels 与 YouTube Shorts",
+        "在 Google Sheets 中将该语录标记为已发布"
+      ],
+      "visible_outcomes": [
+        "TikTok、Instagram Reels 与 YouTube Shorts 上发布的竖版短视频",
+        "Google Sheets 中该条语录被标记为已发布"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-102.packet.json",
+    "packet_sha256": "f8e34eca6e3b9d72a2b88ca0a7625700a3ccfe3ccf059a000063b723ec338ef5",
+    "public_description_sha256": "d7025bcd15425814982a1b860b7977450f1e3e6fae37cfe9584ab1212454466b"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-102.response.json",
+    "verification_response_sha256": "78cace62d29e7575fe5d4a4008bc68720e76b649b8b26e7a7dcda2983417a27c",
+    "decision": "accept"
+  },
+  "formal_index": 113
+}

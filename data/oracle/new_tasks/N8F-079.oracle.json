@@ -1,0 +1,464 @@
+{
+  "task_id": "N8F-079",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "cd0ef16acce8695b3ff74e922e5b70a4dca4654e7de8644113918afe00c41d21",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-BOOK-FULL",
+      "purpose": "正常用例：Telegram 消息包含完整预约信息（标题、开始与结束时间、地点、备注）",
+      "input_data": {
+        "chat_id": "chat-appt-1001",
+        "message_text": "Book a meeting with Alice tomorrow 10:00-11:00 at Room 3, discuss budget"
+      }
+    },
+    {
+      "fixture_id": "F-TG-BOOK-NO-END",
+      "purpose": "边界用例：解析结果缺少结束时间，验证默认时长 60 分钟",
+      "input_data": {
+        "chat_id": "chat-appt-1002",
+        "message_text": "Book a sync call tomorrow at 14:00"
+      }
+    },
+    {
+      "fixture_id": "F-TG-BOOK-AMBIGUOUS",
+      "purpose": "边界用例：消息中缺少明确日期/时间，验证通过 Telegram 追问澄清且不创建日程",
+      "input_data": {
+        "chat_id": "chat-appt-1003",
+        "message_text": "Book a meeting with Bob sometime"
+      }
+    },
+    {
+      "fixture_id": "F-CAL-REMINDER-SEND",
+      "purpose": "正常用例：提醒流程，未来 25 小时内存在距开始约 1 小时的事件，且 ReminderLog 中无记录",
+      "input_data": {
+        "calendar_events": [
+          {"event_id": "evt-rem-1", "title": "Standup", "start": "2026-09-02T11:00:00Z"},
+          {"event_id": "evt-rem-2", "title": "Client Call", "start": "2026-09-02T21:00:00Z"}
+        ],
+        "reminder_log": []
+      }
+    },
+    {
+      "fixture_id": "F-CAL-REMINDER-DUP",
+      "purpose": "边界用例：提醒流程，事件在 ReminderLog 中已有记录，验证不重复发送",
+      "input_data": {
+        "calendar_events": [
+          {"event_id": "evt-rem-1", "title": "Standup", "start": "2026-09-02T11:00:00Z"}
+        ],
+        "reminder_log": [
+          {"event_id": "evt-rem-1", "window": "1h", "sent_at": "2026-09-02T09:00:00Z"}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GEMINI-PARSE-FULL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "parse_appointment",
+      "request_contract": {
+        "message_text": "Book a meeting with Alice tomorrow 10:00-11:00 at Room 3, discuss budget"
+      },
+      "response_contract": {
+        "appointment": {
+          "title": "Meeting with Alice",
+          "start": "2026-09-03T10:00:00Z",
+          "end": "2026-09-03T11:00:00Z",
+          "location": "Room 3",
+          "notes": "discuss budget"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GEMINI-PARSE-NO-END",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "parse_appointment",
+      "request_contract": {
+        "message_text": "Book a sync call tomorrow at 14:00"
+      },
+      "response_contract": {
+        "appointment": {
+          "title": "Sync call",
+          "start": "2026-09-03T14:00:00Z",
+          "end": null,
+          "location": null,
+          "notes": null
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GEMINI-PARSE-AMBIGUOUS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "parse_appointment",
+      "request_contract": {
+        "message_text": "Book a meeting with Bob sometime"
+      },
+      "response_contract": {
+        "appointment": {
+          "title": "Meeting with Bob",
+          "start": null,
+          "end": null,
+          "location": null,
+          "notes": null,
+          "missing": ["start_time"]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CAL-CREATE-EVENT",
+      "dependency_type": "n8n-nodes-base.googleCalendar",
+      "operation": "create_event",
+      "request_contract": {
+        "summary": "Meeting with Alice",
+        "start": "2026-09-03T10:00:00Z",
+        "end": "2026-09-03T11:00:00Z",
+        "location": "Room 3",
+        "description": "discuss budget"
+      },
+      "response_contract": {
+        "event_id": "evt-appt-1001",
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CAL-CREATE-DEFAULT-END",
+      "dependency_type": "n8n-nodes-base.googleCalendar",
+      "operation": "create_event",
+      "request_contract": {
+        "summary": "Sync call",
+        "start": "2026-09-03T14:00:00Z",
+        "end": "2026-09-03T15:00:00Z",
+        "location": null,
+        "description": null
+      },
+      "response_contract": {
+        "event_id": "evt-appt-1002",
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-APPOINTMENT",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "Appointments"
+      },
+      "response_contract": {
+        "appended_rows": 1,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-CONFIRM",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "chat-appt-1001"
+      },
+      "response_contract": {
+        "message_id": 401,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-CONFIRM-NO-END",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "chat-appt-1002"
+      },
+      "response_contract": {
+        "message_id": 402,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-ASK-CLARIFY",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "chat-appt-1003"
+      },
+      "response_contract": {
+        "message_id": 403,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CAL-LIST-REMINDER",
+      "dependency_type": "n8n-nodes-base.googleCalendar",
+      "operation": "list_upcoming_events",
+      "request_contract": {
+        "time_min": "2026-09-02T10:00:00Z",
+        "time_max": "2026-09-03T11:00:00Z"
+      },
+      "response_contract": {
+        "events": [
+          {"event_id": "evt-rem-1", "title": "Standup", "start": "2026-09-02T11:00:00Z"},
+          {"event_id": "evt-rem-2", "title": "Client Call", "start": "2026-09-02T21:00:00Z"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-REMINDER-CHECK-EMPTY",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_reminder_log",
+      "request_contract": {
+        "sheet": "ReminderLog",
+        "event_id": "evt-rem-1"
+      },
+      "response_contract": {
+        "sent": false,
+        "records": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-REMINDER-SEND",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "chat-owner"
+      },
+      "response_contract": {
+        "message_id": 404,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-REMINDER-LOG-WRITE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "ReminderLog",
+        "row": {"event_id": "evt-rem-1", "window": "1h", "sent_at": "2026-09-02T10:00:00Z"}
+      },
+      "response_contract": {
+        "appended_rows": 1,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-REMINDER-CHECK-DUP",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_reminder_log",
+      "request_contract": {
+        "sheet": "ReminderLog",
+        "event_id": "evt-rem-1"
+      },
+      "response_contract": {
+        "sent": true,
+        "records": [{"event_id": "evt-rem-1", "window": "1h", "sent_at": "2026-09-02T09:00:00Z"}]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-BOOK-FULL-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-BOOK-FULL"],
+      "mock_ids": ["M-GEMINI-PARSE-FULL", "M-CAL-CREATE-EVENT", "M-SHEETS-APPEND-APPOINTMENT", "M-TG-CONFIRM"],
+      "assertions": [
+        {
+          "assertion_id": "A-079-1",
+          "target": "exec_log.llm.parsed.title",
+          "operator": "equals",
+          "expected": "Meeting with Alice",
+          "rationale": "语言模型必须把消息解析为结构化的预约信息，标题必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-079-2",
+          "target": "exec_log.llm.parsed.start",
+          "operator": "equals",
+          "expected": "2026-09-03T10:00:00Z",
+          "rationale": "解析结果必须包含开始时间"
+        },
+        {
+          "assertion_id": "A-079-3",
+          "target": "exec_log.googleCalendar.create.event_id",
+          "operator": "equals",
+          "expected": "evt-appt-1001",
+          "rationale": "必备信息齐备后必须在 Google Calendar 中创建日程事件"
+        },
+        {
+          "assertion_id": "A-079-4",
+          "target": "exec_log.googleSheets.append.row.event_id",
+          "operator": "equals",
+          "expected": "evt-appt-1001",
+          "rationale": "预约记录必须包含事件标识"
+        },
+        {
+          "assertion_id": "A-079-5",
+          "target": "exec_log.googleSheets.append.row.chat_id",
+          "operator": "equals",
+          "expected": "chat-appt-1001",
+          "rationale": "预约记录必须包含会话标识"
+        },
+        {
+          "assertion_id": "A-079-6",
+          "target": "exec_log.telegram.confirm.chat_id",
+          "operator": "equals",
+          "expected": "chat-appt-1001",
+          "rationale": "必须通过 Telegram 向用户发送确认消息，且发送到原会话"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOOK-DEFAULT-END-60",
+      "kind": "boundary",
+      "fixture_ids": ["F-TG-BOOK-NO-END"],
+      "mock_ids": ["M-GEMINI-PARSE-NO-END", "M-CAL-CREATE-DEFAULT-END", "M-SHEETS-APPEND-APPOINTMENT", "M-TG-CONFIRM-NO-END"],
+      "assertions": [
+        {
+          "assertion_id": "A-079-7",
+          "target": "exec_log.googleCalendar.create.start",
+          "operator": "equals",
+          "expected": "2026-09-03T14:00:00Z",
+          "rationale": "解析结果缺结束时间时必须保留原开始时间"
+        },
+        {
+          "assertion_id": "A-079-8",
+          "target": "exec_log.googleCalendar.create.end",
+          "operator": "equals",
+          "expected": "2026-09-03T15:00:00Z",
+          "rationale": "缺少结束时间时默认时长为 60 分钟，结束时间必须为开始时间加 60 分钟"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOOK-AMBIGUOUS-ASK",
+      "kind": "boundary",
+      "fixture_ids": ["F-TG-BOOK-AMBIGUOUS"],
+      "mock_ids": ["M-GEMINI-PARSE-AMBIGUOUS", "M-TG-ASK-CLARIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-079-9",
+          "target": "exec_log.telegram.clarify.chat_id",
+          "operator": "equals",
+          "expected": "chat-appt-1003",
+          "rationale": "日期或时间缺失时必须通过 Telegram 向用户追问澄清"
+        },
+        {
+          "assertion_id": "A-079-10",
+          "target": "exec_log.googleCalendar.create.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "信息不齐备时不得创建日程事件"
+        },
+        {
+          "assertion_id": "A-079-11",
+          "target": "exec_log.googleSheets.append.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "信息不齐备时不得追加预约记录"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-SEND-ONCE",
+      "kind": "positive",
+      "fixture_ids": ["F-CAL-REMINDER-SEND"],
+      "mock_ids": ["M-CAL-LIST-REMINDER", "M-SHEETS-REMINDER-CHECK-EMPTY", "M-TG-REMINDER-SEND", "M-SHEETS-REMINDER-LOG-WRITE"],
+      "assertions": [
+        {
+          "assertion_id": "A-079-12",
+          "target": "exec_log.googleCalendar.list.events",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "必须检索未来 25 小时内即将开始的事件，固定模拟返回 2 个事件"
+        },
+        {
+          "assertion_id": "A-079-13",
+          "target": "exec_log.reminder_candidates",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "两个事件分别距开始约 1 小时与 24 小时，均应进入提醒窗口筛选（固定模拟中约 1 小时与约 24 小时各一个）"
+        },
+        {
+          "assertion_id": "A-079-14",
+          "target": "exec_log.googleSheets.reminder_check.sent",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "必须先查询 ReminderLog 确认该事件在提醒窗口是否已发送过提醒，固定模拟中未发送"
+        },
+        {
+          "assertion_id": "A-079-15",
+          "target": "exec_log.telegram.reminder.send.count",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "两个未发送过提醒的事件必须各发送一次 Telegram 提醒"
+        },
+        {
+          "assertion_id": "A-079-16",
+          "target": "exec_log.googleSheets.reminder_log_written",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每次发送提醒后必须登记该次提醒以避免重复发送"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-DUPLICATE-SKIP",
+      "kind": "boundary",
+      "fixture_ids": ["F-CAL-REMINDER-DUP"],
+      "mock_ids": ["M-CAL-LIST-REMINDER", "M-SHEETS-REMINDER-CHECK-DUP", "M-TG-REMINDER-SEND", "M-SHEETS-REMINDER-LOG-WRITE"],
+      "assertions": [
+        {
+          "assertion_id": "A-079-17",
+          "target": "exec_log.googleSheets.reminder_check.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "ReminderLog 中已有该事件在该提醒窗口的发送记录"
+        },
+        {
+          "assertion_id": "A-079-18",
+          "target": "exec_log.telegram.reminder.send.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "已发送过提醒的事件不得再次发送提醒"
+        },
+        {
+          "assertion_id": "A-079-19",
+          "target": "exec_log.googleSheets.reminder_log_written",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "未发送提醒时不得重复登记"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖预约受理与提醒两条主流程：预约（完整信息创建日程→Sheets 追加含事件标识与会话标识→Telegram 确认；缺结束时间默认 60 分钟；日期时间含糊时追问澄清且不创建）；提醒（检索 25 小时内事件→筛选 24h/1h 窗口→查 ReminderLog→发送并登记；已有记录则跳过）。所有外部依赖（Gemini、Google Calendar、Google Sheets、Telegram）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、相等、数量与调用次数检查。"
+}

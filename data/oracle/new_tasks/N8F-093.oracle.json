@@ -1,0 +1,269 @@
+{
+  "task_id": "N8F-093",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "731c09cfb7871925b1187b84f09c1bfd427085b56351894ead46d50e5e3314f6",
+  "fixtures": [
+    {
+      "fixture_id": "F-POSTA-MULTI-PLATFORM",
+      "purpose": "正常用例：手动执行后从 RSS 获取最新视频，账号列表包含启用与禁用账号且存在同平台重复，应只保留启用并按平台去重，为每个目标平台生成定制文案并创建草稿帖",
+      "input_data": {
+        "channel_id": "UC_promotion",
+        "accounts": [
+          {
+            "id": "acc-x-1",
+            "platform": "twitter",
+            "active": true
+          },
+          {
+            "id": "acc-x-2",
+            "platform": "twitter",
+            "active": true
+          },
+          {
+            "id": "acc-li-1",
+            "platform": "linkedin",
+            "active": true
+          },
+          {
+            "id": "acc-ig-disabled",
+            "platform": "instagram",
+            "active": false
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-POSTA-ALL-DISABLED",
+      "purpose": "边界用例：账号列表中没有任何启用账号时，应不生成文案也不创建任何草稿帖",
+      "input_data": {
+        "channel_id": "UC_promotion",
+        "accounts": [
+          {
+            "id": "acc-a",
+            "platform": "twitter",
+            "active": false
+          },
+          {
+            "id": "acc-b",
+            "platform": "facebook",
+            "active": false
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-POSTA-RSS-FETCH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_latest_video",
+      "request_contract": {
+        "channel_id": "UC_promotion"
+      },
+      "response_contract": {
+        "video": {
+          "id": "video_promo_001",
+          "title": "Top 10 Coding Tips",
+          "description": "Practical coding advice for beginners.",
+          "thumbnail_url": "https://i.ytimg.com/vi/video_promo_001/maxresdefault.jpg",
+          "link": "https://www.youtube.com/watch?v=video_promo_001"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-UPLOAD-MEDIA",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "upload_media",
+      "request_contract": {
+        "thumbnail_url": "https://i.ytimg.com/vi/video_promo_001/maxresdefault.jpg"
+      },
+      "response_contract": {
+        "media_id": "media-7788",
+        "reusable": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-LIST-ACCOUNTS",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "list_social_accounts",
+      "request_contract": {
+        "include_inactive": false
+      },
+      "response_contract": {
+        "accounts": [
+          {
+            "id": "acc-x-1",
+            "platform": "twitter",
+            "active": true
+          },
+          {
+            "id": "acc-li-1",
+            "platform": "linkedin",
+            "active": true
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-LLM-CAPTION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "operation": "generate_platform_caption",
+      "request_contract": {
+        "platform": "twitter",
+        "video_title": "Top 10 Coding Tips"
+      },
+      "response_contract": {
+        "caption": "Coding tips that actually help 🚀 Watch: https://www.youtube.com/watch?v=video_promo_001",
+        "platform": "twitter"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTA-CREATE-DRAFT",
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "create_draft_post",
+      "request_contract": {
+        "account_id": "acc-x-1",
+        "platform": "twitter",
+        "media_id": "media-7788",
+        "caption_platform": "twitter",
+        "video_link": "https://www.youtube.com/watch?v=video_promo_001"
+      },
+      "response_contract": {
+        "draft_id": "draft-6001",
+        "status": "draft"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-MULTI-PLATFORM-DRAFTS",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-POSTA-MULTI-PLATFORM"
+      ],
+      "mock_ids": [
+        "M-POSTA-RSS-FETCH",
+        "M-POSTA-UPLOAD-MEDIA",
+        "M-POSTA-LIST-ACCOUNTS",
+        "M-POSTA-LLM-CAPTION",
+        "M-POSTA-CREATE-DRAFT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PA-1",
+          "target": "output.selected_accounts.length",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "账号列表必须只保留启用账号，并按平台去重后每个平台只保留一个账号"
+        },
+        {
+          "assertion_id": "A-PA-2",
+          "target": "exec_log.httpRequest.fetch_latest_video.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "手动执行时必须从频道 RSS 订阅源获取最新视频"
+        },
+        {
+          "assertion_id": "A-PA-3",
+          "target": "output.latest_video.title",
+          "operator": "equals",
+          "expected": "Top 10 Coding Tips",
+          "rationale": "必须解析出最新视频的标题"
+        },
+        {
+          "assertion_id": "A-PA-4",
+          "target": "exec_log.posta.upload_media.request.thumbnail_url",
+          "operator": "equals",
+          "expected": "https://i.ytimg.com/vi/video_promo_001/maxresdefault.jpg",
+          "rationale": "必须下载视频缩略图并上传至 Posta 生成可复用媒体素材"
+        },
+        {
+          "assertion_id": "A-PA-5",
+          "target": "exec_log.lmChatDeepSeek.generate_platform_caption.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "必须为每个去重后的目标平台分别生成一条定制化推广文案"
+        },
+        {
+          "assertion_id": "A-PA-6",
+          "target": "exec_log.posta.create_draft_post.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "必须为每个选中账号在 Posta 中创建一篇草稿帖"
+        },
+        {
+          "assertion_id": "A-PA-7",
+          "target": "exec_log.posta.create_draft_post.request.media_id",
+          "operator": "equals",
+          "expected": "media-7788",
+          "rationale": "草稿帖必须附上已上传的缩略图媒体素材"
+        },
+        {
+          "assertion_id": "A-PA-8",
+          "target": "exec_log.posta.create_draft_post.request.caption_platform",
+          "operator": "equals",
+          "expected": "twitter",
+          "rationale": "草稿帖必须携带对应平台的专属文案（文案已标注所属平台并与账号合并）"
+        },
+        {
+          "assertion_id": "A-PA-9",
+          "target": "exec_log.posta.create_draft_post.request.video_link",
+          "operator": "equals",
+          "expected": "https://www.youtube.com/watch?v=video_promo_001",
+          "rationale": "草稿帖必须包含最新视频的链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ALL-DISABLED-NOOP",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-POSTA-ALL-DISABLED"
+      ],
+      "mock_ids": [
+        "M-POSTA-RSS-FETCH",
+        "M-POSTA-LIST-ACCOUNTS"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-AD-1",
+          "target": "output.selected_accounts.length",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "没有启用账号时选择结果必须为空"
+        },
+        {
+          "assertion_id": "A-AD-2",
+          "target": "exec_log.lmChatDeepSeek.generate_platform_caption.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "没有目标平台时不得调用语言模型生成文案"
+        },
+        {
+          "assertion_id": "A-AD-3",
+          "target": "exec_log.posta.create_draft_post.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "没有启用账号时不得创建任何草稿帖"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 RSS 获取最新视频并解析标题/描述/缩略图/链接、缩略图上传 Posta 生成媒体素材、账号启用状态过滤与平台去重、按平台定制文案生成与平台标注、按账号创建草稿帖。外部依赖（YouTube RSS、Posta 上传/账号/草稿、DeepSeek LLM）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、输出长度、请求字段相等与存在性检查。"
+}

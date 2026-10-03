@@ -1,0 +1,183 @@
+{
+  "task_id": "N8F-061",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "f585622a5997b539bbdf227a5ec3642dd27d32df96ef0d774e3e3c23ab047e2b",
+  "fixtures": [
+    {
+      "fixture_id": "F-LI-TOPIC",
+      "purpose": "正常用例：业务用户通过网页表单提交主题，应生成帖子正文与图像描述、生成配图、转换格式并发布到 LinkedIn",
+      "input_data": {
+        "topic": "How AI is transforming customer support",
+        "submitted_by": "marketing@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-LI-TOPIC-MARKDOWN",
+      "purpose": "边界用例：主题生成的正文包含 Markdown 标记（标题、加粗、列表），发布前必须转换为 LinkedIn 友好文本格式",
+      "input_data": {
+        "topic": "5 remote work habits",
+        "llm_content_with_markdown": "## Remote Work\n**Habit 1**: Block your calendar\n- Tip A\n- Tip B"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LI-LLM-GEN",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "generate_post_and_image_prompt",
+      "request_contract": {
+        "topic": "How AI is transforming customer support"
+      },
+      "response_contract": {
+        "post_content": "AI is transforming customer support. Here is how teams are adapting...",
+        "image_prompt": "A modern support team using AI dashboards, professional style"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LI-IMG-GEN",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "generate_image",
+      "request_contract": {
+        "prompt": "A modern support team using AI dashboards, professional style"
+      },
+      "response_contract": {
+        "image_url": "https://mock-cdn.example.com/imagen/li-post-0001.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LI-PUBLISH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "publish_linkedin_post",
+      "request_contract": {
+        "text_nonempty": true,
+        "image_attached": true,
+        "text": "AI is transforming customer support. Here is how teams are adapting...",
+        "image_url": "https://mock-cdn.example.com/imagen/li-post-0001.png"
+      },
+      "response_contract": {
+        "post_id": "li-post-9001",
+        "status": "published"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TOPIC-PUBLISHED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-LI-TOPIC"
+      ],
+      "mock_ids": [
+        "M-LI-LLM-GEN",
+        "M-LI-IMG-GEN",
+        "M-LI-PUBLISH"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-LI-1",
+          "target": "exec_log.lmChatGoogleGemini.generate_post_and_image_prompt.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "主题必须交给语言模型生成帖子正文与图像描述"
+        },
+        {
+          "assertion_id": "A-LI-2",
+          "target": "exec_log.lmChatGoogleGemini.generate_post_and_image_prompt.request.topic",
+          "operator": "equals",
+          "expected": "How AI is transforming customer support",
+          "rationale": "语言模型输入必须为表单提交的原始主题"
+        },
+        {
+          "assertion_id": "A-LI-3",
+          "target": "output.normalized.post_content",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "语言模型输出必须经过清洗与规范化处理"
+        },
+        {
+          "assertion_id": "A-LI-4",
+          "target": "exec_log.httpRequest.generate_image.request.prompt",
+          "operator": "equals",
+          "expected": "A modern support team using AI dashboards, professional style",
+          "rationale": "图像生成必须使用语言模型生成的图像描述作为提示词"
+        },
+        {
+          "assertion_id": "A-LI-5",
+          "target": "exec_log.httpRequest.generate_image.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图像生成服务必须被调用一次以生成配图"
+        },
+        {
+          "assertion_id": "A-LI-6",
+          "target": "exec_log.httpRequest.publish_linkedin_post.request.image_url",
+          "operator": "equals",
+          "expected": "https://mock-cdn.example.com/imagen/li-post-0001.png",
+          "rationale": "发布请求必须携带图像生成服务返回的配图地址"
+        },
+        {
+          "assertion_id": "A-LI-7",
+          "target": "exec_log.httpRequest.publish_linkedin_post.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "正文与配图就绪后必须发布到 LinkedIn 信息流"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MARKDOWN-CONVERTED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-LI-TOPIC-MARKDOWN"
+      ],
+      "mock_ids": [
+        "M-LI-LLM-GEN",
+        "M-LI-IMG-GEN",
+        "M-LI-PUBLISH"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-MD-1",
+          "target": "output.linkedin_text",
+          "operator": "matches",
+          "expected": "^(?!.*\\#\\#)[\\s\\S]*$",
+          "rationale": "Markdown 标题标记必须被转换为 LinkedIn 友好格式，不得原样保留"
+        },
+        {
+          "assertion_id": "A-MD-2",
+          "target": "output.linkedin_text",
+          "operator": "matches",
+          "expected": "^(?!.*\\*\\*)[\\s\\S]*$",
+          "rationale": "Markdown 加粗标记必须被去除"
+        },
+        {
+          "assertion_id": "A-MD-3",
+          "target": "output.linkedin_text",
+          "operator": "contains",
+          "expected": "Block your calendar",
+          "rationale": "转换后正文内容必须完整保留"
+        },
+        {
+          "assertion_id": "A-MD-4",
+          "target": "exec_log.httpRequest.publish_linkedin_post.request.text",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "发布到 LinkedIn 的正文必须存在且来自转换后的 LinkedIn 友好文本"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖主题→LLM 生成正文与图像描述→输出清洗规范化→图像生成→Markdown 转 LinkedIn 格式→发布到信息流的完整链路。外部依赖（Gemini LLM、Imagen 图像生成、LinkedIn 发布）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、请求字段相等、输出字段存在性、包含/不包含检查与跨字段引用相等。"
+}

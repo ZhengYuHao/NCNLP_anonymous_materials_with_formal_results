@@ -1,0 +1,87 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-052",
+  "source_id": "n8n:9885",
+  "workflow_sha256": "1be83596367c9d636155046ea6bcaea961d2d374fd4737ec23cdaeb031241688",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4fa036ae4c8b6d0335c8e3fadd9130489159cc9d9e4336e6ba0af7a76cd774af",
+  "requirement": {
+    "requirement_text": "系统自动采集 Instagram 达人线索并沉淀为线索库。\n\n1）设定定向参数：目标平台（Instagram）、兴趣领域（例如“beauty & hair”）与目标国家（例如“USA”）。\n2）由语言模型据此自动生成优化的 Google 搜索查询，用于查找所选领域与地区内的相关 Instagram 主页。\n3）从 Google 抓取搜索结果，收集符合搜索条件的大量 Instagram 主页链接。\n4）抓取这些 Instagram 主页的详细资料，包括用户名、粉丝数与个人简介（联系方式通常出现在简介中）。\n5）使用语言模型从主页简介中提取邮箱地址，即使邮箱被隐藏或采用非常规写法也能识别。\n6）将线索存入数据库：新线索自动新增，已有线索则按用户名、粉丝数、邮箱、领域等字段更新。",
+    "source_spans": [
+      {
+        "start": 610,
+        "end": 784,
+        "text": "Set your targeting parameters using the Edit Fields node. You can specify your platform (Instagram), field of interest such as “beauty & hair,” and target country like “USA.”"
+      },
+      {
+        "start": 786,
+        "end": 990,
+        "text": "Generate intelligent search queries with an AI Agent powered by GPT-4o-mini. It automatically creates optimized Google search queries to find relevant Instagram profiles in your chosen niche and location."
+      },
+      {
+        "start": 992,
+        "end": 1139,
+        "text": "Extract results from Google using Apify’s Google Search Scraper, which collects hundreds of Instagram profile URLs that match your search criteria."
+      },
+      {
+        "start": 1141,
+        "end": 1313,
+        "text": "Fetch detailed Instagram profile data using Apify’s Instagram Scraper. This includes usernames, follower counts, and profile bios where contact information usually appears."
+      },
+      {
+        "start": 1315,
+        "end": 1502,
+        "text": "Use AI to extract emails from the profile biographies with the Information Extractor node powered by GPT-3.5-turbo. It identifies emails even when they are hidden or creatively formatted."
+      },
+      {
+        "start": 1504,
+        "end": 1678,
+        "text": "Store verified leads in a PostgreSQL database. The workflow automatically adds new leads or updates existing ones with fields like username, follower count, email, and niche."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "定向参数：目标平台、兴趣领域、目标国家",
+        "Google 搜索结果中匹配的 Instagram 主页链接",
+        "Instagram 主页详细资料（用户名、粉丝数、个人简介）"
+      ],
+      "conditions": [
+        "搜索查询由语言模型依据所选领域与地区生成",
+        "仅收集符合搜索条件的 Instagram 主页",
+        "新线索新增，已有线索按字段更新"
+      ],
+      "allowed_actions": [
+        "生成搜索查询",
+        "抓取 Google 搜索结果",
+        "抓取 Instagram 主页详细资料",
+        "从主页简介中提取邮箱地址",
+        "将线索写入数据库"
+      ],
+      "visible_outcomes": [
+        "数据库中新增或更新的线索记录，字段含用户名、粉丝数、邮箱与领域"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-052.packet.json",
+    "packet_sha256": "35417b7a054fa83b8e651f812e71e132024b4784e2407d084505b85b0f6187f8",
+    "public_description_sha256": "40dd7f97881ccaa3ec6539c7ed15f5ad19ec536c280689eeae052d70d958c404"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-052.response.json",
+    "verification_response_sha256": "d10346ce463f0781901f499791ca18335f0284bbee37ef86a6cef2deb404f03f",
+    "decision": "accept"
+  },
+  "formal_index": 63
+}

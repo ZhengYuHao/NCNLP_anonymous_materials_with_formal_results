@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-054",
+  "case_id": "C-NO-UPDATES-NO-EMAIL",
+  "kind": "boundary",
+  "input_data": {
+    "docs_list": [
+      {
+        "doc_id": "doc-x1",
+        "name": "Archived Policy",
+        "category": "Updates",
+        "last_modified": "2026-05-01T09:00:00Z"
+      }
+    ],
+    "window_days": 7,
+    "run_date": "2026-09-02"
+  },
+  "input_sha256": "A950FC558D49A883AD17C755AD821947CAB5F2D4CE2A3D53C2B24E1A555BE24A"
+}

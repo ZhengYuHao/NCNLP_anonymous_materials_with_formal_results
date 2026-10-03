@@ -1,0 +1,526 @@
+{
+  "task_id": "N8F-015",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "9aea94aaa6e9f94e3d765e32edbe853dbc5db5539ccdc3412305c844c447ef90",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单提交",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "form_submission",
+          "type": "object",
+          "description": "用户通过表单提交的创意或现成文稿"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "form_data",
+          "type": "object",
+          "description": "主题或现成文稿、期望视频时长、语音合成音色、视觉风格、图像生成服务选择"
+        },
+        {
+          "name": "script_input",
+          "type": "object",
+          "description": "表单中的主题/文稿及时长，供脚本生成"
+        },
+        {
+          "name": "visual_style",
+          "type": "string",
+          "description": "选定的视觉风格，供图像提示词生成"
+        },
+        {
+          "name": "image_service",
+          "type": "string",
+          "description": "选定的图像生成服务，供图像生成"
+        }
+      ],
+      "native_evidence": [
+        "On form submission",
+        "Set Idea"
+      ],
+      "requirement_evidence": [
+        "用户通过表单提交以下内容：主题或现成文稿；期望的视频时长；选定的语音合成音色；视觉风格（例如 Pixar、Lego、Cyberpunk）；图像生成服务的选择"
+      ],
+      "rationale": "需求声明通过表单接收用户提交的创意与各项参数，为流程入口的确定性入站解析，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成脚本",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "script_input",
+          "type": "object",
+          "description": "主题或现成文稿及期望时长"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "script",
+          "type": "object",
+          "description": "含标题、描述、开场钩子、完整脚本和行动号召的脚本"
+        }
+      ],
+      "native_evidence": [
+        "Script Writier 🧠",
+        "Long form to Script Writier 🧠",
+        "Output Parser 🛠"
+      ],
+      "requirement_evidence": [
+        "脚本生成：使用语言模型生成吸引人的标题、描述、开场钩子、完整脚本和行动号召"
+      ],
+      "rationale": "需求声明使用语言模型生成标题、描述、开场钩子、完整脚本与行动号召，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语音合成并生成带时间戳字幕",
+      "node_type": "code",
+      "operation_family": "external_media_generation",
+      "inputs": [
+        {
+          "name": "script",
+          "type": "object",
+          "description": "生成的脚本内容"
+        },
+        {
+          "name": "voice_type",
+          "type": "string",
+          "description": "选定的语音合成音色"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_with_timestamps",
+          "type": "object",
+          "description": "按音色合成的音频及带时间戳的字幕"
+        }
+      ],
+      "native_evidence": [
+        "Generate TTS",
+        "Get Captions",
+        "Create Captions"
+      ],
+      "requirement_evidence": [
+        "语音合成：按选定的音色将脚本转换为音频，同时生成带时间戳的字幕"
+      ],
+      "rationale": "需求声明按选定音色调用语音合成服务将脚本转为音频并生成带时间戳字幕，为确定性外部媒体生成动作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "切分场景片段",
+      "node_type": "code",
+      "operation_family": "segmentation",
+      "inputs": [
+        {
+          "name": "script",
+          "type": "object",
+          "description": "生成的脚本内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scenes",
+          "type": "array",
+          "description": "按 5–6 秒切分的场景片段，供分镜规划"
+        }
+      ],
+      "native_evidence": [
+        "Split into 5s Scenes",
+        "Fixer"
+      ],
+      "requirement_evidence": [
+        "场景切分：将脚本切分为 5–6 秒的场景片段，用于可视化的分镜规划"
+      ],
+      "rationale": "需求声明将脚本切分为 5–6 秒场景片段，为确定性切分变换，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成图像提示词",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "scenes",
+          "type": "array",
+          "description": "场景片段"
+        },
+        {
+          "name": "visual_style",
+          "type": "string",
+          "description": "选定的视觉风格"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_prompts",
+          "type": "array",
+          "description": "每个场景对应的图像生成提示词"
+        }
+      ],
+      "native_evidence": [
+        "Image Prompter V2 📷",
+        "Open Router - Deepseek v3."
+      ],
+      "requirement_evidence": [
+        "图像提示词生成：按选定的视觉风格，将每个场景转换为图像生成提示词"
+      ],
+      "rationale": "需求声明按视觉风格将场景转换为图像提示词，需开放语义理解与改写，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成各场景图片",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "image_prompts",
+          "type": "array",
+          "description": "各场景的图像提示词"
+        },
+        {
+          "name": "image_service",
+          "type": "string",
+          "description": "选定的图像生成服务"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scene_images",
+          "type": "array",
+          "description": "各场景生成的图片"
+        }
+      ],
+      "native_evidence": [
+        "HTTP - Together.ai",
+        "Loop Over Items"
+      ],
+      "requirement_evidence": [
+        "图像生成：将提示词提交给图像生成服务，生成各场景图片"
+      ],
+      "rationale": "需求声明将提示词提交给所选图像生成服务生成图片，为确定性外部 API 调用，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "制作短视频片段",
+      "node_type": "code",
+      "operation_family": "external_media_generation",
+      "inputs": [
+        {
+          "name": "scene_images",
+          "type": "array",
+          "description": "各场景图片"
+        },
+        {
+          "name": "scenes",
+          "type": "array",
+          "description": "带脚本时间信息的场景片段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clips",
+          "type": "array",
+          "description": "带 Ken Burns 式缩放效果的短视频片段"
+        }
+      ],
+      "native_evidence": [
+        "Create Clips"
+      ],
+      "requirement_evidence": [
+        "片段制作：依据脚本时间，将每张图片制作成带有 Ken Burns 式缩放效果的短视频片段"
+      ],
+      "rationale": "需求声明依据脚本时间将图片制作为带 Ken Burns 缩放效果的片段，为确定性外部媒体生成动作，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "拼接视频并叠加字幕",
+      "node_type": "code",
+      "operation_family": "external_media_generation",
+      "inputs": [
+        {
+          "name": "clips",
+          "type": "array",
+          "description": "各短视频片段"
+        },
+        {
+          "name": "audio_with_timestamps",
+          "type": "object",
+          "description": "音频及带时间戳的字幕"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "拼接完成并叠加字幕的完整视频"
+        }
+      ],
+      "native_evidence": [
+        "Combine Clips",
+        "Combine Clips3",
+        "Create Captions"
+      ],
+      "requirement_evidence": [
+        "视频合成：将所有片段拼接为一个完整视频，并按此前生成的时间戳叠加字幕"
+      ],
+      "rationale": "需求声明拼接所有片段为完整视频并按时间戳叠加字幕，为确定性外部媒体合成动作，判 code；原生的加背景音乐等未声明细节不纳入。"
+    },
+    {
+      "node_id": "n9",
+      "label": "上传视频到 Google Drive 与 Telegram",
+      "node_type": "code",
+      "operation_family": "external_upload",
+      "inputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "完整视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "上传后获取的视频链接"
+        }
+      ],
+      "native_evidence": [
+        "Google Drive",
+        "Google Drive3",
+        "Google Drive4",
+        "Google Drive6",
+        "Telegram1",
+        "Telegram2",
+        "Telegram"
+      ],
+      "requirement_evidence": [
+        "最终视频上传到 Google Drive 与 Telegram"
+      ],
+      "rationale": "需求声明将最终视频上传至 Google Drive 与 Telegram，为确定性外部上传动作，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "保存视频链接到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "最终视频链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Google Sheets",
+        "Google Sheets16"
+      ],
+      "requirement_evidence": [
+        "相关链接保存到 Google Sheets"
+      ],
+      "rationale": "需求声明将视频相关链接保存到 Google Sheets，为确定性外部写入动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "表单提交后进入脚本生成。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "脚本生成后进入语音合成。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "脚本生成后进入场景切分，与语音合成为并行加工链。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "场景切分后生成图像提示词。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "提示词就绪后调用图像生成服务。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片生成后制作视频片段。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段制作完成后拼接视频并叠加字幕。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n3",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频与字幕就绪后供视频合成使用。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "成片后上传至 Google Drive 与 Telegram。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "上传完成后将链接保存到 Google Sheets。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "script_input",
+      "condition": null,
+      "rationale": "表单中的主题/文稿及时长传给脚本生成节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "script",
+      "condition": null,
+      "rationale": "脚本传给语音合成节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "script",
+      "condition": null,
+      "rationale": "脚本传给场景切分节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "scenes",
+      "condition": null,
+      "rationale": "场景片段传给图像提示词生成节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n1",
+      "target": "n5",
+      "variable": "visual_style",
+      "condition": null,
+      "rationale": "选定的视觉风格传给提示词生成节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "image_prompts",
+      "condition": null,
+      "rationale": "图像提示词传给图像生成节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n1",
+      "target": "n6",
+      "variable": "image_service",
+      "condition": null,
+      "rationale": "图像生成服务选择传给图像生成节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "scene_images",
+      "condition": null,
+      "rationale": "生成的场景图片传给片段制作节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n4",
+      "target": "n7",
+      "variable": "scenes",
+      "condition": null,
+      "rationale": "场景时间信息传给片段制作节点以确定每片段时长。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n7",
+      "target": "n8",
+      "variable": "clips",
+      "condition": null,
+      "rationale": "片段传给视频合成节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n3",
+      "target": "n8",
+      "variable": "audio_with_timestamps",
+      "condition": null,
+      "rationale": "音频与时间戳字幕传给视频合成节点。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n8",
+      "target": "n9",
+      "variable": "final_video",
+      "condition": null,
+      "rationale": "完整视频传给上传节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n9",
+      "target": "n10",
+      "variable": "video_url",
+      "condition": null,
+      "rationale": "视频链接传给保存节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n10"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：表单接收为入口；脚本生成与图像提示词生成判 semantic，其余为确定性 code。语音合成与场景切分为脚本生成后的两条并行加工链，最终在视频合成节点汇合。原生图中大量 Google Sheets/Drive 中间存储、Switch 长短文稿分支、背景音乐（Add Music）等均为需求未声明的实现细节，未纳入。上传（Drive+Telegram）与链接保存（Sheets）按需求顺序串行，保存链接为终止节点。"
+}

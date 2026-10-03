@@ -1,0 +1,71 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-063",
+  "source_id": "n8n:2937",
+  "workflow_sha256": "7a6e3fa5aec9f6b4529e9fa4c72588f81320332c66cf2bb15f1accb8454d3026",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "2228d29a984540c895927123effc3e3c200f9a47e42fea46930d7e569055fa21",
+  "requirement": {
+    "requirement_text": "业务用户在 Telegram 中向机器人发送一条聊天消息提出问题，例如询问下一次活动的时间、下个月有多少场活动、谁演讲的次数最多，或哪些未来活动还没有安排演讲者。系统收到发往该 Telegram 机器人的聊天消息后被触发，从 Google Sheets 中读取已排期的活动日程，将日程转换为表格化的文本形式，并据此交由语言模型处理用户在 Telegram 中提出的问题。语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复。",
+    "source_spans": [
+      {
+        "start": 12,
+        "end": 73,
+        "text": "Chat with your event schedule from Google Sheets in Telegram:"
+      },
+      {
+        "start": 75,
+        "end": 216,
+        "text": "\"When is the next meetup?\"\n\"How many events are there next month?\"\n\"Who presented most often?\"\n\"Which future meetups have no presenters yet?\""
+      },
+      {
+        "start": 218,
+        "end": 347,
+        "text": "This workflow lets you chat with a telegram bot about past, present and future events that are scheduled in a Google Spreadsheet."
+      },
+      {
+        "start": 797,
+        "end": 1108,
+        "text": "Upon getting triggered by a chat message to a telegram bot, the schedule of meetups is retrieved from Google Spreadsheets, converted into a markdown table syntax and fed into the system prompt of an LLM (we're using OpenRouter in this example), whose output is posted back as answer into the same telegram chat."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户在 Telegram 中向机器人发送的聊天消息",
+        "Google Sheets 中维护的活动日程数据"
+      ],
+      "conditions": [
+        "收到发往 Telegram 机器人的聊天消息时触发"
+      ],
+      "allowed_actions": [
+        "从 Google Sheets 读取已排期的活动日程",
+        "将日程转换为表格化文本后交由语言模型处理用户问题",
+        "将语言模型的回答回传到同一个 Telegram 会话"
+      ],
+      "visible_outcomes": [
+        "用户在同一 Telegram 会话中收到基于日程数据的自然语言答复"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-063.packet.json",
+    "packet_sha256": "aa5c7bb96866e41b04e0edb055c787a69917d2b096cbf57aab705f7f886ad449",
+    "public_description_sha256": "16b525cc874eb78d9abc8a52b569d28a36f1808fab06ca8877d163f5f31330a9"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-063.response.json",
+    "verification_response_sha256": "00106bc9f86fe3835ae1e7f02911c16001380403d5867eeda24a0b1ea96f3476",
+    "decision": "accept"
+  },
+  "formal_index": 74
+}

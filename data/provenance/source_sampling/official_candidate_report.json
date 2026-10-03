@@ -1,0 +1,137 @@
+{
+  "workflow_count": 160,
+  "semantic_workflows": 160,
+  "deterministic_workflows": 160,
+  "broad_hybrid_workflows": 160,
+  "coupled_hybrid_workflows": 157,
+  "direct_cross_main_workflows": 154,
+  "explicit_code_hybrid_workflows": 154,
+  "strict_official_pilot_candidates": 152,
+  "main_edges": 3411,
+  "dependency_edges": 491,
+  "resolved_main_edges": 3411,
+  "node_count_execution": {
+    "min": 4,
+    "median": 16.0,
+    "max": 119
+  },
+  "domain_heuristic_counts": {
+    "customer_service": 50,
+    "finance": 2,
+    "general": 79,
+    "governance": 20,
+    "industrial": 2,
+    "medical": 7
+  },
+  "native_size_band_counts": {
+    "native_11_20": 75,
+    "native_1_10": 36,
+    "native_21_40": 35,
+    "native_41_plus": 14
+  },
+  "native_topology_counts": {
+    "branch_join": 20,
+    "iteration_or_cycle": 52,
+    "multi_branch": 9,
+    "multi_branch_join": 38,
+    "sequence_or_parallel_sequences": 22,
+    "single_branch": 19
+  },
+  "official_total_in_category_at_start": 8033,
+  "category": "AI",
+  "rows_per_page": 50,
+  "total_pages": 161,
+  "sampled_pages": [
+    1,
+    16,
+    30,
+    45,
+    59,
+    74,
+    88,
+    103,
+    117,
+    132,
+    146,
+    161
+  ],
+  "sampling_frame_count": 583,
+  "catalog_prefilter_count": 246,
+  "detail_target": 162,
+  "detail_success_count": 160,
+  "detail_errors": [
+    {
+      "template_id": 10908,
+      "error": "RuntimeError: failed to fetch https://api.n8n.io/templates/workflows/10908: urllib attempt 1: HTTPError: HTTP Error 404: Not Found | curl attempt 1: curl: (22) The requested URL returned error: 404 | urllib attempt 2: HTTPError: HTTP Error 404: Not Found | curl attempt 2: curl: (22) The requested URL returned error: 404 | urllib attempt 3: HTTPError: HTTP Error 404: Not Found | curl attempt 3: curl: (22) The requested URL returned error: 404 | urllib attempt 4: HTTPError: HTTP Error 404: Not Found | curl attempt 4: curl: (22) The requested URL returned error: 404"
+    },
+    {
+      "template_id": 6281,
+      "error": "RuntimeError: failed to fetch https://api.n8n.io/templates/workflows/6281: urllib attempt 1: HTTPError: HTTP Error 404: Not Found | curl attempt 1: curl: (22) The requested URL returned error: 404 | urllib attempt 2: HTTPError: HTTP Error 404: Not Found | curl attempt 2: curl: (22) The requested URL returned error: 404 | urllib attempt 3: HTTPError: HTTP Error 404: Not Found | curl attempt 3: curl: (22) The requested URL returned error: 404 | urllib attempt 4: HTTPError: HTTP Error 404: Not Found | curl attempt 4: curl: (22) The requested URL returned error: 404"
+    }
+  ],
+  "pilot_requested": 150,
+  "pilot_selected": 150,
+  "gate_status": "NOT_READY",
+  "page_log": [
+    {
+      "page": 1,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_1.compact.json"
+    },
+    {
+      "page": 16,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_16.compact.json"
+    },
+    {
+      "page": 30,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_30.compact.json"
+    },
+    {
+      "page": 45,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_45.compact.json"
+    },
+    {
+      "page": 59,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_59.compact.json"
+    },
+    {
+      "page": 74,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_74.compact.json"
+    },
+    {
+      "page": 88,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_88.compact.json"
+    },
+    {
+      "page": 103,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_103.compact.json"
+    },
+    {
+      "page": 117,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_117.compact.json"
+    },
+    {
+      "page": 132,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_132.compact.json"
+    },
+    {
+      "page": 146,
+      "record_count": 50,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_146.compact.json"
+    },
+    {
+      "page": 161,
+      "record_count": 33,
+      "cache": "n8n_native_s1\\raw_official\\search_ai_50_161.compact.json"
+    }
+  ]
+}

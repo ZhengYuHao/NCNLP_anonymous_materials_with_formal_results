@@ -1,0 +1,88 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-003",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "待监测新闻主题列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g5",
+      "data_items": [
+        "检索时间窗口配置（天/周/月）",
+        "时间窗口配置（天/周/月）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g6",
+      "data_items": [
+        "报告形式偏好（详细版/简版）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "内容大纲"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "分配到各子主题的研究任务",
+        "分配的子主题与研究任务"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "各子主题研究结果与引用资料",
+        "各子主题研究结果（含自动引用）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "完成的时事通讯稿件"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 1.0,
+    "shared_edge_count": 7,
+    "adjudicated_dispute_count": 0,
+    "adjudicator_id": null,
+    "system_outputs_used": false
+  }
+}

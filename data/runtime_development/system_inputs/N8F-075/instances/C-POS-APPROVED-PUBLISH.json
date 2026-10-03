@@ -1,0 +1,16 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-075",
+  "case_id": "C-POS-APPROVED-PUBLISH",
+  "kind": "positive",
+  "input_data": {
+    "history_topics": [
+      "How to improve sleep quality",
+      "10 minute morning routine",
+      "Beginner guide to meditation"
+    ],
+    "generated_topic": "5 daily habits for better focus",
+    "approval": "approved"
+  },
+  "input_sha256": "3BB83A821BD9DDC4318C2F65CB9D5D393BB995EEA49163A9640213246868C260"
+}

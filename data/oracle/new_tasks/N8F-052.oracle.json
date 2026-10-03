@@ -1,0 +1,414 @@
+{
+  "task_id": "N8F-052",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "4fa036ae4c8b6d0335c8e3fadd9130489159cc9d9e4336e6ba0af7a76cd774af",
+  "fixtures": [
+    {
+      "fixture_id": "F-target",
+      "purpose": "定向参数：平台 Instagram、兴趣领域 beauty & hair、目标国家 USA",
+      "input_data": {
+        "platform": "Instagram",
+        "niche": "beauty & hair",
+        "country": "USA"
+      }
+    },
+    {
+      "fixture_id": "F-search-results",
+      "purpose": "Google 搜索结果中匹配的 Instagram 主页链接 5 个",
+      "input_data": {
+        "profile_urls": [
+          "https://instagram.com/beautypro",
+          "https://instagram.com/hairguru",
+          "https://instagram.com/styleco",
+          "https://instagram.com/glamlab",
+          "https://instagram.com/curlqueen"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-profiles",
+      "purpose": "Instagram 主页详细资料（用户名、粉丝数、个人简介），含非常规写法的邮箱",
+      "input_data": {
+        "profiles": [
+          {
+            "username": "beautypro",
+            "followers": 12000,
+            "bio": "Contact: hello [at] beautypro.com"
+          },
+          {
+            "username": "hairguru",
+            "followers": 8000,
+            "bio": "DM for collabs"
+          },
+          {
+            "username": "styleco",
+            "followers": 5000,
+            "bio": "mailto:style@example.com"
+          },
+          {
+            "username": "glamlab",
+            "followers": 3000,
+            "bio": "Email us: glamlab.contact@example.com"
+          },
+          {
+            "username": "curlqueen",
+            "followers": 15000,
+            "bio": "curlqueen@example.com"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-db-existing",
+      "purpose": "数据库中已有线索 glamlab，用于验证已有线索按字段更新而非新增",
+      "input_data": {
+        "existing": [
+          {
+            "username": "glamlab",
+            "followers": 2500,
+            "email": null,
+            "niche": "beauty & hair"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-search-empty",
+      "purpose": "Google 搜索无结果的场景",
+      "input_data": {
+        "profile_urls": []
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-llm-query",
+      "dependency_type": "llm",
+      "operation": "generate_search_queries",
+      "request_contract": {
+        "platform": "Instagram",
+        "niche": "beauty & hair",
+        "country": "USA"
+      },
+      "response_contract": {
+        "queries": [
+          "site:instagram.com beauty hair USA",
+          "instagram beauty hair influencers USA"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-google-scrape",
+      "dependency_type": "google_scraper",
+      "operation": "scrape_search_results",
+      "request_contract": {
+        "query": "site:instagram.com beauty hair USA"
+      },
+      "response_contract": {
+        "profile_urls": [
+          "https://instagram.com/beautypro",
+          "https://instagram.com/hairguru",
+          "https://instagram.com/styleco",
+          "https://instagram.com/glamlab",
+          "https://instagram.com/curlqueen"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-google-scrape-empty",
+      "dependency_type": "google_scraper",
+      "operation": "scrape_search_results",
+      "request_contract": {
+        "query": "site:instagram.com beauty hair USA",
+        "empty": true
+      },
+      "response_contract": {
+        "profile_urls": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ig-scrape",
+      "dependency_type": "instagram_scraper",
+      "operation": "scrape_profile",
+      "request_contract": {
+        "profile_urls": [
+          "https://instagram.com/beautypro",
+          "https://instagram.com/hairguru",
+          "https://instagram.com/styleco",
+          "https://instagram.com/glamlab",
+          "https://instagram.com/curlqueen"
+        ]
+      },
+      "response_contract": {
+        "profiles": [
+          {
+            "username": "beautypro",
+            "followers": 12000,
+            "bio": "Contact: hello [at] beautypro.com"
+          },
+          {
+            "username": "hairguru",
+            "followers": 8000,
+            "bio": "DM for collabs"
+          },
+          {
+            "username": "styleco",
+            "followers": 5000,
+            "bio": "mailto:style@example.com"
+          },
+          {
+            "username": "glamlab",
+            "followers": 3000,
+            "bio": "Email us: glamlab.contact@example.com"
+          },
+          {
+            "username": "curlqueen",
+            "followers": 15000,
+            "bio": "curlqueen@example.com"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email-1",
+      "dependency_type": "llm",
+      "operation": "extract_email",
+      "request_contract": {
+        "bio": "Contact: hello [at] beautypro.com"
+      },
+      "response_contract": {
+        "username": "beautypro",
+        "email": "hello@beautypro.com"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email-2",
+      "dependency_type": "llm",
+      "operation": "extract_email",
+      "request_contract": {
+        "bio": "DM for collabs"
+      },
+      "response_contract": {
+        "username": "hairguru",
+        "email": null
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email-3",
+      "dependency_type": "llm",
+      "operation": "extract_email",
+      "request_contract": {
+        "bio": "mailto:style@example.com"
+      },
+      "response_contract": {
+        "username": "styleco",
+        "email": "style@example.com"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email-4",
+      "dependency_type": "llm",
+      "operation": "extract_email",
+      "request_contract": {
+        "bio": "Email us: glamlab.contact@example.com"
+      },
+      "response_contract": {
+        "username": "glamlab",
+        "email": "glamlab.contact@example.com"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-email-5",
+      "dependency_type": "llm",
+      "operation": "extract_email",
+      "request_contract": {
+        "bio": "curlqueen@example.com"
+      },
+      "response_contract": {
+        "username": "curlqueen",
+        "email": "curlqueen@example.com"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-postgres-upsert",
+      "dependency_type": "postgres",
+      "operation": "upsert_lead",
+      "request_contract": {
+        "table": "leads",
+        "unique_key": "username"
+      },
+      "response_contract": {
+        "inserted": 4,
+        "updated": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-target",
+        "F-search-results",
+        "F-profiles",
+        "F-db-existing"
+      ],
+      "mock_ids": [
+        "M-llm-query",
+        "M-google-scrape",
+        "M-ig-scrape",
+        "M-llm-email-1",
+        "M-llm-email-2",
+        "M-llm-email-3",
+        "M-llm-email-4",
+        "M-llm-email-5",
+        "M-postgres-upsert"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.upsert.inserted",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "5 个主页中 glamlab 已存在，其余 4 个为新线索应新增"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.upsert.updated",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "glamlab 为已有线索，应更新而非新增"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.leads",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "共抓取 5 个主页，全部应形成线索记录"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.leads[].email",
+          "operator": "contains",
+          "expected": "hello@beautypro.com",
+          "rationale": "邮箱被隐藏为非常规写法（hello [at] beautypro.com）时，语言模型应能识别提取"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.leads[].username",
+          "operator": "contains",
+          "expected": "glamlab",
+          "rationale": "已有线索 glamlab 应出现在结果中且被更新"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-fields",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-target",
+        "F-search-results",
+        "F-profiles",
+        "F-db-existing"
+      ],
+      "mock_ids": [
+        "M-llm-query",
+        "M-google-scrape",
+        "M-ig-scrape",
+        "M-llm-email-1",
+        "M-llm-email-2",
+        "M-llm-email-3",
+        "M-llm-email-4",
+        "M-llm-email-5",
+        "M-postgres-upsert"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-fields",
+          "target": "output.leads[0].username",
+          "operator": "exists",
+          "rationale": "线索记录须含用户名",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-2-pos-fields",
+          "target": "output.leads[0].followers",
+          "operator": "equals",
+          "expected": 12000,
+          "rationale": "线索记录须含抓取到的粉丝数"
+        },
+        {
+          "assertion_id": "A-3-pos-fields",
+          "target": "output.leads[0].email",
+          "operator": "exists",
+          "rationale": "线索记录须含邮箱字段（可为空值但字段须存在）",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-4-pos-fields",
+          "target": "output.leads[0].niche",
+          "operator": "equals",
+          "expected": "beauty & hair",
+          "rationale": "线索记录须含兴趣领域字段"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-no-results",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-target",
+        "F-search-empty"
+      ],
+      "mock_ids": [
+        "M-llm-query",
+        "M-google-scrape-empty",
+        "M-ig-scrape",
+        "M-postgres-upsert"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-no-results",
+          "target": "output.leads",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "搜索无匹配主页时不应产生任何线索"
+        },
+        {
+          "assertion_id": "A-2-bnd-no-results",
+          "target": "output.upsert",
+          "operator": "not_exists",
+          "rationale": "无主页数据时不应向数据库写入",
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "搜索查询、Google/Instagram 抓取、邮箱提取与 PostgreSQL 写入均为固定模拟响应；邮箱字段无论是否提取到值都应存在于记录结构中。"
+}

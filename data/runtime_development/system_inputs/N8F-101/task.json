@@ -1,0 +1,283 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-101",
+  "dataset_partition": "development_qualification",
+  "domain": "governance",
+  "requirement_sha256": "5a67c53da6298958cb9f283ff6ab8efb72121a8b2560a4835f6bc19e8b10a5c1",
+  "natural_language_requirement": "通过对话入口，用户用自然语言就表格提出问题（例如“哪个月最好？”、“按国家拆分收入？”、“哪些行缺少邮箱？”）。智能体读取 Google Sheets 中的实时数据行，基于真实数据计算并给出答案，而不是凭记忆猜测；对话记忆保留上下文，使“那之前一个月呢？”这类追问能够正常衔接；答案连同实际数字在对话中返回。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "answer_question",
+      "request_schema": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "history_length": {
+                "type": "integer"
+              },
+              "question": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "history_length",
+              "question"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "question": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "question"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "operation": "load_context",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "messages": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "content",
+                "role"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheetsTool",
+      "operation": "read_live_rows",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "read_actual_data": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "read_actual_data"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "Country": {
+                      "type": "string"
+                    },
+                    "Revenue": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "Country",
+                    "Revenue"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "Month": {
+                      "type": "string"
+                    },
+                    "Revenue": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "Month",
+                    "Revenue"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "Email": {
+                          "type": "null"
+                        },
+                        "Name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "Email",
+                        "Name"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "Email": {
+                          "type": "string"
+                        },
+                        "Name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "Email",
+                        "Name"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "answer_data",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "string",
+              "description": "基于实时数据计算得出的答案文本"
+            },
+            "evidence": {
+              "type": "array",
+              "description": "支撑答案的实际数字或所引用的数据行（对象数组，additionalProperties: true，minItems: 1）",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "answer",
+            "evidence"
+          ],
+          "additionalProperties": false
+        },
+        "description": "基于真实数据计算得到的答案，含实际数字",
+        "requirement_evidence": [
+          "智能体读取 Google Sheets 中的实时数据行，基于真实数据计算并给出答案，而不是凭记忆猜测"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n3.answer_data"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "reply_message",
+        "schema": {
+          "type": "string"
+        },
+        "description": "将答案连同实际数字组织好的对话回复消息",
+        "requirement_evidence": [
+          "答案连同实际数字在对话中返回"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n4.reply_message"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "616E41D92903284CAC5C107422D1A56C12D982DF4F94E605464E65867D40C6C3",
+  "public_interface_sha256": "48E97AE1B5AAB3089BC1314ECF1EA1CF00713773F7504813AFEE1B7532279CCA",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

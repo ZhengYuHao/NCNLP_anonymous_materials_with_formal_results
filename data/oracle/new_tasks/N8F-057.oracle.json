@@ -1,0 +1,314 @@
+{
+  "task_id": "N8F-057",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "9e39808ae7038967f9c9e3825dab24ab7f227f24eadb0ffaf2aca2f5c40bb3b3",
+  "fixtures": [
+    {
+      "fixture_id": "F-REQ-NORMAL-TURN",
+      "purpose": "正常用例：非最后一轮的面试请求，验证完整辅导链路与投递确认",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "session_id": "sess-interview-01",
+          "role": "backend engineer",
+          "turn_number": 2,
+          "audio": "base64://mock-audio-turn2.ogg"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-FINAL-TURN",
+      "purpose": "正常用例：最后一轮的面试请求，验证生成总结收尾且不再给出下一个问题",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "session_id": "sess-interview-02",
+          "role": "backend engineer",
+          "turn_number": 4,
+          "total_turns": 4,
+          "audio": "base64://mock-audio-turn4.ogg"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CALLBACK-CONFIRMED",
+      "purpose": "正常用例：投递确认回调，确认音频已投递",
+      "input_data": {
+        "method": "POST",
+        "callback": {
+          "delivery_confirmed": true
+        }
+      }
+    },
+    {
+      "fixture_id": "F-NO-CALLBACK",
+      "purpose": "负例：未收到投递确认回调，验证返回重试提示",
+      "input_data": {
+        "method": "POST",
+        "callback_timeout": true
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-WHISPER-TRANSCRIBE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "speech_to_text",
+      "request_contract": {
+        "audio": "base64://mock-audio-turn2.ogg"
+      },
+      "response_contract": {
+        "transcript": "I have three years of experience building REST APIs in Python, and I recently led a migration from monolith to microservices."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WHISPER-TRANSCRIBE-FINAL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "speech_to_text",
+      "request_contract": {
+        "audio": "base64://mock-audio-turn4.ogg"
+      },
+      "response_contract": {
+        "transcript": "I believe my strongest skill is debugging under pressure, and I enjoy mentoring junior developers."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COACH-NORMAL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_coaching",
+      "request_contract": {
+        "session_id": "sess-interview-01",
+        "role": "backend engineer",
+        "turn_number": 2,
+        "transcript": "I have three years of experience building REST APIs in Python, and I recently led a migration from monolith to microservices."
+      },
+      "response_contract": {
+        "feedback": "Your answer was structured and concrete; avoid the filler word 'um' which appeared twice.",
+        "encouragement": "Great momentum, keep using concrete examples.",
+        "score": 8,
+        "next_question": "Describe a time you handled a production outage.",
+        "is_final_turn": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COACH-FINAL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_coaching",
+      "request_contract": {
+        "session_id": "sess-interview-02",
+        "role": "backend engineer",
+        "turn_number": 4,
+        "total_turns": 4,
+        "transcript": "I believe my strongest skill is debugging under pressure, and I enjoy mentoring junior developers."
+      },
+      "response_contract": {
+        "feedback": "Overall you showed strong communication and technical depth throughout the session.",
+        "encouragement": "You finished strong, well done.",
+        "score": 9,
+        "next_question": null,
+        "wrap_up": "Thank you for completing the interview; expect feedback within 24 hours.",
+        "is_final_turn": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TTS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "text_to_speech",
+      "request_contract": {
+        "text": "Your answer was structured and concrete; avoid the filler word um which appeared twice. Great momentum, keep using concrete examples. Describe a time you handled a production outage."
+      },
+      "response_contract": {
+        "audio_url": "https://mock-tts.example/audio/coach-turn2.mp3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TTS-FINAL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "text_to_speech",
+      "request_contract": {
+        "text": "Overall you showed strong communication and technical depth throughout the session. You finished strong, well done. Thank you for completing the interview; expect feedback within 24 hours."
+      },
+      "response_contract": {
+        "audio_url": "https://mock-tts.example/audio/coach-turn4.mp3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CALLBACK-WAIT",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "wait_delivery_confirmation",
+      "request_contract": {
+        "timeout_seconds": 60
+      },
+      "response_contract": {
+        "delivery_confirmed": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CALLBACK-TIMEOUT",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "wait_delivery_confirmation",
+      "request_contract": {
+        "timeout_seconds": 60
+      },
+      "response_contract": {
+        "delivery_confirmed": false,
+        "timed_out": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-NORMAL-TURN-CONFIRMED",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-NORMAL-TURN", "F-CALLBACK-CONFIRMED"],
+      "mock_ids": [
+        "M-WHISPER-TRANSCRIBE",
+        "M-LLM-COACH-NORMAL",
+        "M-TTS",
+        "M-CALLBACK-WAIT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NRM-1",
+          "target": "exec_log.mock_calls.M-WHISPER-TRANSCRIBE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "候选人录音必须被转写为文字稿"
+        },
+        {
+          "assertion_id": "A-NRM-2",
+          "target": "exec_log.mock_calls.M-LLM-COACH-NORMAL.request_contract.transcript",
+          "operator": "contains",
+          "expected": "microservices",
+          "rationale": "送入语言模型的输入必须包含转写文字稿内容"
+        },
+        {
+          "assertion_id": "A-NRM-3",
+          "target": "result.transcript",
+          "operator": "equals",
+          "expected": "I have three years of experience building REST APIs in Python, and I recently led a migration from monolith to microservices.",
+          "rationale": "最终返回必须包含语音转写得到的文字稿"
+        },
+        {
+          "assertion_id": "A-NRM-4",
+          "target": "result.score",
+          "operator": "equals",
+          "expected": 8,
+          "rationale": "返回的评分必须为模型生成的评分"
+        },
+        {
+          "assertion_id": "A-NRM-5",
+          "target": "result.next_question",
+          "operator": "equals",
+          "expected": "Describe a time you handled a production outage.",
+          "rationale": "非最后一轮必须返回下一个面试问题"
+        },
+        {
+          "assertion_id": "A-NRM-6",
+          "target": "result.audio_url",
+          "operator": "equals",
+          "expected": "https://mock-tts.example/audio/coach-turn2.mp3",
+          "rationale": "返回的音频必须为 TTS 生成的音频链接"
+        },
+        {
+          "assertion_id": "A-NRM-7",
+          "target": "exec_log.mock_calls.M-CALLBACK-WAIT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须等待投递确认回调"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FINAL-TURN-CONFIRMED",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-FINAL-TURN", "F-CALLBACK-CONFIRMED"],
+      "mock_ids": [
+        "M-WHISPER-TRANSCRIBE-FINAL",
+        "M-LLM-COACH-FINAL",
+        "M-TTS-FINAL",
+        "M-CALLBACK-WAIT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FIN-1",
+          "target": "result.wrap_up",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "最后一轮必须生成总结收尾内容"
+        },
+        {
+          "assertion_id": "A-FIN-2",
+          "target": "result.next_question",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "最后一轮不得再给出下一个面试问题"
+        },
+        {
+          "assertion_id": "A-FIN-3",
+          "target": "result.audio_url",
+          "operator": "equals",
+          "expected": "https://mock-tts.example/audio/coach-turn4.mp3",
+          "rationale": "总结收尾同样需要合成为音频并随结果返回"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NO-CONFIRMATION-RETRY",
+      "kind": "negative",
+      "fixture_ids": ["F-REQ-NORMAL-TURN", "F-NO-CALLBACK"],
+      "mock_ids": [
+        "M-WHISPER-TRANSCRIBE",
+        "M-LLM-COACH-NORMAL",
+        "M-TTS",
+        "M-CALLBACK-TIMEOUT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-RETRY-1",
+          "target": "response.body.retry_hint",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "未收到投递确认时必须返回重试提示"
+        },
+        {
+          "assertion_id": "A-RETRY-2",
+          "target": "response.body.retry_hint",
+          "operator": "contains",
+          "expected": "retry",
+          "rationale": "重试提示内容必须包含明确的 retry 语义"
+        },
+        {
+          "assertion_id": "A-RETRY-3",
+          "target": "result.audio_url",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未确认投递时不得返回完整的音频结果"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖非最后一轮（返回文字稿+反馈+评分+下一个问题+音频）、最后一轮（总结收尾且无下一个问题）与未收到投递确认（返回重试提示）三个场景。Whisper、LLM、TTS 与确认回调全部固定模拟；断言检查转写与模型输入的一致性、各返回字段的存在性与相等性、以及确认回调的等待与超时分支。"
+}

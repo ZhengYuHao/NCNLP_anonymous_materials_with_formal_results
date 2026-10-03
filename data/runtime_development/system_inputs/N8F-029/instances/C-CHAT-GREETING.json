@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-029",
+  "case_id": "C-CHAT-GREETING",
+  "kind": "positive",
+  "input_data": {
+    "channel": "live_chat",
+    "normalized_message": {
+      "user_id": "chat-2002",
+      "body": "Hello!",
+      "thread_id": null
+    },
+    "config": {
+      "confidence_threshold": 0.7,
+      "max_message_length": 4000
+    }
+  },
+  "input_sha256": "09F06F6AE1D6DD0573365B519915256D63A6CE7AC84D2B20B10DEDAFE2A97EAA"
+}

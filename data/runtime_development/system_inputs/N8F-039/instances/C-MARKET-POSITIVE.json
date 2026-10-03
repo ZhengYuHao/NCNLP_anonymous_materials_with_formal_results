@@ -1,0 +1,13 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-039",
+  "case_id": "C-MARKET-POSITIVE",
+  "kind": "positive",
+  "input_data": {
+    "market_area": "Austin, TX",
+    "gmail_recipient": "acquisition@example.com",
+    "slack_channel": "#investors",
+    "schedule": "monthly"
+  },
+  "input_sha256": "BBDAEDBF6D394DE403B7A234A11D4F290BC1CC050B5B1D6BC37DDBA634D3FB41"
+}

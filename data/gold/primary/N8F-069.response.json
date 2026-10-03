@@ -1,0 +1,312 @@
+{
+  "task_id": "N8F-069",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "cb3fb2565acca31191debd4a5eb05e21849ea9c19c666c8c3da1a17f3872cdf1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收商品提交与元数据",
+      "node_type": "code",
+      "operation_family": "input_reception",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "业务用户的商品提交，含图片来源（移动端上传文件或远程图片地址）、目标平台及 SKU/价格/库存等商品元数据"
+        }
+      ],
+      "native_evidence": ["Webhook - Receive Product", "Validate & Enrich Payload"],
+      "requirement_evidence": [
+        "业务用户提交一张商品图片，可以是移动端上传的图片文件，也可以是通过接口传入的远程图片地址。系统接收该图片后",
+        "随提交传入的商品数据（SKU、价格、库存等）"
+      ],
+      "rationale": "需求声明从业务用户接收商品图片（文件或远程地址）及商品元数据，属确定性触发与接收动作，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "图片托管生成固定访问链接",
+      "node_type": "code",
+      "operation_family": "image_hosting",
+      "inputs": [
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "含图片来源与元数据的商品提交"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_url",
+          "type": "string",
+          "description": "图片经托管服务托管后生成的固定访问链接"
+        },
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "图片托管失败时的结构化错误信息"
+        }
+      ],
+      "native_evidence": ["Has Remote URL?", "Upload to URL - Remote", "Upload to URL - Binary", "Extract Image URL"],
+      "requirement_evidence": [
+        "先交由图片托管服务进行托管，并生成一个可供店铺使用的固定访问链接"
+      ],
+      "rationale": "上传图片至托管服务并生成固定链接属确定性外部动作，判为 code；远程地址与二进制文件两条上传路径在需求中行为一致，折叠为单节点契约。"
+    },
+    {
+      "node_id": "n3",
+      "label": "图像理解语言模型生成商品内容",
+      "node_type": "semantic",
+      "operation_family": "content_generation",
+      "inputs": [
+        {
+          "name": "image_url",
+          "type": "string",
+          "description": "图片托管后的固定访问链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ai_content",
+          "type": "object",
+          "description": "由图像理解模型生成的商品标题、HTML 描述、SEO 标签、建议分类、五条卖点、最长 70 字符 SEO 标题与 URL 友好标识"
+        }
+      ],
+      "native_evidence": ["GPT-4o Vision - Analyse Product"],
+      "requirement_evidence": [
+        "由具备图像理解能力的语言模型识别图片中的商品，据此生成商品标题、HTML 格式的商品描述、SEO 标签以及建议的商品分类，同时生成五条要点式的产品卖点、最长 70 字符的 SEO 标题，以及基于建议商品名称生成的 URL 友好标识"
+      ],
+      "rationale": "识别图片中的商品并生成标题、描述、标签等文案属开放语义理解与生成任务，需语言模型能力，判为 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "清洗规整 SKU、价格与库存",
+      "node_type": "code",
+      "operation_family": "data_cleaning",
+      "inputs": [
+        {
+          "name": "ai_content",
+          "type": "object",
+          "description": "语言模型生成的商品内容"
+        },
+        {
+          "name": "submission",
+          "type": "object",
+          "description": "含 SKU/价格/库存的原始商品元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clean_entry",
+          "type": "object",
+          "description": "清洗规整后可直接上架的商品条目"
+        }
+      ],
+      "native_evidence": ["Parse & Merge AI Product Data"],
+      "requirement_evidence": [
+        "系统还会对 SKU、价格与库存数据进行清洗与规整，形成可直接上架的条目"
+      ],
+      "rationale": "对 SKU、价格、库存做清洗规整并合并 AI 生成内容属确定性数据变换，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "按目标平台格式化商品数据",
+      "node_type": "code",
+      "operation_family": "platform_formatting",
+      "inputs": [
+        {
+          "name": "clean_entry",
+          "type": "object",
+          "description": "可直接上架的商品条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "platform_payload",
+          "type": "object",
+          "description": "按 Shopify 或 WooCommerce 相应格式化的商品数据"
+        }
+      ],
+      "native_evidence": ["Route by Platform", "Shopify - Create Product", "WooCommerce - Create Product"],
+      "requirement_evidence": [
+        "最后，系统按目标电商平台（Shopify 或 WooCommerce）对商品数据进行相应格式化，并在该平台上创建商品条目"
+      ],
+      "rationale": "按目标平台对商品数据做格式化属确定性变换与路由，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "在目标电商平台创建商品条目",
+      "node_type": "terminal",
+      "operation_family": "create_product",
+      "inputs": [
+        {
+          "name": "platform_payload",
+          "type": "object",
+          "description": "平台格式化后的商品数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "平台接口调用失败时的结构化错误信息"
+        }
+      ],
+      "native_evidence": ["Shopify - Create Product", "WooCommerce - Create Product"],
+      "requirement_evidence": [
+        "最后，系统按目标电商平台（Shopify 或 WooCommerce）对商品数据进行相应格式化，并在该平台上创建商品条目。",
+        "若图片上传或电商平台接口调用失败，系统向调用方返回结构化错误信息"
+      ],
+      "rationale": "在平台上创建商品条目是需求声明的最终成功动作，成功后流程无后续环节，故作为成功分支的终止节点；冻结需求未声明创建成功后的返回动作，不建模成功回执。平台接口调用失败时经失败分支转至结构化错误返回节点（n8）。"
+    },
+    {
+      "node_id": "n8",
+      "label": "返回结构化错误信息",
+      "node_type": "terminal",
+      "operation_family": "error_handling",
+      "inputs": [
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "图片托管或平台接口调用失败的结构化错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond to Webhook"],
+      "requirement_evidence": [
+        "若图片上传或电商平台接口调用失败，系统向调用方返回结构化错误信息"
+      ],
+      "rationale": "需求声明图片上传或平台接口调用失败时向调用方返回结构化错误信息，为安全失败收尾动作，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收提交后进入图片托管。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "托管成功生成固定链接后交由语言模型分析。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n2",
+      "target": "n8",
+      "variable": null,
+      "condition": "图片上传失败",
+      "rationale": "图片上传失败分支：返回结构化错误信息。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "AI 生成内容后进入数据清洗规整。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "规整后的条目按目标平台格式化。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "格式化数据后调用平台创建商品条目。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "电商平台接口调用失败",
+      "rationale": "平台接口调用失败分支：返回结构化错误信息。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "商品提交（含图片来源）传给图片托管节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n4",
+      "variable": "submission",
+      "condition": null,
+      "rationale": "SKU/价格/库存等原始元数据传给清洗规整节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "image_url",
+      "condition": null,
+      "rationale": "托管生成的固定访问链接传给图像理解模型。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "ai_content",
+      "condition": null,
+      "rationale": "AI 生成的商品内容传给清洗规整节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "clean_entry",
+      "condition": null,
+      "rationale": "规整后的可上架条目传给平台格式化节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "platform_payload",
+      "condition": null,
+      "rationale": "平台格式化数据传给创建节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n2",
+      "target": "n8",
+      "variable": "error_detail",
+      "condition": null,
+      "rationale": "上传失败的错误信息传给错误返回节点。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n6",
+      "target": "n8",
+      "variable": "error_detail",
+      "condition": null,
+      "rationale": "平台调用失败的错误信息传给错误返回节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6", "n8"],
+  "confidence": 0.9,
+  "notes": "按需求将流程建模为 7 节点：接收提交→图片托管→图像理解模型生成内容→清洗规整→平台格式化→创建条目。创建商品条目是需求声明的最终成功动作（成功后无后续环节），作为成功分支的终止节点（n6）；冻结需求未声明创建成功后的返回动作，故不建模成功回执（原生 Build Product Response / Respond to Webhook 属需求未声明的实现细节）。失败分支：图片上传失败（n2→n8）与电商平台接口调用失败（n6→n8）均返回结构化错误（n8）。远程地址与二进制文件两条上传路径、Shopify 与 WooCommerce 两条创建路径均为同一需求行为的实现分支，折叠进节点契约，未单列。"
+}

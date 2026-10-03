@@ -1,0 +1,132 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-035",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "Reddit 帖子链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g5",
+      "data_items": [
+        "配音音色与语速参数"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "帖子及评论文本",
+        "Reddit 帖子内容与评论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "每个片段的库存素材检索词",
+        "片段素材检索词"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "每个片段的文本内容",
+        "结构化片段文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g6",
+      "data_items": [
+        "片段文本内容（用作字幕文本）",
+        "片段文本内容（字幕来源）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g7",
+      "data_items": [
+        "匹配的竖版视频素材"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "配音音频",
+        "配音音频（字幕同步依据）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "配音音频",
+        "各片段配音音频"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "同步字幕"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "成品视频的访问链接",
+        "渲染完成的成品视频链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 1.0,
+    "shared_edge_count": 11,
+    "adjudicated_dispute_count": 0,
+    "adjudicator_id": null,
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-065",
+  "case_id": "C-NEW-TRANSLATION-POSITIVE",
+  "kind": "positive",
+  "input_data": {
+    "event": "post_created",
+    "post_id": 5,
+    "target_languages": [
+      "es",
+      "fr"
+    ],
+    "existing_translation_languages": []
+  },
+  "input_sha256": "D5F265CBD7C9E7C2FEF986B047A1E5E55B188CFEAEC4B197417214E78075B3B5"
+}

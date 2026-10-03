@@ -1,0 +1,204 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-099",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-APIFY-PROFILE",
+      "dependency_type": "@apify/n8n-nodes-apify.apify",
+      "operation": "discover_and_scrape_posts",
+      "request_contract": {
+        "full_name": "Jane Smith"
+      },
+      "response_contract": {
+        "profile_url": "https://linkedin.com/in/jane-smith",
+        "posts": [
+          {
+            "id": "P01",
+            "date": "2026-08-30",
+            "text": "Excited about our new AI product launch."
+          },
+          {
+            "id": "P02",
+            "date": "2026-08-28",
+            "text": "Key takeaways from the customer conference."
+          },
+          {
+            "id": "P03",
+            "date": "2026-08-25",
+            "text": "Thoughts on prompt engineering best practices."
+          },
+          {
+            "id": "P04",
+            "date": "2026-08-22",
+            "text": "Team offsite recap and culture notes."
+          },
+          {
+            "id": "P05",
+            "date": "2026-08-20",
+            "text": "Hiring: we are looking for ML engineers."
+          },
+          {
+            "id": "P06",
+            "date": "2026-08-18",
+            "text": "Market trends in generative AI."
+          },
+          {
+            "id": "P07",
+            "date": "2026-08-15",
+            "text": "Customer story: deploying at scale."
+          },
+          {
+            "id": "P08",
+            "date": "2026-08-12",
+            "text": "Why evaluation matters for LLM apps."
+          },
+          {
+            "id": "P09",
+            "date": "2026-08-10",
+            "text": "Quick update on our roadmap."
+          },
+          {
+            "id": "P10",
+            "date": "2026-08-08",
+            "text": "Partner announcement with a data platform."
+          },
+          {
+            "id": "P11",
+            "date": "2026-08-05",
+            "text": "Reflections on remote work."
+          },
+          {
+            "id": "P12",
+            "date": "2026-08-03",
+            "text": "Product tip of the week."
+          },
+          {
+            "id": "P13",
+            "date": "2026-08-01",
+            "text": "Community meetup recap."
+          },
+          {
+            "id": "P14",
+            "date": "2026-07-29",
+            "text": "Behind the scenes of our research lab."
+          },
+          {
+            "id": "P15",
+            "date": "2026-07-27",
+            "text": "Interview with our CTO."
+          },
+          {
+            "id": "P16",
+            "date": "2026-07-25",
+            "text": "New blog post on vector databases."
+          },
+          {
+            "id": "P17",
+            "date": "2026-07-22",
+            "text": "Conference panel participation."
+          },
+          {
+            "id": "P18",
+            "date": "2026-07-20",
+            "text": "Customer feedback highlight."
+          },
+          {
+            "id": "P19",
+            "date": "2026-07-18",
+            "text": "Industry roundup."
+          },
+          {
+            "id": "P20",
+            "date": "2026-07-15",
+            "text": "Welcome to new team members."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_activity",
+      "request_contract": {
+        "posts": "array"
+      },
+      "response_contract": {
+        "latest_post_date": "2026-08-30",
+        "cadence": "roughly every 2-3 days",
+        "top_themes": [
+          "AI product launches",
+          "LLM engineering"
+        ],
+        "recent_highlights": [
+          "New AI product launch",
+          "Customer conference takeaways"
+        ],
+        "detailed_topics": [
+          {
+            "topic": "AI product launches",
+            "keywords": [
+              "launch",
+              "AI",
+              "product"
+            ],
+            "rationale": "appears in multiple posts with launch announcements"
+          },
+          {
+            "topic": "LLM engineering",
+            "keywords": [
+              "prompt",
+              "evaluation",
+              "LLM"
+            ],
+            "rationale": "technical posts about building LLM applications"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-REPORT",
+      "dependency_type": "gmail",
+      "operation": "send_html_report",
+      "request_contract": {
+        "to": "string",
+        "subject": "string",
+        "html": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-007",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-REPORT-GENERATED",
+      "fixture_ids": [
+        "F-CMD-FULL-NAME"
+      ],
+      "mock_ids": [
+        "M-APIFY-PROFILE",
+        "M-LLM-ANALYSIS",
+        "M-GMAIL-REPORT"
+      ]
+    },
+    {
+      "case_id": "C-NEG-FIRST-NAME-REJECTED",
+      "fixture_ids": [
+        "F-CMD-FIRST-ONLY"
+      ],
+      "mock_ids": [
+        "M-APIFY-PROFILE",
+        "M-LLM-ANALYSIS",
+        "M-GMAIL-REPORT"
+      ]
+    }
+  ]
+}

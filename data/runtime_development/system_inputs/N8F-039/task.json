@@ -1,0 +1,554 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-039",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "fb7c63d0b82e1c3379fd95b7fb1e6719f3d3406d1415f4374fdb84c243c0d182",
+  "natural_language_requirement": "系统定期执行房地产细分市场投资分析：并行采集四类数据，即房源挂牌数据、公共记录、人口统计信息与宏观经济指标；四类数据整合为统一数据集后，交由语言模型结合必要的量化计算完成分析，形成结构化、可用于投资决策的洞察。分析结果通过 Gmail 发送给收购团队，并通过 Slack 发送给投资人。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_market_with_calculator",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "demographics": {
+            "additionalProperties": false,
+            "properties": {
+              "median_age": {
+                "type": "integer"
+              },
+              "population": {
+                "type": "integer"
+              },
+              "population_growth_pct": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "median_age",
+              "population",
+              "population_growth_pct"
+            ],
+            "type": "object"
+          },
+          "listings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "baths": {
+                  "type": "integer"
+                },
+                "beds": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "integer"
+                },
+                "sqft": {
+                  "type": "integer"
+                },
+                "zip": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "baths",
+                "beds",
+                "id",
+                "price",
+                "sqft",
+                "zip"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "macro": {
+            "additionalProperties": false,
+            "properties": {
+              "gdp_growth_pct": {
+                "type": "number"
+              },
+              "mortgage_rate_pct": {
+                "type": "number"
+              },
+              "unemployment_pct": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "gdp_growth_pct",
+              "mortgage_rate_pct",
+              "unemployment_pct"
+            ],
+            "type": "object"
+          },
+          "public_records": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "amount": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "amount",
+                "date",
+                "id",
+                "type"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "demographics",
+          "listings",
+          "macro",
+          "public_records"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "insight": {
+            "additionalProperties": false,
+            "properties": {
+              "avg_price_per_sqft": {
+                "type": "number"
+              },
+              "market_verdict": {
+                "type": "string"
+              },
+              "median_list_price": {
+                "type": "integer"
+              },
+              "opportunity_score": {
+                "type": "integer"
+              },
+              "recommendation": {
+                "type": "string"
+              },
+              "risk_factors": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "avg_price_per_sqft",
+              "market_verdict",
+              "median_list_price",
+              "opportunity_score",
+              "recommendation",
+              "risk_factors"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "insight"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "body"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "status"
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_demographics",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "market_area": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_area"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "median_age": {
+            "type": "integer"
+          },
+          "population": {
+            "type": "integer"
+          },
+          "population_growth_pct": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "median_age",
+          "population",
+          "population_growth_pct"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_macro_indicators",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "market_area": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_area"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "gdp_growth_pct": {
+            "type": "number"
+          },
+          "mortgage_rate_pct": {
+            "type": "number"
+          },
+          "unemployment_pct": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "gdp_growth_pct",
+          "mortgage_rate_pct",
+          "unemployment_pct"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_mls_listings",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "market_area": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_area"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "listings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "baths": {
+                  "type": "integer"
+                },
+                "beds": {
+                  "type": "integer"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "integer"
+                },
+                "sqft": {
+                  "type": "integer"
+                },
+                "zip": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "baths",
+                "beds",
+                "id",
+                "price",
+                "sqft",
+                "zip"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "listings"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_public_records",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "market_area": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_area"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "records": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "amount": {
+                  "type": "integer"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "amount",
+                "date",
+                "id",
+                "type"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "text"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ]
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "analysis_insights",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "avg_price_per_sqft": {
+              "type": "number",
+              "description": "平均每平方英尺价格"
+            },
+            "market_verdict": {
+              "type": "string",
+              "description": "市场结论"
+            },
+            "median_list_price": {
+              "type": "integer",
+              "description": "挂牌价格中位数"
+            },
+            "opportunity_score": {
+              "type": "integer",
+              "description": "投资机会评分"
+            },
+            "recommendation": {
+              "type": "string",
+              "description": "投资建议"
+            },
+            "risk_factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "风险因素列表"
+            }
+          },
+          "required": [
+            "avg_price_per_sqft",
+            "market_verdict",
+            "median_list_price",
+            "opportunity_score",
+            "recommendation",
+            "risk_factors"
+          ],
+          "additionalProperties": false
+        },
+        "description": "结构化、可用于投资决策的分析洞察",
+        "requirement_evidence": [
+          "交由语言模型结合必要的量化计算完成分析，形成结构化、可用于投资决策的洞察"
+        ],
+        "source_operations": [
+          "analyze_market_with_calculator"
+        ],
+        "design_sources": [
+          "n4.analysis_insights"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "email_send_status",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string",
+              "description": "Gmail 消息 ID"
+            },
+            "status": {
+              "type": "string",
+              "description": "发送状态"
+            }
+          },
+          "required": [
+            "message_id",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "description": "分析结果通过 Gmail 发送给收购团队的发送状态",
+        "requirement_evidence": [
+          "分析结果通过 Gmail 发送给收购团队"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [
+          "n5"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "slack_send_status",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "Slack 消息发送是否成功"
+            },
+            "ts": {
+              "type": "string",
+              "description": "Slack 消息时间戳"
+            }
+          },
+          "required": [
+            "ok",
+            "ts"
+          ],
+          "additionalProperties": false
+        },
+        "description": "分析结果通过 Slack 发送给投资人的发送状态",
+        "requirement_evidence": [
+          "并通过 Slack 发送给投资人"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [
+          "n6"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "11335F5B9774BAFBE17FF7F2B4CDC717B0B385362FBC2A7E407702F84C3FD082",
+  "public_interface_sha256": "C22C5923206602DECC15775A16989C753A9DF24B0D4E2AE1A53FBE8EFD17773E",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

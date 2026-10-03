@@ -1,0 +1,299 @@
+{
+  "task_id": "N8F-099",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "34969c87042ec9fe218374afbef1fae036a50a783b37c51e28d2748ed25ae54a",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Slack 斜杠命令",
+      "node_type": "code",
+      "operation_family": "command_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "command_text",
+          "type": "object",
+          "description": "斜杠命令 /check-linkedin 携带的查询信息（含人员全名文本与用户标识）"
+        }
+      ],
+      "native_evidence": [
+        "Webhook"
+      ],
+      "requirement_evidence": [
+        "客户成功与销售人员在 Slack 中输入斜杠命令 /check-linkedin [全名] 发起查询"
+      ],
+      "rationale": "需求声明通过 Slack 斜杠命令发起查询，为确定性事件接收入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验是否提供完整姓名",
+      "node_type": "semantic",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "command_text",
+          "type": "object",
+          "description": "斜杠命令中的姓名文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "full_name",
+          "type": "string",
+          "description": "通过校验的完整姓名"
+        }
+      ],
+      "native_evidence": [
+        "Do we have a full name ?"
+      ],
+      "requirement_evidence": [
+        "系统首先校验所提供的是完整姓名（而非仅有名）"
+      ],
+      "rationale": "需求声明校验所提供的是完整姓名而非仅有名，需开放文本判断，判为语义节点；校验未通过时的提示为原生实现细节，需求未声明，未单独建模。"
+    },
+    {
+      "node_id": "n3",
+      "label": "检索并定位 LinkedIn 个人主页",
+      "node_type": "code",
+      "operation_family": "profile_discovery",
+      "inputs": [
+        {
+          "name": "full_name",
+          "type": "string",
+          "description": "校验通过的完整姓名"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_url",
+          "type": "string",
+          "description": "定位到的 LinkedIn 个人主页地址"
+        }
+      ],
+      "native_evidence": [
+        "Find Linkedin Profile",
+        "Get Linkedin Profile URL"
+      ],
+      "requirement_evidence": [
+        "随后检索并定位对应的 LinkedIn 个人主页",
+        "对于非常常见的姓名，系统可能无法准确定位到正确的 LinkedIn 个人主页"
+      ],
+      "rationale": "需求声明检索并定位对应的 LinkedIn 个人主页，为确定性外部查询动作，判为代码节点；常见姓名可能无法准确识别的失败行为折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "抓取最近 20 条帖子",
+      "node_type": "code",
+      "operation_family": "content_scraping",
+      "inputs": [
+        {
+          "name": "profile_url",
+          "type": "string",
+          "description": "目标 LinkedIn 个人主页地址"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "该人最近发布的 20 条帖子（公开内容，不访问非公开内容）"
+        }
+      ],
+      "native_evidence": [
+        "Scrap what this person posted recently",
+        "Structure recent posts"
+      ],
+      "requirement_evidence": [
+        "抓取其最近发布的 20 条帖子",
+        "系统不访问 LinkedIn 的非公开内容"
+      ],
+      "rationale": "需求声明抓取最近 20 条帖子，为确定性外部抓取动作，判为代码节点；仅访问公开内容、结果为快照的约束折叠进节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型分析发帖模式并提炼亮点",
+      "node_type": "semantic",
+      "operation_family": "ai_analysis",
+      "inputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "最近 20 条帖子（含发帖日期与内容）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "发帖频率与节奏模式、主要主题与关注领域、带上下文的近期亮点，以及两个主要议题及其关键词与判断依据"
+        }
+      ],
+      "native_evidence": [
+        "Summer McBriefing"
+      ],
+      "requirement_evidence": [
+        "由语言模型分析发帖频率与节奏模式、主要主题与关注领域，并提炼出带上下文的近期亮点",
+        "报告包含最近发帖日期、发帖节奏与主要主题、近期动态概览，以及两个主要议题及其关键词与判断依据"
+      ],
+      "rationale": "需求声明由语言模型分析发帖频率、主题与亮点，需开放语义分析与文本理解，判为语义节点；结果仅为某一时刻快照、不提供实时更新的约束折叠进节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成格式化 HTML 报告",
+      "node_type": "code",
+      "operation_family": "report_generation",
+      "inputs": [
+        {
+          "name": "analysis",
+          "type": "object",
+          "description": "语言模型的分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "格式化的 HTML 情报简报"
+        }
+      ],
+      "native_evidence": [
+        "HTML"
+      ],
+      "requirement_evidence": [
+        "最后生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱"
+      ],
+      "rationale": "需求声明生成格式化的 HTML 报告，为确定性模板化组装，判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "通过邮件发送报告到用户邮箱",
+      "node_type": "terminal",
+      "operation_family": "email_delivery",
+      "inputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "格式化 HTML 报告"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send report via Email"
+      ],
+      "requirement_evidence": [
+        "生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱"
+      ],
+      "rationale": "需求声明通过邮件将报告发送到用户邮箱，为流程最终的用户可见完成动作（最终发送），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到斜杠命令后校验姓名。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "校验通过（提供的是完整姓名）",
+      "rationale": "仅完整姓名通过校验后继续检索主页。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "定位到主页后抓取最近帖子。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "帖子抓取完成后交由语言模型分析。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后生成 HTML 报告。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后发送邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "command_text",
+      "condition": null,
+      "rationale": "命令中的姓名文本供校验。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "full_name",
+      "condition": null,
+      "rationale": "校验通过的完整姓名供主页检索（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "profile_url",
+      "condition": null,
+      "rationale": "主页地址供帖子抓取。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "recent_posts",
+      "condition": null,
+      "rationale": "最近帖子供语言模型分析（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "analysis",
+      "condition": null,
+      "rationale": "分析结果供 HTML 报告生成（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "html_report",
+      "condition": null,
+      "rationale": "HTML 报告供邮件发送。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：Slack 斜杠命令接收→完整姓名校验→检索定位 LinkedIn 主页→抓取最近 20 条帖子→LLM 分析发帖频率/节奏、主题与近期亮点→生成 HTML 报告→邮件发送到用户邮箱。校验未通过时的 Slack 提示为原生实现细节，需求未声明，未单独建模；常见姓名无法准确定位、仅公开内容、快照非实时等约束折叠进相应节点契约。报告中的议题数量按需求取两个。"
+}

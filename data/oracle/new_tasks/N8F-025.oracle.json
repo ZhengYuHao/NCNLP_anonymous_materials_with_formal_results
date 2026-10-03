@@ -1,0 +1,261 @@
+{
+  "task_id": "N8F-025",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "25ebbd3d28fcf821ee90f9f78effeadbd5a7a6816ee6a6027b8fd66a7fe2304e",
+  "fixtures": [
+    {
+      "fixture_id": "F-POST-ID",
+      "purpose": "正常用例：指定要处理的文章标识",
+      "input_data": {
+        "post_id": 42
+      }
+    },
+    {
+      "fixture_id": "F-POST-ID-FULL-TAGS",
+      "purpose": "边界用例：已有标签充足（可选中 4 个）的场景，验证不创建新标签",
+      "input_data": {
+        "post_id": 43
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-WP-GET-POST",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "get_post",
+      "request_contract": {
+        "post_id": 42
+      },
+      "response_contract": {
+        "id": 42,
+        "title": "How Transformer Attention Works",
+        "content": "Attention mechanisms allow models to focus on relevant parts of the input sequence. Self-attention computes weighted sums of value vectors.",
+        "excerpt": "A beginner-friendly explanation of attention in transformers."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-GET-TAGS",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "get_all_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          {"id": 101, "name": "AI"},
+          {"id": 102, "name": "Machine Learning"},
+          {"id": 103, "name": "Deep Learning"},
+          {"id": 104, "name": "Neural Networks"},
+          {"id": 105, "name": "Software Engineering"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-PARTIAL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "operation": "analyze_tags",
+      "request_contract": {
+        "post_id": 42,
+        "title": "How Transformer Attention Works",
+        "content": "Attention mechanisms allow models to focus on relevant parts of the input sequence. Self-attention computes weighted sums of value vectors.",
+        "excerpt": "A beginner-friendly explanation of attention in transformers.",
+        "existing_tags": [
+          {"id": 101, "name": "AI"},
+          {"id": 102, "name": "Machine Learning"},
+          {"id": 103, "name": "Deep Learning"},
+          {"id": 104, "name": "Neural Networks"},
+          {"id": 105, "name": "Software Engineering"}
+        ]
+      },
+      "response_contract": {
+        "selected_existing_tag_ids": [103, 101],
+        "suggested_new_tag_names": ["Attention Mechanism", "Self-Attention"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-FULL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "operation": "analyze_tags",
+      "request_contract": {
+        "post_id": 43
+      },
+      "response_contract": {
+        "selected_existing_tag_ids": [101, 102, 103, 104],
+        "suggested_new_tag_names": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-TAG-1",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Attention Mechanism"
+      },
+      "response_contract": {
+        "id": 201,
+        "name": "Attention Mechanism"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-TAG-2",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Self-Attention"
+      },
+      "response_contract": {
+        "id": 202,
+        "name": "Self-Attention"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-UPDATE-POST",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "update_post_tags",
+      "request_contract": {
+        "post_id": 42,
+        "tags": [103, 101, 201, 202]
+      },
+      "response_contract": {
+        "id": 42,
+        "tags": [103, 101, 201, 202],
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-UPDATE-POST-FULL",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "update_post_tags",
+      "request_contract": {
+        "post_id": 43,
+        "tags": [101, 102, 103, 104]
+      },
+      "response_contract": {
+        "id": 43,
+        "tags": [101, 102, 103, 104],
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-PARTIAL-TAGS-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-POST-ID"],
+      "mock_ids": [
+        "M-WP-GET-POST",
+        "M-WP-GET-TAGS",
+        "M-LLM-ANALYZE-PARTIAL",
+        "M-WP-CREATE-TAG-1",
+        "M-WP-CREATE-TAG-2",
+        "M-WP-UPDATE-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PART-1",
+          "target": "exec_log.mock_calls.M-WP-GET-POST.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须根据文章标识获取指定文章内容"
+        },
+        {
+          "assertion_id": "A-PART-2",
+          "target": "exec_log.mock_calls.M-WP-GET-TAGS.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须获取站点上已有的全部标签"
+        },
+        {
+          "assertion_id": "A-PART-3",
+          "target": "exec_log.mock_calls.M-WP-CREATE-TAG-1.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "模型建议的新标签必须逐个调用接口创建"
+        },
+        {
+          "assertion_id": "A-PART-4",
+          "target": "exec_log.mock_calls.M-WP-CREATE-TAG-2.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "第二个建议新标签也必须被创建"
+        },
+        {
+          "assertion_id": "A-PART-5",
+          "target": "exec_log.mock_calls.M-WP-UPDATE-POST.request_contract.tags",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "最终分配给文章的标签总数必须为 4（2 个已有 + 2 个新建）"
+        },
+        {
+          "assertion_id": "A-PART-6",
+          "target": "exec_log.mock_calls.M-WP-UPDATE-POST.request_contract.tags",
+          "operator": "equals",
+          "expected": [103, 101, 201, 202],
+          "rationale": "标签列表必须由已选中已有标签 ID 与新建标签 ID 合并而成，顺序与内容可精确比对"
+        },
+        {
+          "assertion_id": "A-PART-7",
+          "target": "exec_log.mock_calls.M-WP-UPDATE-POST.request_contract.tags[2]",
+          "operator": "equals",
+          "expected": 201,
+          "rationale": "新建标签 ID 必须取自创建接口返回的 ID，而不是随意编号"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FULL-TAGS-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": ["F-POST-ID-FULL-TAGS"],
+      "mock_ids": [
+        "M-WP-GET-POST",
+        "M-WP-GET-TAGS",
+        "M-LLM-ANALYZE-FULL",
+        "M-WP-UPDATE-POST-FULL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FULL-1",
+          "target": "exec_log.mock_calls.M-WP-CREATE-TAG-1.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "已有标签已可选满 4 个时不得创建任何新标签"
+        },
+        {
+          "assertion_id": "A-FULL-2",
+          "target": "exec_log.mock_calls.M-WP-UPDATE-POST-FULL.request_contract.tags",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "最终标签总数保持 4 个，不多不少"
+        },
+        {
+          "assertion_id": "A-FULL-3",
+          "target": "exec_log.mock_calls.M-WP-UPDATE-POST-FULL.request_contract.tags",
+          "operator": "equals",
+          "expected": [101, 102, 103, 104],
+          "rationale": "全部使用已有标签 ID，且与模型输出一致"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖标签生成主流程（2 个已有 + 2 个新建 → 最终 4 个）与边界场景（已有标签充足时不创建新标签）。WordPress REST 接口与 LLM 全部固定模拟；断言检查获取文章/标签调用、新标签逐个创建次数、最终更新请求中标签数组的长度与精确内容，均为可计算比对。"
+}

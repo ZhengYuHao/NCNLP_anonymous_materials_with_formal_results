@@ -1,0 +1,20 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-WEEKLY-DIGEST",
+  "kind": "positive",
+  "input_data": {
+    "today": "2026-08-16",
+    "subscriber": {
+      "name": "Alice",
+      "email": "alice@example.com",
+      "last_period_start": "2026-08-01",
+      "cycle_length_days": 28,
+      "active": true,
+      "phase": "ovulation",
+      "cycle_day": 16,
+      "days_until_next_period": 13
+    }
+  },
+  "input_sha256": "70C1E08C6FBBD7C230ADB9E06EE6916C977FC1DD864C6A1165F2450C407B030E"
+}

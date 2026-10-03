@@ -1,0 +1,331 @@
+{
+  "task_id": "N8F-019",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "b1b02f26e6317fa9c6381a35e9f01571c1ba89ce29a925d8aee2569df50f27ef",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发（每6小时）",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "本次运行的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "每 6 小时运行一次（频率可调整）",
+        "Schedule Trigger runs every 6 hours (customizable)"
+      ],
+      "rationale": "需求声明每 6 小时定时运行（频率可调整），原生图 Schedule Trigger 为入口，映射为定时触发代码节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "通过抓取服务获取符合筛选条件的职位",
+      "node_type": "code",
+      "operation_family": "job_fetching",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "scraped_jobs",
+          "type": "array",
+          "description": "抓取到的符合筛选条件的 Upwork 职位列表"
+        }
+      ],
+      "native_evidence": [
+        "Run Apify Scraper",
+        "Get Dataset Items"
+      ],
+      "requirement_evidence": [
+        "通过抓取服务获取符合设定筛选条件的 Upwork 职位",
+        "Apify Scraper fetches Upwork jobs matching your criteria"
+      ],
+      "rationale": "需求声明通过抓取服务获取符合筛选条件的职位，为外部抓取动作（Apify HTTP 调用），判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "过滤掉此前已看过的职位",
+      "node_type": "code",
+      "operation_family": "deduplication",
+      "inputs": [
+        {
+          "name": "scraped_jobs",
+          "type": "array",
+          "description": "抓取到的职位列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "new_jobs",
+          "type": "array",
+          "description": "此前未看过的职位列表"
+        }
+      ],
+      "native_evidence": [
+        "Read Existing Job IDs",
+        "Filter Duplicates",
+        "Has New Jobs?"
+      ],
+      "requirement_evidence": [
+        "先过滤掉此前已经看过的职位",
+        "Deduplication filters out jobs you've already seen"
+      ],
+      "rationale": "需求声明过滤掉此前已看过的职位，为确定性去重动作（对照已看记录），判为代码节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型按契合度、客户质量与预算评分",
+      "node_type": "semantic",
+      "operation_family": "ai_scoring",
+      "inputs": [
+        {
+          "name": "new_jobs",
+          "type": "array",
+          "description": "此前未看过的职位列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_jobs",
+          "type": "array",
+          "description": "带 0-100 评分的职位列表（维度：契合度、客户质量、预算）"
+        }
+      ],
+      "native_evidence": [
+        "AI Scoring",
+        "Parse AI Score"
+      ],
+      "requirement_evidence": [
+        "由语言模型对每个职位按契合度、客户质量与预算进行评分，分制为 0–100 分",
+        "AI Scoring (GPT-4) evaluates fit, client quality, budget (0-100 score)"
+      ],
+      "rationale": "需求声明由语言模型按契合度、客户质量与预算评分（0-100），需开放文本评估，判为语义节点；结果解析为代码实现细节并入节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "只保留得分 60 分及以上的职位",
+      "node_type": "code",
+      "operation_family": "threshold_filter",
+      "inputs": [
+        {
+          "name": "scored_jobs",
+          "type": "array",
+          "description": "带评分的职位列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qualified_jobs",
+          "type": "array",
+          "description": "得分 60 分及以上的职位列表"
+        }
+      ],
+      "native_evidence": [
+        "Filter Score >= 60"
+      ],
+      "requirement_evidence": [
+        "随后只保留得分在 60 分及以上的职位",
+        "Filter keeps only jobs scoring 60+"
+      ],
+      "rationale": "需求声明仅保留得分 60 及以上的职位，为确定性阈值过滤，判为代码节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "为保留职位生成个性化投标提案",
+      "node_type": "semantic",
+      "operation_family": "proposal_generation",
+      "inputs": [
+        {
+          "name": "qualified_jobs",
+          "type": "array",
+          "description": "得分 60 分及以上的职位列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "proposals",
+          "type": "array",
+          "description": "为各职位生成的个性化投标提案"
+        }
+      ],
+      "native_evidence": [
+        "Generate Proposal",
+        "Loop Over Items"
+      ],
+      "requirement_evidence": [
+        "为保留下来的职位生成个性化投标提案",
+        "Proposal Generator creates personalized proposals"
+      ],
+      "rationale": "需求声明为保留职位生成个性化投标提案，需开放文本创作，判为语义节点；逐个职位生成的原生循环折叠进节点契约（终止条件：职位全部处理完毕）。"
+    },
+    {
+      "node_id": "n7",
+      "label": "把所有结果记录到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "logging",
+      "inputs": [
+        {
+          "name": "proposals",
+          "type": "array",
+          "description": "为各职位生成的个性化投标提案"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log to Google Sheet"
+      ],
+      "requirement_evidence": [
+        "把所有结果记录到 Google Sheets",
+        "Google Sheets logs all results"
+      ],
+      "rationale": "需求声明把所有结果记录到 Google Sheets，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过 Telegram 发送汇总通知",
+      "node_type": "terminal",
+      "operation_family": "notification",
+      "inputs": [
+        {
+          "name": "proposals",
+          "type": "array",
+          "description": "本轮处理的职位结果（用于汇总统计）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Compute Metrics",
+        "Send Summary"
+      ],
+      "requirement_evidence": [
+        "最后通过 Telegram 发送一条汇总通知",
+        "Telegram sends summary notification"
+      ],
+      "rationale": "需求声明最后通过 Telegram 发送一条汇总通知，为流程最终的用户可见完成动作（通知），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后开始抓取职位。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后按已看记录去重。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "去重后由语言模型对职位评分。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "评分完成后按 60 分阈值过滤。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "保留的职位生成个性化提案。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "提案生成后记录到 Google Sheets。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录完成后发送 Telegram 汇总通知，流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "scraped_jobs",
+      "condition": null,
+      "rationale": "抓取的职位列表供去重使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "new_jobs",
+      "condition": null,
+      "rationale": "去重后的新职位供语言模型评分。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "scored_jobs",
+      "condition": null,
+      "rationale": "带评分的职位供阈值过滤（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "qualified_jobs",
+      "condition": null,
+      "rationale": "合格职位供提案生成使用。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "proposals",
+      "condition": null,
+      "rationale": "提案供记录到 Google Sheets（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n8",
+      "variable": "proposals",
+      "condition": null,
+      "rationale": "处理结果供 Telegram 汇总通知统计使用。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.95,
+  "notes": "按冻结需求建模：定时触发→抓取→去重→LLM 评分→60 分阈值过滤→生成提案→记录 Sheets→Telegram 汇总通知。逐职位提案的原生循环折叠进提案节点契约；原生图无新职位空分支与 Error Trigger 错误告警为需求未声明的实现细节，未纳入（需求 failure_behavior 为空）。"
+}

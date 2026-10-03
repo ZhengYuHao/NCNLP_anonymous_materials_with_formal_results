@@ -1,0 +1,63 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-035",
+  "source_id": "n8n:3407",
+  "workflow_sha256": "394b3989286c546f01b359bbc5714f41d1a72928d95b3d7260f63b975358382e",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "3e626d1bed7c5b59603d5c5aa55f0d2481c1dfdf3e699586c8338507d110e8fa",
+  "requirement": {
+    "requirement_text": "系统以一条 Reddit 帖子链接为输入，并接收配音音色、语速与目标视频时长等参数。处理时，系统获取该 Reddit 帖子及其评论，使用语言模型将整个帖子整理为若干结构化片段；为每个片段生成用于检索库存素材的检索词，并从库存视频素材服务查询与之匹配的竖版视频；随后为每个片段生成配音音频，并生成与音频同步的字幕；素材与音频提交至视频渲染服务后，渲染输出一段 720×1280 的竖版视频，其中包含同步的配音、字幕与 B-roll 画面；最终返回成品视频的访问链接。",
+    "source_spans": [
+      {
+        "start": 788,
+        "end": 1246,
+        "text": "This workflow:\nExtracts Reddit post and comments via Reddit API\nSummarizes the thread into structured clips using OpenAI\nGenerates search queries for each clip for stock footage\nQueries Pexels API for relevant vertical videos\nGenerates TTS audio for each clip using OpenAI Whisper\nCreates subtitles matching the audio\nUploads footage/audio to Shotstack\nRenders a full vertical video (720x1280) with synced TTS, subtitles, and b-roll\nReturns a final video URL"
+      },
+      {
+        "start": 1507,
+        "end": 1686,
+        "text": "The input must include:\n    {\n    \"voice\": \"nova\",\n    \"ttsSpeed\": 1,\n    \"videoLength\": 60,\n    \"redditLink\": \"https://www.reddit.com/r/example/comments/example_id/example_title\""
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Reddit 帖子链接",
+        "配音音色、语速与目标视频时长等参数"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "获取 Reddit 帖子与评论",
+        "将帖子整理为结构化片段",
+        "为片段生成检索词并查询匹配的竖版库存视频素材",
+        "为片段生成配音音频与同步字幕",
+        "提交素材与音频进行渲染，输出 720×1280 竖版视频"
+      ],
+      "visible_outcomes": [
+        "得到一条成品竖版视频的访问链接",
+        "视频中包含配音、字幕与 B-roll 画面"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-035.packet.json",
+    "packet_sha256": "ebe98602a94417dc7ee0231d2817d592fa3f70223142f29d5126e9b86800f544",
+    "public_description_sha256": "cc4404c40785a29a72648ba253ffcbc3e68c4069fc1c23172c654865575e2604"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-035.response.json",
+    "verification_response_sha256": "31572ab33b446bb3423cf56891f02023fdc1ad14713ab94d164e588b311723e7",
+    "decision": "accept"
+  },
+  "formal_index": 46
+}

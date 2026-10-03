@@ -1,0 +1,273 @@
+{
+  "task_id": "N8F-096",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "c3cf5840c8f7960c99c2559c43f2636eaf7adeb65d1e1d45e645a053c43807e6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周一触发",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "每周一早上触发的调度事件"
+        }
+      ],
+      "native_evidence": [
+        "Weekly Schedule"
+      ],
+      "requirement_evidence": [
+        "该审计每周一早上生成一次"
+      ],
+      "rationale": "需求声明每周一早上定时触发，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "对比两月表现并识别下滑页面",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "dropped_pages",
+          "type": "array",
+          "description": "上月相对前一月排名与点击量下滑的页面"
+        }
+      ],
+      "native_evidence": [
+        "GSC: Compare Period",
+        "Filter: Drops"
+      ],
+      "requirement_evidence": [
+        "将上月在 Google Search Console 中的表现与前一月对比，识别出排名与点击量下滑的页面"
+      ],
+      "rationale": "需求声明对比两月表现并识别下滑页面，为确定性数据获取与过滤，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "获取下滑页面热门搜索查询词",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "dropped_pages",
+          "type": "array",
+          "description": "下滑页面"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "queries",
+          "type": "array",
+          "description": "下滑页面排名靠前的搜索查询词"
+        }
+      ],
+      "native_evidence": [
+        "GSC: Get Queries",
+        "Format Queries"
+      ],
+      "requirement_evidence": [
+        "对每一个下滑页面，获取其排名靠前的搜索查询词"
+      ],
+      "rationale": "需求声明获取下滑页面的热门搜索查询词，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "抓取页面实际 Title 与 H2",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "queries",
+          "type": "array",
+          "description": "查询词"
+        },
+        {
+          "name": "dropped_pages",
+          "type": "array",
+          "description": "下滑页面"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "page_content",
+          "type": "object",
+          "description": "从线上网站抓取的页面实际 Title 与 H2 标签"
+        }
+      ],
+      "native_evidence": [
+        "Scrape Page",
+        "Extract Content"
+      ],
+      "requirement_evidence": [
+        "并从线上网站抓取该页面实际的 Title 与 H2 标签"
+      ],
+      "rationale": "需求声明抓取页面实际 Title 与 H2 标签，为确定性外部调用与内容提取，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "分析页面失效原因",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "page_content",
+          "type": "object",
+          "description": "页面实际内容"
+        },
+        {
+          "name": "queries",
+          "type": "array",
+          "description": "搜索查询词"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_results",
+          "type": "object",
+          "description": "用户搜索意图与页面实际内容差距的分析结果"
+        }
+      ],
+      "native_evidence": [
+        "AI Analyst"
+      ],
+      "requirement_evidence": [
+        "随后由语言模型分析该页面失效的原因，即用户搜索意图（搜索查询词）与页面实际内容之间的差距"
+      ],
+      "rationale": "需求声明由语言模型对比搜索意图与页面内容分析失效原因，需开放语义分析，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成并发送顾问式报告",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "analysis_results",
+          "type": "object",
+          "description": "全部下滑页面的分析结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Format for Slack",
+        "Notify Slack"
+      ],
+      "requirement_evidence": [
+        "最后将一份“顾问式”报告发送到 Slack，报告包含量化数据与具体的改进任务"
+      ],
+      "rationale": "需求声明向 Slack 发送含量化数据与改进任务的顾问式报告，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周一触发后对比两月表现。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "识别下滑页面后逐页获取查询词。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取查询词后抓取页面内容。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取后分析失效原因。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n3",
+      "variable": null,
+      "condition": "仍有未处理的下滑页面",
+      "rationale": "需求声明对每一个下滑页面循环处理，故处理完一个页面后回到下一页面。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "所有下滑页面均已处理",
+      "rationale": "全部页面分析完成后汇总发送顾问式报告。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "schedule_event",
+      "condition": null,
+      "rationale": "触发事件传给对比节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "dropped_pages",
+      "condition": null,
+      "rationale": "下滑页面清单传给查询词获取节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "queries",
+      "condition": null,
+      "rationale": "查询词传给页面抓取节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "page_content",
+      "condition": null,
+      "rationale": "页面实际内容传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "analysis_results",
+      "condition": null,
+      "rationale": "分析结果传给报告发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "需求声明对每个下滑页面循环执行查询词获取、页面抓取与失效分析，CFG 以回边表达循环；配置节点、等待节流等原生实现细节未在需求中声明，未纳入；报告格式化与 Slack 发送合并为终止动作。"
+}

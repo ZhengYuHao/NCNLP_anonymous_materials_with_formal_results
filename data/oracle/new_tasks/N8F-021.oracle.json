@@ -1,0 +1,367 @@
+{
+  "task_id": "N8F-021",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "e459c0e51c5d26da6982e0555552c8e415e03211db74b30ba721cedb5abbcdb1",
+  "fixtures": [
+    {
+      "fixture_id": "F-FORM-FULL",
+      "purpose": "正常用例：表单提交 1 个自家商品链接与 3 个竞品链接（达到竞品数量上限），覆盖完整抓取、分析、入库与摘要链路",
+      "input_data": {
+        "form": {
+          "own_product_url": "https://www.amazon.com/dp/B0OWN001",
+          "competitor_urls": [
+            "https://www.amazon.com/dp/B0CMP001",
+            "https://www.amazon.com/dp/B0CMP002",
+            "https://www.amazon.com/dp/B0CMP003"
+          ]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FORM-MIN",
+      "purpose": "边界用例：表单只提交自家商品链接、不提交任何竞品链接，验证竞品为空时流程仍可完成自家商品分析",
+      "input_data": {
+        "form": {
+          "own_product_url": "https://www.amazon.com/dp/B0OWN002",
+          "competitor_urls": []
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BD-START",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "start_snapshot",
+      "request_contract": {
+        "urls": [
+          "https://www.amazon.com/dp/B0OWN001",
+          "https://www.amazon.com/dp/B0CMP001",
+          "https://www.amazon.com/dp/B0CMP002",
+          "https://www.amazon.com/dp/B0CMP003"
+        ]
+      },
+      "response_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-READY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_snapshot_status",
+      "request_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "response_contract": {
+        "status": "ready",
+        "download_url": "https://mock-bd.example.com/snap-0001.json"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-PENDING",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_snapshot_status",
+      "request_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "response_contract": {
+        "status": "processing"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DATA",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_review_data",
+      "request_contract": {
+        "url": "https://mock-bd.example.com/snap-0001.json"
+      },
+      "response_contract": {
+        "products": [
+          {
+            "product_id": "B0OWN001",
+            "reviews": [
+              {
+                "id": "r1",
+                "text": "Battery drains too fast",
+                "rating": 1,
+                "helpful_votes": 50,
+                "duplicate_of": null
+              },
+              {
+                "id": "r2",
+                "text": "Battery drains too fast",
+                "rating": 1,
+                "helpful_votes": 3,
+                "duplicate_of": "r1"
+              },
+              {
+                "id": "r3",
+                "text": "Great design and feel",
+                "rating": 5,
+                "helpful_votes": 20,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP001",
+            "reviews": [
+              {
+                "id": "c1",
+                "text": "Battery life is amazing",
+                "rating": 5,
+                "helpful_votes": 40,
+                "duplicate_of": null
+              },
+              {
+                "id": "c2",
+                "text": "Too expensive",
+                "rating": 2,
+                "helpful_votes": 10,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP002",
+            "reviews": [
+              {
+                "id": "d1",
+                "text": "Very durable build",
+                "rating": 5,
+                "helpful_votes": 30,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP003",
+            "reviews": [
+              {
+                "id": "e1",
+                "text": "Nice color options",
+                "rating": 4,
+                "helpful_votes": 15,
+                "duplicate_of": null
+              }
+            ]
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-THEMES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "extract_themes",
+      "request_contract": {
+        "product_id": "B0OWN001"
+      },
+      "response_contract": {
+        "complaint_themes": [
+          "battery life",
+          "durability"
+        ],
+        "praise_themes": [
+          "design"
+        ],
+        "feature_requests": [
+          "wireless charging"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-BRIEF",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "write_competitive_brief",
+      "request_contract": {
+        "own_complaints": [
+          "battery life",
+          "durability"
+        ],
+        "competitor_praises": [
+          "battery life",
+          "durability",
+          "price"
+        ]
+      },
+      "response_contract": {
+        "brief": "Competitive gap: competitors are praised for battery life and durability, which are our top complaints."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "findings"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 42
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-POST",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_digest",
+      "request_contract": {
+        "channel": "product-review-digest",
+        "text": "Competitive gap: competitors are praised for battery life and durability, which are our top complaints."
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1725200000.000100"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-FULL-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-FORM-FULL"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FULL-1",
+          "target": "exec_log.httpRequest.start_snapshot.request.urls",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "提交 1 个自家商品加 3 个竞品共 4 个链接，抓取任务必须为全部提交商品触发，链接数应等于 4"
+        },
+        {
+          "assertion_id": "A-FULL-2",
+          "target": "exec_log.httpRequest.poll_snapshot_status.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "模拟状态首次即就绪，轮询应恰好一次后进入下载"
+        },
+        {
+          "assertion_id": "A-FULL-3",
+          "target": "exec_log.httpRequest.download_review_data.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "状态就绪后必须下载评论数据一次"
+        },
+        {
+          "assertion_id": "A-FULL-4",
+          "target": "exec_log.lmChatOpenAi.extract_themes.calls",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "每个商品（1 自家 + 3 竞品）都要进行主题抽取，共 4 次"
+        },
+        {
+          "assertion_id": "A-FULL-5",
+          "target": "exec_log.googleSheets.append_row.calls",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "固定数据下自家商品有 2 个重点抱怨（battery life、durability），且这两者均出现在竞品好评主题中构成 2 个竞争缺口，需逐条追加共 4 行"
+        },
+        {
+          "assertion_id": "A-FULL-6",
+          "target": "exec_log.slack.post_digest.request.text",
+          "operator": "contains",
+          "expected": "Competitive gap",
+          "rationale": "Slack 摘要必须包含竞争简报内容"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POLL-RETRY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-FORM-FULL"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-PENDING",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-RETRY-1",
+          "target": "exec_log.httpRequest.poll_snapshot_status.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "首次轮询返回 processing 时必须再次轮询，直至状态就绪，因此轮询调用应发生 2 次"
+        },
+        {
+          "assertion_id": "A-RETRY-2",
+          "target": "exec_log.httpRequest.download_review_data.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "仅在状态变为就绪后下载一次数据，不得在 processing 时提前下载"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MIN-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-FORM-MIN"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-MIN-1",
+          "target": "exec_log.lmChatOpenAi.extract_themes.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "仅提交自家商品时只对 1 个商品做主题抽取"
+        },
+        {
+          "assertion_id": "A-MIN-2",
+          "target": "exec_log.slack.post_digest.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "无竞品时流程仍应完成并向 Slack 发送摘要，不能中断"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖完整提交（1 自家 + 3 竞品，达到竞品数量上限）、轮询重试与无竞品有效边界三类场景。冻结需求仅规定有效输入最多包含 3 个竞品，未规定提交 4 个竞品时应拒绝还是截断，故不将任何超限处理方式作为标准答案，不设超限用例。外部依赖（Bright Data 抓取与轮询、OpenAI 主题抽取与简报、Google Sheets 追加、Slack 摘要）全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、请求参数长度与内容包含等可计算检查。"
+}

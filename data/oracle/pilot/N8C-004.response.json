@@ -1,0 +1,215 @@
+{
+  "pilot_id": "N8C-004",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "973c474d1bc07098a9321fe09119d613263cb5b71311c9ce335262fdc449bd04",
+  "fixtures": [
+    {
+      "fixture_id": "F-LINE-IMAGE",
+      "purpose": "LINE 手写备忘录图片消息，触发图片处理路径",
+      "input_data": {
+        "event_type": "image",
+        "user_id": "LINE-U-01",
+        "message_id": "LINE-MSG-IMG-01",
+        "image_url": "https://line.example.com/media/memo01.jpg",
+        "download_url": "https://line.example.com/media/memo01.jpg?dl=1"
+      }
+    },
+    {
+      "fixture_id": "F-LINE-TAG-SEARCH",
+      "purpose": "标签搜索命令 #meeting",
+      "input_data": {"event_type": "text", "user_id": "LINE-U-01", "text": "#meeting"}
+    },
+    {
+      "fixture_id": "F-LINE-TAG-LIST",
+      "purpose": "标签列表命令 #タグリスト",
+      "input_data": {"event_type": "text", "user_id": "LINE-U-01", "text": "#タグリスト"}
+    },
+    {
+      "fixture_id": "F-IMAGE-OCR-VALID",
+      "purpose": "OCR 成功返回的结构化输出（标题/摘要/标签）",
+      "input_data": {
+        "ocr_result": {
+          "title": "Weekly team meeting notes",
+          "summary": "Agreed on sprint scope and owner assignments.",
+          "tags": ["meeting", "planning"]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-IMAGE-OCR-FAIL",
+      "purpose": "OCR 服务失败的输入，触发重拍引导",
+      "input_data": {"ocr_result": null, "error": "ocr_service_error"}
+    },
+    {
+      "fixture_id": "F-IMAGE-OCR-INVALID",
+      "purpose": "AI 输出无法安全解析（非结构 JSON）的输入，触发重拍引导",
+      "input_data": {"ocr_result": "not-a-json: ???"}
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GDRIVE-UPLOAD",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "upload_memo_image",
+      "request_contract": {"filename": "memo_*.jpg", "content": "image bytes"},
+      "response_contract": {"file_id": "IMG-2026-0001", "link": "https://drive.google.com/file/d/IMG-2026-0001/view"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OCR-VALID",
+      "dependency_type": "language_model",
+      "operation": "ocr_and_structurize_memo",
+      "request_contract": {"image_url": "https://line.example.com/media/memo01.jpg"},
+      "response_contract": {
+        "title": "Weekly team meeting notes",
+        "summary": "Agreed on sprint scope and owner assignments.",
+        "tags": ["meeting", "planning"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OCR-FAIL",
+      "dependency_type": "language_model",
+      "operation": "ocr_and_structurize_memo",
+      "request_contract": {"image_url": "https://line.example.com/media/memo01.jpg"},
+      "response_contract": {"error": "ocr_service_error", "result": null},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-OCR-INVALID",
+      "dependency_type": "language_model",
+      "operation": "ocr_and_structurize_memo",
+      "request_contract": {"image_url": "https://line.example.com/media/memo01.jpg"},
+      "response_contract": {"raw": "not-a-json: ???"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MEMO-STORE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_memo_record",
+      "request_contract": {"sheet": "Memos", "row": "[Title, Summary, Tags, Timestamp, Link]"},
+      "response_contract": {"appended": true, "row_number": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MEMO-SEARCH",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "search_memos_by_tag",
+      "request_contract": {"sheet": "Memos", "tag": "meeting"},
+      "response_contract": {
+        "rows": [
+          {"title": "Weekly team meeting notes", "summary": "Agreed on sprint scope.", "tags": ["meeting", "planning"], "timestamp": "2026-08-25T09:00:00Z", "link": "https://drive.google.com/file/d/IMG-2026-0001/view"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MEMO-SEARCH-EMPTY",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "search_memos_by_tag",
+      "request_contract": {"sheet": "Memos", "tag": "unused-tag"},
+      "response_contract": {"rows": [], "retrieved": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TAGS-LIST",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "list_all_tags",
+      "request_contract": {"sheet": "Memos"},
+      "response_contract": {"tags": ["meeting", "planning", "idea"], "retrieved": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINE-REPLY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "reply_to_line_user",
+      "request_contract": {"user_id": "LINE-U-01", "message": "reply text"},
+      "response_contract": {"ok": true, "reply_message_id": "reply-1"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-IMAGE-STORED",
+      "kind": "positive",
+      "fixture_ids": ["F-LINE-IMAGE", "F-IMAGE-OCR-VALID"],
+      "mock_ids": ["M-GDRIVE-UPLOAD", "M-OCR-VALID", "M-MEMO-STORE", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-IMAGE-SAVED", "target": "mock.M-GDRIVE-UPLOAD.call_count", "operator": "equals", "expected": 1, "rationale": "需求(1)声明将手写图片保存到 Google Drive"},
+        {"assertion_id": "A-OCR-RUN", "target": "mock.M-OCR-VALID.call_count", "operator": "equals", "expected": 1, "rationale": "需求(1)声明执行 AI OCR 并生成结构化数据"},
+        {"assertion_id": "A-MEMO-STORED", "target": "mock.M-MEMO-STORE.requests[0].row[0]", "operator": "contains", "expected": "Weekly team meeting notes", "rationale": "需求声明每条记录含 Title（自动生成），内容来自确定性 OCR mock"},
+        {"assertion_id": "A-TAGS-STORED", "target": "mock.M-MEMO-STORE.requests[0].row[2]", "operator": "contains", "expected": "meeting", "rationale": "需求声明记录含 Tags（自动抽取），Tags 为声明列之一"},
+        {"assertion_id": "A-LINK-STORED", "target": "mock.M-MEMO-STORE.requests[0].row[4]", "operator": "matches", "expected": "^https://drive\\.google\\.com/", "rationale": "需求声明记录含 Link 指向原始图片（来自 Drive mock）"},
+        {"assertion_id": "A-RECORD-COLUMNS", "target": "mock.M-MEMO-STORE.requests[0].row", "operator": "length_equals", "expected": 5, "rationale": "需求声明记录含 Title, Summary, Tags, Timestamp, Link 五列；不强制 Timestamp 格式"},
+        {"assertion_id": "A-COMPLETION-SENT", "target": "mock.M-LINE-REPLY.call_count", "operator": "equals", "expected": 1, "rationale": "需求(1)声明处理完成后向用户发送完成消息"}
+      ]
+    },
+    {
+      "case_id": "C-POS-TAG-SEARCH",
+      "kind": "positive",
+      "fixture_ids": ["F-LINE-TAG-SEARCH"],
+      "mock_ids": ["M-MEMO-SEARCH", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-SEARCH-BY-TAG", "target": "mock.M-MEMO-SEARCH.requests[0].tag", "operator": "equals", "expected": "meeting", "rationale": "需求(2)声明 #タグ名 命令检索含指定标签的备忘录；标签值来自 fixture '#meeting'"},
+        {"assertion_id": "A-RESULTS-REPLIED", "target": "mock.M-LINE-REPLY.requests[0].message", "operator": "contains", "expected": "Weekly team meeting notes", "rationale": "需求(2)可见产出为标签搜索结果返回用户"}
+      ]
+    },
+    {
+      "case_id": "C-POS-TAG-LIST",
+      "kind": "positive",
+      "fixture_ids": ["F-LINE-TAG-LIST"],
+      "mock_ids": ["M-TAGS-LIST", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-TAGS-READ", "target": "mock.M-TAGS-LIST.call_count", "operator": "equals", "expected": 1, "rationale": "需求(3)声明 #タグリスト 命令显示数据库中的全部标签"},
+        {"assertion_id": "A-TAGS-REPLIED", "target": "mock.M-LINE-REPLY.requests[0].message", "operator": "contains", "expected": "idea", "rationale": "回复应包含全部标签（来自 TAGS-LIST mock 固定响应）"}
+      ]
+    },
+    {
+      "case_id": "C-NEG-OCR-FAIL",
+      "kind": "negative",
+      "fixture_ids": ["F-LINE-IMAGE", "F-IMAGE-OCR-FAIL"],
+      "mock_ids": ["M-GDRIVE-UPLOAD", "M-OCR-FAIL", "M-MEMO-STORE", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-NO-STORE", "target": "mock.M-MEMO-STORE.call_count", "operator": "equals", "expected": 0, "rationale": "OCR 失败时无可存储的结构化数据，不写入记录（需求失败行为'引导重拍'的隐含语义）"},
+        {"assertion_id": "A-RETRY-GUIDANCE", "target": "mock.M-LINE-REPLY.requests[0].message", "operator": "contains", "expected": "retake", "rationale": "需求失败行为：'If OCR fails, the user receives guidance to retake the photo'"}
+      ]
+    },
+    {
+      "case_id": "C-NEG-OCR-INVALID-OUTPUT",
+      "kind": "negative",
+      "fixture_ids": ["F-LINE-IMAGE", "F-IMAGE-OCR-INVALID"],
+      "mock_ids": ["M-GDRIVE-UPLOAD", "M-OCR-INVALID", "M-MEMO-STORE", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-NO-STORE-INVALID", "target": "mock.M-MEMO-STORE.call_count", "operator": "equals", "expected": 0, "rationale": "需求(1)声明'安全解析并校验 AI 输出'，不可解析输出不得写入记录"},
+        {"assertion_id": "A-RETRY-GUIDANCE-INVALID", "target": "mock.M-LINE-REPLY.requests[0].message", "operator": "contains", "expected": "retake", "rationale": "解析失败按 OCR 失败处理，引导用户重拍（需求失败行为）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-TAG-NO-MATCH",
+      "kind": "boundary",
+      "fixture_ids": ["F-LINE-TAG-SEARCH"],
+      "mock_ids": ["M-MEMO-SEARCH-EMPTY", "M-LINE-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-SEARCH-EXECUTED", "target": "mock.M-MEMO-SEARCH-EMPTY.call_count", "operator": "equals", "expected": 1, "rationale": "无匹配标签时仍执行检索（边界输入）"},
+        {"assertion_id": "A-STILL-REPLIES", "target": "mock.M-LINE-REPLY.call_count", "operator": "equals", "expected": 1, "rationale": "仍向用户返回结果（空结果集合由数据决定，不规定消息格式）"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "记录行固定为需求声明的 5 列 [Title, Summary, Tags, Timestamp, Link]，断言按索引定位（row[0]/row[2]/row[4]）以保证可判定；不强制 Timestamp 日期格式。标签命令使用需求原文（#タグ名、#タグリスト）。\n核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-IMAGE-SAVED/A-OCR-RUN/A-COMPLETION-SENT（需求(1)）、A-SEARCH-BY-TAG/A-RESULTS-REPLIED（需求(2)）、A-TAGS-READ/A-TAGS-REPLIED（需求(3)）、OCR 失败/无效输出的重拍引导（需求失败行为）。\n- 修改：A-TIMESTAMP→A-RECORD-COLUMNS（删除自创时间戳格式正则，改为按声明 5 列断言）；A-MEMO-STORED/A-TAGS-STORED/A-LINK-STORED 目标索引化（row[0]/row[2]/row[4]）；A-EMPTY-RESULT→A-SEARCH-EXECUTED/A-STILL-REPLIES（原对 message 的 length_equals=0 不可判定，改为检索执行与回复行为）。\n- 删除：无。"
+}

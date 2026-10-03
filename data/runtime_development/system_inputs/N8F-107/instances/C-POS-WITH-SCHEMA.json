@@ -1,0 +1,26 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-107",
+  "case_id": "C-POS-WITH-SCHEMA",
+  "kind": "positive",
+  "input_data": {
+    "prompt": "Find the latest AI news and list the top 3 stories with their titles",
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "stories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "input_sha256": "859DD80C1F3958474806DC1E3D1767FE7CD131E7067D55E56E223C92FB66423F"
+}

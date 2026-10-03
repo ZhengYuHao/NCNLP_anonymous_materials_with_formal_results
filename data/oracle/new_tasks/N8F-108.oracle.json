@@ -1,0 +1,209 @@
+{
+  "task_id": "N8F-108",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "52346e18fb2fe308d9a3f58cbbed18996d5e29152ebe3cd2efa53f34c90f8b22",
+  "fixtures": [
+    {
+      "fixture_id": "F-doc-policy",
+      "purpose": "企业内部 Google Docs 文档内容：含排期与停业日期（自 5 月 25 日起停业 30 天）",
+      "input_data": {
+        "doc_id": "doc_kb",
+        "content": "Opening hours: Mon-Sat 9:00-21:00, closed Sundays. Note: Closed from May 25 for 30 days."
+      }
+    },
+    {
+      "fixture_id": "F-question",
+      "purpose": "用户通过 WhatsApp 发送的自由文本问题",
+      "input_data": {
+        "text": "Are you open today?"
+      }
+    },
+    {
+      "fixture_id": "F-today",
+      "purpose": "固定当日日期 2026-05-30（停业期内，距停业起始日 5 天）",
+      "input_data": {
+        "date": "2026-05-30"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-docs-read",
+      "dependency_type": "google_docs",
+      "operation": "read_document",
+      "request_contract": {
+        "doc_id": "doc_kb"
+      },
+      "response_contract": {
+        "content": "Opening hours: Mon-Sat 9:00-21:00, closed Sundays. Note: Closed from May 25 for 30 days."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-answer",
+      "dependency_type": "llm",
+      "operation": "generate_answer",
+      "request_contract": {
+        "today": "2026-05-30",
+        "question": "Are you open today?"
+      },
+      "response_contract": {
+        "answer": "We're currently closed until June 24, 2026. We reopen the next day with our normal hours."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-whatsapp-reply",
+      "dependency_type": "whatsapp",
+      "operation": "send_message",
+      "request_contract": {
+        "recipient": "wa_user_123"
+      },
+      "response_contract": {
+        "message_id": "wa_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "conversation_log"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 33
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-doc-policy",
+        "F-question",
+        "F-today"
+      ],
+      "mock_ids": [
+        "M-docs-read",
+        "M-llm-answer",
+        "M-whatsapp-reply",
+        "M-sheets-append"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "June 24",
+          "rationale": "文档写明自 5 月 25 日起停业 30 天，比较当日 2026-05-30 后应回答停业至 6 月 24 日"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "closed",
+          "rationale": "当日处于停业期内，回答应说明当前停业状态"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.reply.message_id",
+          "operator": "exists",
+          "rationale": "须通过 WhatsApp 将回答回复给用户",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.sheets_log.text",
+          "operator": "contains",
+          "expected": "Are you open today?",
+          "rationale": "所有对话内容须记录到 Google Sheets，含用户提问"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets_log.answer",
+          "operator": "exists",
+          "rationale": "对话记录应包含系统回答，供报表或审计使用",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-date-calc",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-doc-policy",
+        "F-question",
+        "F-today"
+      ],
+      "mock_ids": [
+        "M-docs-read",
+        "M-llm-answer",
+        "M-whatsapp-reply",
+        "M-sheets-append"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-date-calc",
+          "target": "output.closed_until",
+          "operator": "equals",
+          "expected": "2026-06-24",
+          "rationale": "停业截止日期 = 2026-05-25 + 30 天 = 2026-06-24，程序可精确计算"
+        },
+        {
+          "assertion_id": "A-2-bnd-date-calc",
+          "target": "output.is_closed_today",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "当日 2026-05-30 在停业区间 [2026-05-25, 2026-06-24] 内，应判定为停业"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-doc-read",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-doc-policy",
+        "F-question",
+        "F-today"
+      ],
+      "mock_ids": [
+        "M-docs-read",
+        "M-llm-answer",
+        "M-whatsapp-reply",
+        "M-sheets-append"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-doc-read",
+          "target": "output.docs_read_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每次问答须实时读取企业内部的 Google Docs 文档，读取次数等于本次问答次数"
+        },
+        {
+          "assertion_id": "A-2-pos-doc-read",
+          "target": "output.llm_request",
+          "operator": "contains",
+          "expected": "May 25",
+          "rationale": "定制请求须将文档内容与当日日期及用户问题合并，文档片段应出现在请求中"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "日期计算规则：停业截止日 = 文档起始日期 + 停业天数；当日处于 [起始日, 截止日] 区间内即判定停业。Google Docs 读取、语言模型回答、WhatsApp 回复与 Sheets 记录均为固定模拟响应。"
+}

@@ -1,0 +1,216 @@
+{
+  "task_id": "N8F-003",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "af6ddb89e8a9cd4d63d8cb449a919dd4902c7215f96690be16a9347c5323b08f",
+  "fixtures": [
+    {
+      "fixture_id": "F-NEWS-BTC-DETAILED",
+      "purpose": "正常用例：监测主题 Bitcoin、时间窗口为天、选择详细版报告，验证完整链路",
+      "input_data": {
+        "topic": "Bitcoin",
+        "time_window": "day",
+        "report_format": "detailed",
+        "recipient": "team@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-NEWS-NVDA-SIMPLE",
+      "purpose": "正常用例：监测主题 Nvidia、时间窗口为周、选择简版报告，验证报告形式分支",
+      "input_data": {
+        "topic": "Nvidia",
+        "time_window": "week",
+        "report_format": "simple",
+        "recipient": "team@example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-RESEARCH-BTC",
+      "dependency_type": "httpRequest",
+      "operation": "search_news",
+      "request_contract": {
+        "query": "Bitcoin",
+        "time_window": "day"
+      },
+      "response_contract": {
+        "items": [
+          {
+            "title": "Bitcoin price hits new high",
+            "url": "https://news.example.com/btc-001",
+            "published_at": "2026-09-01T08:00:00Z"
+          },
+          {
+            "title": "Institutional adoption of Bitcoin grows",
+            "url": "https://news.example.com/btc-002",
+            "published_at": "2026-09-01T09:30:00Z"
+          },
+          {
+            "title": "Bitcoin network activity update",
+            "url": "https://news.example.com/btc-003",
+            "published_at": "2026-09-01T10:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RESEARCH-NVDA",
+      "dependency_type": "httpRequest",
+      "operation": "search_news",
+      "request_contract": {
+        "query": "Nvidia",
+        "time_window": "week"
+      },
+      "response_contract": {
+        "items": [
+          {
+            "title": "Nvidia launches new AI chip",
+            "url": "https://news.example.com/nvda-001",
+            "published_at": "2026-08-28T12:00:00Z"
+          },
+          {
+            "title": "Nvidia data center revenue rises",
+            "url": "https://news.example.com/nvda-002",
+            "published_at": "2026-08-30T07:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CONTENT",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "compose_newsletter",
+      "request_contract": {
+        "topic": "string",
+        "report_format": "string"
+      },
+      "response_contract": {
+        "final_newsletter": "## News Summary\nBitcoin price hits new high\n## Industry Analysis\nInstitutional adoption of Bitcoin grows\n## Sources\n- https://news.example.com/btc-001\n- https://news.example.com/btc-002"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-DELIVERY",
+      "dependency_type": "gmail",
+      "operation": "send",
+      "request_contract": {
+        "to": "string",
+        "subject": "string",
+        "body": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-001",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-DETAILED",
+      "kind": "positive",
+      "fixture_ids": ["F-NEWS-BTC-DETAILED"],
+      "mock_ids": ["M-RESEARCH-BTC", "M-LLM-CONTENT", "M-EMAIL-DELIVERY"],
+      "assertions": [
+        {
+          "assertion_id": "A-EMAIL-COUNT",
+          "target": "gmail.send.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "需求要求完成的时事通讯通过电子邮件直接投递，每次运行应恰好发送一封"
+        },
+        {
+          "assertion_id": "A-SUBJECT-TOPIC",
+          "target": "gmail.send.calls[0].subject",
+          "operator": "contains",
+          "expected": "Bitcoin",
+          "rationale": "邮件主题应包含监测主题，证明按指定主题生成通讯"
+        },
+        {
+          "assertion_id": "A-BODY-CITES-URL",
+          "target": "gmail.send.calls[0].body",
+          "operator": "matches",
+          "expected": "https?://\\S+",
+          "rationale": "需求要求自动生成引用信息以支持来源核验，正文必须包含至少一个引用链接"
+        },
+        {
+          "assertion_id": "A-BODY-SUMMARY",
+          "target": "gmail.send.calls[0].body",
+          "operator": "contains",
+          "expected": "Bitcoin price hits new high",
+          "rationale": "稿件内容应来自模拟检索返回的新闻条目，证明检索结果被纳入稿件"
+        },
+        {
+          "assertion_id": "A-BODY-ANALYSIS-SECTION",
+          "target": "gmail.send.calls[0].body",
+          "operator": "contains",
+          "expected": "Industry Analysis",
+          "rationale": "详细版报告应包含分析章节，证明按详细版成稿"
+        },
+        {
+          "assertion_id": "A-RECIPIENT-EMAIL",
+          "target": "gmail.send.calls[0].to",
+          "operator": "matches",
+          "expected": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "rationale": "收件人必须是合法邮箱地址"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-SIMPLE",
+      "kind": "positive",
+      "fixture_ids": ["F-NEWS-NVDA-SIMPLE"],
+      "mock_ids": ["M-RESEARCH-NVDA", "M-LLM-CONTENT", "M-EMAIL-DELIVERY"],
+      "assertions": [
+        {
+          "assertion_id": "A-SIMPLE-EMAIL-COUNT",
+          "target": "gmail.send.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "简版同样只通过电子邮件投递一封通讯"
+        },
+        {
+          "assertion_id": "A-SIMPLE-SUBJECT",
+          "target": "gmail.send.calls[0].subject",
+          "operator": "contains",
+          "expected": "Nvidia",
+          "rationale": "邮件主题应包含监测主题 Nvidia"
+        },
+        {
+          "assertion_id": "A-SIMPLE-BODY-CITE",
+          "target": "gmail.send.calls[0].body",
+          "operator": "matches",
+          "expected": "https?://\\S+",
+          "rationale": "简版报告同样需要携带引用链接以支持来源核验"
+        },
+        {
+          "assertion_id": "A-SIMPLE-BODY-CONTENT",
+          "target": "gmail.send.calls[0].body",
+          "operator": "contains",
+          "expected": "Nvidia launches new AI chip",
+          "rationale": "稿件应包含模拟检索返回的 Nvidia 相关新闻标题"
+        },
+        {
+          "assertion_id": "A-SIMPLE-BODY-LENGTH",
+          "target": "gmail.send.calls[0].body",
+          "operator": "matches",
+          "expected": "^.{1,1000}$",
+          "rationale": "简版正文为短篇幅，长度在可计算的上界内，防止整段正文缺失"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。固定输入覆盖两个主题与两种报告形式；信息检索、语言模型与 Gmail 均使用确定性模拟，不产生真实副作用。断言均为程序可判定：邮件发送次数、主题包含监测主题、正文包含引用 URL 与模拟检索内容、详细版含分析章节。"
+}

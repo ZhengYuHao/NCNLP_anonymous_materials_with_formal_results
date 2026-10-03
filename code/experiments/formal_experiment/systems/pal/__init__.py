@@ -1,0 +1,1 @@
+"""Formal PAL system adapter."""

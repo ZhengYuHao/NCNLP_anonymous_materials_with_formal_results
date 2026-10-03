@@ -1,0 +1,87 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-010",
+  "source_id": "n8n:18250",
+  "workflow_sha256": "d6f56dd488da059fd6726ddc153ac39aebbace420ec2e1080f193c1b037f2adb",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "d3a97c11ea945405376f92ae26526a701292b12470d1f50a7485678b5f7765c3",
+  "requirement": {
+    "requirement_text": "系统用于自动审查合同文件并生成法律审查报告。\n触发与输入：系统每分钟检查一次指定的 Google Drive 文件夹，当该文件夹中出现新建文件时触发。\n处理过程：\n1. 从 Google Drive 下载新建的合同文件，并提取 PDF 中的全文文本；\n2. 将提取的合同文本提交给语言模型，生成结构化分析结果，包含合同类型、关键条款、风险评分、风险项、缺失条款和改进建议；\n3. 使用语言模型将结构化分析结果转换为排版专业的 HTML 版律师报告；\n4. 将 HTML 报告转换为 PDF 文件，并保存到目标 Google Drive 文件夹。\n输出：\n- 原始合同文件被移动到单独的「已处理」Google Drive 文件夹；\n- 向 Slack 频道发送一条完成消息，消息中包含风险详情和报告链接。",
+    "source_spans": [
+      {
+        "start": 341,
+        "end": 425,
+        "text": "Triggers every minute when a new file is created in a specified Google Drive folder."
+      },
+      {
+        "start": 426,
+        "end": 516,
+        "text": "Downloads the new contract file from Google Drive and extracts the full text from the PDF."
+      },
+      {
+        "start": 517,
+        "end": 679,
+        "text": "Sends the extracted contract text to OpenAI to produce structured JSON covering contract type, key terms, risk score, risks, missing clauses, and recommendations."
+      },
+      {
+        "start": 680,
+        "end": 783,
+        "text": "Converts the structured OpenAI analysis into a professionally styled HTML attorney report using OpenAI."
+      },
+      {
+        "start": 784,
+        "end": 870,
+        "text": "Converts the HTML report into a PDF file and saves it to a target Google Drive folder."
+      },
+      {
+        "start": 871,
+        "end": 1040,
+        "text": "Moves the original contract file into a separate “processed” Google Drive folder and posts a completion message with risk details and the report link to a Slack channel."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "指定 Google Drive 文件夹中新建的合同 PDF 文件"
+      ],
+      "conditions": [
+        "每分钟检查一次指定的 Google Drive 文件夹",
+        "仅在该文件夹中出现新建文件时触发"
+      ],
+      "allowed_actions": [
+        "下载新建的合同文件并提取 PDF 全文文本",
+        "使用语言模型生成结构化合同分析（合同类型、关键条款、风险评分、风险项、缺失条款、改进建议）",
+        "使用语言模型将结构化分析转换为排版专业的 HTML 律师报告",
+        "将 HTML 报告转换为 PDF 并保存到目标 Google Drive 文件夹",
+        "将原始合同文件移动到单独的「已处理」Google Drive 文件夹",
+        "向 Slack 频道发送完成消息"
+      ],
+      "visible_outcomes": [
+        "目标 Google Drive 文件夹中的 PDF 律师报告",
+        "原始合同文件被移至「已处理」Google Drive 文件夹",
+        "Slack 频道中包含风险详情与报告链接的完成消息"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-010.packet.json",
+    "packet_sha256": "9a980110991bcb89df39fa7d153e43b5645f9a88fe7360b6cbc2ab438027d6d1",
+    "public_description_sha256": "8c142a71b5c551454cc483e19a4f6da80f367ccb1db587b1977c74f75fc610e6"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-010.response.json",
+    "verification_response_sha256": "0bdf77f84e8c66e2f6630063370aa9eab5ca3152949bca35f1ff48bc50800533",
+    "decision": "accept"
+  },
+  "formal_index": 21
+}

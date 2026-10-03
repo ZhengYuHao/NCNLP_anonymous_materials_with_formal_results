@@ -1,0 +1,227 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "n8n-s1-formal-independent-oracle-v1",
+  "title": "S1 formal independent correctness rules v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "author_id",
+    "status",
+    "requirement_sha256",
+    "fixtures",
+    "mocks",
+    "cases",
+    "replay_plan",
+    "notes"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^N8F-[0-9]{3}$"
+    },
+    "author_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "unsubmitted",
+        "submitted",
+        "infeasible"
+      ]
+    },
+    "requirement_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fixture"
+      }
+    },
+    "mocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mock"
+      }
+    },
+    "cases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/case"
+      }
+    },
+    "replay_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repeat_count",
+        "identical_inputs",
+        "evidence_generated_after_execution"
+      ],
+      "properties": {
+        "repeat_count": {
+          "const": 3
+        },
+        "identical_inputs": {
+          "const": true
+        },
+        "evidence_generated_after_execution": {
+          "const": true
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fixture_id",
+        "purpose",
+        "input_data"
+      ],
+      "properties": {
+        "fixture_id": {
+          "type": "string",
+          "pattern": "^F-[A-Za-z0-9_-]+$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "input_data": {
+          "type": "object"
+        }
+      }
+    },
+    "mock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mock_id",
+        "dependency_type",
+        "operation",
+        "request_contract",
+        "response_contract",
+        "deterministic",
+        "side_effects_disabled"
+      ],
+      "properties": {
+        "mock_id": {
+          "type": "string",
+          "pattern": "^M-[A-Za-z0-9_-]+$"
+        },
+        "dependency_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "request_contract": {
+          "type": "object"
+        },
+        "response_contract": {
+          "type": "object"
+        },
+        "deterministic": {
+          "const": true
+        },
+        "side_effects_disabled": {
+          "const": true
+        }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "kind",
+        "fixture_ids",
+        "mock_ids",
+        "assertions"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "pattern": "^C-[A-Za-z0-9_-]+$"
+        },
+        "kind": {
+          "enum": [
+            "positive",
+            "boundary",
+            "negative",
+            "safe_rejection"
+          ]
+        },
+        "fixture_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "mock_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/assertion"
+          }
+        }
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assertion_id",
+        "target",
+        "operator",
+        "expected",
+        "rationale"
+      ],
+      "properties": {
+        "assertion_id": {
+          "type": "string",
+          "pattern": "^A-[A-Za-z0-9_-]+$"
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operator": {
+          "enum": [
+            "equals",
+            "not_equals",
+            "contains",
+            "exists",
+            "not_exists",
+            "length_equals",
+            "matches"
+          ]
+        },
+        "expected": {},
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

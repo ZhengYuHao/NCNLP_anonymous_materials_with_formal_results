@@ -1,0 +1,108 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-010",
+  "source_id": "n8n:18257",
+  "workflow_sha256": "33816830430d2f68d497f344754e86a23549ba20237378cc7005ab20e401268b",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "1d75b04bb616b212279fd6a830f528a004c3db597b65d331533d44aa8796f34d",
+  "requirement": {
+    "pilot_id": "N8C-010",
+    "requirement_text": "The system receives B2B targeting research requests via a POST webhook (or manual test runs) and normalizes the targeting criteria; the required criteria fields are target_market, target_industries, and target_roles. It validates the required fields and returns a 400 webhook response when the criteria are incomplete. For valid requests the system shall: (1) call a configurable company-discovery HTTP API, remove excluded companies, and use a language model to evaluate fit and generate evidence that is converted into a weighted account score; (2) filter out low-scoring accounts, check Airtable to avoid duplicates, and create a 'Qualified' account record for new matches; (3) call a configurable contact-discovery HTTP API for each qualified account, then use a language model to score each contact's relevance and filter out low-scoring or duplicate contacts using Airtable; (4) use a language model to generate an evidence-based outreach brief and create an Airtable queue item with status 'Needs Human Review'; (5) return a compact JSON result for webhook requests. Additionally, the system runs daily on a schedule to load 'Needs Human Review' items from Airtable, identify stale reviews, and optionally email a summary via Gmail.",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 277,
+        "text": "This workflow accepts B2B targeting criteria via webhook or manual input, discovers matching companies and contacts via external APIs, uses OpenAI to score fit and build an evidence-based outreach brief, and stores qualified results in Airtable for human review."
+      },
+      {
+        "start": 292,
+        "end": 406,
+        "text": "Receives a research request via a POST webhook (or runs from a manual test) and normalizes the targeting criteria."
+      },
+      {
+        "start": 407,
+        "end": 501,
+        "text": "Validates required fields and returns a 400 webhook response when the criteria are incomplete."
+      },
+      {
+        "start": 502,
+        "end": 681,
+        "text": "Calls a configurable company-discovery HTTP API, removes excluded companies, and uses OpenAI to evaluate fit and generate evidence that is converted into a weighted account score."
+      },
+      {
+        "start": 682,
+        "end": 810,
+        "text": "Filters out low-scoring accounts, checks Airtable to avoid duplicates, and creates a “Qualified” account record for new matches."
+      },
+      {
+        "start": 811,
+        "end": 1003,
+        "text": "Calls a configurable contact-discovery HTTP API for each qualified account, then uses OpenAI to score each contact’s relevance and filters out low-scoring or duplicate contacts using Airtable."
+      },
+      {
+        "start": 1004,
+        "end": 1186,
+        "text": "Uses OpenAI to generate an evidence-based outreach brief and creates an Airtable queue item with status “Needs Human Review”, then returns a compact JSON result for webhook requests."
+      },
+      {
+        "start": 1187,
+        "end": 1327,
+        "text": "Runs daily on a schedule to load “Needs Human Review” items from Airtable, identify stale reviews, and optionally email a summary via Gmail."
+      },
+      {
+        "start": 2094,
+        "end": 2144,
+        "text": "target_market, target_industries, and target_roles"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "B2B targeting criteria submitted via POST webhook (or manual test run), including required fields target_market, target_industries, and target_roles"
+      ],
+      "conditions": [
+        "Requests arrive via a POST webhook or manual test runs",
+        "Required criteria fields must be present; incomplete criteria are rejected",
+        "Low-scoring accounts and contacts are filtered out",
+        "Duplicate accounts and contacts are avoided by checking Airtable"
+      ],
+      "allowed_actions": [
+        "Normalize the received targeting criteria",
+        "Validate required fields and return a 400 webhook response when the criteria are incomplete",
+        "Call a configurable company-discovery HTTP API and remove excluded companies",
+        "Use a language model to evaluate fit and generate evidence converted into a weighted account score",
+        "Filter out low-scoring accounts and check Airtable to avoid duplicates",
+        "Create a 'Qualified' account record in Airtable for new matches",
+        "Call a configurable contact-discovery HTTP API for each qualified account",
+        "Use a language model to score each contact's relevance and filter out low-scoring or duplicate contacts using Airtable",
+        "Use a language model to generate an evidence-based outreach brief",
+        "Create an Airtable queue item with status 'Needs Human Review'",
+        "Return a compact JSON result for webhook requests",
+        "Run daily on a schedule to load 'Needs Human Review' items from Airtable, identify stale reviews, and optionally email a summary via Gmail"
+      ],
+      "visible_outcomes": [
+        "'Qualified' account records and outreach queue items stored in Airtable with status 'Needs Human Review' for human review",
+        "A compact JSON result returned for webhook requests",
+        "Optional daily summary email via Gmail covering the review queue and stale reviews"
+      ],
+      "failure_behavior": [
+        "Returns a 400 webhook response when the required targeting criteria are incomplete"
+      ]
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 9
+}

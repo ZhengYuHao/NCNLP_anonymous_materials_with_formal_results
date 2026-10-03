@@ -1,0 +1,591 @@
+{
+  "task_id": "N8F-071",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "67a22a2c2569dff8d73964f2b8f76d810762bc542a04850c705588f70a14ccd2",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收入站线索提交",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "lead_submission",
+          "type": "object",
+          "description": "通过接口提交的入站线索信息（姓名、邮箱、公司、网站、职位、电话、留言、来源）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lead_data",
+          "type": "object",
+          "description": "原始入站线索字段"
+        }
+      ],
+      "native_evidence": [
+        "Receive Inbound Lead"
+      ],
+      "requirement_evidence": [
+        "系统通过接口接收一条入站线索提交"
+      ],
+      "rationale": "需求声明通过接口接收入站线索提交，为流程入口的确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "加载 ICP 与评分阈值",
+      "node_type": "code",
+      "operation_family": "config_loading",
+      "inputs": [
+        {
+          "name": "lead_data",
+          "type": "object",
+          "description": "原始线索数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "icp_config",
+          "type": "object",
+          "description": "预设的理想客户画像（ICP）信息与阈值"
+        }
+      ],
+      "native_evidence": [
+        "Set ICP and Scoring Rules"
+      ],
+      "requirement_evidence": [
+        "系统先应用预设的理想客户画像（ICP）信息与阈值"
+      ],
+      "rationale": "需求声明应用预设 ICP 信息与阈值，为确定性配置装载动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "规范化传入字段",
+      "node_type": "code",
+      "operation_family": "data_normalization",
+      "inputs": [
+        {
+          "name": "lead_data",
+          "type": "object",
+          "description": "原始线索数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_lead",
+          "type": "object",
+          "description": "规范化后的线索字段"
+        }
+      ],
+      "native_evidence": [
+        "Normalize Lead Fields"
+      ],
+      "requirement_evidence": [
+        "对传入字段做规范化处理"
+      ],
+      "rationale": "需求声明对传入字段做规范化处理，为确定性数据整理变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "校验邮箱并推导企业域名",
+      "node_type": "code",
+      "operation_family": "email_validation",
+      "inputs": [
+        {
+          "name": "normalized_lead",
+          "type": "object",
+          "description": "规范化后的线索字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_lead",
+          "type": "object",
+          "description": "含邮箱类型识别与企业域名推导结果的线索数据"
+        }
+      ],
+      "native_evidence": [
+        "Validate Email and Detect Company Domain"
+      ],
+      "requirement_evidence": [
+        "校验邮箱地址，识别其中的免费邮箱与角色邮箱，同时推导出企业域名"
+      ],
+      "rationale": "需求声明校验邮箱、识别免费/角色邮箱并推导企业域名，为确定性校验与推导，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "抓取线索网站",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "validated_lead",
+          "type": "object",
+          "description": "含企业域名的线索数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "website_content",
+          "type": "string",
+          "description": "线索网站页面内容"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Lead Website"
+      ],
+      "requirement_evidence": [
+        "若邮箱是有效的企业邮箱地址，系统则抓取该线索的网站"
+      ],
+      "rationale": "需求声明仅当邮箱为有效企业邮箱时抓取线索网站，为确定性外部抓取动作，判 code；该条件通过 CFG 分支表达。"
+    },
+    {
+      "node_id": "n6",
+      "label": "提取文本样本与购买信号",
+      "node_type": "code",
+      "operation_family": "signal_extraction",
+      "inputs": [
+        {
+          "name": "website_content",
+          "type": "string",
+          "description": "线索网站页面内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "website_signals",
+          "type": "object",
+          "description": "一小段文本样本以及关键词形式的购买信号"
+        }
+      ],
+      "native_evidence": [
+        "Extract Buying Signals from Website"
+      ],
+      "requirement_evidence": [
+        "并从页面内容中提取一小段文本样本以及关键词形式的购买信号"
+      ],
+      "rationale": "需求声明从页面内容提取文本样本与关键词购买信号，为确定性提取变换，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "语言模型评估线索",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "validated_lead",
+          "type": "object",
+          "description": "校验后的线索信息"
+        },
+        {
+          "name": "website_signals",
+          "type": "object",
+          "description": "网站信号（非企业邮箱时为缺省）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ai_verdict",
+          "type": "object",
+          "description": "结构化评估：理想客户契合度评分、所属细分、评分理由、推荐下一步、个性化开场白"
+        }
+      ],
+      "native_evidence": [
+        "Score Lead Against ICP with AI",
+        "OpenAI Chat Model"
+      ],
+      "requirement_evidence": [
+        "随后，系统将线索信息与网站信号交给语言模型，产出结构化的评估结果，包括理想客户契合度评分、所属细分、评分理由、推荐的下一步动作以及一句个性化的开场白"
+      ],
+      "rationale": "需求声明由语言模型产出结构化评估结果，需开放语义理解与推理，判 semantic；非企业邮箱分支无网站信号，直接以线索信息进入评估。"
+    },
+    {
+      "node_id": "n8",
+      "label": "结合数据质量评分并划分档位",
+      "node_type": "code",
+      "operation_family": "scoring",
+      "inputs": [
+        {
+          "name": "ai_verdict",
+          "type": "object",
+          "description": "语言模型评估结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lead_with_tier",
+          "type": "object",
+          "description": "结合确定性数据质量评分后划分为热、温、冷三档的线索"
+        }
+      ],
+      "native_evidence": [
+        "Combine AI Verdict with Data Quality",
+        "Route Lead by Tier"
+      ],
+      "requirement_evidence": [
+        "系统把该契合度评分与一个确定性的数据质量评分相结合，据此将线索划分为热、温、冷三档，并按档位进行分流"
+      ],
+      "rationale": "需求声明将契合度评分与确定性数据质量评分结合并划分热/温/冷档位，为确定性评分与分档动作，判 code；档位分流通过 CFG 分支表达。"
+    },
+    {
+      "node_id": "n9",
+      "label": "在 Slack 中提醒热线索",
+      "node_type": "code",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "lead_with_tier",
+          "type": "object",
+          "description": "档位为热的线索记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slack_alert",
+          "type": "object",
+          "description": "Slack 提醒发送结果"
+        }
+      ],
+      "native_evidence": [
+        "Alert Sales Team in Slack"
+      ],
+      "requirement_evidence": [
+        "对热线索，在 Slack 中发出提醒"
+      ],
+      "rationale": "需求声明对热线索在 Slack 发出提醒，为确定性外部通知动作，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "发送即时个性化回复",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "slack_alert",
+          "type": "object",
+          "description": "Slack 提醒结果"
+        },
+        {
+          "name": "ai_verdict",
+          "type": "object",
+          "description": "含个性化开场白的评估结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "personalized_reply",
+          "type": "object",
+          "description": "Gmail 个性化回复发送结果"
+        }
+      ],
+      "native_evidence": [
+        "Send Instant Personalized Reply"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 向该线索发送即时的个性化回复"
+      ],
+      "rationale": "需求声明通过 Gmail 向热线索发送即时个性化回复，为确定性外部发送动作，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "在 HubSpot 创建或更新联系人",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "personalized_reply",
+          "type": "object",
+          "description": "个性化回复结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contact_record",
+          "type": "object",
+          "description": "HubSpot 中创建或更新的联系人及生命周期阶段"
+        }
+      ],
+      "native_evidence": [
+        "Create Hot Contact in HubSpot"
+      ],
+      "requirement_evidence": [
+        "在 HubSpot 中创建或更新对应联系人并设置相应的生命周期阶段"
+      ],
+      "rationale": "需求声明在 HubSpot 创建或更新联系人并设置生命周期阶段，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "追加记录到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "lead_with_tier",
+          "type": "object",
+          "description": "含评分与档位的线索记录"
+        },
+        {
+          "name": "contact_record",
+          "type": "object",
+          "description": "HubSpot 中创建或更新的联系人记录，热档处理后汇入统一记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "logged_lead",
+          "type": "object",
+          "description": "追加到 Google Sheets 的线索记录"
+        }
+      ],
+      "native_evidence": [
+        "Log Every Lead to Google Sheets"
+      ],
+      "requirement_evidence": [
+        "所有线索都会被追加记录到 Google Sheets"
+      ],
+      "rationale": "需求声明所有线索均追加记录到 Google Sheets，为确定性外部写入动作，判 code；热档处理完成后与温/冷档汇合至此。"
+    },
+    {
+      "node_id": "n13",
+      "label": "返回线索评分与档位响应",
+      "node_type": "terminal",
+      "operation_family": "webhook_response",
+      "inputs": [
+        {
+          "name": "logged_lead",
+          "type": "object",
+          "description": "已记录的线索数据"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Respond to Form"
+      ],
+      "requirement_evidence": [
+        "同时，系统向提交方返回包含该线索评分与档位的响应结果"
+      ],
+      "rationale": "需求声明向提交方返回含评分与档位的响应，为完成动作且无出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收线索后加载 ICP 与阈值。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置就绪后规范化字段。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后校验邮箱并推导域名。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "邮箱为有效企业邮箱",
+      "rationale": "有效企业邮箱才抓取网站。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": "非企业邮箱",
+      "rationale": "非企业邮箱跳过网站抓取与信号提取，直接进入语言模型评估。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后提取文本样本与购买信号。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "信号提取后进入语言模型评估。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "评估完成后结合数据质量评分划分档位。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": "档位 == 热",
+      "rationale": "热档线索进入提醒、回复与 HubSpot 处理链。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n8",
+      "target": "n12",
+      "variable": null,
+      "condition": "档位 == 温 或 冷",
+      "rationale": "温/冷档线索直接进入统一记录；需求未声明温/冷档的额外动作。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "Slack 提醒后发送即时个性化回复。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复发送后在 HubSpot 创建或更新联系人。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "热档处理完成后统一记录到 Google Sheets。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录完成后向提交方返回响应。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "lead_data",
+      "condition": null,
+      "rationale": "原始线索数据传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "normalized_lead",
+      "condition": null,
+      "rationale": "规范化字段传给邮箱校验节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "validated_lead",
+      "condition": null,
+      "rationale": "含企业域名的线索传给网站抓取节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "website_content",
+      "condition": null,
+      "rationale": "页面内容传给信号提取节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "website_signals",
+      "condition": null,
+      "rationale": "网站信号传给语言模型评估节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n4",
+      "target": "n7",
+      "variable": "validated_lead",
+      "condition": null,
+      "rationale": "校验后的线索信息传给语言模型评估节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "ai_verdict",
+      "condition": null,
+      "rationale": "评估结果传给评分分档节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "lead_with_tier",
+      "condition": null,
+      "rationale": "热档线索传给 Slack 提醒节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n7",
+      "target": "n10",
+      "variable": "ai_verdict",
+      "condition": null,
+      "rationale": "个性化开场白传给回复发送节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n8",
+      "target": "n12",
+      "variable": "lead_with_tier",
+      "condition": null,
+      "rationale": "温/冷档线索传给统一记录节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n11",
+      "target": "n12",
+      "variable": "contact_record",
+      "condition": null,
+      "rationale": "热档联系人记录汇入统一记录。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n12",
+      "target": "n13",
+      "variable": "logged_lead",
+      "condition": null,
+      "rationale": "已记录线索传给响应节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n13"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：接收入站线索为入口；ICP 加载、字段规范化、邮箱校验与域名推导为确定性 code；网站抓取与信号提取仅在有效企业邮箱分支执行（CFG 条件表达），非企业邮箱直接进入评估；语言模型评估判 semantic；评分结合确定性数据质量评分并划分热/温/冷三档为 code。需求仅明确声明热档动作（Slack 提醒、Gmail 回复、HubSpot 联系人），温/冷档未声明额外动作，故直接汇入统一 Google Sheets 记录并返回响应。原生的结构化输出解析、OpenAI 模型连接等实现细节未纳入。"
+}

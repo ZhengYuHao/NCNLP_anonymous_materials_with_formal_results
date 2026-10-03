@@ -1,0 +1,68 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-039",
+  "source_id": "n8n:12273",
+  "workflow_sha256": "d91970393f5aaf7cee0141fdfd96fc4f275a56c68e2f3448e22dc6af1209fca1",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "fb7c63d0b82e1c3379fd95b7fb1e6719f3d3406d1415f4374fdb84c243c0d182",
+  "requirement": {
+    "requirement_text": "系统定期执行房地产细分市场投资分析：并行采集四类数据，即房源挂牌数据、公共记录、人口统计信息与宏观经济指标；四类数据整合为统一数据集后，交由语言模型结合必要的量化计算完成分析，形成结构化、可用于投资决策的洞察。分析结果通过 Gmail 发送给收购团队，并通过 Slack 发送给投资人。",
+    "source_spans": [
+      {
+        "start": 13,
+        "end": 846,
+        "text": "This workflow automates end-to-end real estate investment analysis by aggregating data from multiple sources and applying AI-driven evaluation. It is designed for real estate investors, analysts, and portfolio managers seeking data-backed decisions without manual research overhead. The solution addresses the time-consuming challenge of collecting and analyzing fragmented real estate data—such as MLS listings, public records, demographic trends, and macroeconomic indicators—and transforms it into actionable insights using AI. Data is collected in parallel across four streams: MLS property data, public records, demographic information, and macroeconomic signals. These streams are consolidated into a unified dataset and processed by OpenAI GPT-4, using calculator tools and structured output parsing for quantitative analysis."
+      },
+      {
+        "start": 973,
+        "end": 1097,
+        "text": "Connect Gmail account for acquisition team notifications\nIntegrate Slack workspace and specify investor notification channel"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "房源挂牌数据",
+        "公共记录",
+        "人口统计信息",
+        "宏观经济指标"
+      ],
+      "conditions": [
+        "四类数据并行采集后整合为统一数据集"
+      ],
+      "allowed_actions": [
+        "并行采集四类数据",
+        "整合为统一数据集",
+        "结合必要的量化计算生成结构化投资分析",
+        "通过 Gmail 向收购团队发送分析结果通知",
+        "通过 Slack 向投资人发送分析结果通知"
+      ],
+      "visible_outcomes": [
+        "形成可用于投资决策的分析洞察",
+        "收购团队通过邮件收到分析结果",
+        "投资人通过 Slack 收到分析结果"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-039.packet.json",
+    "packet_sha256": "202854dda375c3c2dd3383ac7ee8c7e08633430f4f3afeb4378438490c6c2ec3",
+    "public_description_sha256": "17b0b7af1bde1e3cd587b4e7eb3fc143e15bf01e91ed4effe9745de008f09bbb"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-039.response.json",
+    "verification_response_sha256": "3f31f7378dcdb6667dd1cb6544553a35afb0f9d0f949c2d56b86a3c84b58aa8c",
+    "decision": "accept"
+  },
+  "formal_index": 50
+}

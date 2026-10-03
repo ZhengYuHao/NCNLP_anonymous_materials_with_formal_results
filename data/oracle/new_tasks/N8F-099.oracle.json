@@ -1,0 +1,207 @@
+{
+  "task_id": "N8F-099",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "34969c87042ec9fe218374afbef1fae036a50a783b37c51e28d2748ed25ae54a",
+  "fixtures": [
+    {
+      "fixture_id": "F-CMD-FULL-NAME",
+      "purpose": "正常用例：Slack 斜杠命令提供完整姓名，验证抓取 20 条帖子并生成报告",
+      "input_data": {
+        "slack_command": "/check-linkedin Jane Smith",
+        "full_name": "Jane Smith",
+        "recipient_email": "cs@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-CMD-FIRST-ONLY",
+      "purpose": "负例：仅提供名（John），验证姓名校验失败后不进入后续流程",
+      "input_data": {
+        "slack_command": "/check-linkedin John",
+        "full_name": "John",
+        "recipient_email": "cs@example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-APIFY-PROFILE",
+      "dependency_type": "@apify/n8n-nodes-apify.apify",
+      "operation": "discover_and_scrape_posts",
+      "request_contract": {
+        "full_name": "Jane Smith"
+      },
+      "response_contract": {
+        "profile_url": "https://linkedin.com/in/jane-smith",
+        "posts": [
+          {"id": "P01", "date": "2026-08-30", "text": "Excited about our new AI product launch."},
+          {"id": "P02", "date": "2026-08-28", "text": "Key takeaways from the customer conference."},
+          {"id": "P03", "date": "2026-08-25", "text": "Thoughts on prompt engineering best practices."},
+          {"id": "P04", "date": "2026-08-22", "text": "Team offsite recap and culture notes."},
+          {"id": "P05", "date": "2026-08-20", "text": "Hiring: we are looking for ML engineers."},
+          {"id": "P06", "date": "2026-08-18", "text": "Market trends in generative AI."},
+          {"id": "P07", "date": "2026-08-15", "text": "Customer story: deploying at scale."},
+          {"id": "P08", "date": "2026-08-12", "text": "Why evaluation matters for LLM apps."},
+          {"id": "P09", "date": "2026-08-10", "text": "Quick update on our roadmap."},
+          {"id": "P10", "date": "2026-08-08", "text": "Partner announcement with a data platform."},
+          {"id": "P11", "date": "2026-08-05", "text": "Reflections on remote work."},
+          {"id": "P12", "date": "2026-08-03", "text": "Product tip of the week."},
+          {"id": "P13", "date": "2026-08-01", "text": "Community meetup recap."},
+          {"id": "P14", "date": "2026-07-29", "text": "Behind the scenes of our research lab."},
+          {"id": "P15", "date": "2026-07-27", "text": "Interview with our CTO."},
+          {"id": "P16", "date": "2026-07-25", "text": "New blog post on vector databases."},
+          {"id": "P17", "date": "2026-07-22", "text": "Conference panel participation."},
+          {"id": "P18", "date": "2026-07-20", "text": "Customer feedback highlight."},
+          {"id": "P19", "date": "2026-07-18", "text": "Industry roundup."},
+          {"id": "P20", "date": "2026-07-15", "text": "Welcome to new team members."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_activity",
+      "request_contract": {
+        "posts": "array"
+      },
+      "response_contract": {
+        "latest_post_date": "2026-08-30",
+        "cadence": "roughly every 2-3 days",
+        "top_themes": ["AI product launches", "LLM engineering"],
+        "recent_highlights": ["New AI product launch", "Customer conference takeaways"],
+        "detailed_topics": [
+          {"topic": "AI product launches", "keywords": ["launch", "AI", "product"], "rationale": "appears in multiple posts with launch announcements"},
+          {"topic": "LLM engineering", "keywords": ["prompt", "evaluation", "LLM"], "rationale": "technical posts about building LLM applications"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-REPORT",
+      "dependency_type": "gmail",
+      "operation": "send_html_report",
+      "request_contract": {
+        "to": "string",
+        "subject": "string",
+        "html": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-007",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-REPORT-GENERATED",
+      "kind": "positive",
+      "fixture_ids": ["F-CMD-FULL-NAME"],
+      "mock_ids": ["M-APIFY-PROFILE", "M-LLM-ANALYSIS", "M-GMAIL-REPORT"],
+      "assertions": [
+        {
+          "assertion_id": "A-PROFILE-FOUND",
+          "target": "apify.output.profile_url",
+          "operator": "matches",
+          "expected": "^https?://\\S+",
+          "rationale": "系统应定位到对应的 LinkedIn 个人主页并返回其 URL"
+        },
+        {
+          "assertion_id": "A-POSTS-TWENTY",
+          "target": "apify.output.posts",
+          "operator": "length_equals",
+          "expected": 20,
+          "rationale": "需求要求抓取最近发布的 20 条帖子，数量必须恰好为 20"
+        },
+        {
+          "assertion_id": "A-LATEST-DATE",
+          "target": "llm_analysis.output.latest_post_date",
+          "operator": "equals",
+          "expected": "2026-08-30",
+          "rationale": "报告应包含最近发帖日期，且与模拟数据中最新帖子的日期一致"
+        },
+        {
+          "assertion_id": "A-TWO-TOPICS",
+          "target": "llm_analysis.output.detailed_topics",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "报告必须包含两个主要议题"
+        },
+        {
+          "assertion_id": "A-TOPIC-KEYWORDS",
+          "target": "llm_analysis.output.detailed_topics[0].keywords",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每个主要议题都必须附有关键词"
+        },
+        {
+          "assertion_id": "A-TOPIC-RATIONALE",
+          "target": "llm_analysis.output.detailed_topics[0].rationale",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "每个主要议题都必须附有判断依据"
+        },
+        {
+          "assertion_id": "A-REPORT-EMAIL-ONE",
+          "target": "gmail.send_html_report.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "生成的报告应通过邮件发送一次到用户邮箱"
+        },
+        {
+          "assertion_id": "A-REPORT-HTML",
+          "target": "gmail.send_html_report.calls[0].html",
+          "operator": "matches",
+          "expected": "<[a-zA-Z][^>]*>",
+          "rationale": "报告必须是格式化的 HTML 内容，应包含 HTML 标签"
+        },
+        {
+          "assertion_id": "A-REPORT-SUBJECT",
+          "target": "gmail.send_html_report.calls[0].subject",
+          "operator": "contains",
+          "expected": "Jane Smith",
+          "rationale": "邮件主题应包含被查询人员姓名"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-FIRST-NAME-REJECTED",
+      "kind": "negative",
+      "fixture_ids": ["F-CMD-FIRST-ONLY"],
+      "mock_ids": ["M-APIFY-PROFILE", "M-LLM-ANALYSIS", "M-GMAIL-REPORT"],
+      "assertions": [
+        {
+          "assertion_id": "A-FIRST-NO-SCRAPE",
+          "target": "apify.discover_and_scrape_posts.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "仅提供名未通过校验时不得抓取 LinkedIn 帖子"
+        },
+        {
+          "assertion_id": "A-FIRST-NO-EMAIL",
+          "target": "gmail.send_html_report.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "姓名校验失败时不得生成或发送报告邮件"
+        },
+        {
+          "assertion_id": "A-FIRST-ERROR-REPLY",
+          "target": "output.error_message",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "系统应向 Slack 用户返回姓名校验失败的错误提示"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：完整姓名通过校验并抓取恰好 20 条帖子、报告含最近发帖日期/节奏/两大议题及关键词与依据、HTML 邮件投递；仅名输入被拒绝且不抓取不发邮件。Apify、语言模型与 Gmail 全部确定性模拟。"
+}

@@ -1,0 +1,577 @@
+{
+  "task_id": "N8F-014",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "913ca08f54c52f5e3248f9ef8bcbe0f6f4136e2a1d30a8116484a38558566c8d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 用户消息（文本/语音/图片）",
+      "node_type": "code",
+      "operation_family": "message_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "用户发来的 Telegram 消息（文本、语音或图片）"
+        }
+      ],
+      "native_evidence": ["Telegram Trigger"],
+      "requirement_evidence": ["用户通过 Telegram 以文本、语音或图片方式发送的消息"],
+      "rationale": "消息接收触发为确定性入口行为，判为 code；作为主流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "输入形态路由与注册状态检查",
+      "node_type": "code",
+      "operation_family": "input_routing",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "用户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message_type",
+          "type": "string",
+          "description": "消息形态：text / voice / image"
+        },
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "消息内容（文本、语音文件引用或图片文件引用）"
+        },
+        {
+          "name": "is_registered",
+          "type": "boolean",
+          "description": "用户是否已完成注册"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "description": "用户标识"
+        }
+      ],
+      "native_evidence": ["Input Message Router1", "Registered?", "If"],
+      "requirement_evidence": ["支持文本、语音、图片三种输入方式", "语音消息需先转写后再处理", "食物图片需经 AI 识别分析", "提供简单的注册引导"],
+      "rationale": "按消息形态分流与注册状态查询（查 Google Sheets）均为确定性规则与 IO，判为 code；未注册用户的注册引导分流条件折叠进本节点的输出与路由条件。"
+    },
+    {
+      "node_id": "n3",
+      "label": "转写语音消息",
+      "node_type": "semantic",
+      "operation_family": "speech_transcription",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "语音消息文件引用"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "语音转写后的文本"
+        }
+      ],
+      "native_evidence": ["Download Voice Message", "Fix mime", "Analyze voice message"],
+      "requirement_evidence": ["语音消息经转写后处理", "转写语音消息"],
+      "rationale": "语音转写为多模态语言模型能力（开放理解），判为 semantic；文件下载与 MIME 修正为实现细节，折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "识别食物图片",
+      "node_type": "semantic",
+      "operation_family": "image_recognition",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "食物图片文件引用"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_analysis",
+          "type": "string",
+          "description": "AI 识别分析出的食物描述"
+        }
+      ],
+      "native_evidence": ["Download IMAGE", "Fix mime5", "Analyze image"],
+      "requirement_evidence": ["食物图片由 AI 进行识别分析", "识别食物图片"],
+      "rationale": "食物图片识别为多模态开放理解，判为 semantic；文件下载与 MIME 修正折叠进节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "理解餐食描述并估算营养素",
+      "node_type": "semantic",
+      "operation_family": "nutrition_estimation",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "文本形式的餐食描述"
+        },
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "语音转写后的餐食描述（语音路径）"
+        },
+        {
+          "name": "image_analysis",
+          "type": "string",
+          "description": "图片识别出的食物描述（图片路径）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "nutrition_estimate",
+          "type": "object",
+          "description": "估算的热量、蛋白质、碳水化合物与脂肪"
+        }
+      ],
+      "native_evidence": ["Cal IA Agent"],
+      "requirement_evidence": ["识别或理解用户描述的餐食后，自动估算热量、蛋白质、碳水化合物和脂肪"],
+      "rationale": "理解餐食描述并估算营养素需要开放文本/多模态理解与推理，判为 semantic；三种输入路径汇入同一理解行为。"
+    },
+    {
+      "node_id": "n6",
+      "label": "写入餐食记录（Google Sheets）",
+      "node_type": "code",
+      "operation_family": "data_persistence",
+      "inputs": [
+        {
+          "name": "nutrition_estimate",
+          "type": "object",
+          "description": "估算的营养素数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meal_record",
+          "type": "object",
+          "description": "已写入的餐食记录"
+        },
+        {
+          "name": "reply_content",
+          "type": "string",
+          "description": "记录完成的确认回复内容"
+        }
+      ],
+      "native_evidence": ["Append Meal Data"],
+      "requirement_evidence": ["自动估算热量、蛋白质、碳水化合物和脂肪，并写入餐食记录", "以 Google Sheets 作为数据库，分别维护用户档案（含目标）与餐食记录"],
+      "rationale": "写入 Google Sheets 餐食记录为确定性外部动作，判为 code；确认回复内容由已写入记录确定性组装。"
+    },
+    {
+      "node_id": "n7",
+      "label": "注册引导对话",
+      "node_type": "semantic",
+      "operation_family": "user_onboarding",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "用户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "registration_info",
+          "type": "object",
+          "description": "注册引导产出的用户注册信息（不含体重、身高等个人健康数据）"
+        }
+      ],
+      "native_evidence": ["Register Agent", "get_message (register)"],
+      "requirement_evidence": ["提供简单的注册引导，不存储个人健康数据（不需要体重或身高）"],
+      "rationale": "注册引导为对话式开放交互，判为 semantic；'不存储个人健康数据'为节点契约约束。"
+    },
+    {
+      "node_id": "n8",
+      "label": "保存用户档案（Google Sheets）",
+      "node_type": "code",
+      "operation_family": "data_persistence",
+      "inputs": [
+        {
+          "name": "registration_info",
+          "type": "object",
+          "description": "用户注册信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_record",
+          "type": "object",
+          "description": "已写入的用户档案记录"
+        },
+        {
+          "name": "reply_content",
+          "type": "string",
+          "description": "注册完成的确认回复内容"
+        }
+      ],
+      "native_evidence": ["Register User"],
+      "requirement_evidence": ["以 Google Sheets 作为数据库，分别维护用户档案（含目标）与餐食记录", "注册时不存储个人健康数据，不需要体重或身高"],
+      "rationale": "写入 Google Sheets 用户档案为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "解析目标设置/更新请求",
+      "node_type": "semantic",
+      "operation_family": "goal_management",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "用户的目标设置或更新请求文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "goal_update",
+          "type": "object",
+          "description": "解析出的热量目标与蛋白质目标"
+        }
+      ],
+      "native_evidence": ["Cal IA Agent", "Update Profile Data"],
+      "requirement_evidence": ["用户可设置并更新每日热量目标和蛋白质目标", "用户说 update my protein goal → AI 更新 Google Sheets 中的用户档案"],
+      "rationale": "理解自然语言目标设置请求并解析出目标值需要开放文本理解，判为 semantic。"
+    },
+    {
+      "node_id": "n10",
+      "label": "更新用户档案中的目标（Google Sheets）",
+      "node_type": "code",
+      "operation_family": "data_update",
+      "inputs": [
+        {
+          "name": "goal_update",
+          "type": "object",
+          "description": "待写入的热量目标与蛋白质目标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_record",
+          "type": "object",
+          "description": "更新后的用户档案记录"
+        },
+        {
+          "name": "reply_content",
+          "type": "string",
+          "description": "目标更新完成的确认回复内容"
+        }
+      ],
+      "native_evidence": ["Update Profile Data"],
+      "requirement_evidence": ["设置与更新热量目标和蛋白质目标", "更新 Google Sheets 中的用户档案"],
+      "rationale": "更新 Google Sheets 用户档案为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "生成带可视化进度条的每日营养报告",
+      "node_type": "code",
+      "operation_family": "report_generation",
+      "inputs": [
+        {
+          "name": "user_id",
+          "type": "string",
+          "description": "用户标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reply_content",
+          "type": "string",
+          "description": "带可视化进度条的个性化每日营养汇总消息"
+        }
+      ],
+      "native_evidence": ["Get report", "Get Meals Info", "Get User Info", "Get Data", "Unify data", "Get chart message"],
+      "requirement_evidence": ["日报：向用户推送个性化的每日进度消息，并带有可视化的进度条", "用户输入 report → AI 返回带进度条的每日营养汇总"],
+      "rationale": "读取用户档案与餐食记录并由数据确定性汇总出带进度条的报告消息，原生图亦以代码节点实现该链路，无开放文本生成，判为 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "发送 Telegram 回复",
+      "node_type": "terminal",
+      "operation_family": "message_delivery",
+      "inputs": [
+        {
+          "name": "reply_content",
+          "type": "string",
+          "description": "待发送的回复内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send a text message", "Send a text message1", "Send back message"],
+      "requirement_evidence": ["系统提供一个基于 Telegram 的营养助手", "向用户推送个性化的每日进度消息"],
+      "rationale": "向用户回送消息是各分支最终的用户可见完成动作，判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "消息到达后进行路由与注册检查。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "is_registered == true && message_type == voice",
+      "rationale": "语音消息需先转写后再处理。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "is_registered == true && message_type == image",
+      "rationale": "食物图片需经 AI 识别分析。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": "is_registered == true && message_type == text && 意图为记录餐食",
+      "rationale": "文本餐食描述直接进入理解与估算。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n2",
+      "target": "n9",
+      "variable": null,
+      "condition": "is_registered == true && message_type == text && 意图为设置/更新目标",
+      "rationale": "目标管理请求进入目标解析分支。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n2",
+      "target": "n11",
+      "variable": null,
+      "condition": "is_registered == true && message_type == text && 意图为查询日报（如 report）",
+      "rationale": "日报请求进入报告生成分支。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n2",
+      "target": "n7",
+      "variable": null,
+      "condition": "is_registered == false",
+      "rationale": "未注册用户进入注册引导。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写后的文本进入餐食理解与估算。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片识别结果进入餐食理解与估算。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "估算结果写入餐食记录。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n6",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录后回复用户。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "注册信息收集后保存用户档案。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n8",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "档案保存后回复用户。"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析出的目标写入用户档案。"
+    },
+    {
+      "edge_id": "c15",
+      "source": "n10",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "目标更新后回复用户。"
+    },
+    {
+      "edge_id": "c16",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "日报生成后推送给用户。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "路由消费原始消息。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "转写消费语音文件引用。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "图片识别消费图片文件引用。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "餐食理解消费文本描述。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "transcribed_text",
+      "condition": null,
+      "rationale": "语音路径的转写文本汇入餐食理解。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "image_analysis",
+      "condition": null,
+      "rationale": "图片路径的识别结果汇入餐食理解。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "nutrition_estimate",
+      "condition": null,
+      "rationale": "餐食记录写入消费营养素估算。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n2",
+      "target": "n7",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "注册引导消费用户消息。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n7",
+      "target": "n8",
+      "variable": "registration_info",
+      "condition": null,
+      "rationale": "档案保存消费注册信息。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n2",
+      "target": "n9",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "目标解析消费请求文本。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n9",
+      "target": "n10",
+      "variable": "goal_update",
+      "condition": null,
+      "rationale": "档案更新消费解析出的目标值。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n2",
+      "target": "n11",
+      "variable": "user_id",
+      "condition": null,
+      "rationale": "日报生成按用户读取档案与餐食记录。"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n6",
+      "target": "n12",
+      "variable": "reply_content",
+      "condition": null,
+      "rationale": "发送记录确认回复。"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n8",
+      "target": "n12",
+      "variable": "reply_content",
+      "condition": null,
+      "rationale": "发送注册确认回复。"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n10",
+      "target": "n12",
+      "variable": "reply_content",
+      "condition": null,
+      "rationale": "发送目标更新确认回复。"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n11",
+      "target": "n12",
+      "variable": "reply_content",
+      "condition": null,
+      "rationale": "推送每日营养报告。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n12"],
+  "confidence": 0.75,
+  "notes": "关键取舍：(1) 文本消息的意图细分（记录餐食/设置目标/查询日报）在原生图中由同一 AI 代理借助工具选择实现，Gold 按需求声明的三类行为拆分为独立节点，路由条件以消息形态+意图表达；(2) 注册状态检查折叠进路由节点（查 Google Sheets 确定性判断）；(3) 日报生成链路（读取档案与餐食记录→汇总为带进度条消息）在原生图中全部为代码节点，判为 code；(4) 原生的 Typing…、MarkdownV2、get_error_message、Merge 等实现细节未纳入 Gold。"
+}

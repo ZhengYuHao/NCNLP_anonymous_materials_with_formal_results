@@ -1,0 +1,440 @@
+{
+  "task_id": "N8F-023",
+  "annotator_id": "GM-B-03",
+  "status": "submitted",
+  "requirement_sha256": "808e718e48678b6f68703580e1d25498e2a6728aff033e47fa725b51b2a37c57",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 创意输入（文字加商品图片）",
+      "node_type": "code",
+      "operation_family": "messaging_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "idea_input",
+          "type": "object",
+          "description": "Telegram 输入的文字创意与商品图片"
+        }
+      ],
+      "native_evidence": [
+        "Trigger: Receive Idea via Telegram",
+        "Telegram: Get Image File",
+        "Google Drive: Upload Image"
+      ],
+      "requirement_evidence": [
+        "从 Telegram 输入（文字加商品图片）生成广告创意"
+      ],
+      "rationale": "消息触发与图片文件获取为确定性 IO，判 code；原生将图片先上传 Drive 供后续引用，属实现细节并入输入准备。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成广告创意与图像提示词",
+      "node_type": "semantic",
+      "operation_family": "llm_creative_generation",
+      "inputs": [
+        {
+          "name": "idea_input",
+          "type": "object",
+          "description": "Telegram 输入的文字创意与商品图片"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_prompts",
+          "type": "array",
+          "description": "用于商品视觉素材的图像生成提示词（广告创意的具体化）"
+        }
+      ],
+      "native_evidence": [
+        "Parse Idea Into Prompts",
+        "Generate Image Prompt",
+        "OpenAI Chat Model",
+        "Structured Output Parser"
+      ],
+      "requirement_evidence": [
+        "根据输入生成广告创意",
+        "调用图像生成能力制作商品视觉素材"
+      ],
+      "rationale": "广告创意与构图提示词的生成需要开放文本理解与生成，判 semantic；提示词生成是『制作商品视觉素材』这一声明行为的前置语义环节，原生为 LLM Agent。"
+    },
+    {
+      "node_id": "n3",
+      "label": "调用多种图像生成能力制作商品视觉素材",
+      "node_type": "code",
+      "operation_family": "external_api_image_generation",
+      "inputs": [
+        {
+          "name": "image_prompts",
+          "type": "array",
+          "description": "用于商品视觉素材的图像生成提示词（广告创意的具体化）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_assets",
+          "type": "array",
+          "description": "生成的商品视觉素材图像"
+        }
+      ],
+      "native_evidence": [
+        "Split out – iterate image_prompt",
+        "NanoBanana: Create Image",
+        "Seedream: Generate image from texte",
+        "Generate 4o Image（GPT IMAG 1）",
+        "Wait – NanoBanana job",
+        "Wait – image rendering",
+        "Wait – image rendering II",
+        "NanoBanana – fetch edited image",
+        "Download image from Seedream",
+        "ChatGPT Image – fetch generated image",
+        "Set – select Seedream image URL",
+        "Merge – collect image sources (3 providers)"
+      ],
+      "requirement_evidence": [
+        "使用多种图像生成能力制作商品视觉素材",
+        "商品视觉使用多种图像生成能力制作"
+      ],
+      "rationale": "图像生成类外部服务调用判 code（确定性契约：提交提示词、取回成品图）；原生 3 条图像服务支线按需求『多种图像生成能力』合并为单节点；逐提示词循环为逐项映射折叠；各异步渲染等待/轮询折叠进契约，终止条件为渲染完成状态，max_iterations<=20。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成视频广告脚本",
+      "node_type": "semantic",
+      "operation_family": "llm_script_generation",
+      "inputs": [
+        {
+          "name": "visual_assets",
+          "type": "array",
+          "description": "生成的商品视觉素材图像"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_script",
+          "type": "string",
+          "description": "视频广告脚本文本"
+        }
+      ],
+      "native_evidence": [
+        "Set Master Prompt",
+        "AI Agent: Generate Video Script",
+        "OpenAI Chat Model1",
+        "Structured Output Parser1"
+      ],
+      "requirement_evidence": [
+        "基于由语言模型生成的脚本，使用视频生成能力制作电影感的广告视频",
+        "调用语言模型生成视频脚本"
+      ],
+      "rationale": "广告脚本创作需要开放文本生成，判 semantic；原生将已生成图像 URL 纳入脚本生成上下文（Google Sheets – save image URLs → Set Master Prompt），故 DFG 自视觉素材。"
+    },
+    {
+      "node_id": "n5",
+      "label": "调用视频生成能力制作广告视频片段",
+      "node_type": "code",
+      "operation_family": "external_api_video_generation",
+      "inputs": [
+        {
+          "name": "video_script",
+          "type": "string",
+          "description": "视频广告脚本文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_segments",
+          "type": "array",
+          "description": "生成的电影感广告视频短片段"
+        }
+      ],
+      "native_evidence": [
+        "3 prompts",
+        "Loop Over Items - Split In Batches",
+        "Format Prompt",
+        "Generate Video with VEO3",
+        "Wait for VEO3 Rendering",
+        "Download Video from VEO3"
+      ],
+      "requirement_evidence": [
+        "使用视频生成能力制作电影感的广告视频"
+      ],
+      "rationale": "视频生成类外部服务调用判 code；原生按脚本派生的多个提示词逐一生成片段（Loop Over Items），为逐项映射折叠；渲染等待折叠，终止条件为渲染完成，max_iterations<=20。"
+    },
+    {
+      "node_id": "n6",
+      "label": "合成成片广告",
+      "node_type": "code",
+      "operation_family": "external_api_video_merge",
+      "inputs": [
+        {
+          "name": "video_segments",
+          "type": "array",
+          "description": "生成的电影感广告视频短片段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_video_url",
+          "type": "string",
+          "description": "合成的成片广告视频"
+        }
+      ],
+      "native_evidence": [
+        "Aggregate – gather 3 video URLs",
+        "Update row in sheet",
+        "Merge 3 Videos",
+        "Wait: Merge Process",
+        "Check Merge Status"
+      ],
+      "requirement_evidence": [
+        "把多个短片段合成为一支成片广告",
+        "多个短片段需合成为一支成片"
+      ],
+      "rationale": "外部视频合并服务调用为确定性契约，判 code；合并过程等待/状态检查折叠进契约，终止条件为合并完成，max_iterations<=20。"
+    },
+    {
+      "node_id": "n7",
+      "label": "自动发布到多个社交平台",
+      "node_type": "code",
+      "operation_family": "publishing",
+      "inputs": [
+        {
+          "name": "final_video_url",
+          "type": "string",
+          "description": "合成的成片广告视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_results",
+          "type": "object",
+          "description": "各平台的发布结果与链接"
+        }
+      ],
+      "native_evidence": [
+        "Upload Video to BLOTATO",
+        "Tiktok",
+        "Instagram",
+        "Linkedin",
+        "Twitter (X)",
+        "Facebook",
+        "Pinterest",
+        "Bluesky",
+        "Youtube",
+        "Threads",
+        "Merge1"
+      ],
+      "requirement_evidence": [
+        "自动发布到多个平台（TikTok、Instagram、LinkedIn、X、Threads、Facebook、Pinterest、Bluesky、YouTube）"
+      ],
+      "rationale": "发布为确定性外部动作，判 code；原生经 BLOTATO 中转向 9 个平台分发，需求声明为单一『发布到多个平台』行为，合并为一个节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "保存元数据与结果到 Google Sheets 与 Google Drive",
+      "node_type": "code",
+      "operation_family": "record_keeping",
+      "inputs": [
+        {
+          "name": "final_video_url",
+          "type": "string",
+          "description": "合成的成片广告视频"
+        },
+        {
+          "name": "publish_results",
+          "type": "object",
+          "description": "各平台的发布结果与链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tracking_record",
+          "type": "object",
+          "description": "保存的元数据与结果（含成片链接、发布状态）"
+        }
+      ],
+      "native_evidence": [
+        "Save Ad Data to Google Sheets",
+        "Upload Final Video to Google Drive",
+        "Update URL Final video",
+        "Update Status to \"DONE\"",
+        "Update row in sheet"
+      ],
+      "requirement_evidence": [
+        "把元数据与结果存入 Google Sheets 与 Google Drive 以便跟踪"
+      ],
+      "rationale": "外部存储写入为确定性 IO 动作，判 code；成片 URL 来自合成节点，发布状态来自发布节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送 Telegram 通知（视频链接与文案）",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "tracking_record",
+          "type": "object",
+          "description": "保存的元数据与结果（含成片链接、发布状态）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Video URL via Telegram",
+        "Send a video"
+      ],
+      "requirement_evidence": [
+        "最后通过 Telegram 发送通知，附上视频链接与文案"
+      ],
+      "rationale": "用户可见完成动作且为流程末端（需求声明『最后』），判 terminal；通知内容取自已保存的跟踪记录，与原生 Save Ad Data → Send Video URL 顺序一致。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到创意输入后生成广告创意与提示词。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "提示词就绪后调用图像生成能力。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "视觉素材完成后生成脚本（原生将图像 URL 纳入脚本上下文）。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "脚本完成后制作视频片段。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段完成后合成为成片。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "成片完成后自动发布。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布后保存元数据与结果以便跟踪。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录保存后发送 Telegram 通知（需求声明『最后』，与原生顺序一致）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "idea_input",
+      "condition": null,
+      "rationale": "创意生成消费 Telegram 文字与商品图片。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "image_prompts",
+      "condition": null,
+      "rationale": "图像生成消费广告创意提示词。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "visual_assets",
+      "condition": null,
+      "rationale": "脚本生成参考已生成的商品视觉素材（原生证据：Google Sheets – save image URLs → Set Master Prompt）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "video_script",
+      "condition": null,
+      "rationale": "视频生成消费脚本（及其派生提示词）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "video_segments",
+      "condition": null,
+      "rationale": "合成消费全部短片段。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_video_url",
+      "condition": null,
+      "rationale": "发布消费成片。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n8",
+      "variable": "final_video_url",
+      "condition": null,
+      "rationale": "元数据保存含成片链接。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "publish_results",
+      "condition": null,
+      "rationale": "跟踪记录含各平台发布结果。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "tracking_record",
+      "condition": null,
+      "rationale": "通知附视频链接与文案，取自已保存的跟踪记录。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.75,
+  "notes": "原生 63 节点、含大量 Sheets 状态中转（Google Sheets – save image URLs、Update row in sheet、Update URL Final video 等）与多处异步等待；需求未声明这些中间读写为业务行为，未单独建模。3 条图像生成支线与逐提示词循环、逐脚本提示词循环均为逐项映射，折叠进相应节点契约；各处 Wait/轮询折叠并声明终止条件（渲染/合并完成状态，max_iterations<=20）。发布到 9 个平台合并为单节点。脚本生成参考已生成视觉素材依据原生证据链（Google Sheets – save image URLs → Set Master Prompt → AI Agent）。原生 Think 工具、Sticky Note 等辅助元素不构成业务行为，未纳入。"
+}

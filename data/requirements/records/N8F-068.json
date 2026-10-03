@@ -1,0 +1,73 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-068",
+  "source_id": "n8n:3302",
+  "workflow_sha256": "073467a3d3b2c2723f58d18d30dde9a2fa7d2f3bfa736d004693056d8e0a6423",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "adf87990f265948866cfe06cdb46d65753798883bb6a8dd24108cb0d03f28f81",
+  "requirement": {
+    "requirement_text": "系统用于处理来自政府、企业、非政府组织或个人的新闻稿，帮助编辑与记者管理这些收到的新闻稿。当收到新邮件时系统被触发，首先对邮件附件进行筛选，只保留 Word 和 PDF 格式的文档，其他格式（如 JPG）被剔除。随后按附件情况分为三条处理路径：若筛选后没有剩余附件，则直接处理邮件正文中内联的消息内容；若为 PDF 附件，则提取其中的文档内容；若为 Word 附件，则提取其中的文本内容。无论走哪条路径，提取出的内容都会被交给语言模型，按照预设要求将新闻稿改写为一篇结构完整的文章。另有一个独立的评估环节，由语言模型将生成结果与原始输入进行比对，对转换的质量与准确性作出自评，形成一次额外的反馈闭环。最后，系统向原发件人生成一封回复邮件，其中包含三部分内容：原始输入、生成的文章以及这份自评，便于编辑审阅并做最小幅度的修改。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 721,
+        "text": "This n8n workflow automates the transformation of press releases into polished articles. It converts the content of an email and its attachments (PDF or Word documents) into an AI-written article/blog post. \n\nWhat does it do?\nThis workflow assists editors and journalists in managing incoming press-releases from governments, companies, NGOs, or individuals. The result is a draft article that can easily be reviewed by the editor, who receives it in a reply email containing both the original input and the output, plus an AI-generated self-assessment. This self-assessment represents an additional feedback loop where the AI compares the input with the output to evaluate the quality and accuracy of its transformation."
+      },
+      {
+        "start": 723,
+        "end": 930,
+        "text": "How does it work?\nTriggered by incoming emails in Google, it first filters attachments, retaining only Word and PDF files while removing other formats like JPGs. The workflow then follows one of three paths:"
+      },
+      {
+        "start": 936,
+        "end": 1161,
+        "text": "If no attachments remain, it processes the inline email message directly.\n    For PDF attachments, it uses an extractor to obtain the document content.\n    For Word attachments, it extracts the text content by a http request."
+      },
+      {
+        "start": 1163,
+        "end": 1790,
+        "text": "In each case, the extracted content is then passed to an AI agent that converts the press release into a well-structured article according to predefined prompts. A separate AI evaluation step provides a self-assessment by comparing the output with the original input to ensure quality and accuracy. Finally, the workflow generates a reply email to the sender containing three components: the original input, the AI-generated article, and the self-assessment. This streamlined process helps editors and journalists efficiently manage incoming press releases, delivering draft articles that require minimal additional editing.\"  "
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "收到的新邮件正文内容及其附件（Word 或 PDF 文档）"
+      ],
+      "conditions": [
+        "附件仅保留 Word 与 PDF 格式，其他格式被剔除",
+        "筛选后无剩余附件则处理邮件正文；存在 PDF 附件则提取 PDF 文档内容；存在 Word 附件则提取 Word 文本内容"
+      ],
+      "allowed_actions": [
+        "筛选邮件附件并剔除非 Word/PDF 格式",
+        "按附件情况提取 PDF 文档内容、Word 文本内容或邮件正文内容",
+        "调用语言模型将新闻稿改写为结构完整的文章",
+        "调用语言模型对比原始输入与生成输出，生成质量与准确性自评",
+        "向原发件人发送包含原始输入、生成文章与自评三部分内容的回复邮件"
+      ],
+      "visible_outcomes": [
+        "原发件人收到一封回复邮件，内含原始输入、生成的文章草稿与质量自评三部分内容"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-068.packet.json",
+    "packet_sha256": "6410e135535fb809a3f7db6186a845c45c5c46e4f1ae317ff30e379237bc67c9",
+    "public_description_sha256": "00c8a19a3a2fb9923b75b3a0c421ab95c2bfdf4daeae71b2a85fa88a94004bc4"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-068.response.json",
+    "verification_response_sha256": "58373bd86c04cdf3c74d5667fcea90fe998b582d195eec5dc06fa1950dbe3f04",
+    "decision": "accept"
+  },
+  "formal_index": 79
+}

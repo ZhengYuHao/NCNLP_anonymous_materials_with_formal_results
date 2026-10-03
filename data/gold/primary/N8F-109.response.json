@@ -1,0 +1,343 @@
+{
+  "task_id": "N8F-109",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "a1f853f4b619a03041ae38ce5d5b33ef74150af3c5cf9be6c5d7a906d8b6452e",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "读取两个数据集",
+      "node_type": "code",
+      "operation_family": "data_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "dataset_a",
+          "type": "array",
+          "description": "效果数据数据集，含 Channel 与 Clicks、Spend 等效果指标"
+        },
+        {
+          "name": "dataset_b",
+          "type": "array",
+          "description": "负责人分配数据集，含 Channel 与团队负责人信息"
+        }
+      ],
+      "native_evidence": ["Start Workflow", "Sample Marketing Data", "Google Sheets1"],
+      "requirement_evidence": [
+        "将两个数据集按共同的列（Channel）进行合并"
+      ],
+      "rationale": "需求声明在 Google Sheets 中对两个数据集做整理与分析，读取数据集属确定性外部查询动作，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按 Channel 合并两个数据集",
+      "node_type": "code",
+      "operation_family": "data_merge",
+      "inputs": [
+        {
+          "name": "dataset_a",
+          "type": "array",
+          "description": "效果数据数据集"
+        },
+        {
+          "name": "dataset_b",
+          "type": "array",
+          "description": "负责人分配数据集"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "merged_rows",
+          "type": "array",
+          "description": "按共同列 Channel 合并后的数据行"
+        }
+      ],
+      "native_evidence": ["Merge on Channel Field"],
+      "requirement_evidence": [
+        "将两个数据集按共同的列（Channel）进行合并"
+      ],
+      "rationale": "按共同列合并两个数据集属确定性数据变换，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按效果指标筛选数据行",
+      "node_type": "code",
+      "operation_family": "data_filter",
+      "inputs": [
+        {
+          "name": "merged_rows",
+          "type": "array",
+          "description": "合并后的数据行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "filtered_rows",
+          "type": "array",
+          "description": "按 Clicks、Spend 等效果指标筛选后的数据行"
+        }
+      ],
+      "native_evidence": ["Filter"],
+      "requirement_evidence": [
+        "按效果指标（Clicks、Spend）筛选数据行"
+      ],
+      "rationale": "按效果指标筛选数据行属确定性过滤逻辑，判为 code；具体筛选取值需求未声明，按实现默认值处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "按表现分为 Great 与 Poor",
+      "node_type": "code",
+      "operation_family": "data_classification",
+      "inputs": [
+        {
+          "name": "filtered_rows",
+          "type": "array",
+          "description": "筛选后的数据行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "classified_rows",
+          "type": "array",
+          "description": "按表现标记为 Great 或 Poor 的数据行"
+        }
+      ],
+      "native_evidence": ["Check if spend over $350"],
+      "requirement_evidence": [
+        "再按表现将数据行分为 Great 与 Poor 两类"
+      ],
+      "rationale": "按表现将数据行分支归入 Great 或 Poor 属确定性分支判定逻辑，判为 code；判定阈值需求未声明，按实现默认值处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "按团队负责人汇总结果",
+      "node_type": "code",
+      "operation_family": "data_summary",
+      "inputs": [
+        {
+          "name": "classified_rows",
+          "type": "array",
+          "description": "标记 Great/Poor 的数据行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summary_result",
+          "type": "array",
+          "description": "按团队负责人对 Great 与 Poor 结果分别汇总后的结果"
+        }
+      ],
+      "native_evidence": ["Count good days", "Count bad days", "Organize fields into table", "Organize second data into table", "Append datasources together"],
+      "requirement_evidence": [
+        "按团队负责人对结果进行汇总"
+      ],
+      "rationale": "按团队负责人对分类结果分别计数汇总并合并属确定性聚合动作，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "智能体生成书面分析",
+      "node_type": "semantic",
+      "operation_family": "analysis_generation",
+      "inputs": [
+        {
+          "name": "summary_result",
+          "type": "array",
+          "description": "按负责人汇总后的结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_text",
+          "type": "string",
+          "description": "由语言模型智能体生成的书面分析，指出表现最好与最差的成员"
+        }
+      ],
+      "native_evidence": ["AI Agent - Summarize Leader Performance"],
+      "requirement_evidence": [
+        "最后由语言模型驱动的智能体生成一段书面分析，指出表现最好与最差的成员"
+      ],
+      "rationale": "由语言模型智能体解读汇总结果并撰写书面分析属开放语义理解与生成任务，判为 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "整理分析结果为最终交付格式",
+      "node_type": "code",
+      "operation_family": "response_assembly",
+      "inputs": [
+        {
+          "name": "analysis_text",
+          "type": "string",
+          "description": "智能体生成的书面分析文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_analysis",
+          "type": "object",
+          "description": "解析整理后作为最终结果交付的书面分析"
+        }
+      ],
+      "native_evidence": ["Structured Output Parser", "Convert table names and columns into single text for agent"],
+      "requirement_evidence": [
+        "最后由语言模型驱动的智能体生成一段书面分析，指出表现最好与最差的成员"
+      ],
+      "rationale": "将智能体生成的书面分析解析整理为最终交付格式属确定性整理动作，判为 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "输出分析结果",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "final_analysis",
+          "type": "object",
+          "description": "最终交付的书面分析结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["AI Agent - Summarize Leader Performance"],
+      "requirement_evidence": [
+        "最后由语言模型驱动的智能体生成一段书面分析，指出表现最好与最差的成员"
+      ],
+      "rationale": "输出书面分析结果是用户可见的完成动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取两个数据集后按 Channel 合并。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "合并后按效果指标筛选。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选后按表现分类。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "表现 == Great",
+      "rationale": "表现 Great 分支进入按负责人汇总。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "表现 == Poor",
+      "rationale": "表现 Poor 分支进入按负责人汇总。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总结果交给智能体生成书面分析。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成分析后整理为最终交付格式。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "整理完成后输出分析结果。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "dataset_a",
+      "condition": null,
+      "rationale": "效果数据集传给合并节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n2",
+      "variable": "dataset_b",
+      "condition": null,
+      "rationale": "负责人分配数据集传给合并节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "merged_rows",
+      "condition": null,
+      "rationale": "合并后的数据行传给筛选节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "filtered_rows",
+      "condition": null,
+      "rationale": "筛选后的数据行传给分类节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "classified_rows",
+      "condition": null,
+      "rationale": "分类标记后的数据行传给汇总节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "summary_result",
+      "condition": null,
+      "rationale": "按负责人汇总的结果传给智能体生成分析。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "analysis_text",
+      "condition": null,
+      "rationale": "生成的书面分析文本传给整理节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "final_analysis",
+      "condition": null,
+      "rationale": "整理后的分析结果传给输出节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n8"],
+  "confidence": 0.9,
+  "notes": "按需求建模为 8 节点线性链：读取两个数据集→按 Channel 合并→按效果指标筛选→按表现分为 Great/Poor→按负责人汇总→智能体生成书面分析→整理→输出。筛选阈值与 Great/Poor 判定阈值需求未给出具体取值，按实现默认值处理并在节点契约中注明。原生图中的 Convert table names、Structured Output Parser 等节点为智能体输入输出整理的实现细节，折叠进节点契约，未单列。"
+}

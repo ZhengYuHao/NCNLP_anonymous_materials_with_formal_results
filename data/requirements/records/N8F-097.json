@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-097",
+  "source_id": "n8n:9924",
+  "workflow_sha256": "068f19b13df9677ebd4d037bafbce9651157cdc281944b87a6cef92689ab5dcc",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "09b114592de6f6b1dc54665f21ce0d29acbf6d659b39ff3140207f1d9e073eff",
+  "requirement": {
+    "requirement_text": "手动执行启动，用户需指定一家公司在 Glassdoor 的公司主页链接以及所在国家/地区。系统通过网页抓取服务获取该公司的原始数据，包括公司概览、评分、评论与常见问题；随后由语言模型将原始数据整理为定义好的结构化字段：公司概览（名称、规模、网站、类型）、评分明细、评论摘要（优点、缺点、职位）、常见问题与关键要点；再由语言模型生成一份详细摘要，突出公司声誉、工作文化、员工情绪趋势、优势与劣势以及招聘建议；将结构化数据与摘要合并为统一的输出对象；最终将报告转换为结构化数据文件导出，文件名使用公司名称。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 167,
+        "text": "This workflow automates company research and intelligence extraction from Glassdoor using Decode API for data retrieval and Google Gemini for AI-powered summarization."
+      },
+      {
+        "start": 1205,
+        "end": 1348,
+        "text": "This workflow automates data mining, summarization, and structuring, transforming Glassdoor data into ready-to-use JSON and Markdown summaries."
+      },
+      {
+        "start": 1467,
+        "end": 1513,
+        "text": "Start manually by clicking “Execute Workflow.”"
+      },
+      {
+        "start": 1536,
+        "end": 1614,
+        "text": "Define company_url (e.g., a Glassdoor company profile link) and geo (country)."
+      },
+      {
+        "start": 1666,
+        "end": 1779,
+        "text": "Uses the Decodo API to fetch company data — including overview, ratings, reviews, and frequently asked questions."
+      },
+      {
+        "start": 1951,
+        "end": 2088,
+        "text": "Company overview (name, size, website, type)\n     Ratings breakdown\n     Review snippets (pros, cons, roles)\n     FAQs\n     Key takeaways"
+      },
+      {
+        "start": 2188,
+        "end": 2313,
+        "text": "Company reputation\n     Work culture\n     Employee sentiment trends\n     Strengths and weaknesses\n     Hiring recommendations"
+      },
+      {
+        "start": 2336,
+        "end": 2406,
+        "text": "Combines structured data and summary into a unified object for output."
+      },
+      {
+        "start": 2428,
+        "end": 2518,
+        "text": "Converts the final report into JSON and writes it to disk as\n     C:\\{{CompanyName}}.json."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "手动执行触发",
+        "Glassdoor 公司主页链接（company_url）",
+        "公司所在国家/地区（geo）"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "抓取公司的概览、评分、评论与常见问题等原始数据",
+        "使用语言模型将原始数据整理为结构化字段",
+        "使用语言模型生成涵盖公司声誉、工作文化、员工情绪趋势、优势与劣势、招聘建议的详细摘要",
+        "将结构化数据与摘要合并为统一的输出对象",
+        "将最终报告转换为结构化数据文件导出"
+      ],
+      "visible_outcomes": [
+        "包含公司概览、评分明细、评论摘要、常见问题与关键要点的结构化数据",
+        "一份涵盖公司声誉、工作文化、员工情绪趋势、优势与劣势、招聘建议的详细摘要",
+        "以公司名称命名的导出报告文件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-097.packet.json",
+    "packet_sha256": "08f85eea1d9867fa2a4fa6bc9ad445adf8293d19e64635d13c8429443d889ce4",
+    "public_description_sha256": "65b2ecc0a513ec84736c53dab263be1806e9fe09ae2cb7f2b28a137aa872eb9c"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-097.response.json",
+    "verification_response_sha256": "cd7755bbac6657b1f1bebceb3f83eab07528d230d7a1a53a05ab84675fad32dd",
+    "decision": "accept"
+  },
+  "formal_index": 108
+}

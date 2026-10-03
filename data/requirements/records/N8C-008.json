@@ -1,0 +1,83 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-008",
+  "source_id": "n8n:9248",
+  "workflow_sha256": "e547f50ccd614cc039e44906862fae2927df9dcc402be1f1ae6c63fac0a898f4",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "0f0d3098f9687151f8d615575e119638ad319d458a0a7cd18b1e88afc1f61f80",
+  "requirement": {
+    "pilot_id": "N8C-008",
+    "requirement_text": "A student or faculty member fills out a form with subject code, syllabus topics, and their email address. Based on the submitted syllabus topics, the system automatically generates an exam question paper and sends it to the entered email address. The system shall: (1) pass the syllabus to AI agents to create question sets — Part A questions with 2 marks, Part B questions with 13 marks, and Part C questions with 14 marks (the marks and the number of questions generated can be customized); (2) combine all AI-generated questions into a single structured document; (3) format the questions into a clean HTML exam paper; (4) send the formatted exam paper to the user's email (with option to CC/BCC). Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 534,
+        "end": 683,
+        "text": "This workflow automatically generates an exam question paper based on syllabus topics submitted via a form and sends it to the entered email address."
+      },
+      {
+        "start": 737,
+        "end": 827,
+        "text": "A student or faculty fills out a form with subject code, syllabus topics, and their email."
+      },
+      {
+        "start": 854,
+        "end": 994,
+        "text": "The workflow passes the syllabus to AI agents (Part A with 2 Marks, Part B with 13 Marks, and Part C with 14 Marks) to create question sets."
+      },
+      {
+        "start": 995,
+        "end": 1086,
+        "text": "The marks and the no. of question generated can be customized according to the convenience."
+      },
+      {
+        "start": 1109,
+        "end": 1183,
+        "text": "All AI-generated questions are combined into a single structured document."
+      },
+      {
+        "start": 1204,
+        "end": 1291,
+        "text": "The questions are formatted into a clean HTML exam paper (can also be extended to PDF)."
+      },
+      {
+        "start": 1308,
+        "end": 1385,
+        "text": "The formatted exam paper is sent to the user’s email (with option to CC/BCC)."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Form submission with subject code, syllabus topics (per unit), and the email address to receive the paper"
+      ],
+      "conditions": [
+        "Question generation is driven by the submitted syllabus topics",
+        "Question marks per part: Part A with 2 marks, Part B with 13 marks, Part C with 14 marks; marks and number of questions can be customized"
+      ],
+      "allowed_actions": [
+        "Pass the syllabus to AI agents to create question sets (Part A 2 marks, Part B 13 marks, Part C 14 marks)",
+        "Combine all AI-generated questions into a single structured document",
+        "Format the questions into a clean HTML exam paper",
+        "Send the formatted exam paper to the user's email (with option to CC/BCC)"
+      ],
+      "visible_outcomes": [
+        "The generated exam question paper delivered to the entered email address"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 7
+}

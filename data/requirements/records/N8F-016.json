@@ -1,0 +1,105 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-016",
+  "source_id": "n8n:6768",
+  "workflow_sha256": "bf317c3b349974c1ca349c19efc234b557327ca435ff322192f802e44249f38c",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "c6a751b24d681e139ef84b27a4f1b40564d70a59a5b824001ac9cc8afa9aa893",
+  "requirement": {
+    "requirement_text": "在 Instagram 上，围绕轮换的话题标签，对其下的新帖子自动发布简短、相关的评论，并始终保持在平台限制之内。\n\n每 2 小时在指定分钟触发一次。每次触发时按以下顺序处理：由语言模型生成一个真实的 AI/BPA 类话题标签；通过抓取服务获取该话题标签下最近的帖子，最多取设定条数；从中随机选择一条帖子；由语言模型以设定语言撰写一条不超过 150 字符的回复。\n\n随后生成待评论帖子清单文件并上传到 SharePoint，再发起自动评论动作，将该回复发布到所选帖子下。发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论。整体发布速率被节流到约每天 80 条评论。",
+    "source_spans": [
+      {
+        "start": 81,
+        "end": 211,
+        "text": "automatically posting short, relevant comments on new Instagram posts\nunder rotating hashtags—while staying under platform limits."
+      },
+      {
+        "start": 243,
+        "end": 298,
+        "text": "Schedule Trigger fires every 2 h at a specified minute."
+      },
+      {
+        "start": 379,
+        "end": 443,
+        "text": "Generate Random Hashtag (GPT-4o) outputs a realistic AI/BPA tag."
+      },
+      {
+        "start": 446,
+        "end": 532,
+        "text": "Hashtag Agent (Phantombuster) scrapes up to\n   ENV_MAX_POSTS_PER_HASHTAG recent posts."
+      },
+      {
+        "start": 535,
+        "end": 642,
+        "text": "Get Random Post picks one; Create Comment (GPT-4o) crafts a\n   ≤150-character reply in the chosen language."
+      },
+      {
+        "start": 645,
+        "end": 768,
+        "text": "Builds instagram_post_to_comment.csv, uploads to SharePoint, then\n   launches the Auto-comment Agent which posts the reply."
+      },
+      {
+        "start": 771,
+        "end": 854,
+        "text": "Post URL is logged to instagram_posts_already_commented.csv\n   to avoid duplicates."
+      },
+      {
+        "start": 857,
+        "end": 906,
+        "text": "Wait nodes throttle launches to ≈80 comments/day."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "每 2 小时在指定分钟触发一次",
+        "由语言模型生成的话题标签",
+        "抓取服务返回的话题标签下最近帖子（最多取设定条数）",
+        "设定的回复语言"
+      ],
+      "conditions": [
+        "回复长度不超过 150 字符",
+        "每次最多抓取设定条数的最近帖子，并只随机选取其中一条",
+        "同一帖子链接不得重复评论",
+        "每日评论量限制在约 80 条以内，以符合平台限制"
+      ],
+      "allowed_actions": [
+        "生成话题标签",
+        "抓取该话题标签下的最近帖子",
+        "随机选取一条帖子",
+        "用语言模型以设定语言撰写评论回复",
+        "生成待评论帖子清单文件并上传至 SharePoint",
+        "在所选 Instagram 帖子下发布评论",
+        "将帖子链接写入已评论记录",
+        "对发布速率进行节流"
+      ],
+      "visible_outcomes": [
+        "所选 Instagram 帖子下出现一条不超过 150 字符的评论",
+        "SharePoint 中保存待评论帖子清单文件",
+        "已评论记录中新增该帖子链接",
+        "每日评论量不超过约 80 条"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-016.packet.json",
+    "packet_sha256": "fcee4b04b64ff8bec2da7bc80f9fa7b943054d0d1aa327c876719674cb7d2bfc",
+    "public_description_sha256": "a88b7f1312ce05f69be00388df146b14c95aaa5511981247c22215c0d6784348"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-016.response.json",
+    "verification_response_sha256": "d87ebc5bdaaa92bad097aa11b6ae9b941df76b5f06188cce3a35543e240cf5d7",
+    "decision": "accept"
+  },
+  "formal_index": 27
+}

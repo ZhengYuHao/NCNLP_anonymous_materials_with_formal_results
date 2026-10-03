@@ -1,0 +1,60 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-080",
+  "case_id": "C-POS-REPORT",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-POSTS": {
+        "posts": [
+          {
+            "id": "post-1",
+            "message": "New feature launch!",
+            "reactions": 150,
+            "comments": [
+              {
+                "id": "c1",
+                "text": "This is terrible"
+              },
+              {
+                "id": "c2",
+                "text": "Love it"
+              },
+              {
+                "id": "c3",
+                "text": "Why so slow?"
+              },
+              {
+                "id": "c4",
+                "text": "Great work"
+              }
+            ]
+          },
+          {
+            "id": "post-2",
+            "message": "We are hiring",
+            "reactions": 20,
+            "comments": [
+              {
+                "id": "c5",
+                "text": "Nice"
+              },
+              {
+                "id": "c6",
+                "text": "Interesting"
+              }
+            ]
+          }
+        ]
+      },
+      "F-SCHEDULE": {
+        "schedule": "daily 10:00",
+        "page_id": "page-1",
+        "sheet_tab": "SentimentMetrics",
+        "outlook_recipient": "team@example.com",
+        "slack_channel": "#pr-alerts"
+      }
+    }
+  },
+  "input_sha256": "BEFF26695EC356D578BC6629892886ADC4855F855C32EDF5FDED70B927E9D85D"
+}

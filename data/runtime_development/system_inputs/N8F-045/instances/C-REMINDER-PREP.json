@@ -1,0 +1,17 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-REMINDER-PREP",
+  "kind": "positive",
+  "input_data": {
+    "today": "2026-08-26",
+    "subscriber": {
+      "email": "alice@example.com",
+      "last_period_start": "2026-08-01",
+      "cycle_length_days": 28,
+      "active": true,
+      "last_sent": {}
+    }
+  },
+  "input_sha256": "46B3707DFF4599076203DA96E52B6A474C3E68DEF2190B493D05EECECFD50D32"
+}

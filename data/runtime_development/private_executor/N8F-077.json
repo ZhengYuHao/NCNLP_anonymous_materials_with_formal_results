@@ -1,0 +1,198 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-077",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-DB-DESCRIBE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "describe_table",
+      "request_contract": {
+        "table": "sales"
+      },
+      "response_contract": {
+        "columns": [
+          {
+            "name": "price",
+            "type": "decimal"
+          },
+          {
+            "name": "date",
+            "type": "date"
+          },
+          {
+            "name": "store_id",
+            "type": "string"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-PLAN",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "plan_sql",
+      "request_contract": {
+        "question": "What was the total revenue in Q3?",
+        "schema_present": true
+      },
+      "response_contract": {
+        "sql": "SELECT SUM(price) AS total_revenue FROM sales WHERE date BETWEEN '2026-07-01' AND '2026-09-30'"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-EXECUTE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "execute_sql",
+      "request_contract": {
+        "sql": "SELECT SUM(price) AS total_revenue FROM sales WHERE date BETWEEN '2026-07-01' AND '2026-09-30'"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "total_revenue": 4200000
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-INTERPRET",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "interpret_results",
+      "request_contract": {
+        "question": "What was the total revenue in Q3?"
+      },
+      "response_contract": {
+        "reply": "The total revenue for Q3 was $4.2M."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-MEMORY-LOAD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "operation": "load_thread_history",
+      "request_contract": {
+        "thread_ts": "1700000000.000100"
+      },
+      "response_contract": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What was the total revenue in Q3?"
+          },
+          {
+            "role": "assistant",
+            "content": "The total revenue for Q3 was $4.2M."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-SLACK-REPLY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_reply",
+      "request_contract": {
+        "channel": "C123456",
+        "thread_ts": "1700000000.000100",
+        "text": "The total revenue for Q3 was $4.2M."
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1700000100.000300"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-LLM-PLAN-ERROR",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "plan_sql",
+      "request_contract": {
+        "question": "How many stores in Texas?",
+        "schema_present": true
+      },
+      "response_contract": {
+        "sql": "SELECT COUNT(*) AS store_count FROM stores WHERE state = 'Texas'"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-EXECUTE-FAIL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "execute_sql",
+      "request_contract": {
+        "sql_present": true
+      },
+      "response_contract": {
+        "error": "syntax_error",
+        "status": "failed"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DB-SLACK-ERROR",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_error_message",
+      "request_contract": {
+        "channel": "C123457"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1700000200.000400"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-FIRST-QUESTION-ANSWERED",
+      "fixture_ids": [
+        "F-DB-FIRST-QUESTION"
+      ],
+      "mock_ids": [
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN",
+        "M-DB-EXECUTE",
+        "M-DB-LLM-INTERPRET",
+        "M-DB-SLACK-REPLY"
+      ]
+    },
+    {
+      "case_id": "C-FOLLOWUP-THREAD",
+      "fixture_ids": [
+        "F-DB-FOLLOWUP"
+      ],
+      "mock_ids": [
+        "M-DB-MEMORY-LOAD",
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN",
+        "M-DB-EXECUTE",
+        "M-DB-LLM-INTERPRET",
+        "M-DB-SLACK-REPLY"
+      ]
+    },
+    {
+      "case_id": "C-ERROR-NOTIFY",
+      "fixture_ids": [
+        "F-DB-ERROR"
+      ],
+      "mock_ids": [
+        "M-DB-DESCRIBE",
+        "M-DB-LLM-PLAN-ERROR",
+        "M-DB-EXECUTE-FAIL",
+        "M-DB-SLACK-ERROR"
+      ]
+    }
+  ]
+}

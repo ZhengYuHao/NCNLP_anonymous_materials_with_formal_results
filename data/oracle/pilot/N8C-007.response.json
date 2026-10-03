@@ -1,0 +1,158 @@
+{
+  "pilot_id": "N8C-007",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "b519d0c7bc38f4a9731185e263e002f17ae33c5df6f1ef6a9575807faa02d92b",
+  "fixtures": [
+    {
+      "fixture_id": "F-BBC-MIXED",
+      "purpose": "BBC 文章列表：1 篇适合播客 + 1 篇不适合，验证 LLM 分类过滤",
+      "input_data": {
+        "articles": [
+          {"id": "bbc-a", "title": "Quantum computing breakthrough", "url": "https://bbc.example.com/a", "body": "Scientists at the lab demonstrated a 100-qubit device yesterday..."},
+          {"id": "bbc-b", "title": "Local weather update", "url": "https://bbc.example.com/b", "body": "Scattered showers expected across the region..."}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-BBC-NONE-SUITABLE",
+      "purpose": "全部文章均不适合播客的边界",
+      "input_data": {
+        "articles": [
+          {"id": "bbc-b", "title": "Local weather update", "url": "https://bbc.example.com/b", "body": "Scattered showers expected across the region..."},
+          {"id": "bbc-c", "title": "Traffic delays on M25", "url": "https://bbc.example.com/c", "body": "Commuters face delays this morning..."}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-BBC-SINGLE",
+      "purpose": "单篇适合文章，验证恰好产出 1 条播客音频",
+      "input_data": {
+        "articles": [
+          {"id": "bbc-a", "title": "Quantum computing breakthrough", "url": "https://bbc.example.com/a", "body": "Scientists at the lab demonstrated a 100-qubit device yesterday..."}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BBC-FETCH-MIXED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_bbc_articles",
+      "request_contract": {"url": "https://bbc.example.com/news"},
+      "response_contract": {
+        "articles": [
+          {"id": "bbc-a", "title": "Quantum computing breakthrough", "url": "https://bbc.example.com/a", "body": "Scientists at the lab demonstrated a 100-qubit device yesterday..."},
+          {"id": "bbc-b", "title": "Local weather update", "url": "https://bbc.example.com/b", "body": "Scattered showers expected across the region..."}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BBC-FETCH-NONE-SUITABLE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_bbc_articles",
+      "request_contract": {"url": "https://bbc.example.com/news"},
+      "response_contract": {
+        "articles": [
+          {"id": "bbc-b", "title": "Local weather update", "url": "https://bbc.example.com/b", "body": "Scattered showers expected across the region..."},
+          {"id": "bbc-c", "title": "Traffic delays on M25", "url": "https://bbc.example.com/c", "body": "Commuters face delays this morning..."}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BBC-FETCH-SINGLE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_bbc_articles",
+      "request_contract": {"url": "https://bbc.example.com/news"},
+      "response_contract": {
+        "articles": [
+          {"id": "bbc-a", "title": "Quantum computing breakthrough", "url": "https://bbc.example.com/a", "body": "Scientists at the lab demonstrated a 100-qubit device yesterday..."}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLASSIFY",
+      "dependency_type": "language_model",
+      "operation": "classify_podcast_suitability",
+      "request_contract": {"article": "article title + body"},
+      "response_contract": {
+        "classifications": {
+          "bbc-a": {"suitable": true, "category": "technology"},
+          "bbc-b": {"suitable": false, "category": "weather"},
+          "bbc-c": {"suitable": false, "category": "traffic"}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SCRIPT",
+      "dependency_type": "language_model",
+      "operation": "create_podcast_script",
+      "request_contract": {"article_content": "full article content"},
+      "response_contract": {"script": "Welcome to the briefing. Today: quantum computing breakthrough. [body] ... Thanks for listening."},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TTS",
+      "dependency_type": "text_to_speech",
+      "operation": "synthesize_script_to_speech",
+      "request_contract": {"script": "podcast script"},
+      "response_contract": {"audio_url": "https://audio.example.com/podcasts/bbc-a.mp3", "duration_seconds": 184, "format": "mp3"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-SELECTED",
+      "kind": "positive",
+      "fixture_ids": ["F-BBC-MIXED"],
+      "mock_ids": ["M-BBC-FETCH-MIXED", "M-LLM-CLASSIFY", "M-LLM-SCRIPT", "M-TTS"],
+      "assertions": [
+        {"assertion_id": "A-CLASSIFIED-ALL", "target": "mock.M-LLM-CLASSIFY.call_count", "operator": "equals", "expected": 2, "rationale": "需求声明所有抓取文章经 LLM 分类过滤；2 篇来自 fixture"},
+        {"assertion_id": "A-SCRIPT-ONLY-SELECTED", "target": "mock.M-LLM-SCRIPT.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明仅对选中的适合文章创建播客脚本"},
+        {"assertion_id": "A-FULL-CONTENT-USED", "target": "mock.M-LLM-SCRIPT.requests[0].article_content", "operator": "contains", "expected": "100-qubit device", "rationale": "需求声明提取文章完整内容；正文来自 fixture 文章 body"},
+        {"assertion_id": "A-TTS-ONCE", "target": "mock.M-TTS.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明将脚本转为语音；每个选中文章 1 段"},
+        {"assertion_id": "A-AUDIO-READY", "target": "output.podcasts[0].audio_url", "operator": "matches", "expected": "^https://", "rationale": "可见产出'最终播客音频就绪'；audio_url 为本 Oracle 输出契约命名（需求未规定字段名）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-NONE-SUITABLE",
+      "kind": "boundary",
+      "fixture_ids": ["F-BBC-NONE-SUITABLE"],
+      "mock_ids": ["M-BBC-FETCH-NONE-SUITABLE", "M-LLM-CLASSIFY", "M-TTS"],
+      "assertions": [
+        {"assertion_id": "A-NO-TTS", "target": "mock.M-TTS.call_count", "operator": "equals", "expected": 0, "rationale": "无适合文章时不调用语音合成"},
+        {"assertion_id": "A-EMPTY-PODCASTS", "target": "output.podcasts", "operator": "length_equals", "expected": 0, "rationale": "无播客产物（可见产出为空）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-SINGLE",
+      "kind": "boundary",
+      "fixture_ids": ["F-BBC-SINGLE"],
+      "mock_ids": ["M-BBC-FETCH-SINGLE", "M-LLM-CLASSIFY", "M-LLM-SCRIPT", "M-TTS"],
+      "assertions": [
+        {"assertion_id": "A-SINGLE-TTS", "target": "mock.M-TTS.call_count", "operator": "equals", "expected": 1, "rationale": "单篇文章恰好生成 1 段音频"},
+        {"assertion_id": "A-SINGLE-PODCAST", "target": "output.podcasts", "operator": "length_equals", "expected": 1, "rationale": "恰好 1 条播客产物"},
+        {"assertion_id": "A-SINGLE-CLASSIFIED", "target": "mock.M-LLM-CLASSIFY.call_count", "operator": "equals", "expected": 1, "rationale": "单篇文章分类一次"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：全部断言。A-CLASSIFIED-ALL（需求'LLM 分类过滤'）、A-SCRIPT-ONLY-SELECTED（需求'为选中文章创建脚本'）、A-TTS-ONCE/A-SINGLE-TTS/A-NO-TTS（需求'脚本转语音'）、A-EMPTY-PODCASTS/A-SINGLE-PODCAST（可见产出'音频就绪'）、A-AUDIO-READY（可见产出；字段名 audio_url 为本 Oracle 输出契约命名并注明）。\n- 修改：A-FULL-CONTENT-USED 目标由 content 改为 article_content（与 M-LLM-SCRIPT 的 request_contract 一致，字段为 mock 契约声明）。\n- 删除：无。"
+}

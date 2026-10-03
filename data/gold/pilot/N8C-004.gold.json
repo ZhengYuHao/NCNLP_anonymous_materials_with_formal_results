@@ -1,0 +1,691 @@
+{
+  "pilot_id": "N8C-004",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "973c474d1bc07098a9321fe09119d613263cb5b71311c9ce335262fdc449bd04",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Receive LINE message via webhook",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "Incoming LINE message event carrying user id, reply token, message type (image or text) and message content or image reference"
+        }
+      ],
+      "native_evidence": [
+        "LINE_Receive_Webhook"
+      ],
+      "requirement_evidence": [
+        "Users interact with the system via LINE messages received through a webhook"
+      ],
+      "rationale": "Declared entry point for user interaction via LINE webhook."
+    },
+    {
+      "node_id": "n2",
+      "label": "Validate message type (image or command)",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "Message event whose type is validated and routed"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_message",
+          "type": "object",
+          "description": "Message identified as a handwritten memo image"
+        },
+        {
+          "name": "tag_search_command",
+          "type": "object",
+          "description": "Text message identified as a tag command (#tagname)"
+        },
+        {
+          "name": "tag_list_command",
+          "type": "object",
+          "description": "Text message identified as the tag-list command (#taglist)"
+        }
+      ],
+      "native_evidence": [
+        "Check_Image_Message",
+        "Check_Tag_List_Command",
+        "Check_Tag_Command"
+      ],
+      "requirement_evidence": [
+        "The system validates the message type (image or command)"
+      ],
+      "rationale": "Deterministic type validation and routing into the three declared processing paths."
+    },
+    {
+      "node_id": "n3",
+      "label": "Save memo image to Google Drive",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "image_message",
+          "type": "object",
+          "description": "Image message whose attachment is retrieved and archived"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "archived_image",
+          "type": "object",
+          "description": "Memo image archived in Google Drive, with the image binary and the Drive link for later access"
+        }
+      ],
+      "native_evidence": [
+        "LINE_Download_ImageContent",
+        "Drive_Upload_Image"
+      ],
+      "requirement_evidence": [
+        "the system saves the image to Google Drive",
+        "images are archived in Google Drive, allowing easy access to the original memo later"
+      ],
+      "rationale": "Declared archiving action; retrieving the attachment content is part of saving it. Produces the link stored in the memo record."
+    },
+    {
+      "node_id": "n4",
+      "label": "Run AI OCR and generate structured data",
+      "node_type": "semantic",
+      "operation_family": "llm_ocr",
+      "inputs": [
+        {
+          "name": "archived_image",
+          "type": "object",
+          "description": "Handwritten memo image to read"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ocr_output",
+          "type": "string",
+          "description": "AI OCR output containing title, summary and tags for the memo, or an unreadable-text indication"
+        }
+      ],
+      "native_evidence": [
+        "AI_OCR_Analyze_Image",
+        "AI_Model_Gemini"
+      ],
+      "requirement_evidence": [
+        "runs AI OCR on it and generates structured data",
+        "with a title and summary automatically generated and tags extracted for knowledge organization"
+      ],
+      "rationale": "Handwriting recognition and content understanding; requires a language model and cannot be replaced by deterministic rules."
+    },
+    {
+      "node_id": "n5",
+      "label": "Safely parse and validate AI output",
+      "node_type": "code",
+      "operation_family": "parsing_validation",
+      "inputs": [
+        {
+          "name": "ocr_output",
+          "type": "string",
+          "description": "Raw AI OCR output to parse and validate"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "memo_record",
+          "type": "object",
+          "description": "Validated structured memo data: Title, Summary and Tags"
+        },
+        {
+          "name": "ocr_failure",
+          "type": "boolean",
+          "description": "Signal that OCR failed because the text could not be read"
+        }
+      ],
+      "native_evidence": [
+        "Data_Parse_OCR_JSON",
+        "AI_Check_OCR_Failure"
+      ],
+      "requirement_evidence": [
+        "safely parses and validates the AI output"
+      ],
+      "rationale": "Deterministic JSON parsing, field validation and failure detection over the AI output."
+    },
+    {
+      "node_id": "n6",
+      "label": "Store memo record in Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "memo_record",
+          "type": "object",
+          "description": "Validated Title, Summary and Tags to store"
+        },
+        {
+          "name": "archived_image",
+          "type": "object",
+          "description": "Provides the Link to the original image stored in the record"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Sheets_Append_Row"
+      ],
+      "requirement_evidence": [
+        "stores the memo record in Google Sheets",
+        "Each stored memo record includes: Title, Summary, Tags, Timestamp, and a Link to the original image"
+      ],
+      "rationale": "Declared persistence of the complete memo record (Title, Summary, Tags, Timestamp, Link); the timestamp is generated at write time. Not terminal because the declared completion action is the user-facing message that follows."
+    },
+    {
+      "node_id": "n7",
+      "label": "Send completion message to the user",
+      "node_type": "terminal",
+      "operation_family": "message_send",
+      "inputs": [
+        {
+          "name": "memo_record",
+          "type": "object",
+          "description": "Title, summary and tags confirmed in the completion message"
+        },
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "User id used to deliver the message"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "LINE_Push_Completion_Message"
+      ],
+      "requirement_evidence": [
+        "sends a completion message to the user"
+      ],
+      "rationale": "User-visible completion action of the image path; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n8",
+      "label": "Send retake-photo guidance on OCR failure",
+      "node_type": "terminal",
+      "operation_family": "message_send",
+      "inputs": [
+        {
+          "name": "ocr_failure",
+          "type": "boolean",
+          "description": "Failure signal triggering the guidance"
+        },
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "User id used to deliver the guidance"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "LINE_Push_NoSummary"
+      ],
+      "requirement_evidence": [
+        "If OCR fails, the user receives guidance to retake the photo."
+      ],
+      "rationale": "Declared failure-handling outcome: guidance to retake the photo; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n9",
+      "label": "Extract tag from tag command",
+      "node_type": "code",
+      "operation_family": "command_parsing",
+      "inputs": [
+        {
+          "name": "tag_search_command",
+          "type": "object",
+          "description": "Tag command text (#tagname) sent by the user"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_tag",
+          "type": "string",
+          "description": "Tag name extracted from the command"
+        }
+      ],
+      "native_evidence": [
+        "Extract_Tag"
+      ],
+      "requirement_evidence": [
+        "when a user sends a tag command (#タグ名)"
+      ],
+      "rationale": "Deterministic parsing of the command into the tag to search."
+    },
+    {
+      "node_id": "n10",
+      "label": "Read stored memos from Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "stored_memos",
+          "type": "array",
+          "description": "Memo rows currently stored in the database"
+        }
+      ],
+      "native_evidence": [
+        "Sheets_Get_All_Memos"
+      ],
+      "requirement_evidence": [
+        "the system searches memos that contain the specified tag"
+      ],
+      "rationale": "Reading the stored memo database is required to search it; deterministic external read."
+    },
+    {
+      "node_id": "n11",
+      "label": "Filter memos by tag and build search results",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "stored_memos",
+          "type": "array",
+          "description": "Memo rows to search"
+        },
+        {
+          "name": "search_tag",
+          "type": "string",
+          "description": "Tag the memos must contain"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_results",
+          "type": "string",
+          "description": "Search result message listing the memos that contain the specified tag"
+        }
+      ],
+      "native_evidence": [
+        "Filter_By_Tag",
+        "Build_Search_Result"
+      ],
+      "requirement_evidence": [
+        "the system searches memos that contain the specified tag"
+      ],
+      "rationale": "Deterministic tag matching and result formatting."
+    },
+    {
+      "node_id": "n12",
+      "label": "Send tag search results to the user",
+      "node_type": "terminal",
+      "operation_family": "message_send",
+      "inputs": [
+        {
+          "name": "search_results",
+          "type": "string",
+          "description": "Result message to deliver"
+        },
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "User id used to deliver the results"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "LINE_Push_TagResults"
+      ],
+      "requirement_evidence": [
+        "(2) when a user sends a tag command (#タグ名), the system searches memos that contain the specified tag"
+      ],
+      "rationale": "User-visible completion action of the tag search path; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n13",
+      "label": "Read stored memos from Google Sheets for tag list",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "memo_rows",
+          "type": "array",
+          "description": "Memo rows currently stored in the database"
+        }
+      ],
+      "native_evidence": [
+        "Sheets_Get_All_Memos_For_TagList"
+      ],
+      "requirement_evidence": [
+        "the system displays all tags currently stored in the database"
+      ],
+      "rationale": "Reading the stored memo database is required to enumerate its tags; deterministic external read."
+    },
+    {
+      "node_id": "n14",
+      "label": "Build list of all stored tags",
+      "node_type": "code",
+      "operation_family": "aggregation",
+      "inputs": [
+        {
+          "name": "memo_rows",
+          "type": "array",
+          "description": "Memo rows whose tags are collected"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tag_list",
+          "type": "string",
+          "description": "All unique tags currently stored in the database"
+        }
+      ],
+      "native_evidence": [
+        "Build_TagList"
+      ],
+      "requirement_evidence": [
+        "the system displays all tags currently stored in the database"
+      ],
+      "rationale": "Deterministic collection and deduplication of stored tags."
+    },
+    {
+      "node_id": "n15",
+      "label": "Send tag list to the user",
+      "node_type": "terminal",
+      "operation_family": "message_send",
+      "inputs": [
+        {
+          "name": "tag_list",
+          "type": "string",
+          "description": "Tag list to display"
+        },
+        {
+          "name": "line_message",
+          "type": "object",
+          "description": "User id used to deliver the tag list"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "LINE_Push_TagList"
+      ],
+      "requirement_evidence": [
+        "(3) when a user sends the tag-list command (#タグリスト), the system displays all tags currently stored in the database"
+      ],
+      "rationale": "User-visible completion action of the tag-list path; terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "Every received message is validated and routed."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "message type is image (handwritten memo)",
+      "rationale": "Image messages take the OCR pipeline path."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n9",
+      "variable": null,
+      "condition": "message is a tag command (#tagname)",
+      "rationale": "Tag commands take the search path."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n13",
+      "variable": null,
+      "condition": "message is the tag-list command (#taglist)",
+      "rationale": "The tag-list command takes the tag-list path."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "The archived image is passed to AI OCR."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "The AI output is parsed and validated."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "OCR succeeded: parsed output contains readable memo data",
+      "rationale": "Valid memo data is stored."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n5",
+      "target": "n8",
+      "variable": null,
+      "condition": "OCR failed: text could not be read",
+      "rationale": "Declared failure handling sends retake guidance."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "The completion message is sent after the record is stored."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "The memo database is read for the tag search."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "Stored memos are filtered by the extracted tag."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "The search results are sent to the user."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "Stored memos are aggregated into the tag list."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "The tag list is sent to the user."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "line_message",
+      "condition": null,
+      "rationale": "Routing consumes the received message event."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "image_message",
+      "condition": null,
+      "rationale": "The image path consumes the routed image message."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "archived_image",
+      "condition": null,
+      "rationale": "AI OCR reads the memo image."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "ocr_output",
+      "condition": null,
+      "rationale": "Parsing consumes the raw AI output."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "memo_record",
+      "condition": null,
+      "rationale": "The validated record fields are stored."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n3",
+      "target": "n6",
+      "variable": "archived_image",
+      "condition": null,
+      "rationale": "The stored record includes the Link to the original image from the archive."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n7",
+      "variable": "memo_record",
+      "condition": null,
+      "rationale": "The completion message quotes the title, tags and summary."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n1",
+      "target": "n7",
+      "variable": "line_message",
+      "condition": null,
+      "rationale": "The completion message is delivered to the sending user."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n5",
+      "target": "n8",
+      "variable": "ocr_failure",
+      "condition": null,
+      "rationale": "The failure signal triggers the retake guidance."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n1",
+      "target": "n8",
+      "variable": "line_message",
+      "condition": null,
+      "rationale": "The guidance is delivered to the sending user."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n2",
+      "target": "n9",
+      "variable": "tag_search_command",
+      "condition": null,
+      "rationale": "Tag extraction consumes the routed tag command."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n9",
+      "target": "n11",
+      "variable": "search_tag",
+      "condition": null,
+      "rationale": "Filtering matches memos against the extracted tag."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n10",
+      "target": "n11",
+      "variable": "stored_memos",
+      "condition": null,
+      "rationale": "Filtering searches the stored memo rows."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n11",
+      "target": "n12",
+      "variable": "search_results",
+      "condition": null,
+      "rationale": "The result message is delivered to the user."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n1",
+      "target": "n12",
+      "variable": "line_message",
+      "condition": null,
+      "rationale": "The results are delivered to the sending user."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n13",
+      "target": "n14",
+      "variable": "memo_rows",
+      "condition": null,
+      "rationale": "Tag aggregation consumes the stored memo rows."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n14",
+      "target": "n15",
+      "variable": "tag_list",
+      "condition": null,
+      "rationale": "The tag list is delivered to the user."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n1",
+      "target": "n15",
+      "variable": "line_message",
+      "condition": null,
+      "rationale": "The tag list is delivered to the sending user."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7",
+    "n8",
+    "n12",
+    "n15"
+  ],
+  "confidence": 0.87,
+  "notes": "Three declared branches (image OCR pipeline, tag search, tag list) plus the declared OCR-failure handling. Native-only behaviors excluded as undeclared: the 'Processing... please wait' interim reply, the usage-guidance reply for messages that are neither image nor command, and the credential configuration node. Image retrieval from the LINE content API is folded into the declared Drive-save action because the frozen requirement declares only 'save the image to Google Drive'. Reading the memo database is modelled once per command branch because each branch performs its own read in its own execution path."
+}

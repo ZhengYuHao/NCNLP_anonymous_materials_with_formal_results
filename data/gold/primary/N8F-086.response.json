@@ -1,0 +1,360 @@
+{
+  "task_id": "N8F-086",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "65f546f7c4438931f3844181fca98ae8c8885971924154569a0c9e4150e776e4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收回调并规范化弃购数据",
+      "node_type": "code",
+      "operation_family": "cart_event_reception_and_normalization",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "cart_data",
+          "type": "object",
+          "description": "规范化整理后的弃购购物车数据（购物车标识、客户邮箱与商品信息）"
+        }
+      ],
+      "native_evidence": [
+        "Receive Cart Event1",
+        "Normalize Incoming Cart Data1"
+      ],
+      "requirement_evidence": [
+        "商店通过回调接口推送弃购购物车数据",
+        "系统把购物车标识、客户邮箱与商品信息等规范化整理"
+      ],
+      "rationale": "通过回调接口接收弃购数据并规范化整理，为确定性的输入接收与变换操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "等待可配置时间",
+      "node_type": "code",
+      "operation_family": "configurable_wait",
+      "inputs": [
+        {
+          "name": "cart_data",
+          "type": "object",
+          "description": "规范化后的弃购购物车数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cart_data",
+          "type": "object",
+          "description": "等待后继续流转的弃购购物车数据"
+        }
+      ],
+      "native_evidence": [
+        "Wait before checking cart status1"
+      ],
+      "requirement_evidence": [
+        "先等待一段可配置的时间（例如 30 至 60 分钟），给客户自然完成结账的机会"
+      ],
+      "rationale": "按可配置时长等待后再继续，为确定性的延时操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "重新查询购物车状态并校验",
+      "node_type": "code",
+      "operation_family": "cart_status_recheck",
+      "inputs": [
+        {
+          "name": "cart_data",
+          "type": "object",
+          "description": "弃购购物车数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cart_status",
+          "type": "object",
+          "description": "重新查询得到的购物车最新状态（商品是否仍在购物车、付款是否仍为待支付）"
+        }
+      ],
+      "native_evidence": [
+        "Recheck cart status from store1"
+      ],
+      "requirement_evidence": [
+        "再次向商店接口查询该购物车的状态，校验商品是否仍在购物车中以及付款是否仍为待支付"
+      ],
+      "rationale": "再次向商店接口查询并校验购物车状态，为确定性的外部读取与校验操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "购物车状态判定路由",
+      "node_type": "code",
+      "operation_family": "abandonment_routing",
+      "inputs": [
+        {
+          "name": "cart_status",
+          "type": "object",
+          "description": "购物车最新状态"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cart_status",
+          "type": "object",
+          "description": "仍处于弃购状态的购物车信息（供生成邮件与团队通知使用）"
+        }
+      ],
+      "native_evidence": [
+        "Cart is Still Abandoned?1"
+      ],
+      "requirement_evidence": [
+        "仅当商品仍在购物车中且付款仍为待支付时才继续发送提醒",
+        "若购物车已完成结账，流程自动停止，不再发送提醒"
+      ],
+      "rationale": "判定购物车是否仍处于弃购状态并路由，为确定性条件分支操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成个性化提醒邮件",
+      "node_type": "semantic",
+      "operation_family": "reminder_email_generation",
+      "inputs": [
+        {
+          "name": "cart_status",
+          "type": "object",
+          "description": "仍处于弃购状态的购物车与客户信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_draft",
+          "type": "string",
+          "description": "语言模型生成的个性化提醒邮件原始输出"
+        }
+      ],
+      "native_evidence": [
+        "Genrate Personalized Reminder Email1",
+        "OpenAI Chat Model1"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成一封个性化的提醒邮件"
+      ],
+      "rationale": "需求声明由语言模型生成个性化提醒邮件，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "提取邮件主题与正文",
+      "node_type": "code",
+      "operation_family": "email_field_extraction",
+      "inputs": [
+        {
+          "name": "email_draft",
+          "type": "string",
+          "description": "语言模型生成的邮件原始输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_content",
+          "type": "object",
+          "description": "从模型输出中提取的邮件主题与正文"
+        }
+      ],
+      "native_evidence": [
+        "Extrect Email Subject & Body from AI1"
+      ],
+      "requirement_evidence": [
+        "并从模型输出中提取邮件主题与正文"
+      ],
+      "rationale": "从模型输出中提取主题与正文字段，为确定性的结构化解析操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "结账完成流程终止",
+      "node_type": "terminal",
+      "operation_family": "checkout_completed_termination",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Cart is Still Abandoned?1"
+      ],
+      "requirement_evidence": [
+        "若购物车已完成结账，流程自动停止，不再发送提醒"
+      ],
+      "rationale": "购物车已完成结账时流程自动停止、不再发送任何提醒，为条件分支的终止路径且无后续出边，判定为 terminal 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过 Gmail 发送提醒邮件",
+      "node_type": "terminal",
+      "operation_family": "customer_email_delivery",
+      "inputs": [
+        {
+          "name": "email_content",
+          "type": "object",
+          "description": "提取后的邮件主题与正文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Abandoned cart email to customer1"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 把提醒邮件发送给客户"
+      ],
+      "rationale": "通过 Gmail 向客户发送提醒邮件，为该分支的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "通知内部团队 Slack",
+      "node_type": "terminal",
+      "operation_family": "internal_team_notification",
+      "inputs": [
+        {
+          "name": "cart_status",
+          "type": "object",
+          "description": "仍处于弃购状态的购物车与客户信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Notify internal team on slack1"
+      ],
+      "requirement_evidence": [
+        "同时向 Slack 发送一条消息，通知内部团队该弃购情况"
+      ],
+      "rationale": "向 Slack 发送弃购情况通知内部团队，为该分支的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据规范化后进入等待环节。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "等待结束后重新查询购物车状态。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "状态校验后进入弃购状态判定。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "still_abandoned == true",
+      "rationale": "商品仍在购物车且付款仍为待支付时生成提醒邮件。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": "still_abandoned == false",
+      "rationale": "购物车已完成结账时流程自动终止，不发送提醒。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件生成后提取主题与正文。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取完成后通过 Gmail 发送给客户。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取完成后同时通知内部团队 Slack。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "cart_data",
+      "condition": null,
+      "rationale": "规范化后的购物车数据送入等待环节。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "cart_data",
+      "condition": null,
+      "rationale": "等待后购物车数据送入状态复查节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "cart_status",
+      "condition": null,
+      "rationale": "最新购物车状态送入判定路由节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "cart_status",
+      "condition": null,
+      "rationale": "弃购状态的购物车与客户信息送入邮件生成节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "email_draft",
+      "condition": null,
+      "rationale": "模型生成的邮件输出送入字段提取节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n8",
+      "variable": "email_content",
+      "condition": null,
+      "rationale": "提取的邮件主题与正文送入 Gmail 发送节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n4",
+      "target": "n9",
+      "variable": "cart_status",
+      "condition": null,
+      "rationale": "弃购购物车信息送入 Slack 通知节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7",
+    "n8",
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：接收回调并规范化（code）、等待可配置时间（code）、重新查询并校验购物车状态（code）、弃购状态判定路由（code，已结账则流程终止不发提醒）、生成个性化提醒邮件（semantic）、提取主题与正文（code）、Gmail 发送（terminal）、Slack 通知内部团队（terminal）。需求未声明的实现细节（恢复数据打包 Set 节点）未纳入。混合任务满足 semantic→code 有类型 DFG 边（email_draft）。"
+}

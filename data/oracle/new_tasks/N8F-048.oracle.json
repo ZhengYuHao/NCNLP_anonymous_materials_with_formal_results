@@ -1,0 +1,431 @@
+{
+  "task_id": "N8F-048",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "979f4fc6cb0ed87f42162111736c4747911e6467e12fd564302a837fb4a50f06",
+  "fixtures": [
+    {
+      "fixture_id": "F-CONSENT-VALID",
+      "purpose": "受试者门户提交的已签署知情同意（必填字段齐全）",
+      "input_data": {
+        "submission_id": "sub-001",
+        "participant_id": "P-001",
+        "participant_name": "Jane Roe",
+        "participant_email": "jane.roe@example.com",
+        "trial_id": "T-100",
+        "consent_version": "v3",
+        "signed_at": "2026-09-01T10:00:00Z",
+        "form_text": "I consent to participate in trial T-100.",
+        "pi_email": "pi@clinical.example.com"
+      }
+    },
+    {
+      "fixture_id": "F-CONSENT-INVALID",
+      "purpose": "缺少必填字段(trial_id)的知情同意提交",
+      "input_data": {
+        "submission_id": "sub-002",
+        "participant_id": "P-002",
+        "participant_name": "John Doe",
+        "participant_email": "john@example.com",
+        "trial_id": "",
+        "consent_version": "v1",
+        "signed_at": "2026-09-01T11:00:00Z",
+        "form_text": "I consent.",
+        "pi_email": "pi@clinical.example.com"
+      }
+    },
+    {
+      "fixture_id": "F-CONSENT-STORE",
+      "purpose": "现有知情同意记录：1条即将到期、1条缺失",
+      "input_data": {
+        "consents": [
+          {
+            "participant_id": "P-003",
+            "trial_id": "T-100",
+            "expiry_date": "2026-09-05",
+            "status": "signed"
+          },
+          {
+            "participant_id": "P-004",
+            "trial_id": "T-100",
+            "consent_status": "missing"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-AUDIT-DATE",
+      "purpose": "每日合规检查的执行日期与收件人配置",
+      "input_data": {
+        "sweep_date": "2026-09-02",
+        "pi_email": "pi@clinical.example.com",
+        "regulatory_email": "regulatory@clinical.example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TIMESTAMP",
+      "dependency_type": "timestampService",
+      "operation": "apply_crypto_timestamp",
+      "request_contract": {
+        "submission_id": "sub-001"
+      },
+      "response_contract": {
+        "timestamp": "2026-09-02T02:30:00Z",
+        "signature": "sig-0x1a2b3c"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMPLIANCE",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "review_completeness",
+      "request_contract": {
+        "guideline": "ICH E6 GCP"
+      },
+      "response_contract": {
+        "complete": true,
+        "missing_items": [],
+        "guideline": "ICH E6 GCP"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-CONSENT",
+      "dependency_type": "googleSheets",
+      "operation": "append_consent",
+      "request_contract": {},
+      "response_contract": {
+        "row": 21
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-PI",
+      "dependency_type": "emailSend",
+      "operation": "send_email",
+      "request_contract": {
+        "role": "pi"
+      },
+      "response_contract": {
+        "message_id": "e-pi-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-PARTICIPANT",
+      "dependency_type": "emailSend",
+      "operation": "send_email",
+      "request_contract": {
+        "role": "participant"
+      },
+      "response_contract": {
+        "message_id": "e-pt-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CONSENTS",
+      "dependency_type": "googleSheets",
+      "operation": "read_consents",
+      "request_contract": {},
+      "response_contract": {
+        "rows": [
+          {
+            "participant_id": "P-003",
+            "trial_id": "T-100",
+            "expiry_date": "2026-09-05",
+            "status": "signed"
+          },
+          {
+            "participant_id": "P-004",
+            "trial_id": "T-100",
+            "consent_status": "missing"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CONSENTS-CLEAN",
+      "dependency_type": "googleSheets",
+      "operation": "read_consents",
+      "request_contract": {},
+      "response_contract": {
+        "rows": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-AUDIT",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "generate_audit_summary",
+      "request_contract": {},
+      "response_contract": {
+        "report": "Daily audit 2026-09-02: 1 expiring consent (P-003), 1 missing consent (P-004)."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-AUDIT-CLEAN",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "generate_audit_summary",
+      "request_contract": {},
+      "response_contract": {
+        "report": "Daily audit 2026-09-02: no expiring or missing consents."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-AUDIT",
+      "dependency_type": "emailSend",
+      "operation": "send_email",
+      "request_contract": {
+        "role": "regulatory"
+      },
+      "response_contract": {
+        "message_id": "e-audit-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-CONSENT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CONSENT-VALID"
+      ],
+      "mock_ids": [
+        "M-TIMESTAMP",
+        "M-LLM-COMPLIANCE",
+        "M-APPEND-CONSENT",
+        "M-EMAIL-PI",
+        "M-EMAIL-PARTICIPANT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.validation.valid",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "全部必填字段齐全时校验通过"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.sheets.consents_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "知情同意记录写入 Google Sheets"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.sheets.consents_appended[0].participant_id",
+          "operator": "equals",
+          "expected": "P-001",
+          "rationale": "记录内容对应提交"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.sheets.consents_appended[0].timestamp_signature",
+          "operator": "equals",
+          "expected": "sig-0x1a2b3c",
+          "rationale": "附加具有法律效力的加密时间戳"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets.consents_appended[0].chain_of_custody",
+          "operator": "contains",
+          "expected": "P-001",
+          "rationale": "记录保留完整监管链"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.compliance_check.guideline",
+          "operator": "equals",
+          "expected": "ICH E6 GCP",
+          "rationale": "完整性审核依据 ICH E6 GCP 指南"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.emails.to_pi.recipient",
+          "operator": "equals",
+          "expected": "pi@clinical.example.com",
+          "rationale": "确认邮件发送给主要研究者"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.emails.to_pi.body",
+          "operator": "contains",
+          "expected": "P-001",
+          "rationale": "PI 确认邮件包含受试者标识"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.emails.to_participant.recipient",
+          "operator": "equals",
+          "expected": "jane.roe@example.com",
+          "rationale": "确认邮件发送给受试者"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.emails.to_participant.body",
+          "operator": "contains",
+          "expected": "T-100",
+          "rationale": "受试者确认邮件包含试验标识"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CONSENT-INVALID"
+      ],
+      "mock_ids": [
+        "M-APPEND-CONSENT",
+        "M-EMAIL-PI",
+        "M-EMAIL-PARTICIPANT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-INVALID",
+          "target": "output.validation.valid",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "缺少必填字段(trial_id)时校验失败"
+        },
+        {
+          "assertion_id": "A-2-NEG-INVALID",
+          "target": "output.sheets.consents_appended",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无效提交不写入工作表"
+        },
+        {
+          "assertion_id": "A-3-NEG-INVALID",
+          "target": "output.emails.to_pi",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无效提交不发送 PI 确认邮件"
+        },
+        {
+          "assertion_id": "A-4-NEG-INVALID",
+          "target": "output.emails.to_participant",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无效提交不发送受试者确认邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-SWEEP",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CONSENT-STORE",
+        "F-AUDIT-DATE"
+      ],
+      "mock_ids": [
+        "M-READ-CONSENTS",
+        "M-LLM-AUDIT",
+        "M-EMAIL-AUDIT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-POS-SWEEP",
+          "target": "output.sweep.expiring_or_missing",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每日检查识别出到期与缺失的知情同意"
+        },
+        {
+          "assertion_id": "A-2-POS-SWEEP",
+          "target": "output.sweep.expiring_or_missing",
+          "operator": "contains",
+          "expected": "P-003",
+          "rationale": "即将到期(2026-09-05)的知情同意被识别"
+        },
+        {
+          "assertion_id": "A-3-POS-SWEEP",
+          "target": "output.sweep.expiring_or_missing",
+          "operator": "contains",
+          "expected": "P-004",
+          "rationale": "缺失的知情同意被识别"
+        },
+        {
+          "assertion_id": "A-4-POS-SWEEP",
+          "target": "output.audit_report.text",
+          "operator": "contains",
+          "expected": "P-003",
+          "rationale": "审计汇总报告包含到期参与者"
+        },
+        {
+          "assertion_id": "A-5-POS-SWEEP",
+          "target": "output.audit_report.text",
+          "operator": "contains",
+          "expected": "P-004",
+          "rationale": "审计汇总报告包含缺失参与者"
+        },
+        {
+          "assertion_id": "A-6-POS-SWEEP",
+          "target": "output.emails.audit_summary.recipient",
+          "operator": "equals",
+          "expected": "regulatory@clinical.example.com",
+          "rationale": "每日审计汇总供监管提交"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-CLEAN-SWEEP",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-AUDIT-DATE"
+      ],
+      "mock_ids": [
+        "M-READ-CONSENTS-CLEAN",
+        "M-LLM-AUDIT-CLEAN",
+        "M-EMAIL-AUDIT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-CLEAN-SWEEP",
+          "target": "output.sweep.expiring_or_missing",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无到期或缺失时列表为空"
+        },
+        {
+          "assertion_id": "A-2-BOUND-CLEAN-SWEEP",
+          "target": "output.audit_report.text",
+          "operator": "contains",
+          "expected": "no expiring or missing",
+          "rationale": "报告明确无到期/缺失情况"
+        },
+        {
+          "assertion_id": "A-3-BOUND-CLEAN-SWEEP",
+          "target": "output.emails.audit_summary",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每日审计汇总照常生成"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；时间戳/LLM 审核/Sheets/邮件均固定模拟，无真实副作用；到期判定以 fixture 固定 sweep_date(2026-09-02)与 expiry_date 保证确定性；输出按 output.* JSON 路径表达。"
+}

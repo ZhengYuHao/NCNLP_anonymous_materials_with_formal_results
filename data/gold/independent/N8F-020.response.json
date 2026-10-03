@@ -1,0 +1,786 @@
+{
+  "task_id": "N8F-020",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "70c8914053352c45808e664db3347279263e40d8380563559787145176569f77",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动触发（生成当日内容）",
+      "node_type": "code",
+      "operation_family": "trigger_manual",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_source",
+          "type": "string",
+          "description": "触发来源标识：manual"
+        }
+      ],
+      "native_evidence": ["When clicking 'Execute workflow'"],
+      "requirement_evidence": ["手动触发生成当日内容"],
+      "rationale": "手动触发为确定性入口行为，判为 code；作为内容生成链路的入口之一。"
+    },
+    {
+      "node_id": "n2",
+      "label": "每周一 09:00 计划触发（刷新选题队列）",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_source",
+          "type": "string",
+          "description": "触发来源标识：weekly"
+        }
+      ],
+      "native_evidence": ["Weekly Schedule (Mon 09:00)"],
+      "requirement_evidence": ["按每周一 09:00 的计划触发以刷新选题队列"],
+      "rationale": "定时触发为确定性调度行为，判为 code；作为选题刷新链路的入口。"
+    },
+    {
+      "node_id": "n3",
+      "label": "在 Google Drive 查找指定电子表格",
+      "node_type": "code",
+      "operation_family": "resource_lookup",
+      "inputs": [
+        {
+          "name": "trigger_source",
+          "type": "string",
+          "description": "触发来源（manual / weekly）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "spreadsheet_id",
+          "type": "string",
+          "description": "找到的电子表格标识"
+        },
+        {
+          "name": "spreadsheet_found",
+          "type": "boolean",
+          "description": "指定电子表格是否存在"
+        }
+      ],
+      "native_evidence": ["Search Spreadsheet", "Search files and folders", "Spreadsheet Found?", "Table Exists?1"],
+      "requirement_evidence": ["在 Google Drive 中查找指定的 Google Sheets 文件"],
+      "rationale": "文件查找与存在性判断为确定性 IO 与规则，判为 code；两条触发链路共用本初始化查找。"
+    },
+    {
+      "node_id": "n4",
+      "label": "初始化电子表格与内容文件夹（不存在时创建）",
+      "node_type": "code",
+      "operation_family": "resource_initialization",
+      "inputs": [
+        {
+          "name": "trigger_source",
+          "type": "string",
+          "description": "触发来源（manual / weekly）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "spreadsheet_id",
+          "type": "string",
+          "description": "新建电子表格的标识"
+        }
+      ],
+      "native_evidence": ["Create Spreadsheet", "Create Articles Folder", "Prepare Topics Header Row", "Seed Topics Header", "Prepare Published Header Row", "Seed Published Header", "Prepare Images Header Row", "Seed Images Header", "Prepare State Row", "Seed State Row"],
+      "requirement_evidence": ["若不存在，则创建该电子表格、所需的工作表（选题、已发布、图片、状态）以及 Google Drive 中的内容文件夹"],
+      "rationale": "创建电子表格、工作表（选题、已发布、图片、状态）与内容文件夹为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "读取已发布与已排队标题",
+      "node_type": "code",
+      "operation_family": "data_read",
+      "inputs": [
+        {
+          "name": "spreadsheet_id",
+          "type": "string",
+          "description": "电子表格标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "existing_titles",
+          "type": "string[]",
+          "description": "已发布与已排队的标题列表"
+        }
+      ],
+      "native_evidence": ["Get Published Titles", "Get Existing Queue Titles", "Merge/Aggregate Titles"],
+      "requirement_evidence": ["从 Google Sheets 读取已发布和已排队的标题"],
+      "rationale": "读取并聚合工作表数据为确定性 IO，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "向维基百科查询随机女性主题分类",
+      "node_type": "code",
+      "operation_family": "external_query",
+      "inputs": [
+        {
+          "name": "existing_titles",
+          "type": "string[]",
+          "description": "已有标题（用于候选批次排除）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "category_candidates",
+          "type": "string[]",
+          "description": "随机女性主题分类下的候选主题成员"
+        }
+      ],
+      "native_evidence": ["Pick Random Category", "Get Category Members", "Pick Random Batch + Filter Excluded"],
+      "requirement_evidence": ["向维基百科 API 查询一个随机的女性主题分类"],
+      "rationale": "查询维基百科 API 并抽取分类成员为确定性外部调用与变换，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "由语言模型生成新的俄文选题",
+      "node_type": "semantic",
+      "operation_family": "topic_generation",
+      "inputs": [
+        {
+          "name": "category_candidates",
+          "type": "string[]",
+          "description": "分类候选主题成员"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_topics",
+          "type": "string[]",
+          "description": "语言模型生成的俄文选题"
+        }
+      ],
+      "native_evidence": ["AI: Generate Topics", "LLM: Generate Topics (Claude Sonnet 4.5)", "Parse JSON Response"],
+      "requirement_evidence": ["由语言模型生成新的俄文选题"],
+      "rationale": "选题生成为开放文本生成，判为 semantic；JSON 解析折叠进节点契约。"
+    },
+    {
+      "node_id": "n8",
+      "label": "过滤重复选题",
+      "node_type": "code",
+      "operation_family": "deduplication",
+      "inputs": [
+        {
+          "name": "generated_topics",
+          "type": "string[]",
+          "description": "生成的俄文选题"
+        },
+        {
+          "name": "existing_titles",
+          "type": "string[]",
+          "description": "已发布与已排队标题（排除依据）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "new_topics",
+          "type": "string[]",
+          "description": "过滤重复后的新选题"
+        }
+      ],
+      "native_evidence": ["Filter Duplicate Topics", "Build Exclude List"],
+      "requirement_evidence": ["过滤掉重复选题后追加到选题工作表", "生成的选题须过滤重复项"],
+      "rationale": "按排除列表做确定性去重，判为 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "追加选题到选题工作表",
+      "node_type": "terminal",
+      "operation_family": "data_persistence",
+      "inputs": [
+        {
+          "name": "new_topics",
+          "type": "string[]",
+          "description": "过滤后的新选题"
+        },
+        {
+          "name": "spreadsheet_id",
+          "type": "string",
+          "description": "电子表格标识"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Prepare Topic Row", "Append to Topics Sheet", "Update State Row"],
+      "requirement_evidence": ["过滤掉重复选题后追加到选题工作表", "按每周一 09:00 的计划触发以刷新选题队列"],
+      "rationale": "追加选题到工作表是选题刷新链路的最终可见完成动作（选题队列已更新），判为 terminal，无 CFG 出边；需求声明每周触发仅刷新选题队列，原生图中刷新后继续进入内容生成的部分超出需求边界，不采纳。"
+    },
+    {
+      "node_id": "n10",
+      "label": "读取选题表并选取状态为新的选题",
+      "node_type": "code",
+      "operation_family": "data_read",
+      "inputs": [
+        {
+          "name": "spreadsheet_id",
+          "type": "string",
+          "description": "电子表格标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_topic",
+          "type": "object",
+          "description": "选中的一条状态为新的选题"
+        }
+      ],
+      "native_evidence": ["Get next topic", "Filter New Topics", "Has New Topics?", "Limit To One Topic"],
+      "requirement_evidence": ["读取选题工作表，选取一条状态为'新'的选题", "仅处理状态为'新'的选题"],
+      "rationale": "按状态过滤并限额选取一条选题为确定性规则与 IO，判为 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "由语言模型起草俄文文章",
+      "node_type": "semantic",
+      "operation_family": "article_drafting",
+      "inputs": [
+        {
+          "name": "selected_topic",
+          "type": "object",
+          "description": "选中的选题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_draft",
+          "type": "string",
+          "description": "起草的俄文文章初稿"
+        }
+      ],
+      "native_evidence": ["Draft article", "LLM: Draft Article (Claude Haiku 4.5)", "Merge Draft With Topic"],
+      "requirement_evidence": ["由语言模型起草一篇俄文文章"],
+      "rationale": "文章起草为开放文本生成，判为 semantic。"
+    },
+    {
+      "node_id": "n12",
+      "label": "第二轮改写以降低机械痕迹",
+      "node_type": "semantic",
+      "operation_family": "text_humanization",
+      "inputs": [
+        {
+          "name": "article_draft",
+          "type": "string",
+          "description": "文章初稿"
+        },
+        {
+          "name": "selected_topic",
+          "type": "object",
+          "description": "选题上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_article",
+          "type": "string",
+          "description": "改写后的最终文章文本"
+        }
+      ],
+      "native_evidence": ["Humanize draft", "LLM: Humanize Draft (Claude Haiku 4.5)", "Merge Humanized With Topic"],
+      "requirement_evidence": ["并进行第二轮改写以降低文本中的机械痕迹"],
+      "rationale": "改写润色为开放文本生成，判为 semantic；需求将两轮写作声明为独立步骤，故单列节点。"
+    },
+    {
+      "node_id": "n13",
+      "label": "创建文章文件夹与 Google 文档并写入文章",
+      "node_type": "code",
+      "operation_family": "document_creation",
+      "inputs": [
+        {
+          "name": "final_article",
+          "type": "string",
+          "description": "最终文章文本"
+        },
+        {
+          "name": "selected_topic",
+          "type": "object",
+          "description": "选题上下文（文件夹命名）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "doc_info",
+          "type": "object",
+          "description": "创建的 Google 文档信息（文档标识与链接）"
+        }
+      ],
+      "native_evidence": ["Create Article Folder", "Create Article Doc", "Insert Article Text"],
+      "requirement_evidence": ["随后在 Google Drive 中为该文章创建专属文件夹、创建 Google 文档、写入最终文章文本"],
+      "rationale": "创建文件夹、文档并写入文本为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n14",
+      "label": "公开共享文档链接",
+      "node_type": "code",
+      "operation_family": "permission_sharing",
+      "inputs": [
+        {
+          "name": "doc_info",
+          "type": "object",
+          "description": "Google 文档信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "doc_link",
+          "type": "string",
+          "description": "公开共享的文档链接"
+        }
+      ],
+      "native_evidence": ["Set Doc Permissions", "Attach Doc Link"],
+      "requirement_evidence": ["并将文档链接公开共享"],
+      "rationale": "设置权限并共享链接为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n15",
+      "label": "抽取最多两个配图场景并生成英文配图描述",
+      "node_type": "semantic",
+      "operation_family": "image_prompt_generation",
+      "inputs": [
+        {
+          "name": "final_article",
+          "type": "string",
+          "description": "最终文章文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_prompts",
+          "type": "object[]",
+          "description": "最多两个配图场景的英文配图描述"
+        }
+      ],
+      "native_evidence": ["Generate image prompts", "LLM: Image Prompts (GPT-5)", "Parse Image Prompts"],
+      "requirement_evidence": ["由语言模型从文章中抽取最多两个配图场景并生成英文配图描述", "每篇文章最多抽取两个配图场景、最多生成两幅配图"],
+      "rationale": "场景抽取与英文描述生成为开放文本生成，判为 semantic；数量上限（≤2）按需求折叠进节点契约，解析折叠进输出。"
+    },
+    {
+      "node_id": "n16",
+      "label": "调用图像生成能力生成图片",
+      "node_type": "code",
+      "operation_family": "image_generation",
+      "inputs": [
+        {
+          "name": "image_prompts",
+          "type": "object[]",
+          "description": "英文配图描述"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "binary[]",
+          "description": "生成的配图（最多两幅）"
+        }
+      ],
+      "native_evidence": ["Generate images (OpenRouter)", "Decode Base64 To Binary"],
+      "requirement_evidence": ["再由图像生成能力生成图片"],
+      "rationale": "图像生成为外部服务确定性契约调用，判为 code；Base64 解码折叠进节点契约。"
+    },
+    {
+      "node_id": "n17",
+      "label": "上传图片到 Google Drive 并共享链接",
+      "node_type": "code",
+      "operation_family": "file_upload_sharing",
+      "inputs": [
+        {
+          "name": "images",
+          "type": "binary[]",
+          "description": "生成的配图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_links",
+          "type": "string[]",
+          "description": "公开共享的图片链接"
+        }
+      ],
+      "native_evidence": ["Upload to Drive", "Set File Permissions"],
+      "requirement_evidence": ["把图片上传到 Google Drive 并通过链接共享"],
+      "rationale": "上传与权限共享为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n18",
+      "label": "记录图片元数据、追加已发布条目并更新选题状态",
+      "node_type": "terminal",
+      "operation_family": "record_keeping",
+      "inputs": [
+        {
+          "name": "image_links",
+          "type": "string[]",
+          "description": "图片链接（元数据）"
+        },
+        {
+          "name": "doc_link",
+          "type": "string",
+          "description": "Google 文档链接"
+        },
+        {
+          "name": "selected_topic",
+          "type": "object",
+          "description": "选题行（状态更新目标）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Prepare Image Row", "Append Image Row", "Aggregate Image Results", "Prepare Published Row", "Append to Published Sheet", "Update status & log"],
+      "requirement_evidence": ["把图片元数据记录到图片工作表；把文章条目追加到已发布工作表；并把该选题行的状态更新为'就绪'，同时附上 Google 文档链接"],
+      "rationale": "三项记录行为为确定性数据表写入，需求将其声明为收尾记录步骤，合并为一个记录节点并作为内容生成链路的最终可见完成动作，判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发后进入电子表格查找初始化。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周触发后进入电子表格查找初始化。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "spreadsheet_found == false",
+      "rationale": "电子表格不存在时执行初始化创建。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": "spreadsheet_found == true && trigger_source == weekly",
+      "rationale": "每周触发且表格存在时进入选题刷新链路。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n10",
+      "variable": null,
+      "condition": "spreadsheet_found == true && trigger_source == manual",
+      "rationale": "手动触发且表格存在时进入当日内容生成链路。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "trigger_source == weekly",
+      "rationale": "初始化完成后每周链路继续选题刷新。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n4",
+      "target": "n10",
+      "variable": null,
+      "condition": "trigger_source == manual",
+      "rationale": "初始化完成后手动链路继续内容生成。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取已有标题后查询维基百科分类。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "获得分类候选后由语言模型生成选题。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成的选题需过滤重复。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "过滤后的新选题追加到选题工作表，选题刷新链路结束。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": "selected_topic 存在（状态为新）",
+      "rationale": "存在状态为新的选题时进入文章起草；无新选题时本链路自然结束（选题已由 n9 路径或历史处理覆盖）。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "初稿完成后进行第二轮改写。"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "定稿后创建文件夹与文档并写入。"
+    },
+    {
+      "edge_id": "c15",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "文档创建后公开共享链接。"
+    },
+    {
+      "edge_id": "c16",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "文档共享后进入配图场景抽取。"
+    },
+    {
+      "edge_id": "c17",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "配图描述生成后调用图像生成。"
+    },
+    {
+      "edge_id": "c18",
+      "source": "n16",
+      "target": "n17",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片生成后上传并共享。"
+    },
+    {
+      "edge_id": "c19",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片共享后执行收尾记录，内容生成链路结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "trigger_source",
+      "condition": null,
+      "rationale": "查找节点消费触发来源以区分链路。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "trigger_source",
+      "condition": null,
+      "rationale": "查找节点消费触发来源以区分链路。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "existing_titles",
+      "condition": null,
+      "rationale": "分类候选批次排除依据已有标题。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n6",
+      "target": "n7",
+      "variable": "category_candidates",
+      "condition": null,
+      "rationale": "语言模型消费分类候选生成选题。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n7",
+      "target": "n8",
+      "variable": "generated_topics",
+      "condition": null,
+      "rationale": "去重消费生成的选题。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n8",
+      "variable": "existing_titles",
+      "condition": null,
+      "rationale": "去重排除依据已有标题。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n3",
+      "target": "n5",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "读取标题需电子表格标识。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n4",
+      "target": "n5",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "读取标题需电子表格标识。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n3",
+      "target": "n10",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "读取选题需电子表格标识。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n4",
+      "target": "n10",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "读取选题需电子表格标识。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n3",
+      "target": "n9",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "追加选题需电子表格标识。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n4",
+      "target": "n9",
+      "variable": "spreadsheet_id",
+      "condition": null,
+      "rationale": "追加选题需电子表格标识。"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n10",
+      "target": "n11",
+      "variable": "selected_topic",
+      "condition": null,
+      "rationale": "起草消费选中的选题。"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n11",
+      "target": "n12",
+      "variable": "article_draft",
+      "condition": null,
+      "rationale": "改写消费文章初稿。"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n10",
+      "target": "n12",
+      "variable": "selected_topic",
+      "condition": null,
+      "rationale": "改写合并时保留选题上下文。"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n12",
+      "target": "n13",
+      "variable": "final_article",
+      "condition": null,
+      "rationale": "文档写入消费最终文章文本。"
+    },
+    {
+      "edge_id": "d17",
+      "source": "n10",
+      "target": "n13",
+      "variable": "selected_topic",
+      "condition": null,
+      "rationale": "文章文件夹命名消费选题上下文。"
+    },
+    {
+      "edge_id": "d18",
+      "source": "n13",
+      "target": "n14",
+      "variable": "doc_info",
+      "condition": null,
+      "rationale": "权限共享消费文档信息。"
+    },
+    {
+      "edge_id": "d19",
+      "source": "n12",
+      "target": "n15",
+      "variable": "final_article",
+      "condition": null,
+      "rationale": "配图场景抽取消费最终文章文本。"
+    },
+    {
+      "edge_id": "d20",
+      "source": "n15",
+      "target": "n16",
+      "variable": "image_prompts",
+      "condition": null,
+      "rationale": "图像生成消费配图描述。"
+    },
+    {
+      "edge_id": "d21",
+      "source": "n16",
+      "target": "n17",
+      "variable": "images",
+      "condition": null,
+      "rationale": "上传消费生成的图片。"
+    },
+    {
+      "edge_id": "d22",
+      "source": "n17",
+      "target": "n18",
+      "variable": "image_links",
+      "condition": null,
+      "rationale": "图片元数据记录消费图片链接。"
+    },
+    {
+      "edge_id": "d23",
+      "source": "n14",
+      "target": "n18",
+      "variable": "doc_link",
+      "condition": null,
+      "rationale": "选题状态更新附上 Google 文档链接。"
+    },
+    {
+      "edge_id": "d24",
+      "source": "n10",
+      "target": "n18",
+      "variable": "selected_topic",
+      "condition": null,
+      "rationale": "状态更新作用于该选题行。"
+    }
+  ],
+  "entry_nodes": ["n1", "n2"],
+  "terminal_nodes": ["n9", "n18"],
+  "confidence": 0.75,
+  "notes": "关键取舍：(1) 需求声明每周触发仅刷新选题队列，原生图中每周链在追加选题后继续进入内容生成（Update State Row → Search Spreadsheet → Get next topic），按冻结需求边界不采纳，每周链止于追加选题；(2) 手动/每周共用的表格查找与初始化合并为共享节点，以 trigger_source 区分后续链路；(3) 原生的 Get Folder IDs/Validate Folder IDs/Stop: Missing Folder IDs（文件夹 ID 校验）、Wait (Drive index) 等为未声明的实现细节，未纳入 Gold；(4) 配图数量上限（≤2）折叠进配图节点契约；(5) 选题表为空（无状态为新的选题）时内容链路自然停止，需求未声明该情形的额外行为。"
+}

@@ -1,0 +1,996 @@
+{
+  "pilot_id": "N8C-010",
+  "annotator_id": "GA-01",
+  "status": "submitted",
+  "requirement_sha256": "1d75b04bb616b212279fd6a830f528a004c3db597b65d331533d44aa8796f34d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Receive B2B research request via POST webhook",
+      "node_type": "code",
+      "operation_family": "webhook_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "research_request",
+          "type": "object",
+          "description": "Submitted B2B targeting criteria received via the POST webhook"
+        }
+      ],
+      "native_evidence": [
+        "POST B2B Research Request"
+      ],
+      "requirement_evidence": [
+        "The system receives B2B targeting research requests via a POST webhook"
+      ],
+      "rationale": "Declared webhook entry point that accepts the targeting research request."
+    },
+    {
+      "node_id": "n2",
+      "label": "Manual test run trigger",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "research_request",
+          "type": "object",
+          "description": "Targeting criteria supplied by a manual test run"
+        }
+      ],
+      "native_evidence": [
+        "When Manual Research Initiated",
+        "Set Target Criteria Fields"
+      ],
+      "requirement_evidence": [
+        "(or manual test runs)"
+      ],
+      "rationale": "Declared alternative entry for manual test runs; supplies the same targeting criteria contract as the webhook."
+    },
+    {
+      "node_id": "n3",
+      "label": "Normalize targeting criteria",
+      "node_type": "code",
+      "operation_family": "normalization",
+      "inputs": [
+        {
+          "name": "research_request",
+          "type": "object",
+          "description": "Raw criteria from webhook or manual run"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_criteria",
+          "type": "object",
+          "description": "Normalized targeting criteria including target_market, target_industries, target_roles, exclusions and score thresholds"
+        }
+      ],
+      "native_evidence": [
+        "Normalize Request Data"
+      ],
+      "requirement_evidence": [
+        "normalizes the targeting criteria",
+        "the required criteria fields are target_market, target_industries, and target_roles"
+      ],
+      "rationale": "Deterministic normalization of the received criteria into a consistent shape used by all downstream steps."
+    },
+    {
+      "node_id": "n4",
+      "label": "Validate required criteria fields",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "normalized_criteria",
+          "type": "object",
+          "description": "Criteria whose required fields are validated"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "Validity flag and any missing required fields"
+        }
+      ],
+      "native_evidence": [
+        "Validate Criteria in Request"
+      ],
+      "requirement_evidence": [
+        "It validates the required fields"
+      ],
+      "rationale": "Deterministic presence check of the required fields (target_market, target_industries, target_roles) that produces the validity flag."
+    },
+    {
+      "node_id": "n5",
+      "label": "Check criteria validity",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "Validity-flagged criteria to route"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "Criteria routed to the valid or invalid branch"
+        }
+      ],
+      "native_evidence": [
+        "Check Validity of Criteria"
+      ],
+      "requirement_evidence": [
+        "It validates the required fields and returns a 400 webhook response when the criteria are incomplete"
+      ],
+      "rationale": "Deterministic routing on the validity flag; invalid requests take the 400 rejection terminal, valid requests continue into discovery."
+    },
+    {
+      "node_id": "n6",
+      "label": "Return 400 response for incomplete criteria",
+      "node_type": "terminal",
+      "operation_family": "error_response",
+      "inputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "Missing-field details used to build the rejection response"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Handle Invalid Criteria",
+        "Check Invalid Webhook Request",
+        "Webhook Invalid Criteria Response"
+      ],
+      "requirement_evidence": [
+        "returns a 400 webhook response when the criteria are incomplete"
+      ],
+      "rationale": "Safe rejection for incomplete criteria: returns the 400 webhook response for webhook requests; a manual run with invalid criteria simply halts. Terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n7",
+      "label": "Call configurable company-discovery HTTP API",
+      "node_type": "code",
+      "operation_family": "external_discovery",
+      "inputs": [
+        {
+          "name": "normalized_criteria",
+          "type": "object",
+          "description": "Market, industries and size filters sent to the discovery API"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "company_candidates",
+          "type": "array",
+          "description": "Candidate companies returned by the company-discovery API"
+        }
+      ],
+      "native_evidence": [
+        "Search Company Candidates"
+      ],
+      "requirement_evidence": [
+        "call a configurable company-discovery HTTP API"
+      ],
+      "rationale": "Declared external action that discovers candidate companies from the configurable provider."
+    },
+    {
+      "node_id": "n8",
+      "label": "Remove excluded companies",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "company_candidates",
+          "type": "array",
+          "description": "Candidate companies to filter"
+        },
+        {
+          "name": "normalized_criteria",
+          "type": "object",
+          "description": "Exclusion list from the criteria"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "company_candidate",
+          "type": "object",
+          "description": "Each non-excluded candidate company with normalized fields"
+        }
+      ],
+      "native_evidence": [
+        "Normalize Company Data",
+        "Check Company Exclusion"
+      ],
+      "requirement_evidence": [
+        "remove excluded companies"
+      ],
+      "rationale": "Deterministic exclusion of configured companies from the candidate list; each surviving candidate is emitted individually for per-company evaluation."
+    },
+    {
+      "node_id": "n9",
+      "label": "Evaluate account fit and generate evidence with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_fit_evaluation",
+      "inputs": [
+        {
+          "name": "company_candidate",
+          "type": "object",
+          "description": "Candidate company to assess, carrying discovery data and criteria context"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "fit_evidence",
+          "type": "object",
+          "description": "Language-model fit assessment with evidence points and rationale"
+        }
+      ],
+      "native_evidence": [
+        "AI Analyze Company Fit"
+      ],
+      "requirement_evidence": [
+        "use a language model to evaluate fit and generate evidence"
+      ],
+      "rationale": "Open-text judgement of account fit and evidence generation; requires a language model. Company-site evidence fetching in the native graph is an implementation detail not declared in the frozen requirement and is not modelled separately."
+    },
+    {
+      "node_id": "n10",
+      "label": "Convert evidence into weighted account score",
+      "node_type": "code",
+      "operation_family": "score_computation",
+      "inputs": [
+        {
+          "name": "fit_evidence",
+          "type": "object",
+          "description": "Language-model fit components to weight"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_account",
+          "type": "object",
+          "description": "Account with the deterministic weighted account score"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Account Research Data"
+      ],
+      "requirement_evidence": [
+        "that is converted into a weighted account score"
+      ],
+      "rationale": "Deterministic weighted combination of the fit components into a single account score."
+    },
+    {
+      "node_id": "n11",
+      "label": "Filter out low-scoring accounts",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "scored_account",
+          "type": "object",
+          "description": "Account with computed account_score and the minimum score threshold"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_account",
+          "type": "object",
+          "description": "Account passing the minimum score threshold"
+        }
+      ],
+      "native_evidence": [
+        "Check Account Score Threshold"
+      ],
+      "requirement_evidence": [
+        "filter out low-scoring accounts"
+      ],
+      "rationale": "Deterministic threshold filter on the weighted account score (threshold carried in the account object); low-scoring accounts are dropped and do not continue."
+    },
+    {
+      "node_id": "n12",
+      "label": "Check Airtable to avoid duplicate accounts",
+      "node_type": "code",
+      "operation_family": "dedup_check",
+      "inputs": [
+        {
+          "name": "scored_account",
+          "type": "object",
+          "description": "Qualifying account to check against Airtable"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "account_lookup",
+          "type": "object",
+          "description": "Lookup result carrying the existing_account flag, record id, and the account data"
+        }
+      ],
+      "native_evidence": [
+        "Check Airtable for Existing Account",
+        "Attach Existing Account Context",
+        "Confirm New Account"
+      ],
+      "requirement_evidence": [
+        "check Airtable to avoid duplicates",
+        "call a configurable contact-discovery HTTP API for each qualified account"
+      ],
+      "rationale": "External Airtable lookup plus deterministic comparison; new accounts are created, existing accounts are reused, and both routes continue into contact discovery ('for each qualified account')."
+    },
+    {
+      "node_id": "n13",
+      "label": "Create 'Qualified' account record in Airtable",
+      "node_type": "code",
+      "operation_family": "record_creation",
+      "inputs": [
+        {
+          "name": "account_lookup",
+          "type": "object",
+          "description": "Account data with existing_account == false"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qualified_account",
+          "type": "object",
+          "description": "Newly created qualified account record with status 'Qualified'"
+        }
+      ],
+      "native_evidence": [
+        "Store New Qualified Account",
+        "Reattach New Account Context"
+      ],
+      "requirement_evidence": [
+        "create a 'Qualified' account record for new matches"
+      ],
+      "rationale": "External write persisting the qualified account record for new matches. Not terminal because processing continues into contact discovery."
+    },
+    {
+      "node_id": "n14",
+      "label": "Call configurable contact-discovery HTTP API per qualified account",
+      "node_type": "code",
+      "operation_family": "contact_discovery",
+      "inputs": [
+        {
+          "name": "account_lookup",
+          "type": "object",
+          "description": "Existing account context reused for discovery"
+        },
+        {
+          "name": "qualified_account",
+          "type": "object",
+          "description": "Newly created qualified account used for discovery"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contact_candidate",
+          "type": "object",
+          "description": "Each candidate contact returned by the configurable contact-discovery HTTP API"
+        }
+      ],
+      "native_evidence": [
+        "Discover Contact Candidates",
+        "Normalize Contact Data"
+      ],
+      "requirement_evidence": [
+        "call a configurable contact-discovery HTTP API for each qualified account"
+      ],
+      "rationale": "External action discovering contacts for each qualified account (new or existing); iterates over qualified accounts (bounded by the configured account limit, at most 20 per run)."
+    },
+    {
+      "node_id": "n15",
+      "label": "Score contact relevance with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_contact_scoring",
+      "inputs": [
+        {
+          "name": "contact_candidate",
+          "type": "object",
+          "description": "Candidate contact with title and account context"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contact_scoring",
+          "type": "object",
+          "description": "Contact with language-model relevance scores and rationale"
+        }
+      ],
+      "native_evidence": [
+        "AI Score Contact Relevance"
+      ],
+      "requirement_evidence": [
+        "use a language model to score each contact's relevance"
+      ],
+      "rationale": "Open-text relevance assessment of each contact; requires a language model."
+    },
+    {
+      "node_id": "n16",
+      "label": "Filter out low-scoring or duplicate contacts using Airtable",
+      "node_type": "code",
+      "operation_family": "contact_filtering",
+      "inputs": [
+        {
+          "name": "contact_scoring",
+          "type": "object",
+          "description": "Contact with computed contact_score and the minimum score threshold"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qualified_contact",
+          "type": "object",
+          "description": "Contact passing the score threshold and not duplicated in Airtable"
+        }
+      ],
+      "native_evidence": [
+        "Analyze Contact Score Data",
+        "Check Contact Score Threshold",
+        "Check Airtable for Existing Contact",
+        "Confirm New Contact"
+      ],
+      "requirement_evidence": [
+        "filter out low-scoring or duplicate contacts using Airtable"
+      ],
+      "rationale": "Deterministic score threshold plus Airtable duplicate check; low-scoring or duplicate contacts are dropped. Persisting a separate contact record is a native implementation detail not declared as a visible outcome and is not modelled."
+    },
+    {
+      "node_id": "n17",
+      "label": "Generate evidence-based outreach brief with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_brief_generation",
+      "inputs": [
+        {
+          "name": "qualified_contact",
+          "type": "object",
+          "description": "Qualified contact with account evidence and scores"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "outreach_brief",
+          "type": "object",
+          "description": "Evidence-based outreach brief for human review"
+        }
+      ],
+      "native_evidence": [
+        "AI Develop Outreach Brief",
+        "Analyze Outreach Brief"
+      ],
+      "requirement_evidence": [
+        "use a language model to generate an evidence-based outreach brief"
+      ],
+      "rationale": "Open-text generation of a grounded outreach brief; requires a language model."
+    },
+    {
+      "node_id": "n18",
+      "label": "Create Airtable queue item with status 'Needs Human Review'",
+      "node_type": "code",
+      "operation_family": "queue_creation",
+      "inputs": [
+        {
+          "name": "outreach_brief",
+          "type": "object",
+          "description": "Brief with evidence and scores stored in the queue item"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "queue_item",
+          "type": "object",
+          "description": "Airtable queue item with status 'Needs Human Review'"
+        }
+      ],
+      "native_evidence": [
+        "Create Human Review Queue Item"
+      ],
+      "requirement_evidence": [
+        "create an Airtable queue item with status 'Needs Human Review'"
+      ],
+      "rationale": "External write creating the human-review queue item. Not terminal because the compact result is still returned to the caller. Queue-level duplicate prevention is a native implementation detail not declared in the requirement."
+    },
+    {
+      "node_id": "n19",
+      "label": "Return compact JSON result for the research request",
+      "node_type": "terminal",
+      "operation_family": "result_response",
+      "inputs": [
+        {
+          "name": "queue_item",
+          "type": "object",
+          "description": "Stored queue item used to build the compact result"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Webhook Send Research Outcome",
+        "Check Webhook Request Type",
+        "Process Manual Research Complete"
+      ],
+      "requirement_evidence": [
+        "return a compact JSON result for webhook requests"
+      ],
+      "rationale": "User-visible completion of the research lane: for webhook requests the compact JSON result is returned; manual runs simply end after the queue item is created. Terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n20",
+      "label": "Daily scheduled trigger for review queue",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Daily scheduled run signal that starts the review-queue lane"
+        }
+      ],
+      "native_evidence": [
+        "Daily Queue Review at 9am"
+      ],
+      "requirement_evidence": [
+        "the system runs daily on a schedule to load 'Needs Human Review' items"
+      ],
+      "rationale": "Declared daily schedule entry for the separate review-queue monitoring lane."
+    },
+    {
+      "node_id": "n21",
+      "label": "Load 'Needs Human Review' items from Airtable",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Daily run signal that starts the load"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "review_items",
+          "type": "array",
+          "description": "Queue items currently awaiting human review"
+        }
+      ],
+      "native_evidence": [
+        "GET Pending Review Queue"
+      ],
+      "requirement_evidence": [
+        "load 'Needs Human Review' items from Airtable"
+      ],
+      "rationale": "External read of the pending human-review queue items for the daily lane."
+    },
+    {
+      "node_id": "n22",
+      "label": "Identify stale reviews",
+      "node_type": "code",
+      "operation_family": "stale_detection",
+      "inputs": [
+        {
+          "name": "review_items",
+          "type": "array",
+          "description": "Pending review items to assess for staleness"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "review_summary",
+          "type": "object",
+          "description": "Summary of pending and stale review items"
+        }
+      ],
+      "native_evidence": [
+        "Summarize Review Queue Data"
+      ],
+      "requirement_evidence": [
+        "identify stale reviews"
+      ],
+      "rationale": "Deterministic age comparison against the staleness threshold that produces the review summary."
+    },
+    {
+      "node_id": "n23",
+      "label": "Email review summary via Gmail (optional)",
+      "node_type": "terminal",
+      "operation_family": "email_notification",
+      "inputs": [
+        {
+          "name": "review_summary",
+          "type": "object",
+          "description": "Summary emailed to the reviewer"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Review Summary Email"
+      ],
+      "requirement_evidence": [
+        "optionally email a summary via Gmail"
+      ],
+      "rationale": "Optional user-visible completion of the daily lane: the summary email is sent when enabled. Terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Webhook requests are normalized."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Manual test runs are normalized through the same path."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Normalized criteria are validated."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "The validity flag is routed."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "criteria_valid == false",
+      "rationale": "Invalid criteria take the 400 rejection terminal."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": "criteria_valid == true",
+      "rationale": "Valid requests proceed to company discovery."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "Discovered candidates are filtered for exclusions."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "Eligible companies are assessed for fit."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "Fit evidence is converted into a weighted score."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scored accounts are thresholded."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": "account_score >= minimum_account_score",
+      "rationale": "Accounts meeting the threshold proceed; low-scoring accounts are dropped."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": "existing_account == false",
+      "rationale": "New account is created as Qualified."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n12",
+      "target": "n14",
+      "variable": null,
+      "condition": "existing_account == true",
+      "rationale": "Existing account is reused and continues to contact discovery."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "Newly created account continues into contact discovery."
+    },
+    {
+      "edge_id": "c15",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "Each contact candidate is scored for relevance."
+    },
+    {
+      "edge_id": "c16",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scored contacts are filtered for score and duplicates."
+    },
+    {
+      "edge_id": "c17",
+      "source": "n16",
+      "target": "n17",
+      "variable": null,
+      "condition": "contact_score >= minimum_contact_score and existing_contact == false",
+      "rationale": "Qualified contacts proceed to brief generation; low-scoring or duplicate contacts are dropped."
+    },
+    {
+      "edge_id": "c18",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "The brief is stored as a human-review queue item."
+    },
+    {
+      "edge_id": "c19",
+      "source": "n18",
+      "target": "n19",
+      "variable": null,
+      "condition": null,
+      "rationale": "The compiled result is returned to the caller."
+    },
+    {
+      "edge_id": "c20",
+      "source": "n20",
+      "target": "n21",
+      "variable": null,
+      "condition": null,
+      "rationale": "The daily run loads pending review items."
+    },
+    {
+      "edge_id": "c21",
+      "source": "n21",
+      "target": "n22",
+      "variable": null,
+      "condition": null,
+      "rationale": "Loaded items are checked for staleness."
+    },
+    {
+      "edge_id": "c22",
+      "source": "n22",
+      "target": "n23",
+      "variable": null,
+      "condition": "optional: the summary email is enabled",
+      "rationale": "The summary is emailed when the optional notification is enabled."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "research_request",
+      "condition": null,
+      "rationale": "Normalization consumes the webhook request."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "research_request",
+      "condition": null,
+      "rationale": "Normalization consumes the manual-run criteria."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "normalized_criteria",
+      "condition": null,
+      "rationale": "Validation consumes the normalized criteria."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "validation_result",
+      "condition": null,
+      "rationale": "The validity flag is routed."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "validation_result",
+      "condition": null,
+      "rationale": "The rejection response uses the missing-field details."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n3",
+      "target": "n7",
+      "variable": "normalized_criteria",
+      "condition": null,
+      "rationale": "Company discovery uses the market, industries and size criteria."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "company_candidates",
+      "condition": null,
+      "rationale": "Exclusion filters the discovered candidates."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n3",
+      "target": "n8",
+      "variable": "normalized_criteria",
+      "condition": null,
+      "rationale": "Exclusion uses the exclusion list from the criteria."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "company_candidate",
+      "condition": null,
+      "rationale": "Fit evaluation consumes each eligible company."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n9",
+      "target": "n10",
+      "variable": "fit_evidence",
+      "condition": null,
+      "rationale": "Scoring weights the fit components."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n10",
+      "target": "n11",
+      "variable": "scored_account",
+      "condition": null,
+      "rationale": "Thresholding consumes the scored account."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n11",
+      "target": "n12",
+      "variable": "scored_account",
+      "condition": null,
+      "rationale": "Duplicate checking consumes the qualifying account."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n12",
+      "target": "n13",
+      "variable": "account_lookup",
+      "condition": null,
+      "rationale": "Record creation persists the new account data."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n12",
+      "target": "n14",
+      "variable": "account_lookup",
+      "condition": null,
+      "rationale": "Existing account context feeds contact discovery."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n13",
+      "target": "n14",
+      "variable": "qualified_account",
+      "condition": null,
+      "rationale": "New qualified account feeds contact discovery."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n14",
+      "target": "n15",
+      "variable": "contact_candidate",
+      "condition": null,
+      "rationale": "Relevance scoring consumes the discovered contact."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n15",
+      "target": "n16",
+      "variable": "contact_scoring",
+      "condition": null,
+      "rationale": "Contact filtering consumes the scored contact."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n16",
+      "target": "n17",
+      "variable": "qualified_contact",
+      "condition": null,
+      "rationale": "Brief generation consumes the qualified contact."
+    },
+    {
+      "edge_id": "d19",
+      "source": "n17",
+      "target": "n18",
+      "variable": "outreach_brief",
+      "condition": null,
+      "rationale": "Queue item creation stores the brief."
+    },
+    {
+      "edge_id": "d20",
+      "source": "n18",
+      "target": "n19",
+      "variable": "queue_item",
+      "condition": null,
+      "rationale": "The compact result is returned to the caller."
+    },
+    {
+      "edge_id": "d21",
+      "source": "n20",
+      "target": "n21",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The daily signal starts the review-queue load."
+    },
+    {
+      "edge_id": "d22",
+      "source": "n21",
+      "target": "n22",
+      "variable": "review_items",
+      "condition": null,
+      "rationale": "Stale detection consumes the loaded review items."
+    },
+    {
+      "edge_id": "d23",
+      "source": "n22",
+      "target": "n23",
+      "variable": "review_summary",
+      "condition": null,
+      "rationale": "The email carries the review summary."
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n2",
+    "n20"
+  ],
+  "terminal_nodes": [
+    "n6",
+    "n19",
+    "n23"
+  ],
+  "confidence": 0.87,
+  "notes": "共识 Gold（23 节点、两条车道）：研究车道（webhook n1 + 手动 n2 双入口 → 规范化 n3 → 校验 n4 → 分支 n5 → 400 拒绝 terminal n6 或发现链 n7→n19）＋ 每日队列车道（n20→n23）。账户/联系人按逐项单数流处理并保留'已存在账户继续联系人发现'分支（existing_account 判定）；联系人发现按 'for each qualified account' 迭代（max_iterations<=20）。混合任务类型边：n9/n15/n17(semantic)→code 由 fit_evidence/contact_scoring/outreach_brief 实现。排除未声明实现：网站证据抓取、环境配置 Set 节点、联系人记录持久化、队列级重复预防。"
+}

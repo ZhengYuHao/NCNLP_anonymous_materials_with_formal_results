@@ -1,0 +1,255 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-021",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-BD-START",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "start_snapshot",
+      "request_contract": {
+        "urls": [
+          "https://www.amazon.com/dp/B0OWN001",
+          "https://www.amazon.com/dp/B0CMP001",
+          "https://www.amazon.com/dp/B0CMP002",
+          "https://www.amazon.com/dp/B0CMP003"
+        ]
+      },
+      "response_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-READY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_snapshot_status",
+      "request_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "response_contract": {
+        "status": "ready",
+        "download_url": "https://mock-bd.example.com/snap-0001.json"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL-PENDING",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_snapshot_status",
+      "request_contract": {
+        "snapshot_id": "snap-0001"
+      },
+      "response_contract": {
+        "status": "processing"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DATA",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_review_data",
+      "request_contract": {
+        "url": "https://mock-bd.example.com/snap-0001.json"
+      },
+      "response_contract": {
+        "products": [
+          {
+            "product_id": "B0OWN001",
+            "reviews": [
+              {
+                "id": "r1",
+                "text": "Battery drains too fast",
+                "rating": 1,
+                "helpful_votes": 50,
+                "duplicate_of": null
+              },
+              {
+                "id": "r2",
+                "text": "Battery drains too fast",
+                "rating": 1,
+                "helpful_votes": 3,
+                "duplicate_of": "r1"
+              },
+              {
+                "id": "r3",
+                "text": "Great design and feel",
+                "rating": 5,
+                "helpful_votes": 20,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP001",
+            "reviews": [
+              {
+                "id": "c1",
+                "text": "Battery life is amazing",
+                "rating": 5,
+                "helpful_votes": 40,
+                "duplicate_of": null
+              },
+              {
+                "id": "c2",
+                "text": "Too expensive",
+                "rating": 2,
+                "helpful_votes": 10,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP002",
+            "reviews": [
+              {
+                "id": "d1",
+                "text": "Very durable build",
+                "rating": 5,
+                "helpful_votes": 30,
+                "duplicate_of": null
+              }
+            ]
+          },
+          {
+            "product_id": "B0CMP003",
+            "reviews": [
+              {
+                "id": "e1",
+                "text": "Nice color options",
+                "rating": 4,
+                "helpful_votes": 15,
+                "duplicate_of": null
+              }
+            ]
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-THEMES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "extract_themes",
+      "request_contract": {
+        "product_id": "B0OWN001"
+      },
+      "response_contract": {
+        "complaint_themes": [
+          "battery life",
+          "durability"
+        ],
+        "praise_themes": [
+          "design"
+        ],
+        "feature_requests": [
+          "wireless charging"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-BRIEF",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "write_competitive_brief",
+      "request_contract": {
+        "own_complaints": [
+          "battery life",
+          "durability"
+        ],
+        "competitor_praises": [
+          "battery life",
+          "durability",
+          "price"
+        ]
+      },
+      "response_contract": {
+        "brief": "Competitive gap: competitors are praised for battery life and durability, which are our top complaints."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "findings"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 42
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-POST",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_digest",
+      "request_contract": {
+        "channel": "product-review-digest",
+        "text": "Competitive gap: competitors are praised for battery life and durability, which are our top complaints."
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1725200000.000100"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-FULL-POSITIVE",
+      "fixture_ids": [
+        "F-FORM-FULL"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ]
+    },
+    {
+      "case_id": "C-POLL-RETRY",
+      "fixture_ids": [
+        "F-FORM-FULL"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-PENDING",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ]
+    },
+    {
+      "case_id": "C-MIN-BOUNDARY",
+      "fixture_ids": [
+        "F-FORM-MIN"
+      ],
+      "mock_ids": [
+        "M-BD-START",
+        "M-BD-POLL-READY",
+        "M-BD-DATA",
+        "M-LLM-THEMES",
+        "M-LLM-BRIEF",
+        "M-SHEETS-APPEND",
+        "M-SLACK-POST"
+      ]
+    }
+  ]
+}

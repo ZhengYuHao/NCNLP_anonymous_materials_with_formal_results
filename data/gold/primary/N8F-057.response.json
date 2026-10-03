@@ -1,0 +1,356 @@
+{
+  "task_id": "N8F-057",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "9e39808ae7038967f9c9e3825dab24ab7f227f24eadb0ffaf2aca2f5c40bb3b3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收候选人应答请求",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "http_request",
+          "type": "object",
+          "description": "外部发起的 POST 请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "解析出的会话 ID、岗位角色、轮次编号与候选人录音"
+        }
+      ],
+      "native_evidence": ["Webhook - Candidate Response Submitted", "Set - Config"],
+      "requirement_evidence": ["接收一次 POST 请求，内容包含会话 ID、岗位角色、轮次编号以及候选人的一段录音"],
+      "rationale": "需求声明接收 POST 请求并解析会话 ID、岗位角色、轮次编号与录音，为确定性入站解析，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语音转写为文字稿",
+      "node_type": "semantic",
+      "operation_family": "speech_to_text",
+      "inputs": [
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "含候选人录音的请求数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写出的候选人回答文字稿"
+        },
+        {
+          "name": "audio_duration",
+          "type": "number",
+          "description": "录音时长（秒），来自转写服务元数据"
+        }
+      ],
+      "native_evidence": ["HTTP Request - Transcribe Candidate Audio"],
+      "requirement_evidence": ["将录音送入语音转写服务，生成文字稿"],
+      "rationale": "需求声明将录音送入语音转写服务生成文字稿，语音内容理解无法用确定性规则无损替代，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "分析文字稿并计算表达指标",
+      "node_type": "code",
+      "operation_family": "data_computation",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写文字稿"
+        },
+        {
+          "name": "audio_duration",
+          "type": "number",
+          "description": "录音时长"
+        },
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "含轮次编号的请求数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "表达指标与辅导上下文，含填充词使用、每分钟字数、语速评估、回答过短标记、轮次与是否最后一轮"
+        }
+      ],
+      "native_evidence": ["JS - Analyze Transcript, Compute Speech Metrics & Build Coaching Context"],
+      "requirement_evidence": ["分析文字稿并计算表达指标，包括填充词使用、每分钟字数、语速评估、回答过短的标记，以及本场面试是否已到最后一轮"],
+      "rationale": "需求声明分析文字稿并确定性计算填充词、语速、过短标记与最后一轮判断等表达指标，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成辅导反馈与下一个问题",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "表达指标与辅导上下文"
+        },
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "含会话 ID 的请求数据，用于按会话维护记忆"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "coaching_output",
+          "type": "object",
+          "description": "结构化的辅导反馈、鼓励语、评分与下一个问题（最后一轮为总结收尾，nextQuestion 为空）"
+        }
+      ],
+      "native_evidence": ["AI Agent - Interview Coach", "OpenAI Chat Model", "Window Buffer Memory"],
+      "requirement_evidence": ["使用带会话记忆的语言模型（按会话 ID 维护上下文）生成结构化的辅导反馈、鼓励语、评分，以及下一个面试问题", "若已到最后一轮，则改为生成总结收尾"],
+      "rationale": "需求声明由带会话记忆的语言模型生成结构化辅导内容并按轮次决定下一个问题或总结收尾，需开放文本理解与生成，判 semantic；会话记忆（按会话 ID 键控）与模型输出解析折叠进本节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语音合成辅导内容",
+      "node_type": "code",
+      "operation_family": "text_to_speech",
+      "inputs": [
+        {
+          "name": "coaching_output",
+          "type": "object",
+          "description": "辅导反馈与下一个问题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "合成的辅导音频"
+        }
+      ],
+      "native_evidence": ["HTTP Request - Generate Voice Response"],
+      "requirement_evidence": ["将辅导反馈与下一个问题通过语音合成转换为音频"],
+      "rationale": "需求声明将反馈与问题通过语音合成转换为音频，文本到语音为确定性外部转换动作，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "等待投递确认回调",
+      "node_type": "code",
+      "operation_family": "external_wait",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "delivery_confirmed",
+          "type": "boolean",
+          "description": "是否收到投递确认"
+        }
+      ],
+      "native_evidence": ["Wait - For Delivery Confirmation", "IF - Delivery Confirmed"],
+      "requirement_evidence": ["等待投递确认回调"],
+      "rationale": "需求声明等待投递确认回调并据此路由，为确定性等待门控动作，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "返回完整辅导结果",
+      "node_type": "terminal",
+      "operation_family": "external_response",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写文字稿"
+        },
+        {
+          "name": "coaching_output",
+          "type": "object",
+          "description": "辅导输出与评分"
+        },
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "生成的音频"
+        },
+        {
+          "name": "metrics",
+          "type": "object",
+          "description": "含轮次与会话标识的指标上下文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond to Webhook - Success"],
+      "requirement_evidence": ["确认后，向原请求返回文字稿、辅导输出、评分、下一个问题与生成的音频"],
+      "rationale": "需求声明确认后向原请求返回完整辅导结果，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n8",
+      "label": "返回重试提示",
+      "node_type": "terminal",
+      "operation_family": "external_response",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": ["Respond to Webhook - Retry"],
+      "requirement_evidence": ["若未收到确认，则返回重试提示"],
+      "rationale": "需求声明未收到投递确认时向请求方返回重试提示，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "请求接收后转写录音。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "文字稿生成后计算表达指标。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "指标计算完成后生成辅导反馈。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "辅导内容生成后合成为音频。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频生成后等待投递确认。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "delivery_confirmed == true",
+      "rationale": "收到确认时返回完整辅导结果。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "delivery_confirmed != true",
+      "rationale": "未收到确认时返回重试提示。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "request_data",
+      "condition": null,
+      "rationale": "请求数据（含录音）传给转写节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "request_data",
+      "condition": null,
+      "rationale": "轮次编号传入指标计算节点以判断最后一轮。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "文字稿传给指标计算节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n2",
+      "target": "n3",
+      "variable": "audio_duration",
+      "condition": null,
+      "rationale": "录音时长传给指标计算节点以估算每分钟字数与语速。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n3",
+      "target": "n4",
+      "variable": "metrics",
+      "condition": null,
+      "rationale": "表达指标与辅导上下文传给辅导生成节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n1",
+      "target": "n4",
+      "variable": "request_data",
+      "condition": null,
+      "rationale": "会话 ID 传入辅导生成节点用于按会话维护记忆。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n4",
+      "target": "n5",
+      "variable": "coaching_output",
+      "condition": null,
+      "rationale": "辅导内容传给语音合成节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n2",
+      "target": "n7",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "文字稿传入最终响应组装。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n4",
+      "target": "n7",
+      "variable": "coaching_output",
+      "condition": null,
+      "rationale": "辅导输出与评分传入最终响应组装。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n5",
+      "target": "n7",
+      "variable": "audio_file",
+      "condition": null,
+      "rationale": "生成的音频传入最终响应组装。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n3",
+      "target": "n7",
+      "variable": "metrics",
+      "condition": null,
+      "rationale": "轮次与会话标识传入最终响应组装。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7", "n8"],
+  "confidence": 0.93,
+  "notes": "需求为语音优先的模拟面试辅导：POST 接收（会话 ID/岗位角色/轮次/录音）、语音转写、确定性表达指标计算（填充词、每分钟字数、语速、过短标记、最后一轮判断）、带会话记忆的语言模型生成结构化辅导反馈与下一个问题（最后一轮改总结收尾）、语音合成、等待投递确认后返回完整结果（文字稿、辅导输出、评分、下一个问题与音频）或重试提示。转写判 semantic、TTS 判 code；模型输出解析与 JSON 清理、按会话 ID 键控的会话记忆均折叠进对应节点契约。未收到确认分支按需求 failure_behavior 返回重试提示，建模为第二个终止节点。原生的配置节点、记忆窗口长度等为实现细节未单独建模。"
+}

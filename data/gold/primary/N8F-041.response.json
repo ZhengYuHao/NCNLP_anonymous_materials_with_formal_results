@@ -1,0 +1,444 @@
+{
+  "task_id": "N8F-041",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "2363d9ef02bf8f8419f5a67fe228868997a468385d660f6d7295fb492883d429",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_event",
+          "type": "object",
+          "description": "定时触发信号"
+        }
+      ],
+      "native_evidence": ["Schedule Trigger"],
+      "requirement_evidence": ["在印度标准时间（IST）下午 2 点至晚上 11 点之间每 6 分钟自动执行一次"],
+      "rationale": "需求声明的定时自动执行入口（每 6 分钟、IST 14-23 点），为确定性触发动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按需触发",
+      "node_type": "code",
+      "operation_family": "external_trigger",
+      "inputs": [
+        {
+          "name": "external_request",
+          "type": "object",
+          "description": "外部调用方发起的按需请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trigger_event",
+          "type": "object",
+          "description": "按需触发信号"
+        }
+      ],
+      "native_evidence": ["Manual test trigger"],
+      "requirement_evidence": ["通过外部请求按需手动触发"],
+      "rationale": "需求声明的按需手动触发入口（外部请求随时触发），为确定性触发动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "获取进行中比赛",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "live_matches",
+          "type": "array",
+          "description": "从赛事数据服务获取的当前全部进行中比赛列表"
+        }
+      ],
+      "native_evidence": ["Fetch live match list"],
+      "requirement_evidence": ["系统从板球赛事数据服务获取当前全部进行中的比赛"],
+      "rationale": "需求声明每次执行时从赛事数据服务获取当前全部进行中的比赛，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "识别目标赛事",
+      "node_type": "code",
+      "operation_family": "data_filtering",
+      "inputs": [
+        {
+          "name": "live_matches",
+          "type": "array",
+          "description": "当前全部进行中的比赛列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "target_match",
+          "type": "object",
+          "description": "动态识别出的目标赛事（IPL/T20 优先，不在赛季时回退任意进行中 T20）"
+        }
+      ],
+      "native_evidence": ["Compute Match Indicators", "Is Live Match ?"],
+      "requirement_evidence": ["动态识别出正在进行的目标赛事，识别条件为赛事名称包含“IPL”或“Indian Premier League”、赛制为 T20、比赛已开始且尚未结束", "若 IPL 不在赛季期间，则回退选择任意一场进行中的 T20 比赛"],
+      "rationale": "需求声明的目标赛事动态识别与赛季外回退，为确定性筛选规则，判 code；原生对找不到任何 T20 比赛时的跳过分支未在需求声明，不纳入。"
+    },
+    {
+      "node_id": "n5",
+      "label": "判断局次并计算比赛指标",
+      "node_type": "code",
+      "operation_family": "data_computation",
+      "inputs": [
+        {
+          "name": "target_match",
+          "type": "object",
+          "description": "识别出的目标赛事"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "match_indicators",
+          "type": "object",
+          "description": "结构化比赛上下文，含局次、比分、over、阶段、压力及按局次计算的各项指标"
+        }
+      ],
+      "native_evidence": ["Compute Match Indicators"],
+      "requirement_evidence": ["识别后系统判断当前进行的是第几局并计算相应指标：第一局计算当前得分率、剩余球数、剩余 wickets、预估总分、比赛阶段（Powerplay / Middle / Death）与压力等级", "第二局在此基础上还需计算所需得分率、还需得分、所需得分率与当前得分率的差值以及压力指数"],
+      "rationale": "需求声明的按局次指标计算（第一局与第二局采用不同指标集），为确定性数值计算，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成比赛叙述",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "match_indicators",
+          "type": "object",
+          "description": "结构化比赛上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "narrative",
+          "type": "string",
+          "description": "语言模型生成的恰好 2 句板球解说叙述"
+        }
+      ],
+      "native_evidence": ["Narrative Generator", "Parse Narrative"],
+      "requirement_evidence": ["这些结构化比赛上下文交由语言模型生成一段恰好 2 句、使用前述具体数字、采用板球解说语言、不使用百分比的分析师风格叙述"],
+      "rationale": "需求声明由语言模型依据结构化比赛上下文生成叙述，需开放文本生成，判 semantic；原生对语言模型响应的解析为实现细节，折叠进本节点契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成时间戳并整理日志记录",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "narrative",
+          "type": "string",
+          "description": "生成的叙述文本"
+        },
+        {
+          "name": "match_indicators",
+          "type": "object",
+          "description": "结构化比赛上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheet_record",
+          "type": "object",
+          "description": "含时间戳、赛事名称、局次、over、比分、目标分、所需得分率、当前得分率、阶段、压力与叙述的日志记录"
+        }
+      ],
+      "native_evidence": ["Log to IPL Win Probability Log"],
+      "requirement_evidence": ["生成的叙述一方面连同时间戳、赛事名称、局次、当前 over、比分、目标分、所需得分率、当前得分率、阶段与压力等级追加写入 Google Sheets 日志"],
+      "rationale": "需求声明将叙述连同完整比赛上下文写入日志；保存动作拆分为规整记录的确定性整理（含生成当前时间戳）与外部写入两个最小可测操作，本节点为整理部分，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "写入 Google Sheets 日志",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "sheet_record",
+          "type": "object",
+          "description": "规整后的日志记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Log to IPL Win Probability Log"],
+      "requirement_evidence": ["追加写入 Google Sheets 日志"],
+      "rationale": "需求声明的日志追加写入动作，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n9",
+      "label": "生成时间戳并组装返回载荷",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "narrative",
+          "type": "string",
+          "description": "生成的叙述文本"
+        },
+        {
+          "name": "match_indicators",
+          "type": "object",
+          "description": "结构化比赛上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "response_payload",
+          "type": "object",
+          "description": "含赛事名称、局次、比分、over、阶段、压力、叙述与时间戳的结构化返回载荷"
+        }
+      ],
+      "native_evidence": ["Respond to Webhook"],
+      "requirement_evidence": ["另一方面以结构化结果返回给调用方", "向调用方返回赛事名称、局次、比分、over、阶段、压力、叙述与时间戳"],
+      "rationale": "需求声明向调用方返回结构化结果；返回动作拆分为组装载荷的确定性整理（含生成当前时间戳）与返回动作两个最小可测操作，本节点为组装部分，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "返回结构化结果",
+      "node_type": "terminal",
+      "operation_family": "external_response",
+      "inputs": [
+        {
+          "name": "response_payload",
+          "type": "object",
+          "description": "组装完成的结构化返回载荷"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond to Webhook"],
+      "requirement_evidence": ["以结构化结果返回给调用方"],
+      "rationale": "需求声明的向调用方返回结果动作，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n11",
+      "label": "发送失败告警邮件",
+      "node_type": "terminal",
+      "operation_family": "failure_alert",
+      "inputs": [
+        {
+          "name": "failure_info",
+          "type": "object",
+          "description": "失败环节与错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "NO_DIRECT_NATIVE_NODE: requirement-only failure behavior; see notes"
+      ],
+      "requirement_evidence": ["若处理过程中任一环节失败，则通过邮件发出告警"],
+      "rationale": "需求 failure_behavior 声明任一环节失败时通过邮件发出告警；告警邮件发出为流程终点的用户可见完成动作，判 terminal 且无出边。原生图中无对应邮件节点，本节点仅依据冻结需求建模。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后进入比赛获取。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "按需触发后进入同一比赛获取链。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "比赛列表获取后识别目标赛事。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "目标赛事识别后判断局次并计算指标。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "指标计算完成后生成叙述。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "叙述生成后整理日志记录。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "日志记录整理完成后写入 Google Sheets。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "叙述生成后组装返回载荷。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "返回载荷组装完成后返回调用方。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n3",
+      "target": "n11",
+      "variable": null,
+      "condition": "获取比赛失败",
+      "rationale": "获取比赛环节失败时发出告警。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n4",
+      "target": "n11",
+      "variable": null,
+      "condition": "识别目标赛事失败",
+      "rationale": "识别环节失败时发出告警。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n5",
+      "target": "n11",
+      "variable": null,
+      "condition": "计算比赛指标失败",
+      "rationale": "指标计算环节失败时发出告警。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n6",
+      "target": "n11",
+      "variable": null,
+      "condition": "生成叙述失败",
+      "rationale": "叙述生成环节失败时发出告警。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n7",
+      "target": "n11",
+      "variable": null,
+      "condition": "整理日志记录失败",
+      "rationale": "日志整理环节失败时发出告警。"
+    },
+    {
+      "edge_id": "cfg-15",
+      "source": "n9",
+      "target": "n11",
+      "variable": null,
+      "condition": "组装返回载荷失败",
+      "rationale": "返回载荷组装环节失败时发出告警。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n3",
+      "target": "n4",
+      "variable": "live_matches",
+      "condition": null,
+      "rationale": "进行中比赛列表传给目标赛事识别节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "target_match",
+      "condition": null,
+      "rationale": "目标赛事传给指标计算节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "match_indicators",
+      "condition": null,
+      "rationale": "结构化比赛上下文传给叙述生成节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n6",
+      "target": "n7",
+      "variable": "narrative",
+      "condition": null,
+      "rationale": "生成的叙述传给日志记录整理节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n7",
+      "variable": "match_indicators",
+      "condition": null,
+      "rationale": "比赛上下文传入日志记录整理节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "sheet_record",
+      "condition": null,
+      "rationale": "规整后的日志记录传给 Google Sheets 写入节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n9",
+      "variable": "narrative",
+      "condition": null,
+      "rationale": "生成的叙述传给返回载荷组装节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n5",
+      "target": "n9",
+      "variable": "match_indicators",
+      "condition": null,
+      "rationale": "比赛上下文传入返回载荷组装节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "response_payload",
+      "condition": null,
+      "rationale": "组装完成的结构化载荷传给返回节点。"
+    }
+  ],
+  "entry_nodes": ["n1", "n2"],
+  "terminal_nodes": ["n8", "n10", "n11"],
+  "confidence": 0.93,
+  "notes": "需求为双触发（定时每 6 分钟、IST 14-23 点 + 外部按需请求）共用同一处理链：获取进行中比赛、动态识别目标赛事（名称含 IPL/Indian Premier League 且 T20、已开始未结束，IPL 不在赛季时回退任意进行中 T20）、按局次计算指标（第一局与第二局指标集不同）、语言模型生成恰好 2 句叙述，叙述同时写入 Google Sheets 日志并以结构化结果返回调用方；任一环节失败时邮件告警。双触发建模为两个入口节点汇入同一链。输出拆分为日志记录整理（code）与写入 Sheets（terminal）、返回载荷组装（code）与返回结果（terminal）。原生的无 T20 比赛跳过分支、LLM 响应解析、CricAPI 错误抛出等未在需求声明的实现细节未纳入。n11 失败告警：该行为来自冻结需求，但原生图未找到直接对应节点（原生节点清单为 Schedule Trigger / Manual test trigger / Fetch live match list / Compute Match Indicators / Is Live Match ? / Narrative Generator / Parse Narrative / Log to IPL Win Probability Log / Respond to Webhook，无任何邮件告警节点，main 边均为正常流、无失败分支边）；依据 evidence_precedence 原则以冻结需求为行为边界（business_contract 的 failure_behavior 与 visible_outcomes 均声明任一环节失败时邮件告警），n11 仍保留为终止节点，native_evidence 留空、不虚构证据，主链各执行环节以失败条件连入。"
+}

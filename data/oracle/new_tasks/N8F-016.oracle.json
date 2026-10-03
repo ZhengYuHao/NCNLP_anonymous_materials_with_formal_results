@@ -1,0 +1,364 @@
+{
+  "task_id": "N8F-016",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "c6a751b24d681e139ef84b27a4f1b40564d70a59a5b824001ac9cc8afa9aa893",
+  "fixtures": [
+    {
+      "fixture_id": "F-SCHEDULE",
+      "purpose": "调度配置：每2小时指定分钟触发，语言、抓取上限与日评论上限",
+      "input_data": {
+        "interval_hours": 2,
+        "at_minute": 15,
+        "language": "en",
+        "max_posts_per_hashtag": 5,
+        "daily_comment_cap": 80
+      }
+    },
+    {
+      "fixture_id": "F-POSTS-POOL",
+      "purpose": "抓取服务返回的话题标签下最近帖子（3条）",
+      "input_data": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI automation tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA workflow"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "Low-code news"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-LOG-P1",
+      "purpose": "已评论记录初始状态（含1条历史记录）",
+      "input_data": {
+        "already_commented_urls": [
+          "https://instagram.com/p/aaa"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-EMPTY-POOL",
+      "purpose": "话题标签下无帖子",
+      "input_data": {
+        "posts": []
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-HASHTAG",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_hashtag",
+      "request_contract": {},
+      "response_contract": {
+        "hashtag": "#AIAutomation"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE",
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_contract": {
+        "hashtag": "#AIAutomation",
+        "max_posts": 5
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI automation tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA workflow"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "Low-code news"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-EMPTY",
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_contract": {
+        "hashtag": "#AIAutomation",
+        "max_posts": 5
+      },
+      "response_contract": {
+        "posts": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMMENT",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_comment",
+      "request_contract": {
+        "language": "en"
+      },
+      "response_contract": {
+        "comment": "Great post! Love the AI content."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-LOG-EMPTY",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_commented",
+      "request_contract": {
+        "file": "instagram_posts_already_commented.csv"
+      },
+      "response_contract": {
+        "rows": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-LOG-P1",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_commented",
+      "request_contract": {
+        "file": "instagram_posts_already_commented.csv"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "url": "https://instagram.com/p/aaa"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-UPLOAD-CSV",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "upload_file",
+      "request_contract": {
+        "file_name": "instagram_post_to_comment.csv"
+      },
+      "response_contract": {
+        "file_id": "f-1001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IG-COMMENT",
+      "dependency_type": "instagram",
+      "operation": "post_comment",
+      "request_contract": {},
+      "response_contract": {
+        "comment_id": "c-2001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-LOG",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "append_already_commented",
+      "request_contract": {
+        "file": "instagram_posts_already_commented.csv"
+      },
+      "response_contract": {
+        "ok": true,
+        "total_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FIRST-RUN",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-SCHEDULE",
+        "F-POSTS-POOL"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE",
+        "M-LLM-COMMENT",
+        "M-READ-LOG-EMPTY",
+        "M-UPLOAD-CSV",
+        "M-IG-COMMENT",
+        "M-APPEND-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.hashtag",
+          "operator": "equals",
+          "expected": "#AIAutomation",
+          "rationale": "由语言模型生成固定话题标签"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.scraped_posts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "抓取数量不超过配置上限5"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.chosen_post.url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(aaa|bbb|ccc)$",
+          "rationale": "从抓取结果中随机选取一条（确定性条件下允许池内任一合法结果）"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.posted_comment.body",
+          "operator": "equals",
+          "expected": "Great post! Love the AI content.",
+          "rationale": "发布的评论内容等于模型固定输出"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.posted_comment.body",
+          "operator": "matches",
+          "expected": "^.{1,150}$",
+          "rationale": "评论不超过150字符"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.posted_comment.post_url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(aaa|bbb|ccc)$",
+          "rationale": "评论发布到所选帖子"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.csv_uploaded.file_name",
+          "operator": "equals",
+          "expected": "instagram_post_to_comment.csv",
+          "rationale": "待评论清单上传至 SharePoint"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.already_commented_log.append_url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(aaa|bbb|ccc)$",
+          "rationale": "发布后把帖子链接写入已评论记录"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "evidence.daily_comment_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "单次运行仅发布1条评论，低于约80条/日上限"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-DEDUP",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-SCHEDULE",
+        "F-POSTS-POOL",
+        "F-LOG-P1"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE",
+        "M-LLM-COMMENT",
+        "M-READ-LOG-P1",
+        "M-UPLOAD-CSV",
+        "M-IG-COMMENT",
+        "M-APPEND-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-DEDUP",
+          "target": "output.chosen_post.url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(bbb|ccc)$",
+          "rationale": "已评论过的帖子(aaa)不得被再次选中"
+        },
+        {
+          "assertion_id": "A-2-BOUND-DEDUP",
+          "target": "output.posted_comment.post_url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(bbb|ccc)$",
+          "rationale": "评论目标必须是未评论过的帖子"
+        },
+        {
+          "assertion_id": "A-3-BOUND-DEDUP",
+          "target": "output.already_commented_log.total_rows",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "已评论记录由1条增至2条"
+        },
+        {
+          "assertion_id": "A-4-BOUND-DEDUP",
+          "target": "output.already_commented_log.urls",
+          "operator": "contains",
+          "expected": "https://instagram.com/p/aaa",
+          "rationale": "历史已评论记录被保留"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-EMPTY-POOL",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-SCHEDULE",
+        "F-EMPTY-POOL"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE-EMPTY",
+        "M-READ-LOG-EMPTY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-EMPTY-POOL",
+          "target": "output.chosen_post",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无帖子可选取时不产生选择结果"
+        },
+        {
+          "assertion_id": "A-2-NEG-EMPTY-POOL",
+          "target": "output.posted_comment",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无候选帖子时不发布评论"
+        },
+        {
+          "assertion_id": "A-3-NEG-EMPTY-POOL",
+          "target": "output.already_commented_log.append_url",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "未发布评论则不写入已评论记录"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；随机选取通过固定帖子池+确定性选取实现，断言以正则允许池内任一合法帖子；SharePoint/Instagram/LLM 均使用固定模拟响应，无真实副作用；重复回放下依赖已评论记录避免重复。"
+}

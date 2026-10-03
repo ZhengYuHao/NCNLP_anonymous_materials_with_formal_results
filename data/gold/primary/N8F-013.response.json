@@ -1,0 +1,431 @@
+{
+  "task_id": "N8F-013",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "d03143cde3f221518292eccff8138749c1dca4c12491874d4e7267246a72a273",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收入站邮件",
+      "node_type": "code",
+      "operation_family": "receive_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "入站邮件对象，含发件人、邮件正文与垃圾邮件评分"
+        }
+      ],
+      "native_evidence": ["When Email Received"],
+      "requirement_evidence": [
+        "输入：通过 EmailConnect webhook 接收到的入站邮件内容，包含发件人与邮件正文，以及邮件携带的垃圾邮件评分。"
+      ],
+      "rationale": "webhook 接收邮件是确定性触发动作，判为 code，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "垃圾邮件过滤",
+      "node_type": "code",
+      "operation_family": "filter",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "入站邮件对象，含垃圾邮件评分"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "spam_check",
+          "type": "object",
+          "description": "垃圾邮件判定结果，含 is_spam 标志"
+        }
+      ],
+      "native_evidence": ["Check if spam", "Stop processing"],
+      "requirement_evidence": [
+        "垃圾邮件过滤：若邮件携带的垃圾邮件评分存在且大于 10，则丢弃该邮件，不再继续处理"
+      ],
+      "rationale": "按垃圾评分阈值丢弃邮件是确定性规则过滤，判为 code；丢弃分支对应安全终止。"
+    },
+    {
+      "node_id": "n3",
+      "label": "丢弃垃圾邮件",
+      "node_type": "terminal",
+      "operation_family": "discard",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": ["Stop processing"],
+      "requirement_evidence": [
+        "若邮件携带的垃圾邮件评分存在且大于 10，则丢弃该邮件，不再继续处理"
+      ],
+      "rationale": "垃圾邮件被丢弃、不再处理是需求的明确完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n4",
+      "label": "加载 Notion 问答条目并整理为待比对列表",
+      "node_type": "code",
+      "operation_family": "knowledge_base_load",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "通过过滤的邮件，含发件人与正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "kb_entries",
+          "type": "array",
+          "description": "从 Notion 读取并整理的全部问答条目列表"
+        }
+      ],
+      "native_evidence": ["Get All KB Questions", "Format KB data"],
+      "requirement_evidence": [
+        "知识库加载：从 Notion 数据库中读取全部问答条目，并与发件人、邮件正文一起整理成待比对列表"
+      ],
+      "rationale": "读取 Notion 数据并整理为列表是确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型匹配最相关问答条目",
+      "node_type": "semantic",
+      "operation_family": "semantic_matching",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "邮件发件人与正文，用于匹配"
+        },
+        {
+          "name": "kb_entries",
+          "type": "array",
+          "description": "待比对的问答条目列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "match_result",
+          "type": "object",
+          "description": "匹配结果，含 matched_id 与置信度 confidence；置信度低于 85% 时视为无匹配"
+        }
+      ],
+      "native_evidence": ["Find Best Match", "OpenRouter Chat Model", "Simple Memory3"],
+      "requirement_evidence": [
+        "匹配：使用语言模型（按发件人维护记忆）从知识库中选出最匹配的问答条目 ID；当匹配置信度低于 85% 时返回无匹配结果"
+      ],
+      "rationale": "从知识库选最匹配条目并输出置信度，需开放语义理解与按发件人的记忆，判为 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "核对 ID 并路由请求",
+      "node_type": "code",
+      "operation_family": "route",
+      "inputs": [
+        {
+          "name": "match_result",
+          "type": "object",
+          "description": "匹配结果，含 matched_id 与置信度"
+        },
+        {
+          "name": "kb_entries",
+          "type": "array",
+          "description": "Notion 问答条目列表，用于核对返回的 ID"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "route",
+          "type": "string",
+          "description": "路由结果：auto_answer（自动回答）或 escalate（人工升级）"
+        },
+        {
+          "name": "selected_entry",
+          "type": "object",
+          "description": "核对后确认的问答条目（含答案），无匹配时为 null"
+        }
+      ],
+      "native_evidence": ["Get answer", "If"],
+      "requirement_evidence": [
+        "校验与路由：将返回的 ID 与 Notion 数据核对，据此将请求路由到自动回答路径或人工升级路径"
+      ],
+      "rationale": "将匹配 ID 与 Notion 数据核对并按置信度/核对结果路由，是确定性规则判断，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "起草结构化自动回复",
+      "node_type": "semantic",
+      "operation_family": "draft_reply",
+      "inputs": [
+        {
+          "name": "selected_entry",
+          "type": "object",
+          "description": "核对后匹配到的 Notion 问答条目（含答案）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reply_draft",
+          "type": "object",
+          "description": "基于知识库答案起草的结构化回复内容"
+        }
+      ],
+      "native_evidence": ["Draft answer", "OpenRouter Chat Model1", "Structured Output Parser"],
+      "requirement_evidence": [
+        "匹配成功时：使用语言模型基于匹配到的 Notion 答案起草结构化回复，并通过邮件发送给客户"
+      ],
+      "rationale": "基于知识库答案起草结构化回复，需语言模型生成，判为 semantic。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送自动回复邮件给客户",
+      "node_type": "terminal",
+      "operation_family": "send_reply",
+      "inputs": [
+        {
+          "name": "reply_draft",
+          "type": "object",
+          "description": "起草好的结构化回复"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send answer email to sender"],
+      "requirement_evidence": [
+        "并通过邮件发送给客户"
+      ],
+      "rationale": "向客户发送自动回复邮件是用户可见的完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n9",
+      "label": "起草结构化受理确认",
+      "node_type": "semantic",
+      "operation_family": "draft_acknowledgement",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "原始邮件请求，用于起草受理确认"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ack_draft",
+          "type": "object",
+          "description": "起草好的结构化受理确认内容"
+        }
+      ],
+      "native_evidence": ["Draft escalation", "OpenRouter Chat Model2", "Structured Output Parser1"],
+      "requirement_evidence": [
+        "无匹配时：使用语言模型起草结构化的受理确认，通过邮件将原始请求发送给内部团队，并通过邮件将受理确认发送给客户"
+      ],
+      "rationale": "起草结构化受理确认需语言模型生成，判为 semantic；仅在无匹配升级路径执行。"
+    },
+    {
+      "node_id": "n10",
+      "label": "邮件发送原始请求给内部团队",
+      "node_type": "code",
+      "operation_family": "notify_internal",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "原始邮件请求，转发给内部团队"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send escalation to human"],
+      "requirement_evidence": [
+        "通过邮件将原始请求发送给内部团队"
+      ],
+      "rationale": "向内部团队转发原始请求邮件是确定性的邮件外部动作，其后仍需向客户发送受理确认，故判为 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "邮件发送受理确认给客户",
+      "node_type": "terminal",
+      "operation_family": "send_acknowledgement",
+      "inputs": [
+        {
+          "name": "ack_draft",
+          "type": "object",
+          "description": "起草好的结构化受理确认"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Inform need for escalation to sender"],
+      "requirement_evidence": [
+        "并通过邮件将受理确认发送给客户"
+      ],
+      "rationale": "向客户发送受理确认是用户可见的完成动作，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收入站邮件后进行垃圾过滤。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "spam_check.is_spam == true",
+      "rationale": "垃圾评分存在且大于 10 时丢弃邮件。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "spam_check.is_spam == false",
+      "rationale": "非垃圾邮件继续加载知识库。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "整理待比对列表后执行语言模型匹配。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "匹配完成后核对 ID 并路由。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "route == 'auto_answer'",
+      "rationale": "核对通过且有有效匹配时走自动回答路径。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": "route == 'escalate'",
+      "rationale": "置信度低于 85% 或无有效匹配时走人工升级路径。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "起草回复后发送给客户。"
+    },
+    {
+      "edge_id": "cfg9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "起草受理确认后向内部团队转发原始请求。"
+    },
+    {
+      "edge_id": "cfg10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "向内部团队转发原始请求后，向客户发送受理确认。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "email",
+      "condition": null,
+      "rationale": "邮件传递给垃圾过滤节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n4",
+      "variable": "email",
+      "condition": null,
+      "rationale": "通过过滤的邮件继续用于知识库加载。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "kb_entries",
+      "condition": null,
+      "rationale": "待比对列表传给匹配节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n1",
+      "target": "n5",
+      "variable": "email",
+      "condition": null,
+      "rationale": "发件人与正文用于语言模型匹配。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "match_result",
+      "condition": null,
+      "rationale": "匹配结果传给核对路由节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "selected_entry",
+      "condition": null,
+      "rationale": "核对后的问答条目用于起草自动回复。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "reply_draft",
+      "condition": null,
+      "rationale": "回复草稿传给邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n1",
+      "target": "n9",
+      "variable": "email",
+      "condition": null,
+      "rationale": "原始邮件请求用于起草受理确认。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n1",
+      "target": "n10",
+      "variable": "email",
+      "condition": null,
+      "rationale": "原始邮件请求转发给内部团队。"
+    },
+    {
+      "edge_id": "dfg10",
+      "source": "n9",
+      "target": "n11",
+      "variable": "ack_draft",
+      "condition": null,
+      "rationale": "受理确认草稿传给客户发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n3", "n8", "n11"],
+  "confidence": 0.95,
+  "notes": "按需求建模：垃圾邮件过滤为分支（丢弃→终止；通过→继续）；语言模型匹配输出置信度，核对与路由合并为一个 code 节点（置信度低于 85% 视为无匹配并升级）；自动回答与人工升级两路径各含起草+发送。原生图中的 Format KB data 等数据整理细节并入知识库加载节点。"
+}

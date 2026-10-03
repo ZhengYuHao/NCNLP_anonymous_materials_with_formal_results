@@ -1,0 +1,189 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-012",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g10",
+      "target_group": "g15",
+      "data_items": [
+        "已创建的编辑记录标识"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-012-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "发布结果写回的是已创建的编辑记录，回写需读取该记录标识以定位更新（native 证据含 If Airtable Record Exists 与 Update Existing Airtable Record）。",
+      "confidence": 0.8,
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g11",
+      "target_group": "g12",
+      "data_items": [
+        "生成的方形配图"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g11",
+      "data_items": [
+        "未通过质量检查的质检结果"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-012-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求『若不通过则重新生成』，质检失败结果回传触发并指导配图重新生成，属真实数据回流而非仅先后执行。",
+      "confidence": 0.8,
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g13",
+      "data_items": [
+        "通过质检的配图",
+        "通过质量检查的配图"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g14",
+      "data_items": [
+        "已上传的配图资源标识",
+        "已上传的 LinkedIn 配图资源"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g14",
+      "target_group": "g15",
+      "data_items": [
+        "发布结果",
+        "LinkedIn 发布结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g6",
+      "data_items": [
+        "最近发布历史"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "多源 RSS 最新文章"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "清洗后的候选文章",
+        "清洗去重后的候选文章"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g10",
+      "data_items": [
+        "编辑选题的来源链接与元数据",
+        "选中选题的来源链接与元数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "选中的编辑选题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "帖子初稿"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "精简后的帖子文案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "最终文案",
+        "最终帖子文案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g11",
+      "data_items": [
+        "帖子最终文案（用于配图内容）",
+        "最终帖子文案（用于生成配图卡片）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g14",
+      "data_items": [
+        "帖子最终文案",
+        "最终帖子文案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d16"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.9333333333333333,
+    "shared_edge_count": 14,
+    "adjudicated_dispute_count": 2,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

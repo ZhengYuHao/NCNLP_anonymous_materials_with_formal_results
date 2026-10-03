@@ -1,0 +1,101 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-050",
+  "source_id": "n8n:9739",
+  "workflow_sha256": "d55fe391eb4e589df408dd4e4152e001cc7b904404ca2f2715f862f3dd6f2f39",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4956eb4fe683081f500b56ae29951edcb96ba8bf9d03f17a7dd1c5d0c804f2b4",
+  "requirement": {
+    "requirement_text": "系统自动捕获、评估并分派来自邮件或网页表单的入站线索。\n\n1）入站来源：轮询邮箱获取新的入站邮件；同时接收来自任意在线表单的提交；两路来源汇入同一处理流程。\n2）校验：检查入站数据是否包含必填字段（邮箱或文本）；不合规的条目转入死信队列（DLQ）以待复核。\n3）信息抽取：使用语言模型从自由文本中抽取结构化字段，包括公司名称、规模、行业、角色、地区、问题描述与预算信号。\n4）评分：依据已抽取的行业、规模、角色、问题清晰度与预算信号，按明确标准计算 0–100 的线索评分，并给出线索等级（Hot、Warm、Cold、Unqualified）。\n5）CRM 分派：按配置在 CRM 中创建线索，默认创建 Salesforce 线索，也可适配为 HubSpot。\n6）Slack 通知：向 Slack 发送一条富文本消息，概述线索评分与评分依据，并附带一个“Create intro email”按钮以便快速处理。\n7）记录：所有成功线索记入 Google Sheets 用于报表；失败或无效的线索单独记入 DLQ 标签页用于审计。",
+    "source_spans": [
+      {
+        "start": 968,
+        "end": 1122,
+        "text": "A Gmail trigger polls for new inbound emails.\n   A Webhook node receives submissions from any online form.\n     Both sources merge into a single pipeline."
+      },
+      {
+        "start": 1124,
+        "end": 1270,
+        "text": "Validation:\n   Incoming data is checked for required fields (email or text). Invalid entries are routed to the Dead Letter Queue (DLQ) for review."
+      },
+      {
+        "start": 1272,
+        "end": 1440,
+        "text": "AI Extraction:\n   The OpenAI node extracts structured fields like company name, size, industry, role, region, problem statement, and budget signals from free-form text."
+      },
+      {
+        "start": 1442,
+        "end": 1685,
+        "text": "Parsing & Scoring:\n   The AI output is parsed, then a code node calculates a 0–100 lead score based on transparent criteria—industry, size, role, problem clarity, and budget mentions. It also assigns a lead tier (Hot, Warm, Cold, Unqualified)."
+      },
+      {
+        "start": 1687,
+        "end": 1875,
+        "text": "CRM Routing:\n   Depending on your configuration, the workflow creates a Salesforce lead (default) or can be easily adapted for HubSpot. Territory or CRM owner routing can be extended here."
+      },
+      {
+        "start": 1877,
+        "end": 2021,
+        "text": "Slack Notification:\n   A rich Slack message summarizes the lead score and reasoning and includes a “Create intro email” button for quick action."
+      },
+      {
+        "start": 2023,
+        "end": 2177,
+        "text": "Logging:\n   All successful leads are logged to Google Sheets for reporting. Any failed or invalid leads are logged separately to the DLQ tab for auditing."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "邮箱中轮询到的新入站邮件",
+        "任意在线表单的提交",
+        "入站数据中的必填字段（邮箱或文本）"
+      ],
+      "conditions": [
+        "入站数据必须包含邮箱或文本，否则转入死信队列",
+        "评分依据为行业、规模、角色、问题清晰度与预算提及",
+        "评分范围为 0–100，并划分为 Hot、Warm、Cold、Unqualified 四个等级",
+        "CRM 目标按配置选择 Salesforce 或 HubSpot"
+      ],
+      "allowed_actions": [
+        "轮询邮箱并接收表单提交",
+        "校验必填字段并将不合规条目转入死信队列",
+        "使用语言模型抽取结构化线索字段",
+        "依据已抽取的业务字段计算线索评分与等级",
+        "在 CRM 中创建线索",
+        "向 Slack 发送线索通知",
+        "将线索结果写入 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "CRM 中生成线索记录",
+        "Slack 收到含线索评分、评分依据与“Create intro email”按钮的消息",
+        "成功的线索记入 Google Sheets 用于报表",
+        "失败或无效的线索单独记入 DLQ 标签页用于审计"
+      ],
+      "failure_behavior": [
+        "缺少必填字段的条目转入死信队列（DLQ）以待复核",
+        "失败或无效的线索单独记入 DLQ 标签页用于审计"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-050.packet.json",
+    "packet_sha256": "03a6144f5a85ef85df500b64185d8a402df830c73b26c31746e59d44f1d26a65",
+    "public_description_sha256": "0e75fa3862f06e8c7098a908fb792404bd528a6e3fa47e0e37a6050ea2af7faa"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-050.response.json",
+    "verification_response_sha256": "83454331d806e1959831b3738a8ef120c890f81ed10afddc7807981a25fcb26d",
+    "decision": "accept"
+  },
+  "formal_index": 61
+}

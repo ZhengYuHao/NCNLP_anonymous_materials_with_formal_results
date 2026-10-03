@@ -1,0 +1,197 @@
+{
+  "task_id": "N8F-084",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "2825c5780117d5ee02bffc09933168ffa85d238586378992f3bca7f1b5c3381a",
+  "fixtures": [
+    {
+      "fixture_id": "F-line-message",
+      "purpose": "用户通过 LINE 发送的文本消息事件",
+      "input_data": {
+        "event": {
+          "type": "message",
+          "source": {
+            "userId": "U_123",
+            "type": "user"
+          },
+          "message": {
+            "id": "msg_1",
+            "type": "text",
+            "text": "我最近很迷茫，不知道该换工作还是继续留下"
+          }
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-line-webhook",
+      "dependency_type": "line",
+      "operation": "parse_message_event",
+      "request_contract": {
+        "event_type": "message"
+      },
+      "response_contract": {
+        "user_id": "U_123",
+        "text": "我最近很迷茫，不知道该换工作还是继续留下"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-advice",
+      "dependency_type": "llm",
+      "operation": "advise_three_personas",
+      "request_contract": {
+        "text": "我最近很迷茫，不知道该换工作还是继续留下"
+      },
+      "response_contract": {
+        "roles": [
+          {
+            "persona": "fortune_teller",
+            "advice": "命运的齿轮正在转动，顺势而为方能趋吉避凶"
+          },
+          {
+            "persona": "business_coach",
+            "advice": "列出利弊清单，用数据评估两年的职业发展曲线"
+          },
+          {
+            "persona": "best_friend",
+            "advice": "你已经走得很远了，无论选哪条路我都支持你"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "advice_log"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 12
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-line-reply",
+      "dependency_type": "line",
+      "operation": "send_flex_carousel",
+      "request_contract": {
+        "user_id": "U_123"
+      },
+      "response_contract": {
+        "message_id": "flex_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-line-message"
+      ],
+      "mock_ids": [
+        "M-line-webhook",
+        "M-llm-advice",
+        "M-sheets-append",
+        "M-line-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.carousel.cards",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "卡片轮播须包含 3 张卡片，每角色一张"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.carousel.cards[].persona",
+          "operator": "contains",
+          "expected": "fortune_teller",
+          "rationale": "卡片须包含算命先生角色（神秘、命运导向）"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.carousel.cards[].persona",
+          "operator": "contains",
+          "expected": "business_coach",
+          "rationale": "卡片须包含商业教练角色（逻辑、行动导向）"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.carousel.cards[].persona",
+          "operator": "contains",
+          "expected": "best_friend",
+          "rationale": "卡片须包含挚友角色（轻松、共情）"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.carousel.cards[].color",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "3 张卡片颜色互不相同（去重后数量仍为 3）"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sheets_log.text",
+          "operator": "contains",
+          "expected": "我最近很迷茫",
+          "rationale": "本次建议须连同用户消息写入 Google Sheets 留存历史"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.reply.message_id",
+          "operator": "exists",
+          "rationale": "须向用户成功发送卡片轮播回复消息",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-role-completeness",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-line-message"
+      ],
+      "mock_ids": [
+        "M-line-webhook",
+        "M-llm-advice",
+        "M-sheets-append",
+        "M-line-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-role-completeness",
+          "target": "output.advice.roles",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "结构化回复须在同一次回复中包含 3 个角色"
+        },
+        {
+          "assertion_id": "A-2-bnd-role-completeness",
+          "target": "output.advice.roles[].advice",
+          "operator": "matches",
+          "expected": "^.{1,200}$",
+          "rationale": "每个角色的建议文本须为非空内容（长度 1-200 字符）"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "三个角色的风格要求（神秘命运导向/逻辑行动导向/轻松共情）为冻结需求 conditions，本响应通过固定模拟输出保证内容确定性，程序仅校验角色数量、卡片数量、颜色数量与写入记录的存在性。"
+}

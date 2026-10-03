@@ -1,0 +1,75 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-054",
+  "source_id": "n8n:8039",
+  "workflow_sha256": "143690e4b9cc9d12e42e9f2c0179ca0c7f2ccaba8e7c545744ba9fbd00910dea",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "49660e8eb2926b788de6369d213136397bb07777176b29e8dfd1c87ba7ab1352",
+  "requirement": {
+    "requirement_text": "系统每周自动汇总指定 Google Docs 的更新情况，并通过邮件发送给团队。\n\n1）每周一 09:00 触发执行。\n2）确定受监控的 Google Docs 清单，包含文档 ID、名称与分类（例如项目、会议、更新），并设定 7 天的更新统计区间。\n3）获取这些文档的内容与元数据（最后修改时间、修改人、版本），仅保留过去一周内更新过的文档。\n4）提取文档的纯文本内容，进行清洗与规范化，并收集字数、修改人、最后更新日期等关键信息。\n5）将所有更新过的文档汇总为一份合并内容，作为生成周报的素材。\n6）使用语言模型生成商务风格的周报摘要，内容包含：执行摘要、按文档划分的关键更新、重要变更、行动事项以及下周重点。\n7）将生成结果整理为纯文本与 HTML 两种格式的邮件正文，并附上更新文档清单及其最后修改信息。\n8）通过 Gmail 将周报发送给已配置的团队邮箱，邮件主题中包含本次统计的日期区间。",
+    "source_spans": [
+      {
+        "start": 334,
+        "end": 676,
+        "text": "Weekly Monday 9AM Trigger  \n   A Cron node runs every Monday at 9 AM (adjustable).  \n   Ensures summaries arrive at the start of the workweek.  \n\nPrepare Docs List  \n   A Code node defines which Google Docs to monitor.  \n   Includes doc IDs, names, and categories (e.g., Projects, Meetings, Updates).  \n   Sets a 7-day date range for updates."
+      },
+      {
+        "start": 680,
+        "end": 1197,
+        "text": "Fetch Google Docs & Metadata  \n   Retrieves document content and metadata (last modified, user, version).  \n   Filters only docs that have been updated in the past week.  \n\nProcess Doc Data  \n   Extracts plain text content from Google Docs.  \n   Cleans and normalizes text for summarization.  \n   Collects key details: word count, modified by, last updated date.  \n\nAggregate Updated Docs  \n   Gathers all updated docs into one combined content block.  \n   Prepares context for the AI model to create a weekly digest."
+      },
+      {
+        "start": 1201,
+        "end": 1730,
+        "text": "Generate AI Summary  \n   Uses GPT-4 to generate a business-style weekly summary.  \n   Includes:  \n     Executive summary  \n     Key updates by document  \n     Important changes  \n     Action items  \n     Next week’s focus  \n\nPrepare Email Content  \n   Formats the AI response into both plain text and HTML email.  \n   Adds a list of updated documents with last modified info.  \n\nSend Summary Email  \n   Sends the final summary to the configured team emails via Gmail.  \n   Subject line includes the date range for easy reference."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "受监控的 Google Docs 清单（文档 ID、名称、分类）",
+        "Google Docs 的内容与元数据（最后修改时间、修改人、版本）",
+        "已配置的团队收件邮箱"
+      ],
+      "conditions": [
+        "每周一 09:00 触发",
+        "更新统计区间为 7 天",
+        "仅汇总过去一周内更新过的文档"
+      ],
+      "allowed_actions": [
+        "获取文档内容与元数据",
+        "提取、清洗并规范化文档文本",
+        "汇总更新文档内容",
+        "使用语言模型生成周报摘要",
+        "生成纯文本与 HTML 两种邮件正文",
+        "通过 Gmail 发送周报邮件"
+      ],
+      "visible_outcomes": [
+        "团队邮箱收到周报邮件，主题包含日期区间",
+        "邮件正文含执行摘要、按文档的关键更新、重要变更、行动事项与下周重点",
+        "邮件中附有更新文档清单及其最后修改信息"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-054.packet.json",
+    "packet_sha256": "c45abc19391a3ea7ea435b3185c5fbb260f325544154d5ee64ae1ede1c1cb7e4",
+    "public_description_sha256": "f3ef1fc80a2373652f07c51612bf515170bf81cdc41ad731021dfaecd9c43670"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-054.response.json",
+    "verification_response_sha256": "246418657aede205eed3908257d049d69bd8db6dba4b1d6514250dee67399e31",
+    "decision": "accept"
+  },
+  "formal_index": 65
+}

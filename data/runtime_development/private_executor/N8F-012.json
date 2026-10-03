@@ -1,0 +1,321 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-012",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-rss-read",
+      "dependency_type": "rss",
+      "operation": "read_feed",
+      "request_contract": {
+        "feeds": [
+          "TechCrunch AI",
+          "The Verge AI"
+        ]
+      },
+      "response_contract": {
+        "items": [
+          {
+            "id": "tc1",
+            "title": "AI chip startup raises $200M",
+            "url": "https://techcrunch.example/ai-chip"
+          },
+          {
+            "id": "tc2",
+            "title": "New open source model released",
+            "url": "https://techcrunch.example/oss-model"
+          },
+          {
+            "id": "vg1",
+            "title": "AI chip startup raises $200M",
+            "url": "https://verge.example/ai-chip"
+          },
+          {
+            "id": "vg2",
+            "title": "Robotics roundup this week",
+            "url": "https://verge.example/robotics"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-list",
+      "dependency_type": "airtable",
+      "operation": "list_records",
+      "request_contract": {
+        "table": "publishing_history"
+      },
+      "response_contract": {
+        "records": [
+          {
+            "id": "rec1",
+            "title": "Robotics roundup this week",
+            "published_at": "2026-09-01"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-select",
+      "dependency_type": "llm",
+      "operation": "select_editorial_signal",
+      "request_contract": {
+        "candidates": [
+          {
+            "id": "tc1"
+          },
+          {
+            "id": "tc2"
+          },
+          {
+            "id": "vg2"
+          }
+        ]
+      },
+      "response_contract": {
+        "selected_article_id": "tc1",
+        "quality_score": 0.9
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-select-low",
+      "dependency_type": "llm",
+      "operation": "select_editorial_signal",
+      "request_contract": {
+        "quality_threshold": 0.8
+      },
+      "response_contract": {
+        "selected_article_id": "tc1",
+        "quality_score": 0.4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-draft",
+      "dependency_type": "llm",
+      "operation": "draft_post",
+      "request_contract": {
+        "article_id": "tc1"
+      },
+      "response_contract": {
+        "draft": "Exciting news: AI chip startup raises $200M to accelerate model training. This is a big deal for the industry."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-polish",
+      "dependency_type": "llm",
+      "operation": "polish_post",
+      "request_contract": {
+        "draft": "Exciting news: AI chip startup raises $200M to accelerate model training. This is a big deal for the industry."
+      },
+      "response_contract": {
+        "final_copy": "Exciting news: AI chip startup raises $200M to accelerate model training."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-hashtags",
+      "dependency_type": "llm",
+      "operation": "add_hashtags",
+      "request_contract": {
+        "final_copy": "Exciting news: AI chip startup raises $200M to accelerate model training."
+      },
+      "response_contract": {
+        "hashtags": [
+          "#AI",
+          "#Startup",
+          "#TechNews"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-image-gen",
+      "dependency_type": "image_generation",
+      "operation": "generate_square_image",
+      "request_contract": {
+        "aspect": "1:1"
+      },
+      "response_contract": {
+        "image_url": "https://img.example/gen.png",
+        "width": 1024,
+        "height": 1024,
+        "aspect": "1:1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-qa-fail-once",
+      "dependency_type": "llm",
+      "operation": "qa_image",
+      "request_contract": {
+        "attempt": 1
+      },
+      "response_contract": {
+        "passed": false,
+        "reason": "blurry text"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-qa-pass",
+      "dependency_type": "llm",
+      "operation": "qa_image",
+      "request_contract": {
+        "attempt": 2
+      },
+      "response_contract": {
+        "passed": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-create",
+      "dependency_type": "airtable",
+      "operation": "create_editorial_record",
+      "request_contract": {
+        "table": "editorial"
+      },
+      "response_contract": {
+        "record_id": "rec_edit_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-linkedin-upload",
+      "dependency_type": "linkedin",
+      "operation": "register_upload",
+      "request_contract": {
+        "image_url": "https://img.example/gen.png"
+      },
+      "response_contract": {
+        "upload_token": "up_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-linkedin-publish",
+      "dependency_type": "linkedin",
+      "operation": "publish_org_post",
+      "request_contract": {
+        "upload_token": "up_001"
+      },
+      "response_contract": {
+        "post_id": "post_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-update",
+      "dependency_type": "airtable",
+      "operation": "update_record",
+      "request_contract": {
+        "record_id": "rec_edit_001"
+      },
+      "response_contract": {
+        "record_id": "rec_edit_001",
+        "posted": true,
+        "post_id": "post_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-pos-full",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-linkedin-upload",
+        "M-linkedin-publish",
+        "M-airtable-update"
+      ]
+    },
+    {
+      "case_id": "C-sft-gate",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-test-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-airtable-update"
+      ]
+    },
+    {
+      "case_id": "C-neg-low-quality",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select-low"
+      ]
+    },
+    {
+      "case_id": "C-bnd-qa-retry",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-fail-once",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-linkedin-upload",
+        "M-linkedin-publish",
+        "M-airtable-update"
+      ]
+    }
+  ]
+}

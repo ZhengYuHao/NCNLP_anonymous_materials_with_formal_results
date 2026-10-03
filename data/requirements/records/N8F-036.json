@@ -1,0 +1,71 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-036",
+  "source_id": "n8n:13962",
+  "workflow_sha256": "f2ab673c970dcca93a61500b769dd38410cc550d8cd8c2f40f6a0c1b2cbc0222",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "d78112c8019072dbe0e17440d8a7a7c077e3619f6d595b461e64e8a36dfb683c",
+  "requirement": {
+    "requirement_text": "系统通过外部请求入口接收来自表单、落地页或 CRM 系统的购房意向线索，先由语言模型将新线索与既有客户记录比对，识别并去除重复线索，去重后的线索写入 Google Sheets 用于管线跟踪。随后系统依据买家偏好与房源库进行匹配，从 Google Drive 取出匹配房源的资料文件，并通过 Gmail 将个性化的房源资料发送给买家；与买家的互动记录回写至 Google Sheets。系统还需按周期对买家互动情况做成交分析，由语言模型预测成交概率并给出阶段判断，最后将建议的后续动作与成交优先级通知销售团队。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 639,
+        "text": "📊 Description\nAutomate your entire real estate sales pipeline with an AI-powered deal-making agent that captures buyer leads, matches them with suitable properties, delivers property decks, and predicts deal closing probability. 🏠🤖 This workflow intelligently deduplicates incoming leads, compares buyer preferences with available listings, and automatically sends relevant property brochures. It also analyzes buyer engagement to predict deal success and recommend next actions for your sales team. The result is a fully automated real estate sales assistant that saves time, improves lead management, and increases deal conversion rates."
+      },
+      {
+        "start": 641,
+        "end": 1477,
+        "text": "What This Template Does\n📥 Capture buyer leads via a webhook from forms, landing pages, or CRM systems.\n🤖 Check for duplicate leads using an AI agent that compares new entries against CRM records.\n📊 Store verified leads in Google Sheets for structured pipeline tracking.\n🔍 Match buyers with properties using AI to compare preferences with the property database.\n📂 Retrieve property decks from Google Drive based on matched property details.\n📧 Send personalized property brochures directly to the buyer via Gmail.\n📝 Log buyer interactions back to Google Sheets for visibility and tracking.\n⏰ Run periodic deal analysis using a Cron trigger to evaluate buyer engagement.\n📈 Predict closing probability and generate deal stage insights with an AI scoring agent.\n📩 Notify the sales team with recommended follow-up actions and deal priorities."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "来自表单、落地页或 CRM 系统的购房意向线索",
+        "既有客户记录、房源库与房源资料文件",
+        "买家互动记录"
+      ],
+      "conditions": [
+        "新线索需与既有客户记录比对以判定是否重复"
+      ],
+      "allowed_actions": [
+        "接收购房线索并识别重复线索",
+        "将去重后的线索写入 Google Sheets",
+        "按买家偏好匹配房源",
+        "从 Google Drive 获取匹配房源的资料文件",
+        "通过 Gmail 向买家发送个性化房源资料",
+        "将与买家的互动记录回写 Google Sheets",
+        "按周期分析买家互动情况",
+        "预测成交概率并生成阶段判断",
+        "向销售团队发送后续动作与成交优先级建议"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中新增并更新线索与互动记录",
+        "买家收到个性化房源资料邮件",
+        "销售团队收到后续动作与成交优先级通知",
+        "得到成交概率预测与阶段判断"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-036.packet.json",
+    "packet_sha256": "9d90afac2876940c6b68a9a7fdb01228b67550ffee2fe1b1bc69e893860b6257",
+    "public_description_sha256": "e5070ac451e5816c83e78986b5931d4922ef19e680363b4c3e1f21898dcf5276"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-036.response.json",
+    "verification_response_sha256": "af8353323c503b47db6bcc6f3dea2ba48fc55fff181acdfdddf53f14db9244f4",
+    "decision": "accept"
+  },
+  "formal_index": 47
+}

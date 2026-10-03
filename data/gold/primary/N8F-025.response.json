@@ -1,0 +1,332 @@
+{
+  "task_id": "N8F-025",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "25ebbd3d28fcf821ee90f9f78effeadbd5a7a6816ee6a6027b8fd66a7fe2304e",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "获取文章内容",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "post_id",
+          "type": "string",
+          "description": "指定的文章标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article",
+          "type": "object",
+          "description": "文章内容，含标题、正文与摘要"
+        }
+      ],
+      "native_evidence": ["Get article"],
+      "requirement_evidence": ["根据提供的文章标识获取该篇 WordPress 文章的内容"],
+      "rationale": "需求声明按文章标识获取文章内容，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取已有全部标签",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "existing_tags",
+          "type": "array",
+          "description": "站点上已有的全部标签（含标识与名称）"
+        }
+      ],
+      "native_evidence": ["Get all tags", "Sanitaze Tags"],
+      "requirement_evidence": ["同时获取站点上已有的全部标签"],
+      "rationale": "需求声明获取站点上已有的全部标签，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "合并数据",
+      "node_type": "code",
+      "operation_family": "data_merging",
+      "inputs": [
+        {
+          "name": "article",
+          "type": "object",
+          "description": "文章内容"
+        },
+        {
+          "name": "existing_tags",
+          "type": "array",
+          "description": "已有标签列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "merged_data",
+          "type": "object",
+          "description": "合并后的数据结构（文章内容与已有标签列表）"
+        }
+      ],
+      "native_evidence": ["Merge"],
+      "requirement_evidence": ["随后把这两路数据合并为一个数据结构"],
+      "rationale": "需求声明将文章与标签两路数据合并为一个结构，为确定性合并变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "分析并选取或建议标签",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "merged_data",
+          "type": "object",
+          "description": "文章内容与已有标签列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tag_analysis",
+          "type": "object",
+          "description": "分析结果：选中的已有标签标识（最多 4 个）与建议的新标签名称（补足至 4 个）"
+        }
+      ],
+      "native_evidence": ["Tags Expert", "Anthropic Chat Model", "Structured Output Parser"],
+      "requirement_evidence": ["分析文章的标题、正文与摘要，从已有标签列表中选取最多 4 个相关标签；若不足 4 个，则补充建议新的标签名称，使标签总数达到 4 个"],
+      "rationale": "需求声明由语言模型扮演检索优化专家分析文章并选取或建议标签，需开放文本理解与判断，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "分离已有与新标签",
+      "node_type": "code",
+      "operation_family": "data_splitting",
+      "inputs": [
+        {
+          "name": "tag_analysis",
+          "type": "object",
+          "description": "标签分析结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_tag_ids",
+          "type": "array",
+          "description": "已选中的已有标签标识"
+        },
+        {
+          "name": "new_tag_names",
+          "type": "array",
+          "description": "建议创建的新标签名称"
+        }
+      ],
+      "native_evidence": ["Existing Tags", "New Tags"],
+      "requirement_evidence": ["把分析结果分为两类处理。已选中的已有标签，其标签标识直接进入最终更新；建议的新标签则逐个处理"],
+      "rationale": "需求声明将分析结果分为已有标签与新标签两类处理，为确定性分离变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "逐个创建新标签",
+      "node_type": "code",
+      "operation_family": "external_api_call_loop",
+      "inputs": [
+        {
+          "name": "new_tag_names",
+          "type": "array",
+          "description": "建议创建的新标签名称"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "created_tag_ids",
+          "type": "array",
+          "description": "新建标签的标识集合"
+        }
+      ],
+      "native_evidence": ["Split Out", "Loop Over Items", "Add tag", "Aggretate new tags"],
+      "requirement_evidence": ["对每个新标签调用 WordPress 接口完成创建，并收集新建标签的标识"],
+      "rationale": "需求声明对每个新标签逐个调用接口创建并收集标识；for-each 循环折叠进本节点契约，迭代次数等于新标签数（最多 4 个），为确定性外部动作，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "合并标签标识",
+      "node_type": "code",
+      "operation_family": "data_merging",
+      "inputs": [
+        {
+          "name": "selected_tag_ids",
+          "type": "array",
+          "description": "已选中的已有标签标识"
+        },
+        {
+          "name": "created_tag_ids",
+          "type": "array",
+          "description": "新建标签的标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_tag_ids",
+          "type": "array",
+          "description": "合并后的最终标签标识列表"
+        }
+      ],
+      "native_evidence": ["Merge1", "Sanitize"],
+      "requirement_evidence": ["把已有标签标识与新建标签标识合并为一个列表"],
+      "rationale": "需求声明将已有与新建标签标识合并为一个列表，为确定性合并变换，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "更新文章标签",
+      "node_type": "terminal",
+      "operation_family": "external_write_back",
+      "inputs": [
+        {
+          "name": "final_tag_ids",
+          "type": "array",
+          "description": "合并后的最终标签标识列表"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Update article"],
+      "requirement_evidence": ["通过更新操作写回该篇 WordPress 文章，完成打标签"],
+      "rationale": "需求声明通过更新操作将标签写回文章，为流程终点的最终完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章内容获取后进入合并。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "已有标签获取后进入合并。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "合并完成后交语言模型分析。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后分离两类标签。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "new_tag_names 非空",
+      "rationale": "存在建议的新标签时逐个创建。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "新标签创建完成后合并标识。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "已有标签标识直接进入最终合并。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "标识合并完成后写回文章。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "article",
+      "condition": null,
+      "rationale": "文章内容传入合并节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "existing_tags",
+      "condition": null,
+      "rationale": "已有标签列表传入合并节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "merged_data",
+      "condition": null,
+      "rationale": "合并后的数据传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "tag_analysis",
+      "condition": null,
+      "rationale": "分析结果传给分离节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "new_tag_names",
+      "condition": null,
+      "rationale": "建议的新标签名传给创建节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "created_tag_ids",
+      "condition": null,
+      "rationale": "新建标签标识传入合并节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n5",
+      "target": "n7",
+      "variable": "selected_tag_ids",
+      "condition": null,
+      "rationale": "已有标签标识传入合并节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "final_tag_ids",
+      "condition": null,
+      "rationale": "最终标签标识列表传给文章更新节点。"
+    }
+  ],
+  "entry_nodes": ["n1", "n2"],
+  "terminal_nodes": ["n8"],
+  "confidence": 0.94,
+  "notes": "需求为获取文章与已有标签、合并后交语言模型分析选取/建议最多 4 个标签、分离两类处理（已有标识直通、新标签逐个创建）、合并标识写回文章。数据获取为并行两路（文章+标签），故 entry 为两个节点并在合并点汇合。新标签创建为 for-each 循环，折叠进节点契约（迭代次数等于新标签数，最多 4）。原生的结构化输出解析器、清理节点等为实现细节未单独建模。"
+}

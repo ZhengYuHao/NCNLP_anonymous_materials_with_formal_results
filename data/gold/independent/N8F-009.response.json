@@ -1,0 +1,648 @@
+{
+  "task_id": "N8F-009",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "3c68c0e7d47b9f027dd25c6f3df2d1a32ea99de2fe778f41e0e3bb29558c0f76",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收制作请求表单",
+      "node_type": "code",
+      "operation_family": "form_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "request",
+          "type": "object",
+          "description": "制作请求：产品图片、UGC 提示词、选定的视频风格"
+        }
+      ],
+      "native_evidence": ["When UGC Form Submitted"],
+      "requirement_evidence": ["通过表单提交的制作请求，包含产品图片、UGC 提示词和选定的视频风格"],
+      "rationale": "表单触发与请求接收为确定性入口行为，判为 code；作为流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "提取产品细节并生成结构化 UGC 提示词",
+      "node_type": "semantic",
+      "operation_family": "prompt_generation",
+      "inputs": [
+        {
+          "name": "request",
+          "type": "object",
+          "description": "制作请求（产品图片、UGC 提示词、视频风格）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompts",
+          "type": "object",
+          "description": "语言模型输出：结构化图片提示词、视频提示词与反向约束"
+        }
+      ],
+      "native_evidence": ["UGC Generation Agent", "Post Chat to OpenRouter API", "OpenRouter Chat Interface"],
+      "requirement_evidence": ["将产品图片与提示词提交给语言模型进行产品细节提取，然后使用语言模型生成结构化的 UGC 图片提示词、视频提示词以及反向约束"],
+      "rationale": "产品细节提取与结构化提示词生成是开放文本理解与生成，判为 semantic；OpenRouter 调用为该语义行为的模型依赖，折叠进节点契约。"
+    },
+    {
+      "node_id": "n3",
+      "label": "解析模型输出为规整字段",
+      "node_type": "code",
+      "operation_family": "output_parsing",
+      "inputs": [
+        {
+          "name": "prompts",
+          "type": "object",
+          "description": "语言模型返回的原始内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "规整后的字段：图片提示词、视频提示词、反向约束"
+        }
+      ],
+      "native_evidence": ["Extract UGC Prompt Data"],
+      "requirement_evidence": ["将模型返回内容解析为规整的字段"],
+      "rationale": "对模型返回内容做确定性解析与规整，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "调用图像生成能力生成图片",
+      "node_type": "code",
+      "operation_family": "image_generation",
+      "inputs": [
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "含图片提示词的规整字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_image",
+          "type": "binary",
+          "description": "生成的 UGC 图片"
+        }
+      ],
+      "native_evidence": ["Call UGC Image API Service"],
+      "requirement_evidence": ["调用图像生成能力生成图片"],
+      "rationale": "图像生成为外部服务的确定性契约调用，按规则判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发布提示词预览到 Discord",
+      "node_type": "code",
+      "operation_family": "message_posting",
+      "inputs": [
+        {
+          "name": "generated_image",
+          "type": "binary",
+          "description": "生成的 UGC 图片"
+        },
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "提示词字段（预览内容）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "preview_message",
+          "type": "object",
+          "description": "已发布的提示词预览消息（含图片与提示词）"
+        }
+      ],
+      "native_evidence": ["Prepare UGC Image Data", "Send UGC Image to Discord"],
+      "requirement_evidence": ["将提示词预览发布到 Discord"],
+      "rationale": "向 Discord 发布预览为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "收集审核人决定（第二个表单）",
+      "node_type": "code",
+      "operation_family": "form_input",
+      "inputs": [
+        {
+          "name": "preview_message",
+          "type": "object",
+          "description": "提示词预览消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "review_decision",
+          "type": "string",
+          "description": "审核决定：approved / needs_changes / rejected"
+        },
+        {
+          "name": "review_feedback",
+          "type": "string",
+          "description": "审核人要求修改时给出的反馈"
+        }
+      ],
+      "native_evidence": ["UGC Approval Form"],
+      "requirement_evidence": ["通过第二个表单收集审核人的决定：通过 / 需修改 / 拒绝", "审核人要求修改时给出的反馈"],
+      "rationale": "第二个表单收集审核决定为确定性表单输入行为，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "按审核决定路由",
+      "node_type": "code",
+      "operation_family": "branching",
+      "inputs": [
+        {
+          "name": "review_decision",
+          "type": "string",
+          "description": "审核决定"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Route by UGC Approval"],
+      "requirement_evidence": ["通过：启动视频生成", "需修改：依据审核人反馈重新生成提示词", "拒绝：终止流程"],
+      "rationale": "需求声明三种决定的分流行为，单列路由节点表达分支条件；判为 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "提交视频生成任务",
+      "node_type": "code",
+      "operation_family": "video_generation_submit",
+      "inputs": [
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "含视频提示词的规整字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_prediction",
+          "type": "object",
+          "description": "视频生成预测任务对象（含状态）"
+        }
+      ],
+      "native_evidence": ["Request Replicate Video Creation"],
+      "requirement_evidence": ["若审核通过，将视频提示词提交给视频生成能力"],
+      "rationale": "提交视频生成任务为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "等待并轮询预测状态直至成功",
+      "node_type": "code",
+      "operation_family": "status_polling",
+      "inputs": [
+        {
+          "name": "video_prediction",
+          "type": "object",
+          "description": "视频生成预测任务对象"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_result",
+          "type": "object",
+          "description": "成功完成的视频生成结果（含视频链接）"
+        }
+      ],
+      "native_evidence": ["Wait 30 Seconds", "Check Video Creation Status", "Route by Video Status", "Wait 80 Seconds"],
+      "requirement_evidence": ["等待并轮询预测状态直至成功", "视频生成需轮询预测状态直至成功"],
+      "rationale": "轮询为周期性状态检查，确定性判为 code；自环表达轮询循环，终止条件为预测状态成功或达到最大轮询次数（max_iterations=20），需求已显式声明该轮询行为。"
+    },
+    {
+      "node_id": "n10",
+      "label": "发布生成的视频链接到 Discord",
+      "node_type": "code",
+      "operation_family": "message_posting",
+      "inputs": [
+        {
+          "name": "video_result",
+          "type": "object",
+          "description": "生成的视频结果（含链接）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_link_message",
+          "type": "object",
+          "description": "已发布的视频链接消息"
+        }
+      ],
+      "native_evidence": ["Notify Discord of Approved UGC"],
+      "requirement_evidence": ["将生成的视频链接发布到 Discord"],
+      "rationale": "向 Discord 发布视频链接为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "依据审核反馈重新生成提示词",
+      "node_type": "semantic",
+      "operation_family": "prompt_regeneration",
+      "inputs": [
+        {
+          "name": "review_feedback",
+          "type": "string",
+          "description": "审核人要求修改时给出的反馈"
+        },
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "原提示词字段（重生成的基础）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "regenerated_prompts",
+          "type": "object",
+          "description": "依据反馈重新生成的 UGC 提示词"
+        }
+      ],
+      "native_evidence": ["Regenerate UGC Content Agent", "Secondary OpenRouter Chat"],
+      "requirement_evidence": ["需修改：依据审核人反馈重新生成提示词", "审核要求修改时依据反馈重新生成提示词"],
+      "rationale": "依据反馈重新生成提示词是开放文本生成，判为 semantic。"
+    },
+    {
+      "node_id": "n12",
+      "label": "解析重生成的模型输出",
+      "node_type": "code",
+      "operation_family": "output_parsing",
+      "inputs": [
+        {
+          "name": "regenerated_prompts",
+          "type": "object",
+          "description": "重新生成的提示词原始输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "parsed_fields",
+          "type": "object",
+          "description": "规整后的重生成字段（与首次解析同构）"
+        }
+      ],
+      "native_evidence": ["Parse Regenerated AI Output"],
+      "requirement_evidence": ["将模型返回内容解析为规整的字段"],
+      "rationale": "重生成路径同样需要需求第 2 步声明的确定性解析，判为 code。"
+    },
+    {
+      "node_id": "n13",
+      "label": "设定最终任务元数据",
+      "node_type": "code",
+      "operation_family": "metadata_preparation",
+      "inputs": [
+        {
+          "name": "video_result",
+          "type": "object",
+          "description": "视频生成结果（含链接等信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "job_metadata",
+          "type": "object",
+          "description": "最终任务元数据"
+        }
+      ],
+      "native_evidence": ["Finalize Job Details"],
+      "requirement_evidence": ["设定最终的任务元数据"],
+      "rationale": "确定性字段组装，判为 code。"
+    },
+    {
+      "node_id": "n14",
+      "label": "保存任务记录到数据表",
+      "node_type": "code",
+      "operation_family": "data_persistence",
+      "inputs": [
+        {
+          "name": "job_metadata",
+          "type": "object",
+          "description": "最终任务元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "job_record",
+          "type": "object",
+          "description": "已保存的数据表任务记录"
+        }
+      ],
+      "native_evidence": ["Save Job Record to Database"],
+      "requirement_evidence": ["将任务记录保存到数据表"],
+      "rationale": "写数据表为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n15",
+      "label": "向 Discord 发送完成通知",
+      "node_type": "terminal",
+      "operation_family": "notification",
+      "inputs": [
+        {
+          "name": "job_record",
+          "type": "object",
+          "description": "已保存的任务记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Notify Discord of Completion"],
+      "requirement_evidence": ["向 Discord 发送完成通知"],
+      "rationale": "完成通知是用户可见的最终完成动作，判为 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n16",
+      "label": "审核拒绝，终止流程",
+      "node_type": "terminal",
+      "operation_family": "safe_rejection",
+      "inputs": [
+        {
+          "name": "review_decision",
+          "type": "string",
+          "description": "审核决定（rejected）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Route by UGC Approval (rejection branch)", "Discord Rejection Notice"],
+      "requirement_evidence": ["拒绝：终止流程"],
+      "rationale": "审核拒绝为安全拒绝/终止行为，判为 terminal，无 CFG 出边；需求仅声明终止，原生图的拒绝通知内容未在需求中声明，不建模额外通知行为。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到制作请求后进入提示词生成。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "模型输出后解析为规整字段。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "用图片提示词调用图像生成。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片生成后发布提示词预览。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "预览发布后通过第二个表单收集审核决定。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "按审核决定分流。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "review_decision == approved",
+      "rationale": "审核通过：启动视频生成。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交任务后进入状态轮询。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n9",
+      "target": "n9",
+      "variable": null,
+      "condition": "video_status != succeeded",
+      "rationale": "轮询循环：预测未成功时继续等待并轮询；终止条件为状态成功或达到最大轮询次数，max_iterations=20。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": "video_status == succeeded",
+      "rationale": "轮询成功后发布视频链接。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n10",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "视频链接发布后设定最终任务元数据。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n7",
+      "target": "n11",
+      "variable": null,
+      "condition": "review_decision == needs_changes",
+      "rationale": "需修改：依据审核人反馈重新生成提示词。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "重生成输出需解析为规整字段。"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "重生成提示词回流进入图像生成→预览→审核循环（需求未显式声明再审核环节，为使重生成产物回流按'需修改→重新生成提示词'语义循环处理）；审核循环终止条件为审核人给出通过或拒绝，每次需修改触发一次重生成，max_iterations=20。"
+    },
+    {
+      "edge_id": "c15",
+      "source": "n7",
+      "target": "n16",
+      "variable": null,
+      "condition": "review_decision == rejected",
+      "rationale": "审核拒绝：终止流程。"
+    },
+    {
+      "edge_id": "c16",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "元数据就绪后保存任务记录。"
+    },
+    {
+      "edge_id": "c17",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录保存后发送完成通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "request",
+      "condition": null,
+      "rationale": "语言模型消费制作请求提取产品细节。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "prompts",
+      "condition": null,
+      "rationale": "解析节点消费模型原始输出。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "parsed_fields",
+      "condition": null,
+      "rationale": "图像生成消费图片提示词字段。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "parsed_fields",
+      "condition": null,
+      "rationale": "预览消息包含提示词内容。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "generated_image",
+      "condition": null,
+      "rationale": "预览消息包含生成的图片。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "preview_message",
+      "condition": null,
+      "rationale": "审核表单针对已发布的预览收集决定。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "review_decision",
+      "condition": null,
+      "rationale": "路由消费审核决定。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n11",
+      "variable": "review_feedback",
+      "condition": null,
+      "rationale": "重生成消费审核反馈。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n11",
+      "target": "n12",
+      "variable": "regenerated_prompts",
+      "condition": null,
+      "rationale": "解析节点消费重生成输出。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n12",
+      "target": "n4",
+      "variable": "parsed_fields",
+      "condition": null,
+      "rationale": "重生成字段回流至图像生成（与首次解析同构）。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n3",
+      "target": "n8",
+      "variable": "parsed_fields",
+      "condition": null,
+      "rationale": "视频生成消费视频提示词字段。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n8",
+      "target": "n9",
+      "variable": "video_prediction",
+      "condition": null,
+      "rationale": "轮询消费预测任务对象。"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n9",
+      "target": "n10",
+      "variable": "video_result",
+      "condition": null,
+      "rationale": "视频链接发布消费生成结果。"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n9",
+      "target": "n13",
+      "variable": "video_result",
+      "condition": null,
+      "rationale": "最终元数据包含视频生成结果信息。"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n13",
+      "target": "n14",
+      "variable": "job_metadata",
+      "condition": null,
+      "rationale": "数据表保存任务元数据记录。"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n14",
+      "target": "n15",
+      "variable": "job_record",
+      "condition": null,
+      "rationale": "完成通知引用已保存的任务记录。"
+    },
+    {
+      "edge_id": "d17",
+      "source": "n6",
+      "target": "n16",
+      "variable": "review_decision",
+      "condition": null,
+      "rationale": "拒绝终止节点消费审核决定。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n15", "n16"],
+  "confidence": 0.78,
+  "notes": "关键取舍：(1) 需求声明'需修改：依据审核人反馈重新生成提示词'但未显式说明重生成后的去向，为使重生成产物回流且保证图连通，建模为重生成→解析→图像生成→预览→再审核的循环（与原生图第二轮审核结构一致），循环终止条件为审核人给出通过或拒绝，max_iterations=20；(2) 需求显式声明'等待并轮询预测状态直至成功'，故单列轮询节点并以自环表达，终止条件 status==succeeded，max_iterations=20；(3) 原生图中的 Discord Approval Confirmation、二次拒绝通知、Prepare Revised UGC Preview 等未被需求声明的中间节点未纳入 Gold；拒绝分支按需求仅建模为终止，不建模额外通知内容。"
+}

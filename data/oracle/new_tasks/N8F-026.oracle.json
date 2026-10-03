@@ -1,0 +1,459 @@
+{
+  "task_id": "N8F-026",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "af2fdd0d50d54d7b8d86e1558f4c0f315b809051a807f2d7e4f33f082fb8add7",
+  "fixtures": [
+    {
+      "fixture_id": "F-CONFIG",
+      "purpose": "固定的城市、品类、阈值与投递目标配置（基准日期 2026-09-02）",
+      "input_data": {
+        "city": "Austin",
+        "categories": [
+          "Plumber",
+          "Electrician"
+        ],
+        "score_threshold": 60,
+        "contact_window_days": 90,
+        "sheet_id": "SHEET-PROSPECTS",
+        "slack_channel": "#prospects",
+        "run_date": "2026-09-02"
+      }
+    },
+    {
+      "fixture_id": "F-PROFILES-EMPTY",
+      "purpose": "商家发现检索返回空结果的边界数据，验证无候选时收敛为无动作行为",
+      "input_data": {
+        "profiles": []
+      }
+    },
+    {
+      "fixture_id": "F-PROFILES",
+      "purpose": "固定商家档案：含 90 天过滤、恰好 90 天边界、低分评论等情形",
+      "input_data": {
+        "profiles": [
+          {
+            "business_id": "B-001",
+            "category": "Plumber",
+            "name": "Alpha Plumbing",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": false
+            },
+            "last_contacted": "2026-08-03",
+            "reviews": [
+              {
+                "stars": 2,
+                "text": "Slow service"
+              }
+            ]
+          },
+          {
+            "business_id": "B-002",
+            "category": "Plumber",
+            "name": "Beta Pipes",
+            "completeness_gaps": {
+              "photos": false,
+              "hours": false
+            },
+            "last_contacted": null,
+            "reviews": [
+              {
+                "stars": 3,
+                "text": "High price"
+              }
+            ]
+          },
+          {
+            "business_id": "B-003",
+            "category": "Electrician",
+            "name": "Gamma Electric",
+            "completeness_gaps": {
+              "photos": false,
+              "hours": false
+            },
+            "last_contacted": "2026-05-25",
+            "reviews": [
+              {
+                "stars": 1,
+                "text": "Rude staff"
+              }
+            ]
+          },
+          {
+            "business_id": "B-004",
+            "category": "Electrician",
+            "name": "Delta Sparks",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": true
+            },
+            "last_contacted": null,
+            "reviews": [
+              {
+                "stars": 5,
+                "text": "Great work"
+              },
+              {
+                "stars": 2,
+                "text": "Late arrival"
+              }
+            ]
+          },
+          {
+            "business_id": "B-005",
+            "category": "Plumber",
+            "name": "Epsilon Drains",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": false
+            },
+            "last_contacted": "2026-06-04",
+            "reviews": [
+              {
+                "stars": 4,
+                "text": "Good"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-PREVIOUS-PROSPECTS",
+      "purpose": "Google Sheets 中已记录的候选商家（用于近期联系过滤）",
+      "input_data": {
+        "rows": [
+          {
+            "business_id": "B-001",
+            "name": "Alpha Plumbing",
+            "last_contacted": "2026-08-03"
+          },
+          {
+            "business_id": "B-005",
+            "name": "Epsilon Drains",
+            "last_contacted": "2026-06-04"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BD-DISCOVER",
+      "dependency_type": "httpRequest",
+      "operation": "bright_data_maps_discovery",
+      "request_contract": {
+        "city": "Austin",
+        "one_call_per_category": true
+      },
+      "response_contract": {
+        "snapshot_id": "SNAP-001",
+        "status": "accepted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL",
+      "dependency_type": "httpRequest",
+      "operation": "poll_snapshot_progress",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "snapshot_id": "SNAP-001",
+        "status": "ready"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DOWNLOAD",
+      "dependency_type": "httpRequest",
+      "operation": "download_business_profiles",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "profiles": "see fixture F-PROFILES"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DOWNLOAD-EMPTY",
+      "dependency_type": "httpRequest",
+      "operation": "download_business_profiles",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "profiles": "see fixture F-PROFILES-EMPTY"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-THEMES",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "extract_complaint_themes",
+      "request_contract": {
+        "reviews_stars_lte": 3
+      },
+      "response_contract": {
+        "per_business": {
+          "B-002": {
+            "themes": [
+              "price concerns"
+            ]
+          },
+          "B-003": {
+            "themes": [
+              "customer service issues"
+            ]
+          },
+          "B-004": {
+            "themes": [
+              "timeliness"
+            ]
+          },
+          "B-005": {
+            "themes": [
+              "service quality"
+            ]
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "sheet_id": "SHEET-PROSPECTS"
+      },
+      "response_contract": {
+        "rows": "see fixture F-PREVIOUS-PROSPECTS"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet_id": "SHEET-PROSPECTS",
+        "one_row_per_candidate": true
+      },
+      "response_contract": {
+        "status": "appended",
+        "row_number": 10
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-DIGEST",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#prospects",
+        "message_is_ranked_digest": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000002"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-WEEKLY",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD",
+        "M-LLM-THEMES",
+        "M-SHEETS-READ",
+        "M-SHEETS-APPEND",
+        "M-SLACK-DIGEST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.discovery_searches",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每个品类（Plumber、Electrician）各触发一次商家发现检索"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.candidates",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "B-002、B-003、B-004、B-005 为候选；B-001 最近30天内联系过被过滤"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.candidates[*].business_id",
+          "operator": "contains",
+          "expected": "B-002",
+          "rationale": "从未联系过的商家必须保留"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.candidates[*].business_id",
+          "operator": "contains",
+          "expected": "B-003",
+          "rationale": "100 天前联系过，不在最近 90 天内，应保留"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.candidates[*].business_id",
+          "operator": "not_equals",
+          "expected": "B-001",
+          "rationale": "B-001 于 2026-08-03 联系（距基准日约30天），必须被过滤"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.candidates[*].score",
+          "operator": "exists",
+          "rationale": "每个候选商家必须基于资料完整度缺口计算得分",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.complaint_themes",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "每个候选商家生成一份抱怨主题抽取结果"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.complaint_themes[*].themes",
+          "operator": "contains",
+          "expected": "price concerns",
+          "rationale": "B-002 三星及以下评论抽取主题须为固定响应中的内容"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.sheets_appended",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "每个候选商家逐行追加到 Google Sheets"
+        },
+        {
+          "assertion_id": "A-POS-10",
+          "target": "output.slack_digest",
+          "operator": "exists",
+          "rationale": "必须向 Slack 发送格式化摘要",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-11",
+          "target": "output.slack_digest.text",
+          "operator": "contains",
+          "expected": "Beta Pipes",
+          "rationale": "摘要须包含排名报告中的商家信息"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-90D",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD",
+        "M-LLM-THEMES",
+        "M-SHEETS-READ",
+        "M-SHEETS-APPEND",
+        "M-SLACK-DIGEST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.candidates[*].business_id",
+          "operator": "contains",
+          "expected": "B-005",
+          "rationale": "B-005 于 2026-06-04 联系，距基准日恰好90天，不在\"最近90天内\"范围内，不应被过滤"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.candidates",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "90 天边界不改变候选集：B-005 保留、B-001 过滤"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-EMPTY-RESULTS",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES-EMPTY",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD-EMPTY",
+        "M-SHEETS-READ"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.discovery_searches",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求无条件要求每个品类各触发一次发现检索，空结果时检索仍发生"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.candidates",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "检索返回空结果即无候选商家"
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.sheets_appended",
+          "operator": "not_exists",
+          "rationale": "需求规定每个候选商家追加一行，候选为零时无动作、不追加任何行",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.slack_digest",
+          "operator": "not_exists",
+          "rationale": "摘要内容为带排名的候选商家，候选为零时无动作、不发送摘要",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Bright Data 发现检索/轮询/下载、LLM 抱怨主题、Sheets 读写、Slack 均为固定模拟。90 天过滤以固定基准日期 2026-09-02 计算，候选集、追加行数与摘要内容均为可计算常数。空结果场景（F-PROFILES-EMPTY）收敛为需求支持的无动作：检索照常按品类触发，候选为零时不追加、不投递，不引入任何需求未规定的错误输出。\n候选勘误OE-N8F026-EMPTY-01：空结果用例改用独立下载mock，使其响应明确引用该用例提供的F-PROFILES-EMPTY；需求和断言均未改变。"
+}

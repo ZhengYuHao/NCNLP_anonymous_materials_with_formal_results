@@ -1,0 +1,325 @@
+{
+  "task_id": "N8F-098",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "62aad480b7dcb753296ee07f9d5fdb33ab4f3558d62bc708275c4c7929514c6e",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时/按需触发并读取目标 URL 与关注条件",
+      "node_type": "code",
+      "operation_family": "trigger_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "watch_config",
+          "type": "object",
+          "description": "目标 URL 与关注条件配置"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger",
+        "Define Target URLs",
+        "Define What Matters To You"
+      ],
+      "requirement_evidence": [
+        "按每日计划或按需运行，对多个目标 URL 进行变更监控"
+      ],
+      "rationale": "触发并加载监控配置"
+    },
+    {
+      "node_id": "n2",
+      "label": "抓取目标网页内容并截取页面快照",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "watch_config",
+          "type": "object",
+          "description": "目标 URL 与关注条件配置"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "page_snapshots",
+          "type": "object[]",
+          "description": "本次抓取的网页内容与快照"
+        }
+      ],
+      "native_evidence": [
+        "Scrape Target URLs",
+        "Capture Screenshots"
+      ],
+      "requirement_evidence": [
+        "抓取目标网页的内容并截取页面快照"
+      ],
+      "rationale": "确定性抓取与截图"
+    },
+    {
+      "node_id": "n3",
+      "label": "读取历史快照",
+      "node_type": "code",
+      "operation_family": "fetch_transform",
+      "inputs": [
+        {
+          "name": "watch_config",
+          "type": "object",
+          "description": "目标 URL 与关注条件配置"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "historical_snapshots",
+          "type": "object[]",
+          "description": "历史快照数据"
+        }
+      ],
+      "native_evidence": [
+        "Get Last Snapshots",
+        "Get Many Blocks"
+      ],
+      "requirement_evidence": [
+        "由语言模型对本次快照与历史快照进行比对"
+      ],
+      "rationale": "读取历史快照供比对"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型比对快照、高亮有意义变化并生成文字摘要",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "page_snapshots",
+          "type": "object[]",
+          "description": "本次抓取的网页内容与快照"
+        },
+        {
+          "name": "historical_snapshots",
+          "type": "object[]",
+          "description": "历史快照数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "change_analysis",
+          "type": "object[]",
+          "description": "变化比对结果与文字摘要"
+        }
+      ],
+      "native_evidence": [
+        "Compare Snapshots",
+        "Combine Website Data"
+      ],
+      "requirement_evidence": [
+        "由语言模型对本次快照与历史快照进行比对，高亮其中有意义的变化",
+        "为每次变化生成简洁的文字摘要"
+      ],
+      "rationale": "快照比对与摘要生成需语言模型"
+    },
+    {
+      "node_id": "n5",
+      "label": "按关注条件过滤更新",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "change_analysis",
+          "type": "object[]",
+          "description": "变化比对结果与文字摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "relevant_updates",
+          "type": "object[]",
+          "description": "满足关注条件的更新"
+        }
+      ],
+      "native_evidence": [
+        "Split Out Updates",
+        "Combine Snapshots and AI Analysis"
+      ],
+      "requirement_evidence": [
+        "只有满足用户预先定义的关注条件（聚焦特定内容变化、忽略细微差异）的更新才会被记录"
+      ],
+      "rationale": "确定性过滤：聚焦有意义变化、忽略细微差异"
+    },
+    {
+      "node_id": "n6",
+      "label": "将快照、比对结果与摘要保存到 Notion",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "relevant_updates",
+          "type": "object[]",
+          "description": "满足关注条件的更新"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "saved_records",
+          "type": "object[]",
+          "description": "保存的 Notion 记录"
+        }
+      ],
+      "native_evidence": [
+        "Save Snapshots",
+        "Append Blocks",
+        "Create Updates",
+        "Construct Update Pages"
+      ],
+      "requirement_evidence": [
+        "将页面快照、比对结果与摘要保存到 Notion 以便查阅"
+      ],
+      "rationale": "确定性 Notion 写入"
+    },
+    {
+      "node_id": "n7",
+      "label": "有更新时通过 Gmail 发送邮件提醒",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "saved_records",
+          "type": "object[]",
+          "description": "保存的 Notion 记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Email Updates"
+      ],
+      "requirement_evidence": [
+        "当发生更新时，可通过 Gmail 发送邮件提醒"
+      ],
+      "rationale": "邮件提醒为最终动作；无更新时流程终止（不发送）"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取配置后抓取页面"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取配置后并行加载历史快照"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "本次快照进入比对"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "历史快照进入比对"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "比对后按关注条件过滤"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "过滤后保存 Notion"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "保存后有更新则发邮件"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "watch_config",
+      "condition": null,
+      "rationale": "URL 配置供抓取"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "watch_config",
+      "condition": null,
+      "rationale": "URL 配置供读取历史"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "page_snapshots",
+      "condition": null,
+      "rationale": "本次快照供比对"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "historical_snapshots",
+      "condition": null,
+      "rationale": "历史快照供比对"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "change_analysis",
+      "condition": null,
+      "rationale": "比对结果用于过滤"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "relevant_updates",
+      "condition": null,
+      "rationale": "满足条件的更新保存 Notion"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "saved_records",
+      "condition": null,
+      "rationale": "保存记录用于邮件提醒"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "定时/按需→抓取+快照与读历史快照并行→LLM 比对高亮变化并生成摘要→按关注条件过滤→保存 Notion→有更新时 Gmail 提醒（无更新则流程结束，折叠进终止契约）。"
+}

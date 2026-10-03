@@ -1,0 +1,367 @@
+{
+  "task_id": "N8F-064",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "dbf8cbf4f49420b715320234649c0b529f5efcbde15ee490757dd65f290cf254",
+  "fixtures": [
+    {
+      "fixture_id": "F-WATCHLIST",
+      "purpose": "用户设定的关注清单（指数/外汇/大宗商品三类）与报告收件人",
+      "input_data": {
+        "watchlist": {
+          "indices": [
+            "SPY",
+            "QQQ"
+          ],
+          "forex": [
+            "EUR/USD"
+          ],
+          "commodities": [
+            "XAU",
+            "CL"
+          ]
+        },
+        "report_recipient": "trader@example.com",
+        "rate_limit_batch_seconds": 15
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-QUOTE-SPY",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "SPY"
+      },
+      "response_contract": {
+        "symbol": "SPY",
+        "open": 498.0,
+        "close": 510.0,
+        "prev_close": 500.0,
+        "high": 512.0,
+        "low": 497.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-QQQ",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "QQQ"
+      },
+      "response_contract": {
+        "symbol": "QQQ",
+        "open": 450.0,
+        "close": 448.0,
+        "prev_close": 450.0,
+        "high": 452.0,
+        "low": 447.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-EURUSD",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "EUR/USD"
+      },
+      "response_contract": {
+        "symbol": "EUR/USD",
+        "open": 1.085,
+        "close": 1.09,
+        "prev_close": 1.085,
+        "high": 1.091,
+        "low": 1.084
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-XAU",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "XAU"
+      },
+      "response_contract": {
+        "symbol": "XAU",
+        "open": 2500.0,
+        "close": 2520.0,
+        "prev_close": 2500.0,
+        "high": 2525.0,
+        "low": 2495.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-CL",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "CL"
+      },
+      "response_contract": {
+        "symbol": "CL",
+        "open": 80.0,
+        "close": 79.5,
+        "prev_close": 80.0,
+        "high": 80.2,
+        "low": 79.3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-CL-FAIL",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "CL"
+      },
+      "response_contract": {
+        "error": "rate_limit_exceeded",
+        "status": 429
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYST",
+      "dependency_type": "lmChatGroq",
+      "operation": "generate_market_snapshot",
+      "request_contract": {},
+      "response_contract": {
+        "sections": {
+          "market_summary": "Markets were mixed today.",
+          "key_movers": [
+            "SPY +2.0%",
+            "QQQ -0.4%"
+          ],
+          "risk_sentiment": "Risk-on bias",
+          "actionable_outlook": "Consider adding SPY exposure."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-REPORT",
+      "dependency_type": "googleSheets",
+      "operation": "append_main_report",
+      "request_contract": {},
+      "response_contract": {
+        "row": 15
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-ERROR",
+      "dependency_type": "googleSheets",
+      "operation": "append_error_log",
+      "request_contract": {},
+      "response_contract": {
+        "row": 3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {},
+      "response_contract": {
+        "message_id": "g-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-REPORT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-WATCHLIST"
+      ],
+      "mock_ids": [
+        "M-QUOTE-SPY",
+        "M-QUOTE-QQQ",
+        "M-QUOTE-EURUSD",
+        "M-QUOTE-XAU",
+        "M-QUOTE-CL",
+        "M-LLM-ANALYST",
+        "M-APPEND-REPORT",
+        "M-GMAIL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.normalized_quotes",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "按关注清单逐一获取三类标的当日行情"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.normalized_quotes[0].symbol",
+          "operator": "equals",
+          "expected": "SPY",
+          "rationale": "行情数据对应清单标的"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.normalized_quotes[0].pct_change",
+          "operator": "equals",
+          "expected": 2.0,
+          "rationale": "当日百分比变化=(510-500)/500=2.0"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.normalized_quotes[0].trend",
+          "operator": "equals",
+          "expected": "bullish",
+          "rationale": "收涨判定看涨趋势"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.normalized_quotes[1].trend",
+          "operator": "equals",
+          "expected": "bearish",
+          "rationale": "QQQ 收跌(448<450)判定看跌趋势"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.report.sections.market_summary",
+          "operator": "equals",
+          "expected": "Markets were mixed today.",
+          "rationale": "宏观策略快照的市场综述等于固定输出"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.report.sections.key_movers",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "快照含主要波动标的板块"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.report.sections.risk_sentiment",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "快照含风险情绪板块"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.report.sections.actionable_outlook",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "快照含可执行操作展望板块"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.sheets.main_report_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "完整报告写入主 Google Sheets 标签页用于历史留存"
+        },
+        {
+          "assertion_id": "A-11",
+          "target": "output.emails.report.recipient",
+          "operator": "equals",
+          "expected": "trader@example.com",
+          "rationale": "最终报告通过 Gmail 发送"
+        },
+        {
+          "assertion_id": "A-12",
+          "target": "output.emails.report.body",
+          "operator": "contains",
+          "expected": "Markets were mixed today.",
+          "rationale": "邮件正文为排版后的报告文本"
+        },
+        {
+          "assertion_id": "A-13",
+          "target": "output.sheets.error_log_appended",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无失败时不写入 Error logs"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-API-FAILURE",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-WATCHLIST"
+      ],
+      "mock_ids": [
+        "M-QUOTE-SPY",
+        "M-QUOTE-QQQ",
+        "M-QUOTE-EURUSD",
+        "M-QUOTE-XAU",
+        "M-QUOTE-CL-FAIL",
+        "M-LLM-ANALYST",
+        "M-APPEND-REPORT",
+        "M-APPEND-ERROR",
+        "M-GMAIL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-API-FAILURE",
+          "target": "output.sheets.error_log_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "请求失败时把失败详情写入 Error logs 标签页"
+        },
+        {
+          "assertion_id": "A-2-NEG-API-FAILURE",
+          "target": "output.sheets.error_log_appended[0].symbol",
+          "operator": "equals",
+          "expected": "CL",
+          "rationale": "失败详情记录对应失败标的"
+        },
+        {
+          "assertion_id": "A-3-NEG-API-FAILURE",
+          "target": "output.sheets.error_log_appended[0].status",
+          "operator": "equals",
+          "expected": 429,
+          "rationale": "触及接口硬性限制(429)被记录"
+        },
+        {
+          "assertion_id": "A-4-NEG-API-FAILURE",
+          "target": "output.emails.alert.subject",
+          "operator": "contains",
+          "expected": "FAILED",
+          "rationale": "发送紧急失败告警"
+        },
+        {
+          "assertion_id": "A-5-NEG-API-FAILURE",
+          "target": "output.emails.alert.body",
+          "operator": "contains",
+          "expected": "CL",
+          "rationale": "告警包含失败标的"
+        },
+        {
+          "assertion_id": "A-6-NEG-API-FAILURE",
+          "target": "output.emails.alert.recipient",
+          "operator": "equals",
+          "expected": "trader@example.com",
+          "rationale": "告警发送至报告收件人"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；TwelveData 逐标的固定行情、LLM 宏观策略快照固定输出；百分比变化与看涨/看跌由固定行情可精确计算；失败分支以 CL 返回 429 触发；无真实副作用。"
+}

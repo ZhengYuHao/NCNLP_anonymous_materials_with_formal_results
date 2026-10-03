@@ -1,0 +1,11 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-063",
+  "case_id": "C-SCHEDULE-COUNT-MONTH",
+  "kind": "positive",
+  "input_data": {
+    "chat_id": "chat-events-001",
+    "message_text": "How many events are there next month?"
+  },
+  "input_sha256": "3FCEFD1291F59366B4E54ED3D53735117C281D287DE80416C8A5EEB155D2D6E1"
+}

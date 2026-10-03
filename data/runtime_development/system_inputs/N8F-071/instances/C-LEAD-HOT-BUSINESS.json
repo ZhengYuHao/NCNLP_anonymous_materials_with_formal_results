@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-071",
+  "case_id": "C-LEAD-HOT-BUSINESS",
+  "kind": "positive",
+  "input_data": {
+    "lead": {
+      "name": "Alice Johnson",
+      "email": "alice@acme.io",
+      "company": "Acme Corp",
+      "website": "https://acme.io",
+      "job_title": "VP Engineering",
+      "phone": "+1-555-0101",
+      "message": "Interested in enterprise automation",
+      "source": "website-form"
+    }
+  },
+  "input_sha256": "591AE93083181C5A0C7E5A9160775F286C95226E19CFA41EFDE75D43615AF9A8"
+}

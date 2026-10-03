@@ -1,0 +1,62 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-081",
+  "source_id": "n8n:9540",
+  "workflow_sha256": "99692f390537469c5d48017f7fb875faf13fbe6eed66a6792b301227ff5799d6",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4fddb4581808febff0971090a6bef2f70242cf60156e52874bd2cf7ffc735fca",
+  "requirement": {
+    "requirement_text": "一、输入\n候选人通过 JotForm 表单提交简历信息，包括姓名、邮箱与 PDF 简历。\n\n二、主要处理\n1. 将 PDF 简历转换为图片，再通过文字识别提取其中的文本。\n2. 由语言模型分析简历，给出优势、待改进之处以及 1 至 100 分的评分。\n3. 将本次提交的数据存入数据库。\n\n三、分支与最终结果\n1. 评分高于 85 分的简历被添加到 Zoho CRM，并向候选人发送祝贺邮件。\n2. 评分未达标的简历则向候选人发送反馈邮件。",
+    "source_spans": [
+      {
+        "start": 177,
+        "end": 634,
+        "text": "What It Does\nThis template automates resume processing by:\nCapturing resume submissions (name, email, PDF) via JotForm.\nConverting PDFs to images using PDF.co API.\nExtracting text with Azure Vision OCR.\nAnalyzing resumes with GPT-4.1 for strengths, improvements, and a score (1–100).\nStoring submission data in PostgreSQL.\nAdding high-scoring resumes (&gt;85) to Zoho CRM and sending congratulatory emails.\nSending feedback emails for lower-scoring resumes."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "候选人通过 JotForm 提交的姓名、邮箱与 PDF 简历"
+      ],
+      "conditions": [
+        "评分采用 1 至 100 的量表",
+        "评分高于 85 分时走 CRM 收录与祝贺邮件分支",
+        "评分未达标时走反馈邮件分支"
+      ],
+      "allowed_actions": [
+        "将 PDF 简历转换为图片并进行文字识别提取文本",
+        "由语言模型分析简历，给出优势、待改进之处与评分",
+        "将提交数据存入数据库",
+        "将高分简历添加到 Zoho CRM",
+        "向候选人发送祝贺邮件或反馈邮件"
+      ],
+      "visible_outcomes": [
+        "数据库中留存本次提交数据",
+        "高分候选人被添加到 Zoho CRM 并收到祝贺邮件",
+        "未达标候选人收到反馈邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-081.packet.json",
+    "packet_sha256": "6a739460eb8da53e860ad539a050888ffe4ccb350a8cae3df3e398d1c3536f82",
+    "public_description_sha256": "1e5cc308d838a7c43dda9e90c2847b90e82890592cf14665bfc32090c3962c71"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-081.response.json",
+    "verification_response_sha256": "798bdd2e56176920a5fcb82ebe7d0ba5057ed3c9f57caef4d23a8ef7bfc685df",
+    "decision": "accept"
+  },
+  "formal_index": 92
+}

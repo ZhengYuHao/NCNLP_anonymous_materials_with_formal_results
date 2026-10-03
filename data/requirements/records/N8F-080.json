@@ -1,0 +1,79 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-080",
+  "source_id": "n8n:10821",
+  "workflow_sha256": "f6cae2478f549f2983a8f88c02ec14513d6d943ff1062c220c9c91e027734470",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "77f818bf1ec8145636ff44019ff0ac818389f898256042df22b1aa44ede782a0",
+  "requirement": {
+    "requirement_text": "一、触发与输入\n每天上午 10 点运行一次，通过 Facebook 的 Graph API 抓取最新的帖子，并提取帖子正文、互动量以及每条帖子最多 100 条评论。\n\n二、主要处理\n1. 对抓取到的 Facebook 数据结构化与清洗，供情感判定使用。\n2. 由语言模型对帖子语气与评论情感进行判定，输出情感倾向、置信度与说明。\n3. 把全部情感指标（含正面比例与互动数据）记录到 Google Sheets。\n4. 生成带颜色标记的 HTML 情感汇总报告，并通过 Outlook 以邮件发送。\n\n三、分支与最终结果\n1. 判定为负面的结果会发送到 Slack，以便及时响应。\n2. 若处理过程中任一环节失败，同样向 Slack 发送告警。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 451,
+        "text": "📊 Description\nAutomatically analyze the sentiment of Facebook posts and their audience comments using GPT-4 to identify trends and potential PR risks. 🧠💬\n This workflow fetches recent posts via the Facebook Graph API, performs AI-powered sentiment analysis on both posts and comments, routes negative results to Slack for immediate attention, logs all data into Google Sheets, and sends a beautifully formatted sentiment summary report via Outlook. 📈📧"
+      },
+      {
+        "start": 453,
+        "end": 1223,
+        "text": "What This Template Does\n1️⃣ Trigger – Runs daily at 10 AM to fetch the latest Facebook posts. ⏰\n 2️⃣ Data Extraction – Pulls post text, reactions, and up to 100 comments per post using Facebook Graph API. 📲\n 3️⃣ Formatting – Structures and cleans Facebook data for AI analysis. 🧩\n 4️⃣ AI Sentiment Analysis – GPT-4 evaluates post tone and audience sentiment with confidence scores and explanations. 🤖\n 5️⃣ Routing – Sends negative sentiment alerts directly to Slack for quick response. ⚠️\n 6️⃣ Logging – Records all sentiment metrics in Google Sheets, including positivity ratio and engagement data. 📊\n 7️⃣ Reporting – Generates a color-coded HTML email report and delivers it via Outlook. 💌\n 8️⃣ Error Handling – Sends Slack alerts if any node in the workflow fails. 🛡️"
+      },
+      {
+        "start": 1553,
+        "end": 1917,
+        "text": "Features\nAutomated daily trigger for post sentiment scanning\nFacebook Graph API integration for posts and comments\nGPT-4–powered comment tone and sentiment scoring\nSlack notifications for negative sentiment alerts\nGoogle Sheets sentiment dashboard logging\nBeautiful HTML report delivery through Microsoft Outlook\nBuilt-in error detection with Slack fallback alerts"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Facebook 页面上最近的帖子",
+        "帖子的正文与互动量",
+        "每条帖子最多 100 条评论"
+      ],
+      "conditions": [
+        "每天上午 10 点触发一次",
+        "每条帖子最多处理 100 条评论",
+        "情感判定为负面时走告警分支"
+      ],
+      "allowed_actions": [
+        "通过 Facebook 的 Graph API 抓取帖子与评论",
+        "结构化与清洗抓取到的数据",
+        "由语言模型判定帖子语气与评论情感并给出置信度与说明",
+        "将情感指标记录到 Google Sheets",
+        "生成带颜色标记的 HTML 汇总报告并通过 Outlook 邮件发送",
+        "将负面情感结果发送到 Slack",
+        "处理失败时向 Slack 发送告警"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中留存全部情感指标，含正面比例与互动数据",
+        "收件人通过 Outlook 收到带颜色标记的 HTML 情感汇总报告",
+        "Slack 收到负面情感的提醒消息",
+        "处理失败时 Slack 收到错误告警"
+      ],
+      "failure_behavior": [
+        "处理过程中任一环节失败时，向 Slack 发送告警"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-080.packet.json",
+    "packet_sha256": "c0c07daa3a08f056796d35defd824aadcf82f399664b7416ad4177c88c8a999b",
+    "public_description_sha256": "42dbc49068df56aadca49e728c929d10295aed86a485c5041f788545ac221899"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-080.response.json",
+    "verification_response_sha256": "ce7a145ecb7e60d07750007b4c926dc8b9368ece56d5469df307ab06f2779126",
+    "decision": "accept"
+  },
+  "formal_index": 91
+}

@@ -1,0 +1,64 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-057",
+  "source_id": "n8n:18212",
+  "workflow_sha256": "1afda37d8647dadad05ba9318a5afe361de5d45f5e1c5b2f0056c8c151415ee8",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "9e39808ae7038967f9c9e3825dab24ab7f227f24eadb0ffaf2aca2f5c40bb3b3",
+  "requirement": {
+    "requirement_text": "系统提供语音优先的模拟面试辅导服务。\n\n1）接收一次 POST 请求，内容包含会话 ID、岗位角色、轮次编号以及候选人的一段录音。\n2）将录音送入语音转写服务，生成文字稿。\n3）分析文字稿并计算表达指标，包括填充词使用、每分钟字数、语速评估、回答过短的标记，以及本场面试是否已到最后一轮。\n4）使用带会话记忆的语言模型（按会话 ID 维护上下文）生成结构化的辅导反馈、鼓励语、评分，以及下一个面试问题；若已到最后一轮，则改为生成总结收尾。\n5）将辅导反馈与下一个问题通过语音合成转换为音频。\n6）等待投递确认回调；确认后，向原请求返回文字稿、辅导输出、评分、下一个问题与生成的音频；若未收到确认，则返回重试提示。",
+    "source_spans": [
+      {
+        "start": 343,
+        "end": 1226,
+        "text": "Receives a POST webhook request containing a sessionId, role, turnNumber, and an audio recording from the candidate.\nSends the audio to OpenAI Speech-to-Text (Whisper) to generate a transcript.\nAnalyzes the transcript to compute delivery metrics such as filler-word usage, words per minute, pace assessment, short-answer flags, and whether the session reached the final turn.\nUses an OpenAI chat agent with Window Buffer Memory keyed by sessionId to produce structured JSON coaching feedback, encouragement, a score, and the next interview question (or a wrap-up on the final turn).\nConverts the agent’s feedback and next question into audio using OpenAI Text-to-Speech.\nWaits for a delivery-confirmation callback and then responds to the original webhook with the transcript, coaching outputs, score, next question, and generated audio (or returns a retry message if not confirmed)."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "包含会话 ID、岗位角色、轮次编号与候选人录音的 POST 请求",
+        "语音转写得到的文字稿",
+        "投递确认回调"
+      ],
+      "conditions": [
+        "已到最后一轮时生成总结收尾，而不再给出下一个问题",
+        "需收到投递确认后才返回完整结果"
+      ],
+      "allowed_actions": [
+        "将录音转写为文字稿",
+        "计算表达指标",
+        "使用语言模型生成辅导反馈、鼓励语、评分与下一个问题",
+        "将反馈与问题合成为音频",
+        "等待投递确认回调",
+        "响应原请求"
+      ],
+      "visible_outcomes": [
+        "请求方收到文字稿、辅导输出、评分、下一个问题与生成的音频",
+        "未收到确认时请求方收到重试提示"
+      ],
+      "failure_behavior": [
+        "未收到投递确认时返回重试提示"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-057.packet.json",
+    "packet_sha256": "252b0b1b454c2447459536c25a1bc787cdf9025f84b7677d34684103b586fe64",
+    "public_description_sha256": "09e0099ad4928fe75f7dc368e2e23897403d8b3180170fe90b77bcd02857488c"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-057.response.json",
+    "verification_response_sha256": "17c1d2af5180c1cb8ee4915439245894b480c8e44c59b8a9f0f847b4bc5292f3",
+    "decision": "accept"
+  },
+  "formal_index": 68
+}

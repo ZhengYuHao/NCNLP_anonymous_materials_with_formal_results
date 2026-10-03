@@ -1,0 +1,73 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-037",
+  "source_id": "n8n:12268",
+  "workflow_sha256": "4de9cd2f0c10b6d8620f54ccfd38fba730d5d0e483e88db40cac336c69eae252",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "6a162c99d379991ec2db1d3db3dbd6ee23a56afce8212d2c50d972dd5dc5e4d0",
+  "requirement": {
+    "requirement_text": "系统通过外部请求入口接收同意管理器（Consent Manager）登记申请，先对申请内容进行规范化并提取关键字段，再校验必填字段是否齐备：字段缺失或格式不完整的申请记入审计记录表，用于后续跟进与重新提交；字段齐备的申请进入资格评估。资格评估由语言模型依据 DPDP 的资格标准，从财务能力、技术能力、运营准备度与材料提交情况四个方面进行，其中材料缺失不作为拒绝条件；评估结论以结构化形式给出是否合格、风险等级、判定理由、缺失材料清单与建议的后续步骤。评估合格的申请进入批准流程，系统通过 Gmail 通知合规团队该申请人已通过资格评估、可进入核验；评估不合格的申请，系统通过 Gmail 向申请人发送拒绝邮件，列出存在的问题与重新提交要求。每次处理均在登记表中留痕：先写入初始受理记录，最终以申请人联系邮箱作为标识，更新该记录的最终资格状态。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 767,
+        "text": "📘 Description\nThis workflow automates the complete DPDP-aligned Consent Manager Registration screening pipeline — from intake to eligibility evaluation and final compliance routing.\nEvery incoming registration request is normalized, validated, logged, evaluated by an AI compliance engine (GPT-4o), and then routed into either approval or rejection flows.\nIt intelligently handles missing documentation (treated as a minor issue), evaluates financial/technical/operational capacity, generates structured eligibility JSON, updates registration records in Google Sheets, and sends outcome-specific emails to applicants and compliance teams.\n The workflow creates a full audit trail while reducing manual screening workload and ensuring consistent eligibility decisions."
+      },
+      {
+        "start": 769,
+        "end": 3167,
+        "text": "⚙️ What This Workflow Does (Step-by-Step)\n▶️ Receive Consent Registration Event (Webhook)\n Collects incoming Consent Manager registration applications and triggers the processing pipeline.\n🧹 Extract & Normalize Registration Payload (Code Node)\n Cleans the body payload and extracts key fields:\n action, organizationName, applicationType, contactEmail, netWorth, technicalCapacity, operationalCapacity, documentAttached, submittedAt.\n🔍 Validate Registration Payload Structure (IF Node)\n Checks the presence of mandatory fields.\n Valid → continue to eligibility evaluation\n Invalid → log in the audit sheet.\n📄 Log Invalid Registration Requests to Sheet (Google Sheets)\n Stores malformed or incomplete submissions for audit, follow-up, and retry handling.\n📝 Write Initial Registration Entry to Sheet (Google Sheets)\n Creates the initial intake row in the master registration sheet before applying eligibility logic.\n🧠 Configure GPT-4o — Eligibility Evaluation Model (Azure OpenAI)\n Prepares the AI model used to determine whether the applicant meets DPDP’s eligibility criteria.\n🤖 AI Eligibility Evaluator (DPDP Compliance)\n Analyzes applicant data and evaluates their eligibility based on:\n financial capacity, technical capability, operational readiness, and documentation status.\n Missing documents → NOT a rejection condition.\n Returns strictly formatted JSON with: eligible, riskLevel, decisionReason, missingItems, recommendedNextSteps.\n🧼 Parse AI Eligibility JSON Output (Code Node)\n Converts AI output into valid JSON by removing markdown artifacts and ensuring safe parsing.\n🔎 Validate Eligibility Status (IF Node)\n Routes the outcome:\n Eligible → approval workflow\n Ineligible → rejection email.\n📧 Send Rejection Email to Applicant (Gmail)\n Sends a structured rejection email listing issues and re-submission instructions.\n🔗 Merge Registration + Eligibility Summary (Code Node)\n Combines raw registration data with AI eligibility results into one unified JSON package.\n📬 Send Approval Email to Compliance Team (Gmail)\n Notifies compliance officers that an applicant passed eligibility and is ready for verification.\n🧩 Prepare Status Update Fields (Set Node)\n Constructs the final status value (e.g., “passed”) for updating the database.\n📘 Update Registration Status in Sheet (Google Sheets)\n Updates the applicant’s record using contactEmail as the key, marking the final eligibility status."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过外部请求入口提交的同意管理器登记申请数据"
+      ],
+      "conditions": [
+        "必填字段齐备的申请进入资格评估",
+        "必填字段缺失的申请记入审计记录表",
+        "材料缺失不作为拒绝条件",
+        "评估结论为合格时进入批准流程",
+        "评估结论为不合格时向申请人发送拒绝邮件"
+      ],
+      "allowed_actions": [
+        "规范化申请内容并提取关键字段",
+        "校验必填字段是否齐备",
+        "将不完整或格式错误的申请记入审计记录表",
+        "写入初始受理记录",
+        "从财务能力、技术能力、运营准备度与材料情况评估资格",
+        "生成包含是否合格、风险等级、判定理由、缺失材料与后续建议的结论",
+        "通过 Gmail 通知合规团队",
+        "通过 Gmail 向申请人发送拒绝邮件",
+        "更新该申请人在登记表中的最终资格状态"
+      ],
+      "visible_outcomes": [
+        "审计记录表中保存不完整或格式错误的申请",
+        "合规团队收到资格通过通知邮件",
+        "不合格申请人收到列明问题与重新提交要求的拒绝邮件",
+        "登记表中该申请人的最终资格状态被更新"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-037.packet.json",
+    "packet_sha256": "bf18a75230571e9384849e1d36349ff30074b2b600cb48d1cecd81fb9fe04790",
+    "public_description_sha256": "62309e3343f5890299a81e2615a8a44414cfd5be1e5c1a4af4d8e76be7834e5d"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-037.response.json",
+    "verification_response_sha256": "8ab691d6038ce23b56b04bcd9c9541ee60d9496c937538e6d5c095986005b77c",
+    "decision": "accept"
+  },
+  "formal_index": 48
+}

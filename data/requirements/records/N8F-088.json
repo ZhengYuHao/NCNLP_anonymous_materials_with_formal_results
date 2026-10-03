@@ -1,0 +1,67 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-088",
+  "source_id": "n8n:16122",
+  "workflow_sha256": "f4c55f99f7aa9e0f459c8f2a1d433478789c00a5bb4f55d0be270b3398b24aa0",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "9bbd5b9b1f3d0afbc9c008aca4c7b2ec962b42d36b65323d40d896650c0092e8",
+  "requirement": {
+    "requirement_text": "一、输入\n用户通过表单提交一个 YouTube 视频链接，并选择语言与翻译偏好。\n\n二、主要处理\n1. 调用视频转写与信息获取服务，并行获取该视频的转写文本与视频详情。\n2. 把转写文本与视频元信息合并，识别转写文本的语言，并依据所选的翻译范围构造处理请求。\n3. 交由语言模型生成摘要、要点，以及在需要时生成完整的转写译文。\n4. 把模型输出与视频信息、原始转写文本整理为一份文本文档。\n\n三、最终结果\n把该文本转换为可下载文件，并作为表单的响应返回给用户。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 244,
+        "text": "Quick Overview\nThis workflow collects a YouTube URL via an n8n form, retrieves the video transcript and metadata using Supadata, then uses OpenAI to generate a summary, key points, and optional translation, and returns a downloadable text file."
+      },
+      {
+        "start": 246,
+        "end": 869,
+        "text": "How it works\nReceives a YouTube URL plus language and translation preferences through an n8n form.\nUses Supadata to fetch the video transcript and the video details in parallel.\nCombines transcript and video metadata, detects the transcript language, and builds an OpenAI prompt based on the selected translation scope.\nSends the transcript to OpenAI to produce a summary, key points, and optionally a full translated transcript.\nFormats the AI output together with the video info and original transcript into a single text document.\nConverts the formatted text into a downloadable file and returns it as the form response."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户通过表单提交的 YouTube 视频链接",
+        "用户选择的语言与翻译偏好",
+        "视频的转写文本与视频详情"
+      ],
+      "conditions": [
+        "翻译范围由用户在表单中选择",
+        "完整转写译文仅在所选翻译范围包含翻译时才产出"
+      ],
+      "allowed_actions": [
+        "获取视频的转写文本与详情",
+        "合并转写文本与视频元信息并识别转写语言",
+        "依据所选翻译范围构造处理请求",
+        "由语言模型生成摘要、要点与可选的完整译文",
+        "把输出与视频信息、原始转写文本整理为文本文档",
+        "将文本转换为可下载文件并作为表单响应返回"
+      ],
+      "visible_outcomes": [
+        "用户在提交表单后直接获得一个可下载的文本文件",
+        "文件内容包含摘要、要点、视频信息、原始转写文本，以及在需要时的完整译文"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-088.packet.json",
+    "packet_sha256": "d1ca38eac3ad0ec864a89bffc660ba9400dff65183391ada8f41d4e84d05ccef",
+    "public_description_sha256": "f49b8e359ad9f21ea372a1e3ec2137fdf7ebc8d39e1eefbbf0449e56943a2028"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-088.response.json",
+    "verification_response_sha256": "2a1fe5bde6f60df8828158f4272cf78bb52621991bc96e9e8177a300270bdf90",
+    "decision": "accept"
+  },
+  "formal_index": 99
+}

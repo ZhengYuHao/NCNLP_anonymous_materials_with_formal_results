@@ -1,0 +1,311 @@
+{
+  "task_id": "N8F-085",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "cd1dd53f5dafe1f88e2009c33345a1240d2dc1a5f522836c1a640726d2e127e2",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "获取频道标识列表",
+      "node_type": "code",
+      "operation_family": "input_reception",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "channel_ids",
+          "type": "array",
+          "description": "待监控的 YouTube 频道标识列表，使用自定义指定值或默认频道列表"
+        }
+      ],
+      "native_evidence": ["On form submission", "Get Channel Ids", "Default YouTube Channel Ids"],
+      "requirement_evidence": [
+        "可指定自定义的 YouTube 频道标识；未指定时使用默认频道列表。"
+      ],
+      "rationale": "接收自定义频道标识或回退到默认列表属确定性输入处理，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成 RSS 订阅源并监控新视频",
+      "node_type": "code",
+      "operation_family": "rss_monitoring",
+      "inputs": [
+        {
+          "name": "channel_ids",
+          "type": "array",
+          "description": "待监控的 YouTube 频道标识列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "feed_videos",
+          "type": "array",
+          "description": "从各频道 RSS 订阅源读取到的视频条目"
+        }
+      ],
+      "native_evidence": ["Create RSS Feed URLs", "RSS Read  - Max 15 Latest Videos per Channel"],
+      "requirement_evidence": [
+        "为每个 YouTube 频道自动生成对应的 RSS 订阅源，并监控频道的新视频上传。"
+      ],
+      "rationale": "为每个频道生成 RSS 订阅源并读取视频条目属确定性外部查询动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按时间窗口筛选新视频",
+      "node_type": "code",
+      "operation_family": "time_window_filter",
+      "inputs": [
+        {
+          "name": "feed_videos",
+          "type": "array",
+          "description": "从 RSS 订阅源读取到的视频条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_videos",
+          "type": "array",
+          "description": "最近 3 天窗口内发布的新视频"
+        }
+      ],
+      "native_evidence": ["Label New Videos", "Get New Videos"],
+      "requirement_evidence": [
+        "只保留最近 3 天窗口内发布的新视频（该窗口可按需要调整）。"
+      ],
+      "rationale": "按发布时间窗口筛选视频属确定性过滤逻辑，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "获取视频详细信息",
+      "node_type": "code",
+      "operation_family": "video_detail_fetch",
+      "inputs": [
+        {
+          "name": "recent_videos",
+          "type": "array",
+          "description": "窗口内的新视频条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_details",
+          "type": "array",
+          "description": "通过 YouTube 接口获取的视频详细信息，含缩略图、标题、简介与链接"
+        }
+      ],
+      "native_evidence": ["Create YouTube API URL", "Get YouTube Video Details"],
+      "requirement_evidence": [
+        "通过 YouTube 接口获取视频的详细信息。"
+      ],
+      "rationale": "调用 YouTube 接口获取视频详情属确定性外部查询动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成 HTML 邮件内容",
+      "node_type": "semantic",
+      "operation_family": "email_content_generation",
+      "inputs": [
+        {
+          "name": "video_details",
+          "type": "array",
+          "description": "视频详细信息，含缩略图、标题、简介与链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_html",
+          "type": "string",
+          "description": "含视频缩略图、标题、简介与直达链接的 HTML 邮件内容"
+        }
+      ],
+      "native_evidence": ["Create Email per Video", "Create One Email for All Videos"],
+      "requirement_evidence": [
+        "生成适配各种邮件客户端的 HTML 邮件内容，其中包含视频缩略图、标题、简介与直达链接。"
+      ],
+      "rationale": "生成适配不同邮件客户端的 HTML 邮件内容属开放内容生成任务，需语言模型能力，判为 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "按形式组织邮件通知",
+      "node_type": "code",
+      "operation_family": "notification_assembly",
+      "inputs": [
+        {
+          "name": "email_html",
+          "type": "string",
+          "description": "生成的 HTML 邮件内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_content",
+          "type": "object",
+          "description": "按逐个视频邮件或合并摘要邮件形式组织好的邮件通知内容"
+        }
+      ],
+      "native_evidence": ["One List Object", "Multiple Emails", "Single Email"],
+      "requirement_evidence": [
+        "通过邮件发送通知，形式可为每个新视频单独一封邮件，也可把全部新视频合并为一封摘要邮件。"
+      ],
+      "rationale": "按逐个或合并摘要形式组织邮件属确定性编排与聚合动作，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送邮件通知",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "email_content",
+          "type": "object",
+          "description": "组织好的邮件通知内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Multiple Emails", "Single Email"],
+      "requirement_evidence": [
+        "通过邮件发送通知，形式可为每个新视频单独一封邮件，也可把全部新视频合并为一封摘要邮件。"
+      ],
+      "rationale": "向用户发送邮件通知是用户可见的完成动作，无后续处理，判为 terminal。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送 Telegram 通知",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "video_details",
+          "type": "array",
+          "description": "视频详细信息，含缩略图与链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Telegram"],
+      "requirement_evidence": [
+        "通过 Telegram 发送新视频通知，附带视频缩略图与链接。"
+      ],
+      "rationale": "向用户发送带缩略图与链接的 Telegram 通知是用户可见的完成动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "确定频道列表后生成 RSS 订阅源并监控。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取到视频条目后按时间窗口筛选。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选出近期视频后获取详细信息。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取详情后生成 HTML 邮件内容。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取详情后并行发送 Telegram 通知。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成 HTML 内容后按形式组织邮件。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "组织完成后发送邮件通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "channel_ids",
+      "condition": null,
+      "rationale": "频道标识列表传给 RSS 生成与监控节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "feed_videos",
+      "condition": null,
+      "rationale": "RSS 读取到的视频条目传给时间窗口筛选节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "recent_videos",
+      "condition": null,
+      "rationale": "窗口内新视频传给详情获取节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "video_details",
+      "condition": null,
+      "rationale": "视频详细信息传给 HTML 邮件生成节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n8",
+      "variable": "video_details",
+      "condition": null,
+      "rationale": "缩略图与链接信息传给 Telegram 通知节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "email_html",
+      "condition": null,
+      "rationale": "生成的 HTML 邮件内容传给组织节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "email_content",
+      "condition": null,
+      "rationale": "组织好的邮件内容传给发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7", "n8"],
+  "confidence": 0.9,
+  "notes": "按需求建模为 8 节点：频道标识→RSS 监控→时间窗口筛选→获取详情→生成 HTML 邮件→组织邮件通知→发送邮件；Telegram 通知与邮件通知为并行交付。原生图中表单/定时/手动三种触发为同一输入行为的不同实现，折叠进 n1 契约；Prepare For Telegram Message、Prepare YouTube Data、Workflow Variables 等节点属需求未声明的数据整理细节，未单列。"
+}

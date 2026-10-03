@@ -1,0 +1,297 @@
+{
+  "task_id": "N8F-078",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "516fd4125103a24ee57abc183b0846cb9808d010d21932506a758d92d533157a",
+  "fixtures": [
+    {
+      "fixture_id": "F-ALERTS-SIX",
+      "purpose": "正常用例：缓冲服务返回 6 条告警（SIEM 2 条、EDR 2 条、云安全 2 条），其中 2 条明显重复（同主机同规则同严重度且间隔小于时间窗）、2 条模糊、2 条独立，验证指纹预聚类与 LLM 裁决",
+      "input_data": {
+        "alerts": [
+          {
+            "source": "SIEM",
+            "alert_id": "s-001",
+            "host": "web-01",
+            "rule_id": "R-101",
+            "severity": "high",
+            "timestamp": "2026-09-02T10:00:01Z"
+          },
+          {
+            "source": "SIEM",
+            "alert_id": "s-002",
+            "host": "web-01",
+            "rule_id": "R-101",
+            "severity": "high",
+            "timestamp": "2026-09-02T10:00:05Z"
+          },
+          {
+            "source": "EDR",
+            "alert_id": "e-001",
+            "host": "db-02",
+            "rule_id": "R-202",
+            "severity": "medium",
+            "timestamp": "2026-09-02T10:03:00Z"
+          },
+          {
+            "source": "EDR",
+            "alert_id": "e-002",
+            "host": "db-02",
+            "rule_id": "R-203",
+            "severity": "medium",
+            "timestamp": "2026-09-02T10:04:00Z"
+          },
+          {
+            "source": "CLOUD",
+            "alert_id": "c-001",
+            "host": "gateway-01",
+            "rule_id": "R-301",
+            "severity": "low",
+            "timestamp": "2026-09-02T11:00:00Z"
+          },
+          {
+            "source": "CLOUD",
+            "alert_id": "c-002",
+            "host": "api-03",
+            "rule_id": "R-302",
+            "severity": "low",
+            "timestamp": "2026-09-02T11:10:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-ALERTS-SINGLE",
+      "purpose": "边界用例：缓冲服务返回 1 条独立告警，无重复无模糊簇，验证不调用语言模型直接建单",
+      "input_data": {
+        "alerts": [
+          {
+            "source": "SIEM",
+            "alert_id": "s-010",
+            "host": "web-99",
+            "rule_id": "R-999",
+            "severity": "high",
+            "timestamp": "2026-09-02T12:00:00Z"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BUFFER-STORE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "post_alert_to_buffer",
+      "request_contract": {
+        "alert": "normalized_alert"
+      },
+      "response_contract": {
+        "stored": true,
+        "buffer_id": "buf-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BUFFER-FETCH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_alerts_for_window",
+      "request_contract": {
+        "window_start": "2026-09-02T09:00:00Z",
+        "window_end": "2026-09-02T12:00:00Z"
+      },
+      "response_contract": {
+        "alerts": "alerts_from_fixture"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLUSTER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "operation": "decide_ambiguous_cluster",
+      "request_contract": {
+        "cluster": "ambiguous_cluster"
+      },
+      "response_contract": {
+        "decision": "merge",
+        "case_representative": "e-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TICKETING-UPSERT",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "bulk_upsert_cases",
+      "request_contract": {
+        "cases": "final_cases"
+      },
+      "response_contract": {
+        "created": 2,
+        "updated": 3,
+        "total": 5
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-SUMMARY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_cycle_summary",
+      "request_contract": {
+        "channel": "#sec-alerts",
+        "text": "summary_with_counts"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "5555555555.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-SIX-ALERTS-CLUSTERING",
+      "kind": "positive",
+      "fixture_ids": ["F-ALERTS-SIX"],
+      "mock_ids": ["M-BUFFER-STORE", "M-BUFFER-FETCH", "M-LLM-CLUSTER", "M-TICKETING-UPSERT", "M-SLACK-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-CL-1",
+          "target": "exec_log.normalized_alerts",
+          "operator": "length_equals",
+          "expected": 6,
+          "rationale": "缓冲服务返回 6 条告警，规范化后必须全部保留"
+        },
+        {
+          "assertion_id": "A-CL-1B",
+          "target": "exec_log.buffer.store_calls",
+          "operator": "length_equals",
+          "expected": 6,
+          "rationale": "需求规定每条告警规范化后写入外部告警缓冲服务暂存，6 条告警必须产生 6 次写入"
+        },
+        {
+          "assertion_id": "A-CL-2",
+          "target": "exec_log.normalized_alerts[0].source",
+          "operator": "equals",
+          "expected": "SIEM",
+          "rationale": "规范化结构必须保留告警来源字段"
+        },
+        {
+          "assertion_id": "A-CL-3",
+          "target": "exec_log.normalized_alerts[0].fingerprint",
+          "operator": "equals",
+          "expected": "web-01|R-101|high",
+          "rationale": "指纹必须按主机、规则标识与严重程度三要素生成"
+        },
+        {
+          "assertion_id": "A-CL-4",
+          "target": "exec_log.preclusters.obvious",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "s-001 与 s-002 同指纹且间隔 4 秒在时间窗内，必须预聚为一簇"
+        },
+        {
+          "assertion_id": "A-CL-5",
+          "target": "exec_log.llm.decided_clusters",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅难以判定的簇交由语言模型，6 条告警中仅 1 个模糊簇送 LLM 裁决"
+        },
+        {
+          "assertion_id": "A-CL-6",
+          "target": "exec_log.llm.decision",
+          "operator": "equals",
+          "expected": "merge",
+          "rationale": "语言模型的裁决结果必须被采用并反映到最终聚类"
+        },
+        {
+          "assertion_id": "A-CL-7",
+          "target": "exec_log.final_cases",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "6 条告警经预聚类（2 并 1）与 LLM 裁决（2 并 1）后应形成 4 个统一事件工单"
+        },
+        {
+          "assertion_id": "A-CL-8",
+          "target": "exec_log.ticketing.upsert.total",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "工单系统 upsert 总数必须与最终聚类数量一致"
+        },
+        {
+          "assertion_id": "A-CL-9",
+          "target": "exec_log.slack.summary.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求向 Slack 发布汇总消息，发送必须成功"
+        },
+        {
+          "assertion_id": "A-CL-10",
+          "target": "exec_log.slack.summary.case_count",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "Slack 汇总消息必须说明本轮新建或更新的统一工单数量（4）"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SINGLE-ALERT-NO-LLM",
+      "kind": "boundary",
+      "fixture_ids": ["F-ALERTS-SINGLE"],
+      "mock_ids": ["M-BUFFER-STORE", "M-BUFFER-FETCH", "M-TICKETING-UPSERT", "M-SLACK-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-SA-0",
+          "target": "exec_log.buffer.store_calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "需求规定每条告警规范化后写入外部告警缓冲服务暂存，单条告警必须产生 1 次写入"
+        },
+        {
+          "assertion_id": "A-SA-1",
+          "target": "exec_log.preclusters.obvious",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "单条告警无重复，不应产生任何预聚类"
+        },
+        {
+          "assertion_id": "A-SA-2",
+          "target": "exec_log.llm_called",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "没有模糊簇时不得调用语言模型"
+        },
+        {
+          "assertion_id": "A-SA-3",
+          "target": "exec_log.final_cases",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "单条独立告警应直接形成 1 个统一事件工单"
+        },
+        {
+          "assertion_id": "A-SA-4",
+          "target": "exec_log.ticketing.upsert.total",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "工单 upsert 数量必须为 1"
+        },
+        {
+          "assertion_id": "A-SA-5",
+          "target": "exec_log.slack.summary.case_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "Slack 汇总必须报告 1 个工单"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 6 条告警的完整聚类路径（规范化、写入缓冲服务、指纹、预聚类、LLM 裁决模糊簇、构建 4 个工单并 upsert、Slack 汇总）与单条告警边界路径（写入缓冲、不调 LLM 直接建单）。告警缓冲写入与取回、Anthropic 裁决、工单系统、Slack 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数组长度、字符串相等、布尔值相等与数量相等。"
+}

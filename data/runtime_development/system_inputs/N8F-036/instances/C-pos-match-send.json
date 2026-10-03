@@ -1,0 +1,60 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-036",
+  "case_id": "C-pos-match-send",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-webhook-leads": {
+        "leads": [
+          {
+            "id": "L1",
+            "name": "Alice Smith",
+            "email": "alice@x.com",
+            "budget": 500000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 3
+            }
+          },
+          {
+            "id": "L2",
+            "name": "Bob Jones",
+            "email": "bob@x.com",
+            "budget": 450000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 2
+            }
+          }
+        ]
+      },
+      "F-listings": {
+        "listings": [
+          {
+            "id": "P1",
+            "city": "Austin",
+            "bedrooms": 2,
+            "price": 420000
+          },
+          {
+            "id": "P2",
+            "city": "Austin",
+            "bedrooms": 3,
+            "price": 520000
+          }
+        ]
+      },
+      "F-decks": {
+        "decks": [
+          {
+            "listing_id": "P1",
+            "file_id": "deck_P1",
+            "url": "https://drive.example/deck_P1.pdf"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "E6A68712172EF948802BB6993DEF7BFD71FDB10EB2CD1DD7AAE98D2CC3A6F2FD"
+}

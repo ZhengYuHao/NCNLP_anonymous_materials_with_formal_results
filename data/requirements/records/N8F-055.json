@@ -1,0 +1,62 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-055",
+  "source_id": "n8n:9344",
+  "workflow_sha256": "ac9c806ac0c0f4c47534bdd364a9812d01b713df0ddeb650ef53f7116aff6250",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "bdf8109a339f048901f6603230239de2a5116f77209d3a5f5844e21464e8ae44",
+  "requirement": {
+    "requirement_text": "系统根据保存在 Google Drive 中的 JSON 工作流文件，自动生成可用于模板发布的说明文案并交付给指定人员。\n\n1）由人工手动触发后开始处理。\n2）在指定的 Google Drive 文件夹中搜索 JSON 格式的工作流文件。\n3）逐个处理该文件夹中找到的每个 JSON 文件：下载文件并准备用于数据提取。\n4）从下载的 JSON 内容中解析出工作流数据。\n5）使用语言模型生成简洁的标题与详细的描述。\n6）将生成结果转换为结构化的 Markdown，用于模板发布。\n7）再生成同一份描述的 HTML 版本，用于邮件发送。\n8）将生成的信息记入 Google Sheets 以备存档。\n9）向指定收件人发送邮件，正文包含 Markdown 与 HTML 两种格式的描述内容。",
+    "source_spans": [
+      {
+        "start": 302,
+        "end": 952,
+        "text": "Manually triggers the workflow to start processing.\nSearches a specified Google Drive folder for JSON workflow files.\nIterates through each JSON file found in that folder.\nDownloads each file and prepares it for data extraction.\nParses workflow data from the downloaded JSON content.\nUses Azure OpenAI GPT-4 to generate concise titles and detailed descriptions.\nConverts the AI output into structured Markdown for n8n template publishing.\nCreates an HTML version of the description for email delivery.\nLogs generated details into a Google Sheet for record-keeping.\nSends an email containing the Markdown and HTML descriptions to the target recipient."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "指定 Google Drive 文件夹中的 JSON 工作流文件",
+        "指定的收件人地址"
+      ],
+      "conditions": [
+        "由人工手动触发执行",
+        "逐个处理文件夹中找到的每个 JSON 文件"
+      ],
+      "allowed_actions": [
+        "搜索并下载 JSON 工作流文件",
+        "解析 JSON 中的工作流数据",
+        "使用语言模型生成标题与描述",
+        "转换为结构化 Markdown 与 HTML",
+        "将生成信息记入 Google Sheets",
+        "向指定收件人发送邮件"
+      ],
+      "visible_outcomes": [
+        "收件人收到包含 Markdown 与 HTML 描述内容的邮件",
+        "Google Sheets 中新增本次生成的信息记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-055.packet.json",
+    "packet_sha256": "add1ca3c8a6d1cb260d996f6c9c3a6a88964aab7ddadafa950cba3892c7e3808",
+    "public_description_sha256": "dd8538f559977cca7671cf67a0f37e654acdeb329a0049281943bbdc7d0f69ef"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-055.response.json",
+    "verification_response_sha256": "c2ca14d3f809d723ef0c0c7f66f00a54543012cf68cd35335e5e23c05cf565a4",
+    "decision": "accept"
+  },
+  "formal_index": 66
+}

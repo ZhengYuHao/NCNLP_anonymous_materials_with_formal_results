@@ -1,0 +1,71 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-096",
+  "source_id": "n8n:11401",
+  "workflow_sha256": "570065f3bac86c114e9e30b52e2ee2d2b623b4b7779b717be933d5d752012c73",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "c3cf5840c8f7960c99c2559c43f2636eaf7adeb65d1e1d45e645a053c43807e6",
+  "requirement": {
+    "requirement_text": "自动监控 Google Search Console 的数据，以便在其演变为严重问题之前发现 SEO 表现下滑。处理过程为：将上月在 Google Search Console 中的表现与前一月对比，识别出排名与点击量下滑的页面；对每一个下滑页面，获取其排名靠前的搜索查询词，并从线上网站抓取该页面实际的 Title 与 H2 标签；随后由语言模型分析该页面失效的原因，即用户搜索意图（搜索查询词）与页面实际内容之间的差距；最后将一份“顾问式”报告发送到 Slack，报告包含量化数据与具体的改进任务（例如需要改写的 Title 与需要补充的 H2 标题）。该审计每周一早上生成一次。",
+    "source_spans": [
+      {
+        "start": 44,
+        "end": 453,
+        "text": "Automatically monitor your Google Search Console data to catch SEO performance drops before they become critical. This workflow identifies pages losing rankings and clicks, scrapes the live content, and uses AI to analyze the gap between \"Search Queries\" (User Intent) and \"Page Content\" (Reality). It then delivers actionable fixes—including specific Title rewrites and missing H2 headings—directly to Slack."
+      },
+      {
+        "start": 578,
+        "end": 1087,
+        "text": "How it works\nCompare & Detect: Compares last month's GSC performance with the previous month to identify pages with declining traffic.\nDeep Dive: For each struggling page, it fetches the top search queries and scrapes the actual Title and H2 tags from your live website.\nAI Analysis: An AI Agent analyzes why the page is failing by comparing user intent vs. actual content.\nReport: Sends a \"Consultant-style\" report to Slack with quantitative data and specific improvement tasks (e.g., \"Add this H2 heading\")."
+      },
+      {
+        "start": 1410,
+        "end": 1453,
+        "text": "receive your SEO audit every Monday morning"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Search Console 中上月与前一月的表现数据",
+        "下滑页面对应的搜索查询词",
+        "下滑页面在线上网站中实际的 Title 与 H2 标签"
+      ],
+      "conditions": [
+        "仅对排名与点击量下滑的页面做深入分析",
+        "每周一早上执行一次"
+      ],
+      "allowed_actions": [
+        "对比上月与前一月的表现以识别下滑页面",
+        "获取下滑页面的热门搜索查询词",
+        "抓取页面线上实际的 Title 与 H2 标签",
+        "使用语言模型对比搜索意图与页面实际内容，分析页面失效原因",
+        "向 Slack 发送顾问式审计报告"
+      ],
+      "visible_outcomes": [
+        "Slack 中收到包含量化数据与具体改进任务（Title 改写、缺失的 H2 标题）的 SEO 审计报告"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-096.packet.json",
+    "packet_sha256": "5435491d07aea81e607272c09c8ab56b9a1d7d70a8a322b22b9d40720431acf5",
+    "public_description_sha256": "c363a874a122bdbfb88c48e25af3b0424103aa96c72f0d25b2e16f5156816f0a"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-096.response.json",
+    "verification_response_sha256": "2145a6656f20b1a4e93f328618b1f62962afc26bac338f59e72f376868c08e04",
+    "decision": "accept"
+  },
+  "formal_index": 107
+}

@@ -1,0 +1,278 @@
+{
+  "task_id": "N8F-052",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "4fa036ae4c8b6d0335c8e3fadd9130489159cc9d9e4336e6ba0af7a76cd774af",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "触发 Instagram 达人线索采集流程",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "When clicking 'Test workflow' (manualTrigger)"
+      ],
+      "requirement_evidence": [
+        "系统自动采集 Instagram 达人线索并沉淀为线索库"
+      ],
+      "rationale": "采集流水线的流程入口（原生手动触发），为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "设定定向参数：目标平台、兴趣领域与目标国家",
+      "node_type": "code",
+      "operation_family": "config_setup",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "targeting_params",
+          "type": "object",
+          "description": "目标平台、兴趣领域与目标国家"
+        }
+      ],
+      "native_evidence": [
+        "Edit Fields (set)"
+      ],
+      "requirement_evidence": [
+        "设定定向参数：目标平台（Instagram）、兴趣领域（例如“beauty & hair”）与目标国家（例如“USA”）"
+      ],
+      "rationale": "需求声明的定向参数设定，为确定性配置动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型生成优化的 Google 搜索查询",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "targeting_params",
+          "type": "object",
+          "description": "定向参数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_queries",
+          "type": "array",
+          "description": "优化的 Google 搜索查询"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent (agent)",
+        "OpenAI Chat Model (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型据此自动生成优化的 Google 搜索查询，用于查找所选领域与地区内的相关 Instagram 主页"
+      ],
+      "rationale": "需求声明由语言模型生成搜索查询，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "从 Google 抓取搜索结果，收集符合搜索条件的 Instagram 主页链接",
+      "node_type": "code",
+      "operation_family": "external_fetch",
+      "inputs": [
+        {
+          "name": "search_queries",
+          "type": "array",
+          "description": "搜索查询"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_urls",
+          "type": "array",
+          "description": "符合搜索条件的 Instagram 主页链接集合"
+        }
+      ],
+      "native_evidence": [
+        "HTTP Request (httpRequest, Apify Google Search Scraper)",
+        "Split Out (splitOut)"
+      ],
+      "requirement_evidence": [
+        "从 Google 抓取搜索结果，收集符合搜索条件的大量 Instagram 主页链接"
+      ],
+      "rationale": "需求声明的外部抓取动作，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "抓取 Instagram 主页详细资料（用户名、粉丝数与个人简介）",
+      "node_type": "code",
+      "operation_family": "external_fetch",
+      "inputs": [
+        {
+          "name": "profile_urls",
+          "type": "array",
+          "description": "Instagram 主页链接集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_details",
+          "type": "array",
+          "description": "各主页的用户名、粉丝数与个人简介"
+        }
+      ],
+      "native_evidence": [
+        "HTTP Request1 (httpRequest, Apify Instagram Scraper)",
+        "Loop Over Items (splitInBatches, 逐主页处理)"
+      ],
+      "requirement_evidence": [
+        "抓取这些 Instagram 主页的详细资料，包括用户名、粉丝数与个人简介"
+      ],
+      "rationale": "需求声明的外部抓取动作，为确定性外部调用，判 code；逐主页批处理循环为实现细节，折叠进集合级契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型从主页简介中提取邮箱地址",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "profile_details",
+          "type": "array",
+          "description": "主页详细资料"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enriched_leads",
+          "type": "array",
+          "description": "提取邮箱后的线索记录（用户名、粉丝数、邮箱、领域）"
+        }
+      ],
+      "native_evidence": [
+        "Information Extractor (informationExtractor)",
+        "OpenAI Chat Model1 (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "使用语言模型从主页简介中提取邮箱地址，即使邮箱被隐藏或采用非常规写法也能识别"
+      ],
+      "rationale": "需求声明由语言模型从简介中提取邮箱，判 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "将线索存入数据库：新线索新增，已有线索按字段更新",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "enriched_leads",
+          "type": "array",
+          "description": "含邮箱的线索记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Postgres (postgres, upsert)"
+      ],
+      "requirement_evidence": [
+        "将线索存入数据库：新线索自动新增，已有线索则按用户名、粉丝数、邮箱、领域等字段更新"
+      ],
+      "rationale": "需求声明的数据库写入（新增/更新），为最终交付，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后设定定向参数"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "参数设定后生成搜索查询"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成查询后抓取 Google 结果"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "收集链接后抓取主页资料"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得资料后提取邮箱"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取完成后写入数据库"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "targeting_params",
+      "condition": null,
+      "rationale": "搜索查询基于定向参数生成"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "search_queries",
+      "condition": null,
+      "rationale": "Google 抓取使用生成的查询"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "profile_urls",
+      "condition": null,
+      "rationale": "主页资料抓取基于收集到的链接"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "profile_details",
+      "condition": null,
+      "rationale": "邮箱提取基于主页简介"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "enriched_leads",
+      "condition": null,
+      "rationale": "数据库写入使用提取邮箱后的线索"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "线性流水线建模。原生 Loop Over Items 逐主页批处理循环为实现细节，折叠进 n5/n6/n7 的集合级契约（需求声明处理搜索所得的主页集合，循环为数据并行而非控制流）。原生 Code（查询转义）、Code1（URL 清理）等为实现细节，未纳入。"
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-084",
+  "source_id": "n8n:14308",
+  "workflow_sha256": "0743cb45938764956c746b07454f9dc1f695a98d514f8cfa3d13cada44d2fdd2",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "2825c5780117d5ee02bffc09933168ffa85d238586378992f3bca7f1b5c3381a",
+  "requirement": {
+    "requirement_text": "一、输入\n用户向 LINE 机器人发送一条文本消息，系统解析传入的消息事件。\n\n二、主要处理\n1. 把消息交给语言模型，要求其在一次结构化回复中以三个不同角色分别给出建议。\n2. 三个角色分别为：算命先生，给出神秘、以命运为导向的建议；商业教练，给出讲逻辑、以行动为导向的指导；挚友，给出轻松、共情的鼓励。\n3. 把本次建议写入 Google Sheets，用于留存历史记录。\n\n三、最终结果\n向用户返回一条卡片轮播消息，每个角色一张卡片，各卡片以不同颜色区分。",
+    "source_spans": [
+      {
+        "start": 238,
+        "end": 301,
+        "text": "When a user sends a text message to the LINE bot, the workflow:"
+      },
+      {
+        "start": 303,
+        "end": 620,
+        "text": "Parses the incoming LINE Webhook event\nPasses the message to Google Gemini via Basic LLM Chain\nGemini replies as three distinct personas in a single structured response\nThe advice is logged to Google Sheets for history tracking\nA Flex Message carousel is sent back to the user — one card per persona, each color-coded"
+      },
+      {
+        "start": 622,
+        "end": 791,
+        "text": "The three personas:\n🔮 Fortune Teller — mystical, fate-driven advice\n💼 Business Coach — logical, action-oriented guidance\n😊 Best Friend — casual, empathetic encouragement"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户向 LINE 机器人发送的一条文本消息"
+      ],
+      "conditions": [
+        "三个角色在同一次结构化回复中分别给出建议",
+        "三个角色的风格固定为：算命先生（神秘、命运导向）、商业教练（逻辑、行动导向）、挚友（轻松、共情）"
+      ],
+      "allowed_actions": [
+        "解析传入的消息事件",
+        "由语言模型以三个角色分别生成建议",
+        "把本次建议写入 Google Sheets 以留存历史",
+        "向用户发送卡片轮播消息"
+      ],
+      "visible_outcomes": [
+        "用户在 LINE 中收到一条卡片轮播消息，每个角色一张卡片且配色不同",
+        "Google Sheets 中新增一条建议历史记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-084.packet.json",
+    "packet_sha256": "602cb5a8b60cb7928516395754542704ec1dd7c699b695ad0b97a9ddb8356a1c",
+    "public_description_sha256": "16d50e206c474da97ef59abe012f857e4c62e4894b18b67128eb43c007ba3415"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-084.response.json",
+    "verification_response_sha256": "852a21c348add89cca47b3da476b654e0c153fbc8302e27996ba6deb18a730c8",
+    "decision": "accept"
+  },
+  "formal_index": 95
+}

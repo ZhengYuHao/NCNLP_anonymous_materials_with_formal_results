@@ -1,0 +1,358 @@
+{
+  "task_id": "N8F-010",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "d3a97c11ea945405376f92ae26526a701292b12470d1f50a7485678b5f7765c3",
+  "fixtures": [
+    {
+      "fixture_id": "F-NEW-CONTRACT",
+      "purpose": "指定 Google Drive 文件夹中新建的合同 PDF，用于触发完整处理链",
+      "input_data": {
+        "file_id": "DRV-F-1001",
+        "name": "vendor-agreement.pdf",
+        "mime_type": "application/pdf",
+        "folder_id": "DRV-IN-01",
+        "is_new": true,
+        "extracted_text": "This vendor agreement sets forth the terms between Acme and Vendor including payment terms and renewal."
+      }
+    },
+    {
+      "fixture_id": "F-DRIVE-NO-NEW",
+      "purpose": "目标文件夹无新建文件，验证不触发处理",
+      "input_data": {
+        "new_files": []
+      }
+    },
+    {
+      "fixture_id": "F-LLM-STRUCTURED",
+      "purpose": "固定的语言模型结构化合同分析结果",
+      "input_data": {
+        "contract_type": "Vendor Agreement",
+        "key_terms": [
+          "payment terms",
+          "term length",
+          "liability cap"
+        ],
+        "risk_score": 72,
+        "risks": [
+          "uncapped liability",
+          "auto-renewal"
+        ],
+        "missing_clauses": [
+          "force majeure"
+        ],
+        "recommendations": [
+          "add liability cap",
+          "review renewal terms"
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DRIVE-TRIGGER",
+      "dependency_type": "googleDriveTrigger",
+      "operation": "list_new_files",
+      "request_contract": {
+        "folder_id": "DRV-IN-01",
+        "frequency": "every_minute"
+      },
+      "response_contract": {
+        "new_files": [
+          {
+            "file_id": "DRV-F-1001",
+            "name": "vendor-agreement.pdf",
+            "mime_type": "application/pdf"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-DOWNLOAD",
+      "dependency_type": "googleDrive",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "DRV-F-1001"
+      },
+      "response_contract": {
+        "file_id": "DRV-F-1001",
+        "content": "This vendor agreement sets forth the terms between Acme and Vendor including payment terms and renewal.",
+        "mime_type": "application/pdf"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STRUCTURED",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_contract",
+      "request_contract": {
+        "input_is_pdf_text": true
+      },
+      "response_contract": {
+        "contract_type": "Vendor Agreement",
+        "key_terms": [
+          "payment terms",
+          "term length",
+          "liability cap"
+        ],
+        "risk_score": 72,
+        "risks": [
+          "uncapped liability",
+          "auto-renewal"
+        ],
+        "missing_clauses": [
+          "force majeure"
+        ],
+        "recommendations": [
+          "add liability cap",
+          "review renewal terms"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-HTML",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_html_report",
+      "request_contract": {
+        "input_is_structured_analysis": true
+      },
+      "response_contract": {
+        "html": "<html><body><h1>Attorney Review Report</h1><p>Risk score: 72</p></body></html>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HTML2PDF",
+      "dependency_type": "htmlcsstopdf",
+      "operation": "convert_html_to_pdf",
+      "request_contract": {
+        "input_is_html": true
+      },
+      "response_contract": {
+        "file_id": "RPT-0001",
+        "name": "vendor-agreement-report.pdf",
+        "folder_id": "DRV-OUT-01",
+        "link": "https://drive.example.com/file/RPT-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-MOVE",
+      "dependency_type": "googleDrive",
+      "operation": "move_file",
+      "request_contract": {
+        "file_id": "DRV-F-1001",
+        "destination": "processed"
+      },
+      "response_contract": {
+        "file_id": "DRV-F-1001",
+        "status": "moved",
+        "destination": "DRV-PROCESSED"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-POST",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#legal-reports",
+        "message_must_contain": [
+          "risk details",
+          "report link"
+        ]
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-NEW-CONTRACT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-NEW-CONTRACT",
+        "F-LLM-STRUCTURED"
+      ],
+      "mock_ids": [
+        "M-DRIVE-TRIGGER",
+        "M-DRIVE-DOWNLOAD",
+        "M-LLM-STRUCTURED",
+        "M-LLM-HTML",
+        "M-HTML2PDF",
+        "M-DRIVE-MOVE",
+        "M-SLACK-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.report_pdf.link",
+          "operator": "exists",
+          "rationale": "HTML 报告必须已转换为 PDF 并保存到目标文件夹",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.report_pdf.folder_id",
+          "operator": "equals",
+          "expected": "DRV-OUT-01",
+          "rationale": "PDF 必须保存到目标 Google Drive 文件夹"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.original_file.status",
+          "operator": "equals",
+          "expected": "moved",
+          "rationale": "原始合同文件必须被移动"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.original_file.destination",
+          "operator": "contains",
+          "expected": "PROCESSED",
+          "rationale": "原始文件必须移入已处理文件夹"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.structured_analysis.contract_type",
+          "operator": "equals",
+          "expected": "Vendor Agreement",
+          "rationale": "结构化分析必须来自固定语言模型响应"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.structured_analysis.risk_score",
+          "operator": "equals",
+          "expected": 72,
+          "rationale": "风险评分必须等于固定响应中的 72"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.slack_message.text",
+          "operator": "contains",
+          "expected": "72",
+          "rationale": "Slack 完成消息必须包含风险详情（风险评分）"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.slack_message.text",
+          "operator": "contains",
+          "expected": "https://drive.example.com/file/RPT-0001",
+          "rationale": "Slack 完成消息必须附带报告链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-NO-NEW-FILE",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-DRIVE-NO-NEW"
+      ],
+      "mock_ids": [
+        "M-DRIVE-TRIGGER"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.report_pdf",
+          "operator": "not_exists",
+          "rationale": "无新建文件时不生成报告 PDF",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.slack_message",
+          "operator": "not_exists",
+          "rationale": "无新建文件时不发送 Slack 完成消息",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.original_file",
+          "operator": "not_exists",
+          "rationale": "无新建文件时不移动任何文件",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-STRUCTURE-COMPLETE",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-NEW-CONTRACT",
+        "F-LLM-STRUCTURED"
+      ],
+      "mock_ids": [
+        "M-DRIVE-TRIGGER",
+        "M-DRIVE-DOWNLOAD",
+        "M-LLM-STRUCTURED",
+        "M-LLM-HTML",
+        "M-HTML2PDF",
+        "M-DRIVE-MOVE",
+        "M-SLACK-POST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.structured_analysis.contract_type",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含合同类型字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.structured_analysis.key_terms",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含关键条款字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-03",
+          "target": "output.structured_analysis.risk_score",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含风险评分字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-04",
+          "target": "output.structured_analysis.risks",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含风险项字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-05",
+          "target": "output.structured_analysis.missing_clauses",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含缺失条款字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-06",
+          "target": "output.structured_analysis.recommendations",
+          "operator": "exists",
+          "rationale": "结构化分析必须包含改进建议字段，六类字段齐备才满足契约",
+          "expected": true
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Google Drive 触发/下载/移动、LLM 结构化分析与 HTML 生成、HTML→PDF、Slack 均为固定模拟服务，无真实文件与副作用。是否触发、报告落盘位置、邮件/消息内容均由固定输入决定。"
+}

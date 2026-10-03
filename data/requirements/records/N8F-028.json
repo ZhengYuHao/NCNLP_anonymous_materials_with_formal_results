@@ -1,0 +1,125 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-028",
+  "source_id": "n8n:13518",
+  "workflow_sha256": "2752fd29a2a78c392eb52343d4563f5c243e812097427e41b0446a5dd578ece3",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "205c715ae0d09f101e0f7417aaddf964ebd44400957f03880ecd0f44fc468ba7",
+  "requirement": {
+    "requirement_text": "每 24 小时运行一次，自动推进此前因时机不当而被暂停的线索的再接触。\n\n每次运行时，从 HubSpot 拉取最近的线索及其关键活动与生命周期属性（用于判断跟进时机），单次最多取 20 条；仅保留此前因时机不当被暂停的线索，避免打扰进行中的机会。\n\n符合条件的线索以逐条或分批的方式处理。对每个线索，由语言模型基于线索上下文生成一封简短、友好的再接触跟进邮件正文，不使用客户关系管理系统的内部标签，不带推销口吻；随后把生成结果整理为可用字段：主题、正文、收件人邮箱与负责人信息。\n\n流程不自动发送邮件，而是在 Gmail 中创建一封草稿供人工审阅，并在 Slack 中通知该线索的负责人：草稿已就绪、该线索值得重新跟进。\n\n若语言模型生成失败，则在 Slack 中发送告警，附上该线索的姓名、邮箱与生成错误信息，以便仍能转为人工跟进。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 280,
+        "text": "This workflow automates daily re-engagement for HubSpot leads that were previously paused due to timing. It runs every 24 hours, fetches recent leads with activity data, and filters only those marked as “bad timing,” ensuring active opportunities are not disturbed."
+      },
+      {
+        "start": 281,
+        "end": 569,
+        "text": "Qualified leads are processed in batches, and an AI agent generates a short, polite follow-up email designed to reopen the conversation without sounding salesy. Instead of sending automatically, the workflow creates a Gmail draft for human review and notifies the assigned owner in Slack."
+      },
+      {
+        "start": 570,
+        "end": 686,
+        "text": "If AI generation fails, the workflow sends a Slack alert with the lead details so manual follow-up can still happen."
+      },
+      {
+        "start": 941,
+        "end": 1033,
+        "text": "Pulls up to 20 leads with key activity and lifecycle properties needed for follow-up timing."
+      },
+      {
+        "start": 1070,
+        "end": 1163,
+        "text": "Keeps only leads that were previously paused due to timing (targets cold opportunities only)."
+      },
+      {
+        "start": 1198,
+        "end": 1293,
+        "text": "Processes leads one-by-one / in batches to prevent rate-limit issues and keep execution stable."
+      },
+      {
+        "start": 1346,
+        "end": 1444,
+        "text": "Creates a short, friendly follow-up message based on lead context (no CRM labels, no salesy tone)."
+      },
+      {
+        "start": 1462,
+        "end": 1539,
+        "text": "Normalizes AI output into usable fields (subject/body/toEmail/owner details)."
+      },
+      {
+        "start": 1579,
+        "end": 1635,
+        "text": "Creates a Gmail draft (human-in-the-loop; no auto-send)."
+      },
+      {
+        "start": 1677,
+        "end": 1760,
+        "text": "Notifies the assigned owner that a draft is ready and the lead is worth revisiting."
+      },
+      {
+        "start": 1788,
+        "end": 1854,
+        "text": "Builds a clean error context (lead name/email + AI error message)."
+      },
+      {
+        "start": 1888,
+        "end": 1959,
+        "text": "Alerts the owner when AI fails so the lead can be followed up manually."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "每 24 小时一次的触发",
+        "HubSpot 中最近的线索及其关键活动与生命周期属性",
+        "线索的负责人信息"
+      ],
+      "conditions": [
+        "单次最多拉取 20 条线索",
+        "仅保留此前因时机不当被暂停的线索",
+        "线索以逐条或分批方式处理",
+        "邮件正文简短友好，不使用客户关系管理系统内部标签，不带推销口吻",
+        "不自动发送，只创建草稿供人工审阅"
+      ],
+      "allowed_actions": [
+        "从 HubSpot 拉取线索并按状态过滤",
+        "分批或逐条处理线索",
+        "调用语言模型生成再接触跟进邮件正文",
+        "把生成结果整理为主题、正文、收件人邮箱与负责人信息",
+        "在 Gmail 中创建草稿",
+        "在 Slack 通知负责人草稿已就绪",
+        "生成失败时在 Slack 发送含线索详情与错误信息的告警"
+      ],
+      "visible_outcomes": [
+        "Gmail 中为该线索创建一封待人工审阅的草稿邮件",
+        "负责人在 Slack 收到草稿就绪通知",
+        "生成失败时负责人在 Slack 收到含线索姓名、邮箱与错误信息的告警"
+      ],
+      "failure_behavior": [
+        "语言模型生成失败时，向 Slack 发送告警，附上线索姓名、邮箱与生成错误信息，以便转为人工跟进"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-028.packet.json",
+    "packet_sha256": "1a4c9a94487cbb575cbf3e2dffbad477727751fca3aaea2203646d538289a87c",
+    "public_description_sha256": "a11c83f2a3f6682fda84574e6179b7c62f7ac74cb3f1a7fa5ae051038a1426f2"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-028.response.json",
+    "verification_response_sha256": "86fe26f300b1860add674a27061a3bad6e26199e2cf502f5223bce7aaec8f1b4",
+    "decision": "accept"
+  },
+  "formal_index": 39
+}

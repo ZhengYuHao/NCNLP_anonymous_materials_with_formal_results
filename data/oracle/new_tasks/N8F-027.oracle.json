@@ -1,0 +1,259 @@
+{
+  "task_id": "N8F-027",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "85bfaf7aa4dc571771b0c085792051e4299f299d3860d9ce3d4b3ecef4fe7b77",
+  "fixtures": [
+    {
+      "fixture_id": "F-LEADS-MIXED",
+      "purpose": "正常用例：3 条线索中 2 条需跟进（一条会回复、一条不回复），1 条状态为 closed 无需跟进",
+      "input_data": {
+        "leads": [
+          {
+            "lead_id": "L001",
+            "email": "alice@corp-a.com",
+            "name": "Alice",
+            "company": "Corp A",
+            "status": "active",
+            "outreach_stage": "first"
+          },
+          {
+            "lead_id": "L002",
+            "email": "bob@corp-b.com",
+            "name": "Bob",
+            "company": "Corp B",
+            "status": "active",
+            "outreach_stage": "first"
+          },
+          {
+            "lead_id": "L003",
+            "email": "carol@corp-c.com",
+            "name": "Carol",
+            "company": "Corp C",
+            "status": "closed",
+            "outreach_stage": "done"
+          }
+        ],
+        "reply_map": {
+          "L001": false,
+          "L002": true
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "sheet": "leads"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "lead_id": "L001",
+            "email": "alice@corp-a.com",
+            "name": "Alice",
+            "company": "Corp A",
+            "status": "active",
+            "outreach_stage": "first"
+          },
+          {
+            "lead_id": "L002",
+            "email": "bob@corp-b.com",
+            "name": "Bob",
+            "company": "Corp B",
+            "status": "active",
+            "outreach_stage": "first"
+          },
+          {
+            "lead_id": "L003",
+            "email": "carol@corp-c.com",
+            "name": "Carol",
+            "company": "Corp C",
+            "status": "closed",
+            "outreach_stage": "done"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SCORE",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "score_lead",
+      "request_contract": {
+        "lead_id": "string"
+      },
+      "response_contract": {
+        "scores": {
+          "L001": {"score": 85, "priority": "high"},
+          "L002": {"score": 70, "priority": "medium"}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-FIRST-MAIL",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_cold_email",
+      "request_contract": {
+        "lead_id": "string"
+      },
+      "response_contract": {
+        "emails": {
+          "L001": {"subject": "Hi Alice, quick idea for Corp A", "body": "I noticed Corp A is expanding its data team."},
+          "L002": {"subject": "Hi Bob, thought for Corp B", "body": "Corp B could benefit from better analytics."}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-FOLLOWUP",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_followup_email",
+      "request_contract": {
+        "lead_id": "string"
+      },
+      "response_contract": {
+        "emails": {
+          "L001": {"subject": "Following up, Alice", "body": "Just checking in on my previous note."},
+          "L002": {"subject": "Following up, Bob", "body": "Curious if this is relevant for your team."}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "gmail",
+      "operation": "send",
+      "request_contract": {
+        "to": "string",
+        "subject": "string",
+        "body": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-002",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REPLY-CHECK",
+      "dependency_type": "gmail",
+      "operation": "check_reply",
+      "request_contract": {
+        "lead_id": "string",
+        "email": "string"
+      },
+      "response_contract": {
+        "replied": {
+          "L001": false,
+          "L002": true
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-UPDATE",
+      "dependency_type": "googleSheets",
+      "operation": "update_row",
+      "request_contract": {
+        "lead_id": "string",
+        "fields": "object"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-NURTURE-CYCLE",
+      "kind": "positive",
+      "fixture_ids": ["F-LEADS-MIXED"],
+      "mock_ids": ["M-SHEETS-READ", "M-LLM-SCORE", "M-LLM-FIRST-MAIL", "M-LLM-FOLLOWUP", "M-GMAIL-SEND", "M-REPLY-CHECK", "M-SHEETS-UPDATE"],
+      "assertions": [
+        {
+          "assertion_id": "A-FIRST-EMAIL-COUNT",
+          "target": "gmail.send.calls",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "2 条需跟进线索各收 1 封首次触达邮件与 1 封跟进邮件，共 4 封；closed 线索 L003 不应收到邮件"
+        },
+        {
+          "assertion_id": "A-FIRST-SUBJECT-PERSONAL",
+          "target": "gmail.send.calls[0].subject",
+          "operator": "contains",
+          "expected": "Alice",
+          "rationale": "首次触达邮件应包含线索姓名，验证个性化冷邮件生成"
+        },
+        {
+          "assertion_id": "A-L001-CLOSED",
+          "target": "sheets_update.calls[0].fields.status",
+          "operator": "contains",
+          "expected": "closed",
+          "rationale": "L001 未回复，等待检查后应被标记为已关闭"
+        },
+        {
+          "assertion_id": "A-L002-NOT-CLOSED",
+          "target": "sheets_update.calls[0].fields.status",
+          "operator": "not_equals",
+          "expected": "closed",
+          "rationale": "L002 已回复，不应被标记为已关闭"
+        },
+        {
+          "assertion_id": "A-SHEETS-UPDATED-COUNT",
+          "target": "sheets_update.calls",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "2 条线索各经历首封后更新与跟进后更新（含关闭状态），共 4 次记录更新"
+        },
+        {
+          "assertion_id": "A-EMAIL-SAVED",
+          "target": "saved_messages",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求要求保存生成的邮件内容，2 条线索的首封邮件应被保存"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-SINGLE-LEAD",
+      "kind": "boundary",
+      "fixture_ids": ["F-LEADS-MIXED"],
+      "mock_ids": ["M-SHEETS-READ", "M-LLM-SCORE", "M-LLM-FIRST-MAIL", "M-LLM-FOLLOWUP", "M-GMAIL-SEND", "M-REPLY-CHECK", "M-SHEETS-UPDATE"],
+      "assertions": [
+        {
+          "assertion_id": "A-CLOSED-NO-EMAIL",
+          "target": "gmail.send.calls",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "边界复核：状态为 closed 的 L003 必须被筛选排除，邮件总数仍为 4 而非 6"
+        },
+        {
+          "assertion_id": "A-NO-UPDATE-CLOSED",
+          "target": "sheets_update.calls",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "closed 线索不应进入处理流程，因此不产生任何记录更新"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。固定线索集覆盖：需跟进（回复/未回复）与无需跟进（closed）分支。语言模型邮件生成、Gmail 发送、回复检查、Sheets 读写全部确定性模拟。断言可计算：邮件发送总数、个性化主题、Sheets 状态更新（closed 标记）、更新次数、邮件保存数量。"
+}

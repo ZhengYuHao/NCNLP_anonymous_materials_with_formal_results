@@ -1,0 +1,284 @@
+{
+  "task_id": "N8F-032",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "85191ba356727d2658b551e02a9fd529b874feb565977a2c9fef2b96e52713a3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 YouTube 视频链接",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "用户提交的 YouTube 视频链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "待处理的视频链接"
+        }
+      ],
+      "native_evidence": [
+        "▶️ Start"
+      ],
+      "requirement_evidence": [
+        "系统以一条 YouTube 视频链接为输入"
+      ],
+      "rationale": "需求声明以一条 YouTube 视频链接为输入，为确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取视频字幕文本",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "视频链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "视频的字幕文本"
+        }
+      ],
+      "native_evidence": [
+        "📝 Fetch Transcript"
+      ],
+      "requirement_evidence": [
+        "获取该视频的字幕文本"
+      ],
+      "rationale": "需求声明获取视频字幕文本，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成博客文章与社交媒体内容",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "字幕文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "基于字幕生成的博客文章与社交媒体内容"
+        }
+      ],
+      "native_evidence": [
+        "🧙 AI Content"
+      ],
+      "requirement_evidence": [
+        "并由语言模型基于字幕生成博客文章与社交媒体内容"
+      ],
+      "rationale": "需求声明由语言模型基于字幕生成博客文章与社交媒体内容，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "等待人工批准",
+      "node_type": "code",
+      "operation_family": "approval",
+      "inputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "生成的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approved_content",
+          "type": "object",
+          "description": "经人工批准的内容"
+        }
+      ],
+      "native_evidence": [
+        "💬 Slack Approval",
+        "🔔 Wait Approval"
+      ],
+      "requirement_evidence": [
+        "内容在发布前可选择等待人工批准"
+      ],
+      "rationale": "需求声明发布前可选择等待人工批准，为可选的人工审批环节，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发布内容到选定平台",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "生成的内容"
+        },
+        {
+          "name": "approved_content",
+          "type": "object",
+          "description": "批准后的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "各发布平台的发布结果"
+        }
+      ],
+      "native_evidence": [
+        "📤 Publish?",
+        "📝 WordPress",
+        "💼 LinkedIn",
+        "🐦 Tweet 1/5",
+        "📸 Instagram1"
+      ],
+      "requirement_evidence": [
+        "生成的内容发布到选定的发布平台"
+      ],
+      "rationale": "需求声明把内容发布到选定的发布平台，为确定性外部动作（多个平台的具体顺序为实现细节），判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "记录处理结果",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📊 Notion",
+        "🎉 Success"
+      ],
+      "requirement_evidence": [
+        "并对每次处理结果进行记录以便追踪"
+      ],
+      "rationale": "需求声明记录每次处理结果以便追踪，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收链接后获取字幕。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "字幕获取后生成内容。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "启用了人工批准",
+      "rationale": "启用人工批准时等待批准。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": "未启用人工批准",
+      "rationale": "未启用时直接进入发布。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "人工批准通过",
+      "rationale": "批准通过后进入发布。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后记录处理结果。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video_url",
+      "condition": null,
+      "rationale": "视频链接传给字幕获取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "字幕文本传给内容生成节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "generated_content",
+      "condition": null,
+      "rationale": "生成内容传给人工批准节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "generated_content",
+      "condition": null,
+      "rationale": "生成内容传给发布节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "approved_content",
+      "condition": null,
+      "rationale": "批准后的内容传给发布节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布结果传给记录节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "人工批准建模为可选分支：启用时等待批准，未启用时直接发布；原生中的修订反馈、取消、错误停止、各平台拆分发布等分支未被需求声明，未纳入。字幕获取失败的检查为需求未声明的实现细节，未纳入。"
+}

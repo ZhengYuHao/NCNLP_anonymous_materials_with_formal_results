@@ -1,0 +1,248 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-065",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-WP-GET-POST-5",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_post_raw",
+      "request_contract": {
+        "post_id": 5
+      },
+      "response_contract": {
+        "post": {
+          "id": 5,
+          "status": "publish",
+          "title": "Welcome to my tech blog",
+          "content": "<p>This post explains the architecture of modern web applications.</p>",
+          "excerpt": "A short introduction to web app architecture.",
+          "acf": {
+            "subtitle": "Architecture basics",
+            "meta_description": "Learn how modern web apps are built."
+          },
+          "_links": {
+            "self": "https://mock-wp.example/wp-json/wp/v2/posts/5"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-GET-POST-6",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_post_raw",
+      "request_contract": {
+        "post_id": 6
+      },
+      "response_contract": {
+        "post": {
+          "id": 6,
+          "status": "publish",
+          "title": "Scaling databases in production",
+          "content": "<p>Sharding and replication are the two pillars of horizontal scaling.</p>",
+          "excerpt": "Database scaling strategies explained.",
+          "acf": {
+            "subtitle": "Production scaling",
+            "meta_description": "A practical guide to scaling databases."
+          },
+          "_links": {
+            "self": "https://mock-wp.example/wp-json/wp/v2/posts/6"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LANG-DETECT-5",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_source_language",
+      "request_contract": {
+        "snippet": "This post explains the architecture of modern web applications."
+      },
+      "response_contract": {
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LANG-DETECT-6",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_source_language",
+      "request_contract": {
+        "snippet": "Sharding and replication are the two pillars of horizontal scaling."
+      },
+      "response_contract": {
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-ES",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "es",
+        "texts": [
+          "Welcome to my tech blog",
+          "<p>This post explains the architecture of modern web applications.</p>",
+          "A short introduction to web app architecture.",
+          "Architecture basics",
+          "Learn how modern web apps are built."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Bienvenido a mi blog de tecnología",
+          "<p>Esta publicación explica la arquitectura de las aplicaciones web modernas.</p>",
+          "Una breve introducción a la arquitectura de aplicaciones web.",
+          "Conceptos básicos de arquitectura",
+          "Aprende cómo se construyen las aplicaciones web modernas."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-FR",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "fr",
+        "texts": [
+          "Welcome to my tech blog",
+          "<p>This post explains the architecture of modern web applications.</p>",
+          "A short introduction to web app architecture.",
+          "Architecture basics",
+          "Learn how modern web apps are built."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Bienvenue sur mon blog technique",
+          "<p>Cet article explique l'architecture des applications web modernes.</p>",
+          "Une brève introduction à l'architecture des applications web.",
+          "Notions de base sur l'architecture",
+          "Apprenez comment les applications web modernes sont construites."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEEPL-BULK-FR-ONLY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_contract": {
+        "target_lang": "fr",
+        "texts": [
+          "Scaling databases in production",
+          "<p>Sharding and replication are the two pillars of horizontal scaling.</p>",
+          "Database scaling strategies explained.",
+          "Production scaling",
+          "A practical guide to scaling databases."
+        ]
+      },
+      "response_contract": {
+        "translations": [
+          "Mise à l'échelle des bases de données en production",
+          "<p>Le partitionnement et la réplication sont les deux piliers de la mise à l'échelle horizontale.</p>",
+          "Stratégies de mise à l'échelle des bases de données expliquées.",
+          "Mise à l'échelle en production",
+          "Un guide pratique pour mettre à l'échelle les bases de données."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-ES",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 5,
+        "lang": "es",
+        "title": "Bienvenido a mi blog de tecnología",
+        "content": "<p>Esta publicación explica la arquitectura de las aplicaciones web modernas.</p>",
+        "linked_post_id": 5
+      },
+      "response_contract": {
+        "id": 51,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/51"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-FR",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 5,
+        "lang": "fr",
+        "title": "Bienvenue sur mon blog technique",
+        "content": "<p>Cet article explique l'architecture des applications web modernes.</p>",
+        "linked_post_id": 5
+      },
+      "response_contract": {
+        "id": 52,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/52"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-DRAFT-FR-ONLY",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_contract": {
+        "post_id": 6,
+        "lang": "fr",
+        "title": "Mise à l'échelle des bases de données en production",
+        "content": "<p>Le partitionnement et la réplication sont les deux piliers de la mise à l'échelle horizontale.</p>",
+        "linked_post_id": 6
+      },
+      "response_contract": {
+        "id": 61,
+        "status": "draft",
+        "link": "https://mock-wp.example/wp-json/wp/v2/posts/61"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-NEW-TRANSLATION-POSITIVE",
+      "fixture_ids": [
+        "F-POST-NEW-TRANSLATION"
+      ],
+      "mock_ids": [
+        "M-WP-GET-POST-5",
+        "M-LLM-LANG-DETECT-5",
+        "M-DEEPL-BULK-ES",
+        "M-DEEPL-BULK-FR",
+        "M-WP-CREATE-DRAFT-ES",
+        "M-WP-CREATE-DRAFT-FR"
+      ]
+    },
+    {
+      "case_id": "C-PARTIAL-TRANSLATION-BOUNDARY",
+      "fixture_ids": [
+        "F-POST-PARTIAL-TRANSLATION"
+      ],
+      "mock_ids": [
+        "M-WP-GET-POST-6",
+        "M-LLM-LANG-DETECT-6",
+        "M-DEEPL-BULK-FR-ONLY",
+        "M-WP-CREATE-DRAFT-FR-ONLY"
+      ]
+    }
+  ]
+}

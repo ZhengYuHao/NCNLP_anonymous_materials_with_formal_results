@@ -1,0 +1,97 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-001",
+  "source_id": "n8n:18301",
+  "workflow_sha256": "a4de396c27771806fa9f40501a40637a1d1ef2ae847c5e83df5f4e1e0f15c793",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "bf0e6cb9d26bc81f49ac01847429d56fe627af4d2ab5a1c89d5f5bfb453d95a3",
+  "requirement": {
+    "requirement_text": "系统对外提供一个统一的 Webhook 接口，用于处理学习辅导类请求。请求以 POST 方式提交，请求体中携带要调用的模块名称以及该模块所需的输入字段。系统按请求体中的模块名称分发到以下五类处理：\n1. 学习笔记（notes）：接收主题、难度、语言和格式四项输入，调用语言模型生成结构化的学习笔记，并以 JSON 形式返回笔记内容。\n2. 视频检索（youtube_search）：按给定的检索词和语言查询 YouTube Data API，返回最多 10 个匹配的视频，将结果整理为规整的视频列表后以 JSON 形式返回。\n3. 测验（quiz）：按请求中指定的题目数量，调用语言模型生成对应数量的单选题，将模型输出解析为合法 JSON 后返回题目、选项、答案和解析。\n4. 职业路线图（roadmap）：接收职业类别和岗位，调用语言模型生成包含里程碑、学习资源和进度安排的结构化路线图对象，并以 JSON 形式返回。\n5. 学习教练（assistant）：创建或复用一个会话 ID，结合会话记忆存储中的历史上下文与语言模型生成针对当前对话的辅导回复，并以 JSON 形式返回助手消息。",
+    "source_spans": [
+      {
+        "start": 334,
+        "end": 414,
+        "text": "Receives a POST webhook request and reads the requested module from body.module."
+      },
+      {
+        "start": 415,
+        "end": 563,
+        "text": "For notes, sends the topic, difficulty, language, and format to Mistral Cloud to generate structured study notes and returns { notes: ... } as JSON."
+      },
+      {
+        "start": 564,
+        "end": 751,
+        "text": "For youtube_search, queries the YouTube Data API for up to 10 videos matching the provided search term and language, formats the results into a clean videos array, and returns it as JSON."
+      },
+      {
+        "start": 752,
+        "end": 967,
+        "text": "For quiz, prompts Mistral Cloud to generate exactly the requested number of multiple-choice questions, parses the model output into valid JSON, and returns the quiz questions with options, answers, and explanations."
+      },
+      {
+        "start": 968,
+        "end": 1143,
+        "text": "For roadmap, sends the provided career category and role to Mistral Cloud to generate a structured roadmap object (milestones, resources, and progress) and returns it as JSON."
+      },
+      {
+        "start": 1144,
+        "end": 1319,
+        "text": "For assistant, creates or reuses a session ID, uses Postgres chat memory plus Mistral Cloud to generate a contextual coaching reply, and returns the assistant message as JSON."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "以 POST 方式提交的 Webhook 请求，请求体中包含模块名称（notes / youtube_search / quiz / roadmap / assistant）及该模块所需字段",
+        "notes 模块：主题、难度、语言、格式",
+        "youtube_search 模块：检索词、语言",
+        "quiz 模块：题目数量",
+        "roadmap 模块：职业类别、岗位",
+        "assistant 模块：会话 ID（可复用已有或新建）与用户消息"
+      ],
+      "conditions": [
+        "按请求体中的模块名称分发到对应的处理分支",
+        "youtube_search 最多返回 10 个匹配视频",
+        "quiz 生成的单选题数量与请求中指定的数量一致",
+        "quiz 的模型输出需解析为合法 JSON",
+        "assistant 复用已有会话 ID，若不存在则创建新的会话 ID"
+      ],
+      "allowed_actions": [
+        "生成结构化学习笔记",
+        "查询 YouTube Data API 并将结果整理为规整的视频列表",
+        "生成单选题并解析模型输出为合法 JSON",
+        "生成包含里程碑、资源与进度的结构化职业路线图对象",
+        "结合会话记忆存储中的历史上下文生成辅导回复",
+        "以 JSON 形式返回处理结果"
+      ],
+      "visible_outcomes": [
+        "notes：JSON 形式的学习笔记内容",
+        "youtube_search：JSON 形式的视频列表，最多 10 条",
+        "quiz：JSON 形式的题目，含选项、答案与解析",
+        "roadmap：JSON 形式的路线图对象，含里程碑、资源与进度",
+        "assistant：JSON 形式的助手回复消息"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-001.packet.json",
+    "packet_sha256": "b5eb31908facb8b5cde93e0b263de5aa5fb4b213ca559d6717aab43f41382bc1",
+    "public_description_sha256": "c7f923d9751eb0d378a4fe75aa85027bac79b7610e38d0a8f3368690819c2a58"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-001.response.json",
+    "verification_response_sha256": "1ebe18e30b2093bbe42bda5bcf7a00a7639f9529dd34a862f1deed05ba772b45",
+    "decision": "accept"
+  },
+  "formal_index": 12
+}

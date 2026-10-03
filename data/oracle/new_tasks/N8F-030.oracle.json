@@ -1,0 +1,419 @@
+{
+  "task_id": "N8F-030",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "6cd504c4a44fa1d7abc4f9ace89de206be8224f9ac043a71e66c918794ff47b5",
+  "fixtures": [
+    {
+      "fixture_id": "F-SHEET-FIRST-ENTRY",
+      "purpose": "正常用例：竞品表中存在一条尚无历史记录的首次商品，验证首次记录直接保存初始值",
+      "input_data": {
+        "sheet_row": {
+          "product_id": "p-100",
+          "product_url": "https://mock-store.example.com/products/alpha",
+          "current_price": null,
+          "current_offer": null,
+          "history_price": null,
+          "history_offer": null
+        }
+      }
+    },
+    {
+      "fixture_id": "F-SHEET-CHANGED",
+      "purpose": "正常用例：竞品表记录的价格与历史不同（历史 99.99，抓取到 89.99），验证检测到变化时更新记录",
+      "input_data": {
+        "sheet_row": {
+          "product_id": "p-200",
+          "product_url": "https://mock-store.example.com/products/beta",
+          "current_price": null,
+          "current_offer": null,
+          "history_price": 99.99,
+          "history_offer": "none"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-SHEET-UNCHANGED",
+      "purpose": "正常用例：竞品表记录的价格与历史相同（均为 49.99），验证未检测到变化时同样更新记录",
+      "input_data": {
+        "sheet_row": {
+          "product_id": "p-300",
+          "product_url": "https://mock-store.example.com/products/gamma",
+          "current_price": null,
+          "current_offer": null,
+          "history_price": 49.99,
+          "history_offer": "10% off"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-HTTP-SCRAPE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "scrape_product_page",
+      "request_contract": {
+        "url": "https://mock-store.example.com/products/alpha"
+      },
+      "response_contract": {
+        "raw_html": "<html><body><h1>Alpha Widget</h1><span class=\"price\">$89.99</span><span class=\"offer\">15% off</span></body></html>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT-NEW",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "operation": "extract_product_price_offer",
+      "request_contract": {
+        "cleaned_text": "Alpha Widget $89.99 15% off"
+      },
+      "response_contract": {
+        "product_name": "Alpha Widget",
+        "price": 89.99,
+        "offer": "15% off"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT-CHANGED",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "operation": "extract_product_price_offer",
+      "request_contract": {
+        "cleaned_text": "Beta Gadget $89.99"
+      },
+      "response_contract": {
+        "product_name": "Beta Gadget",
+        "price": 89.99,
+        "offer": "none"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT-UNCHANGED",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "operation": "extract_product_price_offer",
+      "request_contract": {
+        "cleaned_text": "Gamma Device $49.99 10% off"
+      },
+      "response_contract": {
+        "product_name": "Gamma Device",
+        "price": 49.99,
+        "offer": "10% off"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-UPDATE-FIRST",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_row_initial",
+      "request_contract": {
+        "product_id": "p-100",
+        "current_price": 89.99,
+        "current_offer": "15% off"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 5
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-UPDATE-CHANGED",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_row_on_change",
+      "request_contract": {
+        "product_id": "p-200",
+        "current_price": 89.99,
+        "current_offer": "none",
+        "history_price": 99.99,
+        "history_offer": "none"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 7
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-UPDATE-UNCHANGED",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_row_no_change",
+      "request_contract": {
+        "product_id": "p-300",
+        "current_price": 49.99,
+        "current_offer": "10% off",
+        "history_price": 49.99,
+        "history_offer": "10% off"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 9
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ-UPDATED",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_updated_dataset",
+      "request_contract": {
+        "sheet": "competitors"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "product_id": "p-100",
+            "product_name": "Alpha Widget",
+            "current_price": 89.99,
+            "current_offer": "15% off"
+          },
+          {
+            "product_id": "p-200",
+            "product_name": "Beta Gadget",
+            "current_price": 89.99,
+            "current_offer": "none"
+          },
+          {
+            "product_id": "p-300",
+            "product_name": "Gamma Device",
+            "current_price": 49.99,
+            "current_offer": "10% off"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-INSIGHTS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "operation": "generate_market_insights",
+      "request_contract": {
+        "market_comparison": "structured_comparison_data"
+      },
+      "response_contract": {
+        "insights": "Beta Gadget dropped below Alpha Widget; consider matching price.",
+        "summary_saved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-SAVE-SUMMARY",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_row_with_summary",
+      "request_contract": {
+        "sheet": "competitors",
+        "summary": "Beta Gadget dropped below Alpha Widget; consider matching price."
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 12
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_report",
+      "request_contract": {
+        "to": "pricing-team@example.com",
+        "subject": "Market Intelligence Report",
+        "html_body": "<html><body><h1>Market Intelligence Report</h1></body></html>"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-030",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-RESET",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "move_current_to_history_and_clear",
+      "request_contract": {
+        "sheet": "competitors",
+        "rows": "all_processed_rows"
+      },
+      "response_contract": {
+        "reset": true,
+        "rows_updated": 3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-FIRST-ENTRY-INITIAL-SAVE",
+      "kind": "positive",
+      "fixture_ids": ["F-SHEET-FIRST-ENTRY"],
+      "mock_ids": ["M-HTTP-SCRAPE", "M-LLM-EXTRACT-NEW", "M-SHEETS-UPDATE-FIRST"],
+      "assertions": [
+        {
+          "assertion_id": "A-FE-1",
+          "target": "exec_log.is_first_record",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "该商品无历史价格记录，必须判定为首次记录"
+        },
+        {
+          "assertion_id": "A-FE-2",
+          "target": "exec_log.sheets.update_row_initial.current_price",
+          "operator": "equals",
+          "expected": 89.99,
+          "rationale": "首次记录应保存抓取并抽取到的当前价格作为初始值"
+        },
+        {
+          "assertion_id": "A-FE-3",
+          "target": "exec_log.sheets.update_row_initial.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "初始值保存必须成功写入 Google Sheets"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CHANGED-UPDATES-RECORD",
+      "kind": "positive",
+      "fixture_ids": ["F-SHEET-CHANGED"],
+      "mock_ids": ["M-LLM-EXTRACT-CHANGED", "M-SHEETS-UPDATE-CHANGED"],
+      "assertions": [
+        {
+          "assertion_id": "A-CH-1",
+          "target": "exec_log.price_changed",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "当前价 89.99 与历史价 99.99 不同，必须判定价格发生变化"
+        },
+        {
+          "assertion_id": "A-CH-2",
+          "target": "exec_log.sheets.update_row_on_change.current_price",
+          "operator": "equals",
+          "expected": 89.99,
+          "rationale": "检测到变化时记录必须更新为新抓取的价格"
+        },
+        {
+          "assertion_id": "A-CH-3",
+          "target": "exec_log.sheets.update_row_on_change.history_price",
+          "operator": "equals",
+          "expected": 99.99,
+          "rationale": "更新时历史价格必须被保留或迁移，不得丢失历史值"
+        },
+        {
+          "assertion_id": "A-CH-4",
+          "target": "exec_log.sheets.update_row_on_change.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "变化更新必须成功写入 Google Sheets"
+        }
+      ]
+    },
+    {
+      "case_id": "C-UNCHANGED-STILL-UPDATES",
+      "kind": "boundary",
+      "fixture_ids": ["F-SHEET-UNCHANGED"],
+      "mock_ids": ["M-LLM-EXTRACT-UNCHANGED", "M-SHEETS-UPDATE-UNCHANGED"],
+      "assertions": [
+        {
+          "assertion_id": "A-UN-1",
+          "target": "exec_log.price_changed",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "当前价与历史价相同，必须判定价格未变化"
+        },
+        {
+          "assertion_id": "A-UN-2",
+          "target": "exec_log.sheets.update_row_no_change.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求明确要求即使未检测到变化也会更新记录，未变化时也必须发生写入"
+        },
+        {
+          "assertion_id": "A-UN-3",
+          "target": "exec_log.sheets.update_row_no_change.current_price",
+          "operator": "equals",
+          "expected": 49.99,
+          "rationale": "无变化更新必须保留与历史一致的当前价格值"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FULL-CYCLE-REPORT-AND-RESET",
+      "kind": "positive",
+      "fixture_ids": ["F-SHEET-FIRST-ENTRY", "F-SHEET-CHANGED", "F-SHEET-UNCHANGED"],
+      "mock_ids": [
+        "M-SHEETS-READ-UPDATED",
+        "M-LLM-INSIGHTS",
+        "M-SHEETS-SAVE-SUMMARY",
+        "M-GMAIL-SEND",
+        "M-SHEETS-RESET"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FC-1",
+          "target": "exec_log.read_updated_dataset.rows",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "全部条目处理完毕后必须取回更新后的完整数据集"
+        },
+        {
+          "assertion_id": "A-FC-2",
+          "target": "exec_log.llm_insights.insights",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求语言模型基于市场对比数据生成战略洞察与建议，输出必须包含洞察文本"
+        },
+        {
+          "assertion_id": "A-FC-3",
+          "target": "exec_log.sheets.save_summary.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "分析摘要必须保存回 Google Sheets"
+        },
+        {
+          "assertion_id": "A-FC-4",
+          "target": "final_output.email.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "最终报告必须通过 Gmail 发送成功"
+        },
+        {
+          "assertion_id": "A-FC-5",
+          "target": "final_output.email.html_body",
+          "operator": "contains",
+          "expected": "Market Intelligence Report",
+          "rationale": "邮件正文必须是 HTML 排版的市场情报报告"
+        },
+        {
+          "assertion_id": "A-FC-6",
+          "target": "exec_log.sheets.reset.reset",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "本轮结束后必须执行数据重置以进入下一轮"
+        },
+        {
+          "assertion_id": "A-FC-7",
+          "target": "exec_log.sheets.reset.rows_updated",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "重置操作必须覆盖本轮全部 3 条处理过的商品记录"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖首次记录保存初始值、价格变化更新、价格未变化仍更新三条分支，以及完整轮次（取回数据集、生成洞察、保存摘要、发送 HTML 报告、重置数据）。页面抓取、Groq 抽取与洞察、Sheets 读写、Gmail 发送全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数值相等、布尔值相等、字段存在、数组长度与内容包含等可计算条件。"
+}

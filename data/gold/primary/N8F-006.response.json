@@ -1,0 +1,384 @@
+{
+  "task_id": "N8F-006",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "ac45d955b0d7dcb3e4587f9932067b71b124ed23cf22d1cf00d6926a200ec942",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收并整理患者表单输入",
+      "node_type": "code",
+      "operation_family": "input_receipt",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "patient_info",
+          "type": "object",
+          "description": "网页表单提交的患者信息，含疾病、年龄、性别"
+        }
+      ],
+      "native_evidence": [
+        "Form Input Configuration",
+        "Process Patient Input"
+      ],
+      "requirement_evidence": [
+        "输入：用户通过网页表单提交患者信息，包括疾病、年龄和性别。"
+      ],
+      "rationale": "需求声明输入来自网页表单，包含疾病、年龄、性别；由确定性代码接收并整理为结构化输入，不涉及开放文本理解，判定为 code 节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成个性化健康指南",
+      "node_type": "semantic",
+      "operation_family": "content_generation",
+      "inputs": [
+        {
+          "name": "patient_info",
+          "type": "object",
+          "description": "患者疾病、年龄、性别信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "guide_content",
+          "type": "string",
+          "description": "生成的健康指南文本，含医学信息、自然疗法、预防策略与疗愈食谱"
+        }
+      ],
+      "native_evidence": [
+        "Disease Info Agent"
+      ],
+      "requirement_evidence": [
+        "使用语言模型依据提交的疾病信息生成完整的健康指南，内容包括医学信息、自然疗法、预防策略和疗愈食谱，并按疾病、年龄、性别对内容进行个性化定制"
+      ],
+      "rationale": "需求明确由语言模型生成个性化健康指南，需要开放文本理解与生成，无法用确定性规则无损替代，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "质量评估",
+      "node_type": "semantic",
+      "operation_family": "quality_evaluation",
+      "inputs": [
+        {
+          "name": "guide_content",
+          "type": "string",
+          "description": "待评估的健康指南内容"
+        },
+        {
+          "name": "optimized_content",
+          "type": "string",
+          "description": "优化后的健康指南内容（迭代轮次中传入）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "quality_result",
+          "type": "object",
+          "description": "评估结果，含完整性与准确性审查结论及通过与否的判定信息"
+        }
+      ],
+      "native_evidence": [
+        "Health Evaluator Agent"
+      ],
+      "requirement_evidence": [
+        "由语言模型担任评估器，对生成内容的完整性与准确性进行审查"
+      ],
+      "rationale": "需求指定由语言模型担任评估器审查完整性与准确性，属于开放文本理解与评判，判定为 semantic 节点；迭代中优化后的内容同样送回该节点重新评估。"
+    },
+    {
+      "node_id": "n4",
+      "label": "质量判定与路由",
+      "node_type": "code",
+      "operation_family": "conditional_routing",
+      "inputs": [
+        {
+          "name": "quality_result",
+          "type": "object",
+          "description": "质量评估结果，含是否达标标记"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "quality_pass",
+          "type": "boolean",
+          "description": "质量是否达标的布尔标记"
+        },
+        {
+          "name": "approved_content",
+          "type": "string",
+          "description": "审核通过的健康指南内容"
+        },
+        {
+          "name": "metrics_data",
+          "type": "object",
+          "description": "聚合的执行指标，含 token 用量、处理耗时与质量迭代次数"
+        }
+      ],
+      "native_evidence": [
+        "Check Quality Approval"
+      ],
+      "requirement_evidence": [
+        "未达到质量标准时，由语言模型自动优化内容并重新评估，最多迭代 5 次",
+        "仅审核通过的内容进入排版与导出环节"
+      ],
+      "rationale": "基于评估结果执行确定性分支判断（是否达标），并按分支路由到优化或排版环节，判定为 code 节点；同时聚合执行指标供末段记录。"
+    },
+    {
+      "node_id": "n5",
+      "label": "迭代优化内容",
+      "node_type": "semantic",
+      "operation_family": "content_refinement",
+      "inputs": [
+        {
+          "name": "guide_content",
+          "type": "string",
+          "description": "待优化的健康指南内容"
+        },
+        {
+          "name": "quality_result",
+          "type": "object",
+          "description": "评估意见，指导优化方向"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "optimized_content",
+          "type": "string",
+          "description": "优化后的健康指南内容"
+        }
+      ],
+      "native_evidence": [
+        "Health Optimizer Agent"
+      ],
+      "requirement_evidence": [
+        "未达到质量标准时，由语言模型自动优化内容并重新评估，最多迭代 5 次"
+      ],
+      "rationale": "需求声明由语言模型自动优化内容，需要开放文本改写，判定为 semantic 节点；循环回评估节点，终止条件为质量通过或迭代达 5 次。"
+    },
+    {
+      "node_id": "n6",
+      "label": "专业排版与双时区时间戳",
+      "node_type": "code",
+      "operation_family": "document_formatting",
+      "inputs": [
+        {
+          "name": "approved_content",
+          "type": "string",
+          "description": "审核通过的健康指南内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "formatted_content",
+          "type": "string",
+          "description": "按统一样式与分节标记排版并附加双时区时间戳的内容"
+        }
+      ],
+      "native_evidence": [
+        "Update Final Calculation Node"
+      ],
+      "requirement_evidence": [
+        "对内容进行专业排版（统一样式与分节标记），并附加本地时间与 UTC 双时区时间戳"
+      ],
+      "rationale": "排版、统一样式、分节标记与时间戳附加均为确定性规则，无需开放理解，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "导出到 Google Docs",
+      "node_type": "code",
+      "operation_family": "external_delivery",
+      "inputs": [
+        {
+          "name": "formatted_content",
+          "type": "string",
+          "description": "排版完成的健康指南内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "doc_reference",
+          "type": "string",
+          "description": "生成的 Google Docs 文档引用信息"
+        }
+      ],
+      "native_evidence": [
+        "Natural Health Guide"
+      ],
+      "requirement_evidence": [
+        "导出为 Google Docs 文档",
+        "生成的健康指南以 Google Docs 文档形式交付，用户可从 Google Docs 下载该指南"
+      ],
+      "rationale": "将内容导出到 Google Docs 为确定性的外部写操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "记录执行指标",
+      "node_type": "terminal",
+      "operation_family": "metrics_logging",
+      "inputs": [
+        {
+          "name": "metrics_data",
+          "type": "object",
+          "description": "含 token 用量、处理耗时与质量迭代次数的执行指标"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log Execution Metrics"
+      ],
+      "requirement_evidence": [
+        "同时记录执行指标，包括使用的 token 数、处理耗时和质量迭代次数，用于性能追踪"
+      ],
+      "rationale": "记录执行指标为流程末段的收尾动作，需求将其声明为独立行为；作为终止节点，完成记录后流程结束，无后续出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "表单输入接收完成后开始内容生成。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成内容后进入质量评估。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "评估完成后进入质量判定。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "quality_pass == false",
+      "rationale": "未达标时路由到迭代优化。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "优化后重新评估，形成迭代环；终止条件为质量通过或迭代次数达到上限 5 次（max_iterations=5）。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "quality_pass == true",
+      "rationale": "审核通过的内容进入排版环节。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "排版完成后导出到 Google Docs。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "导出完成后记录执行指标，流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "patient_info",
+      "condition": null,
+      "rationale": "患者信息从输入接收节点流向内容生成节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "guide_content",
+      "condition": null,
+      "rationale": "生成的指南内容送入质量评估。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "quality_result",
+      "condition": null,
+      "rationale": "评估结果送入质量判定。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "guide_content",
+      "condition": null,
+      "rationale": "未达标时原内容送入优化节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "quality_result",
+      "condition": null,
+      "rationale": "评估意见指导优化方向。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n3",
+      "variable": "optimized_content",
+      "condition": null,
+      "rationale": "优化后的内容送回评估节点重新评估。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n4",
+      "target": "n6",
+      "variable": "approved_content",
+      "condition": null,
+      "rationale": "审核通过的内容送入排版节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "formatted_content",
+      "condition": null,
+      "rationale": "排版后的内容送入导出节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n4",
+      "target": "n8",
+      "variable": "metrics_data",
+      "condition": null,
+      "rationale": "执行指标由质量判定节点聚合后送入指标记录节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "需求声明的五个环节依次映射：生成（semantic）、评估（semantic）、优化（semantic，最多5次迭代）、排版+双时区时间戳（code）、导出 Google Docs（code）与记录指标（terminal）。质量判定为确定性路由（code），基于 LLM 评估结果分支。原生图中的 token 捕获节点（Capture Disease Info Tokens 等）属指标采集实现细节，未单独纳入。迭代环终止条件为质量通过或达到 max_iterations=5。"
+}

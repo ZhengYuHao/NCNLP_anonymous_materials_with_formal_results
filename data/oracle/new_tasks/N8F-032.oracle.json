@@ -1,0 +1,325 @@
+{
+  "task_id": "N8F-032",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "85191ba356727d2658b551e02a9fd529b874feb565977a2c9fef2b96e52713a3",
+  "fixtures": [
+    {
+      "fixture_id": "F-VIDEO-AUTO",
+      "purpose": "未启用人工批准的 YouTube 视频输入与发布平台",
+      "input_data": {
+        "video_url": "https://www.youtube.com/watch?v=abc123",
+        "platforms": [
+          "wordpress",
+          "linkedin",
+          "x",
+          "instagram"
+        ],
+        "auto_publish": true
+      }
+    },
+    {
+      "fixture_id": "F-VIDEO-APPROVAL",
+      "purpose": "启用人工批准的输入",
+      "input_data": {
+        "video_url": "https://www.youtube.com/watch?v=abc123",
+        "platforms": [
+          "wordpress"
+        ],
+        "auto_publish": false
+      }
+    },
+    {
+      "fixture_id": "F-TRANSCRIPT",
+      "purpose": "YouTube 视频字幕文本",
+      "input_data": {
+        "transcript": "In this video we explore automation. It is great. Step one. Step two."
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TRANSCRIPT",
+      "dependency_type": "httpRequest",
+      "operation": "fetch_youtube_transcript",
+      "request_contract": {
+        "video_url": "https://www.youtube.com/watch?v=abc123"
+      },
+      "response_contract": {
+        "transcript": "In this video we explore automation. It is great. Step one. Step two."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-GENERATE",
+      "dependency_type": "googleGemini",
+      "operation": "generate_content",
+      "request_contract": {},
+      "response_contract": {
+        "blog": {
+          "title": "Automation Guide",
+          "body": "This blog post covers automation."
+        },
+        "social": [
+          {
+            "platform": "linkedin",
+            "text": "Check our automation guide"
+          },
+          {
+            "platform": "x",
+            "text": "Automation guide out now"
+          },
+          {
+            "platform": "instagram",
+            "text": "New guide!"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPROVAL-APPROVED",
+      "dependency_type": "approvalGateway",
+      "operation": "check_approval",
+      "request_contract": {},
+      "response_contract": {
+        "approved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPROVAL-DENIED",
+      "dependency_type": "approvalGateway",
+      "operation": "check_approval",
+      "request_contract": {},
+      "response_contract": {
+        "approved": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-PUBLISH",
+      "dependency_type": "wordpress",
+      "operation": "publish_post",
+      "request_contract": {},
+      "response_contract": {
+        "post_id": 3001
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINKEDIN-PUBLISH",
+      "dependency_type": "linkedIn",
+      "operation": "publish_share",
+      "request_contract": {},
+      "response_contract": {
+        "share_id": 4001
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-PUBLISH",
+      "dependency_type": "twitter",
+      "operation": "publish_tweet",
+      "request_contract": {},
+      "response_contract": {
+        "tweet_id": 5001
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IG-PUBLISH",
+      "dependency_type": "instagram",
+      "operation": "publish_media",
+      "request_contract": {},
+      "response_contract": {
+        "media_id": 6001
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LOG",
+      "dependency_type": "notion",
+      "operation": "log_result",
+      "request_contract": {},
+      "response_contract": {
+        "page_id": 7001
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-AUTO",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-VIDEO-AUTO",
+        "F-TRANSCRIPT"
+      ],
+      "mock_ids": [
+        "M-TRANSCRIPT",
+        "M-LLM-GENERATE",
+        "M-WP-PUBLISH",
+        "M-LINKEDIN-PUBLISH",
+        "M-X-PUBLISH",
+        "M-IG-PUBLISH",
+        "M-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.transcript",
+          "operator": "equals",
+          "expected": "In this video we explore automation. It is great. Step one. Step two.",
+          "rationale": "获取到视频字幕文本"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.generated.blog.title",
+          "operator": "equals",
+          "expected": "Automation Guide",
+          "rationale": "基于字幕生成博客文章"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.published",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "内容发布到全部选定平台"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "wordpress",
+          "rationale": "WordPress 被发布"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "linkedin",
+          "rationale": "LinkedIn 被发布"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "x",
+          "rationale": "X 被发布"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "instagram",
+          "rationale": "Instagram 被发布"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.log.records",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "处理结果被记录以便追踪"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.log.records[0].video_url",
+          "operator": "equals",
+          "expected": "https://www.youtube.com/watch?v=abc123",
+          "rationale": "记录包含输入视频链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-APPROVAL-GRANTED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-VIDEO-APPROVAL",
+        "F-TRANSCRIPT"
+      ],
+      "mock_ids": [
+        "M-TRANSCRIPT",
+        "M-LLM-GENERATE",
+        "M-APPROVAL-APPROVED",
+        "M-WP-PUBLISH",
+        "M-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-POS-APPROVAL-GRANTED",
+          "target": "output.published",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "人工批准通过后发布"
+        },
+        {
+          "assertion_id": "A-2-POS-APPROVAL-GRANTED",
+          "target": "output.published[0].platform",
+          "operator": "equals",
+          "expected": "wordpress",
+          "rationale": "发布到所选平台"
+        },
+        {
+          "assertion_id": "A-3-POS-APPROVAL-GRANTED",
+          "target": "output.log.records[0].status",
+          "operator": "equals",
+          "expected": "published",
+          "rationale": "记录发布状态"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-APPROVAL-DENIED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-VIDEO-APPROVAL",
+        "F-TRANSCRIPT"
+      ],
+      "mock_ids": [
+        "M-TRANSCRIPT",
+        "M-LLM-GENERATE",
+        "M-APPROVAL-DENIED",
+        "M-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-APPROVAL-DENIED",
+          "target": "output.published",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "未获人工批准时不发布内容"
+        },
+        {
+          "assertion_id": "A-2-BOUND-APPROVAL-DENIED",
+          "target": "output.generated.blog.title",
+          "operator": "equals",
+          "expected": "Automation Guide",
+          "rationale": "内容已生成但处于待批准"
+        },
+        {
+          "assertion_id": "A-3-BOUND-APPROVAL-DENIED",
+          "target": "output.log.records[0].status",
+          "operator": "equals",
+          "expected": "pending_approval",
+          "rationale": "记录标记为待批准"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；字幕获取与内容生成为固定模拟；人工批准以确定性网关模拟 approved/denied 两种结果；发布与记录均无真实副作用。"
+}

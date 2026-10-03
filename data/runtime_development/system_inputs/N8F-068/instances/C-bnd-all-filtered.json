@@ -1,0 +1,22 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-068",
+  "case_id": "C-bnd-all-filtered",
+  "kind": "boundary",
+  "input_data": {
+    "from": "pr@company.com",
+    "subject": "Press release: event",
+    "body": "inline text about the upcoming event.",
+    "attachments": [
+      {
+        "name": "img1.jpg",
+        "mime": "image/jpeg"
+      },
+      {
+        "name": "img2.jpg",
+        "mime": "image/jpeg"
+      }
+    ]
+  },
+  "input_sha256": "B9BB1DC215C90C7A78256C4C1F171F14560550CC507A6DDA763F7E585BBBA24F"
+}

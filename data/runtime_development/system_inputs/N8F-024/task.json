@@ -1,0 +1,736 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-024",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "93f5004b713fdebfd1e5cc98b3633bc9c9a3904768d35db1dd3f75a5a7cea098",
+  "natural_language_requirement": "接收外部预订来源提交的短租预订请求，并校验必填字段与日期先后顺序。\n\n若预订无效：向 Telegram 发送告警，并通过邮件把被跳过的预订内容发送给房东。\n\n若预订有效：规范化预订数据、生成预订编号、把该预订追加到 Google Sheets 的预订工作表，并在 Telegram 通知房东。\n\n每天按计划时间（或通过手动请求）执行一次扫描：读取 Google Sheets 中的预订记录，识别出需要发送入住（明天）、退房（今天）或评价请求（退房后两天）消息的行程。对每个到期的行程，由一个语言模型驱动的助理从 Google Sheets 的手册工作表中查找房源信息，生成一条纯文本消息。每条生成的消息都记录到 Google Sheets 的客人日志工作表，通过邮件发送给客人，并在 Telegram 发布确认。\n\n对于退房当天的预订：在 Google Sheets 的清洁任务工作表中创建一条清洁任务；若已设置清洁人员邮箱，则通过邮件通知清洁人员并在 Telegram 提醒房东，否则提醒房东未设置清洁人员邮箱。\n\n每周一：读取 Google Sheets 中的预订与清洁任务，计算本周统计，由语言模型撰写一份简明的房东周报，并通过邮件与 Telegram 发送给房东；若本周没有任何活动，则改为发送一条“一切正常”的消息。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_booking",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "appended_row": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appended_row"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_cleaning_task",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "appended_row": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appended_row"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_guest_log",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "appended_row": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appended_row"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "booking_id": {
+                  "type": "string"
+                },
+                "check_in": {
+                  "type": "string"
+                },
+                "check_out": {
+                  "type": "string"
+                },
+                "guest_email": {
+                  "type": "string"
+                },
+                "guest_name": {
+                  "type": "string"
+                },
+                "property": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "booking_id",
+                "check_in",
+                "check_out",
+                "guest_email",
+                "guest_name",
+                "property"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_cleaning_tasks",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "date": {
+                      "type": "string"
+                    },
+                    "property": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "task_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "property",
+                    "status",
+                    "task_id"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_playbook",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "address": {
+                  "type": "string"
+                },
+                "door_code": {
+                  "type": "string"
+                },
+                "property": {
+                  "type": "string"
+                },
+                "wifi": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "address",
+                "door_code",
+                "property",
+                "wifi"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_guest_message",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "due_booking": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "due_booking"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_weekly_digest",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "weekly_stats": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "weekly_stats"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "digest"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "ok"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "booking_append_record",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "appended_row": {
+              "type": "integer",
+              "description": "The row number appended in the booking worksheet"
+            },
+            "booking_id": {
+              "type": "string",
+              "description": "Generated booking identifier"
+            },
+            "guest_name": {
+              "type": "string",
+              "description": "Name of the guest"
+            },
+            "guest_email": {
+              "type": "string",
+              "description": "Email of the guest"
+            },
+            "property": {
+              "type": "string",
+              "description": "Property name or identifier"
+            },
+            "check_in": {
+              "type": "string",
+              "description": "Check-in date"
+            },
+            "check_out": {
+              "type": "string",
+              "description": "Check-out date"
+            }
+          },
+          "required": [
+            "appended_row",
+            "booking_id",
+            "guest_name",
+            "guest_email",
+            "property",
+            "check_in",
+            "check_out"
+          ],
+          "additionalProperties": true
+        },
+        "description": "The booking record appended to Google Sheets booking worksheet, including internal booking fields for verification",
+        "requirement_evidence": [
+          "把该预订追加到 Google Sheets 的预订工作表"
+        ],
+        "source_operations": [
+          "append_booking"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "cleaning_task_append_record",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "appended_row": {
+              "type": "integer",
+              "description": "The row number appended in the cleaning task worksheet"
+            },
+            "property": {
+              "type": "string",
+              "description": "Property name or identifier for cleaning task"
+            },
+            "date": {
+              "type": "string",
+              "description": "Date of the cleaning task"
+            },
+            "task_id": {
+              "type": "string",
+              "description": "Identifier of the cleaning task"
+            }
+          },
+          "required": [
+            "appended_row",
+            "property",
+            "date",
+            "task_id"
+          ],
+          "additionalProperties": true
+        },
+        "description": "The cleaning task record appended to Google Sheets cleaning task worksheet, including task details for verification",
+        "requirement_evidence": [
+          "在 Google Sheets 的清洁任务工作表中创建一条清洁任务"
+        ],
+        "source_operations": [
+          "append_cleaning_task"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "guest_log_append_record",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "appended_row": {
+              "type": "integer",
+              "description": "The row number appended in the guest log worksheet"
+            },
+            "booking_id": {
+              "type": "string",
+              "description": "Booking identifier related to the guest message"
+            },
+            "guest_message": {
+              "type": "string",
+              "description": "The text content of the guest message"
+            }
+          },
+          "required": [
+            "appended_row",
+            "booking_id",
+            "guest_message"
+          ],
+          "additionalProperties": true
+        },
+        "description": "The guest message record appended to Google Sheets guest log worksheet, including message content for verification",
+        "requirement_evidence": [
+          "每条生成的消息都记录到 Google Sheets 的客人日志工作表"
+        ],
+        "source_operations": [
+          "append_guest_log"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sent_emails",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "message_id": {
+                "type": "string",
+                "description": "Identifier of the sent email message"
+              },
+              "to": {
+                "type": "string",
+                "description": "Email recipient address"
+              },
+              "subject": {
+                "type": "string",
+                "description": "Email subject line"
+              },
+              "body": {
+                "type": "string",
+                "description": "Email message body content"
+              }
+            },
+            "required": [
+              "message_id",
+              "to",
+              "subject",
+              "body"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "description": "Emails sent to guests, landlords, or cleaning staff, including recipients and message content for verification",
+        "requirement_evidence": [
+          "通过邮件把被跳过的预订内容发送给房东",
+          "通过邮件发送给客人",
+          "通过邮件通知清洁人员",
+          "通过邮件与 Telegram 发送给房东"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "telegram_messages",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "message_id": {
+                "type": "integer",
+                "description": "Telegram message identifier"
+              },
+              "ok": {
+                "type": "boolean",
+                "description": "Whether the Telegram message was sent successfully"
+              },
+              "text": {
+                "type": "string",
+                "description": "Text content of the Telegram message"
+              }
+            },
+            "required": [
+              "message_id",
+              "ok",
+              "text"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "description": "Messages sent to Telegram for alerts, confirmations, and reminders, including text content for verification",
+        "requirement_evidence": [
+          "向 Telegram 发送告警",
+          "在 Telegram 通知房东",
+          "并在 Telegram 发布确认",
+          "在 Telegram 提醒房东",
+          "提醒房东未设置清洁人员邮箱",
+          "通过邮件与 Telegram 发送给房东"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "due_bookings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "booking_id": {
+                "type": "string"
+              },
+              "check_in": {
+                "type": "string"
+              },
+              "check_out": {
+                "type": "string"
+              },
+              "guest_email": {
+                "type": "string"
+              },
+              "guest_name": {
+                "type": "string"
+              },
+              "property": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "booking_id",
+              "check_in",
+              "check_out",
+              "guest_email",
+              "guest_name",
+              "property"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "Bookings identified as due for check-in, check-out, or review message sending",
+        "requirement_evidence": [
+          "识别出需要发送入住（明天）、退房（今天）或评价请求（退房后两天）消息的行程"
+        ],
+        "source_operations": [
+          "read_bookings"
+        ],
+        "design_sources": [
+          "n8.due_booking"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "guest_messages",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Generated guest message text"
+          }
+        },
+        "description": "Language model generated plain text messages for guests",
+        "requirement_evidence": [
+          "由一个语言模型驱动的助理从 Google Sheets 的手册工作表中查找房源信息，生成一条纯文本消息"
+        ],
+        "source_operations": [
+          "write_guest_message"
+        ],
+        "design_sources": [
+          "n9.guest_message"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "weekly_stats_and_digest",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "weekly_stats": {
+              "type": "object",
+              "description": "Computed weekly statistics of bookings and cleaning tasks",
+              "properties": {
+                "new_bookings_count": {
+                  "type": "integer",
+                  "description": "Number of new bookings this week"
+                },
+                "cleaning_tasks_count": {
+                  "type": "integer",
+                  "description": "Number of cleaning tasks this week"
+                },
+                "check_ins_count": {
+                  "type": "integer",
+                  "description": "Number of check-ins this week"
+                },
+                "check_outs_count": {
+                  "type": "integer",
+                  "description": "Number of check-outs this week"
+                }
+              },
+              "required": [
+                "new_bookings_count",
+                "cleaning_tasks_count",
+                "check_ins_count",
+                "check_outs_count"
+              ],
+              "additionalProperties": true
+            },
+            "digest_report": {
+              "type": "string",
+              "description": "Language model generated concise landlord weekly digest"
+            }
+          },
+          "required": [
+            "weekly_stats",
+            "digest_report"
+          ],
+          "additionalProperties": true
+        },
+        "description": "Weekly booking and cleaning task statistics and landlord digest report with detailed weekly stats fields",
+        "requirement_evidence": [
+          "读取 Google Sheets 中的预订与清洁任务，计算本周统计",
+          "由语言模型撰写一份简明的房东周报"
+        ],
+        "source_operations": [
+          "write_weekly_digest"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "69B7DC62760A18E2C83585C354C5FF931D65512101C2C3187F3E44DFFEBB104D",
+  "public_interface_sha256": "B3DF7584C534DECA72864740663C98AF69054149892445E09C44DCA6FBD1F4BE",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

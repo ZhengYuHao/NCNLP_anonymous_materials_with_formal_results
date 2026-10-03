@@ -1,0 +1,286 @@
+{
+  "task_id": "N8F-105",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "cc1568b94f2a03963283bff7fac129b1b831380f6c5bbbe13a5c714a3ef4afea",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 消息并提取内容",
+      "node_type": "code",
+      "operation_family": "event_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "Telegram 机器人收到的用户消息，含文本内容、图片引用与内容类型标记（image/text）"
+        }
+      ],
+      "native_evidence": ["📱 Telegram Trigger", "📋 Extract Message Data"],
+      "requirement_evidence": ["机器人接收用户发来的图片或文本消息"],
+      "rationale": "需求声明的 Telegram 消息接收入口，为确定性的事件接收与内容提取动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按内容类型路由",
+      "node_type": "code",
+      "operation_family": "conditional_router",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "收到的用户消息，含内容类型标记"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "按内容类型分派后的消息（图片类或文本类）"
+        }
+      ],
+      "native_evidence": ["🔀 Route by Content Type - Image or Text"],
+      "requirement_evidence": [
+        "机器人接收用户发来的图片或文本消息，并按内容类型分派处理。",
+        "图片类消息进入图像分析路径：下载该图片，交由具备视觉理解能力的语言模型进行分析；文本类消息进入图像生成路径：以该文本作为提示词，调用图像生成能力生成图片。"
+      ],
+      "rationale": "需求声明的按消息内容类型分派动作：图片进入图像分析、文本进入图像生成，为确定性的条件路由变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "下载图片",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "图片类用户消息，含图片引用"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_file",
+          "type": "object",
+          "description": "从消息中下载得到的图片文件"
+        }
+      ],
+      "native_evidence": ["📸 Get Image file from Telegram"],
+      "requirement_evidence": ["图片类消息进入图像分析路径：下载该图片"],
+      "rationale": "需求声明的图片下载动作，为确定性的外部文件读取动作，判 code；仅图片分支激活。"
+    },
+    {
+      "node_id": "n4",
+      "label": "视觉语言模型分析图片",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "image_file",
+          "type": "object",
+          "description": "从消息中下载得到的图片文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_result",
+          "type": "string",
+          "description": "视觉语言模型对图片内容的理解与分析结果文本"
+        }
+      ],
+      "native_evidence": ["Analyze image using GPT-4O-Mini", "HTTP Nvidia Vila"],
+      "requirement_evidence": ["交由具备视觉理解能力的语言模型进行分析"],
+      "rationale": "需求声明由具备视觉理解能力的语言模型分析图片，需开放视觉理解与文本生成，判 semantic；原生两个视觉模型调用折叠为本节点契约（模型选型为实现细节）。"
+    },
+    {
+      "node_id": "n5",
+      "label": "根据文本提示词生成图片",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "object",
+          "description": "文本类用户消息，含作为提示词的文本内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_image",
+          "type": "object",
+          "description": "根据文本提示词调用图像生成能力生成的图片"
+        }
+      ],
+      "native_evidence": ["NVIDIA API NVIDIA Stable Diffusion 3"],
+      "requirement_evidence": ["文本类消息进入图像生成路径：以该文本作为提示词，调用图像生成能力生成图片"],
+      "rationale": "需求声明的以文本为提示词调用图像生成能力生成图片的动作，为确定性的外部生成请求与结果获取，判 code；仅文本分支激活。"
+    },
+    {
+      "node_id": "n6",
+      "label": "汇总两条路径的处理结果",
+      "node_type": "code",
+      "operation_family": "data_merging",
+      "inputs": [
+        {
+          "name": "analysis_result",
+          "type": "string",
+          "description": "视觉语言模型对图片的分析结果文本"
+        },
+        {
+          "name": "generated_image",
+          "type": "object",
+          "description": "根据文本提示词生成的图片"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "combined_results",
+          "type": "object",
+          "description": "两条路径处理结果汇总后的统一对象，供格式化报告使用"
+        }
+      ],
+      "native_evidence": ["🔀 Merge AI Results"],
+      "requirement_evidence": ["两条路径的处理结果汇总后"],
+      "rationale": "需求声明的两条路径处理结果汇总动作，为并行分支汇入的确定性合并变换，判 code；承担 semantic 到 code 的数据传递。"
+    },
+    {
+      "node_id": "n7",
+      "label": "通过 Gmail 发送格式化报告",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "combined_results",
+          "type": "object",
+          "description": "汇总后的处理结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send a message of image-to-text results", "Send a message of text-to-image results"],
+      "requirement_evidence": ["通过 Gmail 将结果以格式化报告的形式发送到邮箱"],
+      "rationale": "需求声明的通过 Gmail 将汇总结果以格式化报告发送到邮箱的动作，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "消息接收并提取内容后进入类型路由。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "content_type == 'image'",
+      "rationale": "图片类消息进入图像分析路径。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": "content_type == 'text'",
+      "rationale": "文本类消息进入图像生成路径。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片下载完成后交视觉语言模型分析。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片分析结果汇入汇总点。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成的图片汇入汇总点。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "两条路径结果汇总完成后发送格式化报告邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "提取后的用户消息传给路由节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "图片类消息沿图片分支传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n5",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "文本类消息沿文本分支传给图像生成节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "image_file",
+      "condition": null,
+      "rationale": "下载得到的图片文件传给视觉语言模型。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "analysis_result",
+      "condition": null,
+      "rationale": "图片分析结果传给汇总节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "generated_image",
+      "condition": null,
+      "rationale": "生成的图片传给汇总节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "combined_results",
+      "condition": null,
+      "rationale": "汇总结果传给邮件发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7"],
+  "confidence": 0.93,
+  "notes": "需求为 Telegram 机器人的视觉理解与图像生成能力：接收用户图片或文本消息，按内容类型路由——图片进入下载+视觉语言模型分析路径，文本进入以文本为提示词的图像生成路径；两条路径处理结果在合并点汇总后，通过 Gmail 以格式化报告发送到邮箱。multi_branch_join 拓扑：路由后双分支汇入合并点再统一发送，n4→n6 承担 semantic 到 code 的数据传递。原生的 Get Text from Telegram 回执消息、Convert to Binary File（base64 转二进制）、双 Gmail 节点拆分发送、Vila 与 GPT-4o-Mini 双模型调用等均属需求未声明的实现细节，未单独建模；需求未声明失败行为，未建模失败分支。"
+}

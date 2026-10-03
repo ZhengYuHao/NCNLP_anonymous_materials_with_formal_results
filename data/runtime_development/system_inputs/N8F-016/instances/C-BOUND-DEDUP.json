@@ -1,0 +1,39 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-016",
+  "case_id": "C-BOUND-DEDUP",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-SCHEDULE": {
+        "interval_hours": 2,
+        "at_minute": 15,
+        "language": "en",
+        "max_posts_per_hashtag": 5,
+        "daily_comment_cap": 80
+      },
+      "F-POSTS-POOL": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI automation tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA workflow"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "Low-code news"
+          }
+        ]
+      },
+      "F-LOG-P1": {
+        "already_commented_urls": [
+          "https://instagram.com/p/aaa"
+        ]
+      }
+    }
+  },
+  "input_sha256": "F93320BB654FE033706712A734B770A6F2EAEED19FD167043816CFD425EFE4CA"
+}

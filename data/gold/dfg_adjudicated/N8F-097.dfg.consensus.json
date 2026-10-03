@@ -1,0 +1,79 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-097",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "公司主页链接（company_url）",
+        "国家/地区（geo）",
+        "公司主页链接（company_url）与国家/地区（geo）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "公司原始数据（概览、评分、评论、常见问题）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "公司原始数据（评分、评论等）",
+        "公司原始数据（评论、评分等）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "结构化字段数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "详细摘要"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "统一输出对象（结构化数据与摘要）",
+        "合并后的统一输出对象（最终报告）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 1.0,
+    "shared_edge_count": 6,
+    "adjudicated_dispute_count": 0,
+    "adjudicator_id": null,
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "task_id": "N8F-038",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "4e606245eb5a44d718d6a5d0ef334214bc3c1a84013cafe1b58b33f28e2a3454",
+  "fixtures": [
+    {
+      "fixture_id": "F-QUERY-SALES",
+      "purpose": "正常用例：用户提供表名 sales 后，用自然语言询问去年总销售额，验证问题被转换为 SQL 并执行",
+      "input_data": {
+        "table_name": "sales",
+        "question": "What was the total revenue last year?"
+      }
+    },
+    {
+      "fixture_id": "F-QUERY-CUSTOMERS",
+      "purpose": "正常用例：用户提供表名 customers 后，用自然语言询问客户总数，验证返回基于查询结果的分析结论",
+      "input_data": {
+        "table_name": "customers",
+        "question": "How many customers do we have?"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-TO-SQL-SALES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "question_to_sql",
+      "request_contract": {
+        "table_name": "sales",
+        "question": "What was the total revenue last year?"
+      },
+      "response_contract": {
+        "sql": "SELECT SUM(revenue) AS total_revenue FROM sales WHERE year = 2025"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTGRES-SALES",
+      "dependency_type": "n8n-nodes-base.postgres",
+      "operation": "execute_query",
+      "request_contract": {
+        "sql": "SELECT SUM(revenue) AS total_revenue FROM sales WHERE year = 2025"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "total_revenue": 1234500
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-SALES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_query_result",
+      "request_contract": {
+        "rows": "query_result_rows",
+        "question": "What was the total revenue last year?"
+      },
+      "response_contract": {
+        "conclusion": "Total revenue last year was 1,234,500."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TO-SQL-CUSTOMERS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "question_to_sql",
+      "request_contract": {
+        "table_name": "customers",
+        "question": "How many customers do we have?"
+      },
+      "response_contract": {
+        "sql": "SELECT COUNT(*) AS customer_count FROM customers"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTGRES-CUSTOMERS",
+      "dependency_type": "n8n-nodes-base.postgres",
+      "operation": "execute_query",
+      "request_contract": {
+        "sql": "SELECT COUNT(*) AS customer_count FROM customers"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "customer_count": 42
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE-CUSTOMERS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_query_result",
+      "request_contract": {
+        "rows": "query_result_rows",
+        "question": "How many customers do we have?"
+      },
+      "response_contract": {
+        "conclusion": "There are 42 customers in total."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-SALES-QUERY",
+      "kind": "positive",
+      "fixture_ids": ["F-QUERY-SALES"],
+      "mock_ids": ["M-LLM-TO-SQL-SALES", "M-POSTGRES-SALES", "M-LLM-ANALYZE-SALES"],
+      "assertions": [
+        {
+          "assertion_id": "A-SQ-1",
+          "target": "exec_log.llm_to_sql.sql",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求由语言模型将自然语言问题转换为 SQL，执行日志必须记录生成的 SQL"
+        },
+        {
+          "assertion_id": "A-SQ-2",
+          "target": "exec_log.llm_to_sql.sql",
+          "operator": "contains",
+          "expected": "sales",
+          "rationale": "生成的 SQL 必须引用用户提供的目标表名 sales"
+        },
+        {
+          "assertion_id": "A-SQ-3",
+          "target": "exec_log.postgres.execute_query.rows",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求直接对数据库执行查询，执行日志必须包含查询结果行"
+        },
+        {
+          "assertion_id": "A-SQ-4",
+          "target": "exec_log.postgres.execute_query.rows[0].total_revenue",
+          "operator": "equals",
+          "expected": 1234500,
+          "rationale": "查询结果必须与固定模拟的数据库响应一致"
+        },
+        {
+          "assertion_id": "A-SQ-5",
+          "target": "final_output.conclusion",
+          "operator": "contains",
+          "expected": "1,234,500",
+          "rationale": "最终分析结论必须基于查询结果中的具体数值"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CUSTOMERS-QUERY",
+      "kind": "positive",
+      "fixture_ids": ["F-QUERY-CUSTOMERS"],
+      "mock_ids": ["M-LLM-TO-SQL-CUSTOMERS", "M-POSTGRES-CUSTOMERS", "M-LLM-ANALYZE-CUSTOMERS"],
+      "assertions": [
+        {
+          "assertion_id": "A-CQ-1",
+          "target": "exec_log.llm_to_sql.sql",
+          "operator": "equals",
+          "expected": "SELECT COUNT(*) AS customer_count FROM customers",
+          "rationale": "语言模型转换出的 SQL 必须与固定模拟输出完全一致，不得改写"
+        },
+        {
+          "assertion_id": "A-CQ-2",
+          "target": "exec_log.postgres.execute_query.rows[0].customer_count",
+          "operator": "equals",
+          "expected": 42,
+          "rationale": "数据库返回的计数必须被如实取回"
+        },
+        {
+          "assertion_id": "A-CQ-3",
+          "target": "final_output.conclusion",
+          "operator": "contains",
+          "expected": "42",
+          "rationale": "分析结论必须包含查询得到的客户数量数值"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两个正常查询（sales 汇总、customers 计数）。需求仅规定使用者先提供一次目标表名后进行查询的正常流程，未规定缺少表名等异常输入的处理策略，故不设错误分支用例。语言模型 SQL 转换与分析、PostgreSQL 查询全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为 SQL 文本相等/包含、结果数值相等、字段存在与调用次数等可计算条件。"
+}

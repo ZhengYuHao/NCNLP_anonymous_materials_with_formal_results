@@ -1,0 +1,118 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-072",
+  "source_id": "n8n:7926",
+  "workflow_sha256": "63bb1439e177b67ee8af5ab41213fd871c29e46d3501621ab4caa32b334bec6b",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "f415c02058cb4cfcbc2caf2c2daf32c93fe47ba9a25927b50d31c2eb2edfc636",
+  "requirement": {
+    "requirement_text": "业务用户提交一个需要检查的网址，系统同时向 VirusTotal 与 urlscan.io 发起检测请求。VirusTotal 在网址可达时总会返回结果，提供该网址的信誉、恶意/安全标记以及扫描元数据；urlscan.io 则返回该网址在加载时的行为细节（涉及的域名、请求与资源等），但有时会因被拦截或受限制而失败。系统会检查 urlscan.io 是否成功响应，并据此分两种情况生成一份汇总结论：若两次检测都成功，则汇总 VirusTotal 与 urlscan.io 的综合发现；若 urlscan.io 失败，则在汇总中明确写明“urlscan.io 检测被阻断/失败，结论仅依据 VirusTotal 的结果”。无论走哪种情况，系统都会产出一份完整、结构化且便于阅读的安全检测汇总，并通过 Telegram 机器人发送到指定的 Telegram 会话。",
+    "source_spans": [
+      {
+        "start": 17,
+        "end": 185,
+        "text": "The workflow is designed to scan submitted URLs using urlscan.io and VirusTotal, combine the results into a single structured summary, and send the report via Telegram."
+      },
+      {
+        "start": 577,
+        "end": 614,
+        "text": "Accepts URLs that need to be checked."
+      },
+      {
+        "start": 615,
+        "end": 663,
+        "text": "Initiates requests to VirusTotal and urlscan.io."
+      },
+      {
+        "start": 684,
+        "end": 731,
+        "text": "Always returns results if the URL is reachable."
+      },
+      {
+        "start": 732,
+        "end": 794,
+        "text": "Provides reputation, malicious/clean flags, and scan metadata."
+      },
+      {
+        "start": 815,
+        "end": 903,
+        "text": "Returns details on how the URL behaves when loaded (domains, requests, resources, etc.)."
+      },
+      {
+        "start": 904,
+        "end": 950,
+        "text": "Sometimes fails due to blocks or restrictions."
+      },
+      {
+        "start": 985,
+        "end": 1034,
+        "text": "Checks whether urlscan.io responded successfully."
+      },
+      {
+        "start": 1035,
+        "end": 1108,
+        "text": "Ensures the workflow always produces a summary, even if urlscan.io fails."
+      },
+      {
+        "start": 1132,
+        "end": 1213,
+        "text": "If both scans succeed → summarize combined findings from VirusTotal + urlscan.io."
+      },
+      {
+        "start": 1214,
+        "end": 1333,
+        "text": "If urlscan.io fails → state clearly in the summary “urlscan.io scan was blocked/failed. Relying on VirusTotal results.”"
+      },
+      {
+        "start": 1406,
+        "end": 1474,
+        "text": "Final formatted summary is delivered to a Telegram chat via the bot."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "业务用户提交的待检测网址",
+        "VirusTotal 返回的信誉、恶意/安全标记与扫描元数据",
+        "urlscan.io 返回的网址加载行为细节（域名、请求、资源等）"
+      ],
+      "conditions": [
+        "VirusTotal 在网址可达时返回结果；urlscan.io 可能因被拦截或受限而失败",
+        "两次检测均成功时汇总双方面发现",
+        "urlscan.io 失败时在汇总中明确标注失败并仅依据 VirusTotal 结果"
+      ],
+      "allowed_actions": [
+        "向 VirusTotal 与 urlscan.io 发起检测请求",
+        "检查 urlscan.io 是否成功响应",
+        "生成结构化、便于阅读的安全检测汇总",
+        "通过 Telegram 机器人将汇总发送到指定 Telegram 会话"
+      ],
+      "visible_outcomes": [
+        "指定 Telegram 会话收到一份完整的安全检测汇总",
+        "汇总中明确说明 urlscan.io 检测是成功还是被阻断/失败"
+      ],
+      "failure_behavior": [
+        "urlscan.io 检测被阻断或失败时，仍在汇总中明确标注该情况并以 VirusTotal 结果作为依据，保证用户依然收到一份完整的安全报告"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-072.packet.json",
+    "packet_sha256": "b43e82088e16f4311fecdc58c50d7a2c8e6ad21c7f93eb8734bd4100f3c43778",
+    "public_description_sha256": "f3b3c9bb3346f5170f6bc596b70926525f59f15dc7053391cf808969b80ac289"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-072.response.json",
+    "verification_response_sha256": "789205f04c5660a0fc9c9e393392e1c3c624e7e4b1eb93e28bb59e253e711246",
+    "decision": "accept"
+  },
+  "formal_index": 83
+}

@@ -1,0 +1,210 @@
+{
+  "task_id": "N8F-035",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "3e626d1bed7c5b59603d5c5aa55f0d2481c1dfdf3e699586c8338507d110e8fa",
+  "fixtures": [
+    {
+      "fixture_id": "F-REDDIT-INPUT",
+      "purpose": "正常用例：Reddit 帖子链接与配音音色、语速、目标时长参数",
+      "input_data": {
+        "voice": "nova",
+        "ttsSpeed": 1,
+        "videoLength": 60,
+        "redditLink": "https://www.reddit.com/r/example/comments/abc123/example_title"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-REDDIT-FETCH",
+      "dependency_type": "httpRequest",
+      "operation": "fetch_reddit_thread",
+      "request_contract": {
+        "url": "https://www.reddit.com/r/example/comments/abc123/example_title"
+      },
+      "response_contract": {
+        "post": {
+          "id": "abc123",
+          "title": "An interesting discussion about remote work",
+          "selftext": "Remote work changes productivity patterns.",
+          "score": 120
+        },
+        "comments": [
+          {"author": "u1", "body": "I agree with the productivity gains."},
+          {"author": "u2", "body": "Communication is the real challenge."},
+          {"author": "u3", "body": "Hybrid setups work best for my team."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLIPS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "structure_clips",
+      "request_contract": {
+        "thread": "string"
+      },
+      "response_contract": {
+        "clips": [
+          {"id": "C1", "text": "Remote work boosts productivity."},
+          {"id": "C2", "text": "Communication is the main challenge."},
+          {"id": "C3", "text": "Hybrid setups balance both worlds."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QUERIES",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_search_queries",
+      "request_contract": {
+        "clips": "array"
+      },
+      "response_contract": {
+        "queries": [
+          {"clip_id": "C1", "query": "remote work office"},
+          {"clip_id": "C2", "query": "team communication"},
+          {"clip_id": "C3", "query": "hybrid work"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PEXELS-SEARCH",
+      "dependency_type": "httpRequest",
+      "operation": "search_stock_videos",
+      "request_contract": {
+        "query": "string",
+        "orientation": "portrait"
+      },
+      "response_contract": {
+        "videos": [
+          {
+            "id": 9001,
+            "width": 720,
+            "height": 1280,
+            "url": "https://videos.example.com/stock-9001.mp4"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TTS-AUDIO",
+      "dependency_type": "httpRequest",
+      "operation": "generate_tts",
+      "request_contract": {
+        "clip_id": "string",
+        "voice": "nova",
+        "speed": 1
+      },
+      "response_contract": {
+        "audio_url": "https://audio.example.com/clip-audio.mp3",
+        "duration_seconds": 12
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHOTSTACK-RENDER",
+      "dependency_type": "httpRequest",
+      "operation": "render_video",
+      "request_contract": {
+        "width": 720,
+        "height": 1280,
+        "assets": "array"
+      },
+      "response_contract": {
+        "render_id": "render-fixed-001",
+        "status": "completed",
+        "video_url": "https://render.example.com/final-video.mp4"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-RENDER-VERTICAL",
+      "kind": "positive",
+      "fixture_ids": ["F-REDDIT-INPUT"],
+      "mock_ids": ["M-REDDIT-FETCH", "M-LLM-CLIPS", "M-LLM-QUERIES", "M-PEXELS-SEARCH", "M-TTS-AUDIO", "M-SHOTSTACK-RENDER"],
+      "assertions": [
+        {
+          "assertion_id": "A-REDDIT-FETCHED",
+          "target": "fetch_reddit_thread.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "系统应抓取一次 Reddit 帖子及其评论"
+        },
+        {
+          "assertion_id": "A-CLIPS-COUNT",
+          "target": "llm_clips.output.clips",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "模拟帖子被整理为 3 个结构化片段"
+        },
+        {
+          "assertion_id": "A-PEXELS-QUERY-COUNT",
+          "target": "pexels.search_stock_videos.calls",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每个片段都应生成检索词并查询库存素材，共 3 次查询"
+        },
+        {
+          "assertion_id": "A-TTS-COUNT",
+          "target": "tts.generate_tts.calls",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每个片段都应生成配音音频，共 3 段"
+        },
+        {
+          "assertion_id": "A-RENDER-ONCE",
+          "target": "shotstack.render_video.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "全部素材与音频应提交一次渲染"
+        },
+        {
+          "assertion_id": "A-RENDER-RESOLUTION",
+          "target": "shotstack.render_video.calls[0].height",
+          "operator": "equals",
+          "expected": 1280,
+          "rationale": "渲染参数必须是 720×1280 竖版规格"
+        },
+        {
+          "assertion_id": "A-RENDER-WIDTH",
+          "target": "shotstack.render_video.calls[0].width",
+          "operator": "equals",
+          "expected": 720,
+          "rationale": "渲染参数宽度必须为 720"
+        },
+        {
+          "assertion_id": "A-OUTPUT-URL",
+          "target": "output.video_url",
+          "operator": "matches",
+          "expected": "^https?://\\S+",
+          "rationale": "最终应返回成品视频的访问链接"
+        },
+        {
+          "assertion_id": "A-BROLL-ASSETS",
+          "target": "shotstack.render_video.calls[0].assets",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "提交给渲染服务的素材（B-roll 画面与音频）必须存在"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。固定输入含 Reddit 链接与 voice/ttsSpeed/videoLength 参数；帖子抓取、片段整理、检索词、Pexels 素材、TTS 与 Shotstack 渲染全部确定性模拟。断言可计算：抓取次数、片段数、素材查询次数、配音段数、渲染分辨率 720×1280、输出视频 URL 存在且为合法链接。"
+}

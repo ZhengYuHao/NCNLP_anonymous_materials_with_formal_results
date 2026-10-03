@@ -1,0 +1,348 @@
+{
+  "task_id": "N8F-088",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "9bbd5b9b1f3d0afbc9c008aca4c7b2ec962b42d36b65323d40d896650c0092e8",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单提交",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "用户提交的 YouTube 视频链接"
+        },
+        {
+          "name": "language_pref",
+          "type": "object",
+          "description": "用户选择的语言与翻译偏好"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "视频链接"
+        },
+        {
+          "name": "language_pref",
+          "type": "object",
+          "description": "语言与翻译偏好"
+        }
+      ],
+      "native_evidence": [
+        "When URL Submitted"
+      ],
+      "requirement_evidence": [
+        "用户通过表单提交一个 YouTube 视频链接，并选择语言与翻译偏好"
+      ],
+      "rationale": "需求声明接收表单提交的视频链接与语言翻译偏好，为确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取视频转写文本",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "视频链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "视频的转写文本"
+        }
+      ],
+      "native_evidence": [
+        "Extract Transcript"
+      ],
+      "requirement_evidence": [
+        "调用视频转写与信息获取服务，并行获取该视频的转写文本与视频详情"
+      ],
+      "rationale": "需求声明调用转写服务获取转写文本，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "获取视频详情",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "视频链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_details",
+          "type": "object",
+          "description": "视频的元信息详情"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Video Details"
+      ],
+      "requirement_evidence": [
+        "调用视频转写与信息获取服务，并行获取该视频的转写文本与视频详情"
+      ],
+      "rationale": "需求声明获取视频详情，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "合并信息并构造处理请求",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写文本"
+        },
+        {
+          "name": "video_details",
+          "type": "object",
+          "description": "视频详情"
+        },
+        {
+          "name": "language_pref",
+          "type": "object",
+          "description": "翻译偏好"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "processing_request",
+          "type": "object",
+          "description": "合并转写与元信息、识别转写语言并按翻译范围构造的处理请求"
+        }
+      ],
+      "native_evidence": [
+        "Merge Transcript and Video Info",
+        "Combine Video and Transcript",
+        "Format for AI Processing"
+      ],
+      "requirement_evidence": [
+        "把转写文本与视频元信息合并，识别转写文本的语言，并依据所选的翻译范围构造处理请求"
+      ],
+      "rationale": "需求声明合并转写与元信息、识别语言并按翻译范围构造请求，为确定性合并与构造，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成摘要、要点与译文",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "processing_request",
+          "type": "object",
+          "description": "处理请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model_output",
+          "type": "object",
+          "description": "摘要、要点及在需要时的完整转写译文"
+        }
+      ],
+      "native_evidence": [
+        "AI Summarization and Translation"
+      ],
+      "requirement_evidence": [
+        "交由语言模型生成摘要、要点，以及在需要时生成完整的转写译文"
+      ],
+      "rationale": "需求声明由语言模型生成摘要、要点与可选译文，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "整理为文本文档",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "model_output",
+          "type": "object",
+          "description": "模型输出"
+        },
+        {
+          "name": "video_details",
+          "type": "object",
+          "description": "视频信息"
+        },
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "原始转写文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text_document",
+          "type": "string",
+          "description": "含摘要、要点、视频信息、原始转写及可选译文的文本文档"
+        }
+      ],
+      "native_evidence": [
+        "Format for AI Processing"
+      ],
+      "requirement_evidence": [
+        "把模型输出与视频信息、原始转写文本整理为一份文本文档"
+      ],
+      "rationale": "需求声明把模型输出与视频信息、原始转写整理为文本文档，为确定性格式化，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "转换为可下载文件并返回",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "text_document",
+          "type": "string",
+          "description": "整理好的文本文档"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Output File Conversion"
+      ],
+      "requirement_evidence": [
+        "把该文本转换为可下载文件，并作为表单的响应返回给用户"
+      ],
+      "rationale": "需求声明将文本转换为可下载文件并作为表单响应返回，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收表单后并行获取转写文本。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收表单后并行获取视频详情。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写文本汇入合并节点。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "视频详情汇入合并节点。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "构造请求后交由语言模型生成。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "模型输出整理为文本文档。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "文档转换为文件并返回。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video_url",
+      "condition": null,
+      "rationale": "视频链接传给转写获取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "video_url",
+      "condition": null,
+      "rationale": "视频链接传给详情获取节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "转写文本传给合并节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "video_details",
+      "condition": null,
+      "rationale": "视频详情传给合并节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "processing_request",
+      "condition": null,
+      "rationale": "处理请求传给语言模型节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "model_output",
+      "condition": null,
+      "rationale": "模型输出传给文档整理节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "text_document",
+      "condition": null,
+      "rationale": "文本文档传给文件转换节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.93,
+  "notes": "转写文本与视频详情并行获取后汇入合并节点；识别语言与按翻译范围构造请求合并为预处理节点；完整译文仅在所选翻译范围包含翻译时产出，作为语义节点输入条件的一部分说明。"
+}

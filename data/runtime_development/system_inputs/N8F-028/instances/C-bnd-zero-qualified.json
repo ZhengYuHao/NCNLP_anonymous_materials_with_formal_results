@@ -1,0 +1,50 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-028",
+  "case_id": "C-bnd-zero-qualified",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-leads-zero": {
+        "leads": [
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          }
+        ]
+      },
+      "F-owners": {
+        "owner_a": {
+          "owner_id": "owner_a",
+          "name": "Alpha Manager",
+          "email": "alpha@corp.com"
+        },
+        "owner_b": {
+          "owner_id": "owner_b",
+          "name": "Beta Manager",
+          "email": "beta@corp.com"
+        },
+        "owner_c": {
+          "owner_id": "owner_c",
+          "name": "Gamma Manager",
+          "email": "gamma@corp.com"
+        }
+      }
+    }
+  },
+  "input_sha256": "307635C0E50119F1619B9DCFF04C7FC1BD02B40C9D85ADA7C598E80330C72EA8"
+}

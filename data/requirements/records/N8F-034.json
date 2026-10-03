@@ -1,0 +1,98 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-034",
+  "source_id": "n8n:3155",
+  "workflow_sha256": "a29f5b91ef734047596dfdc30ca43fa297a512dba202bfe9d49b510796388d5d",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "fff929bc124d0c0495a69c576e26196036258342ec64411b851abd3aa76200b9",
+  "requirement": {
+    "requirement_text": "系统按周定期执行：围绕指定主题在 Reddit 检索相关帖子，并按互动表现（如点赞数等条件）筛选出处于上升趋势的帖子。对每篇入选帖子，系统获取其评论，按评分取排名前 30 条评论，使用语言模型分析这些评论，得出整体情绪、主要叙事、受众洞察以及对公关工作的启示；同时使用网页正文抽取服务获取帖子所链接文章的内容，识别其中的核心故事要素、技术层面要素、叙事机会与可传播要素。综合评论与内容两方面的分析，系统为每篇帖子生成报告，内容包括首发式报道机会、趋势放大型选题、优先级排序、执行路线图与策略建议。报告被整理为文本文件并打包为压缩包上传至 Google Drive，随后通过 Mattermost 将压缩包链接分享给团队成员。",
+    "source_spans": [
+      {
+        "start": 522,
+        "end": 998,
+        "text": "Operating on a weekly schedule, the workflow searches Reddit for posts related to specified topics, filters them based on engagement metrics, and performs a deep analysis of both the content and public reaction. \n\nIt then generates comprehensive reports that include story opportunities, audience insights, and strategic recommendations. These reports are automatically compiled, stored in Google Drive, and shared with team members via Mattermost for immediate collaboration."
+      },
+      {
+        "start": 3343,
+        "end": 3813,
+        "text": "What this workflow does\nOverview\nThe workflow automatically identifies trending posts on Reddit related to specified topics, analyzes both the content of linked articles and public sentiment from comments, and generates comprehensive PR strategy reports. These reports include story opportunities, audience insights, and strategic recommendations based on the analysis. The final reports are compiled, stored in Google Drive, and shared with team members via Mattermost."
+      },
+      {
+        "start": 3815,
+        "end": 4078,
+        "text": "Process\nTopic Selection and Reddit Search:\n   The workflow starts with a list of topics specified in the \"Set Data\" node\n   It searches Reddit for posts related to these topics\n   Posts are filtered based on upvotes and other criteria to focus on trending content"
+      },
+      {
+        "start": 4080,
+        "end": 4349,
+        "text": "Comment Analysis:\n   For each post, the workflow retrieves comments\n   It extracts the top 30 comments based on score\n   Using Claude AI, it analyzes the comments to understand:\n     Overall sentiment\n     Dominant narratives\n     Audience insights\n     PR implications"
+      },
+      {
+        "start": 4351,
+        "end": 4578,
+        "text": "Content Analysis:\n   The workflow extracts the content of the linked article using Jina AI\n   It analyzes the content to identify:\n     Core story elements\n     Technical aspects\n     Narrative opportunities\n     Viral elements"
+      },
+      {
+        "start": 4580,
+        "end": 4834,
+        "text": "PR Strategy Development:\n   Based on the combined analysis of comments and content, the workflow generates:\n     First-mover story opportunities\n     Trend-amplifier story ideas\n     Priority rankings\n     Execution roadmap\n     Strategic recommendations"
+      },
+      {
+        "start": 4836,
+        "end": 5129,
+        "text": "Report Generation and Distribution:\n   The workflow compiles comprehensive reports for each post\n   Reports are converted to text files\n   All files are compressed into a ZIP archive\n   The archive is uploaded to Google Drive\n   A link to the archive is shared with team members via Mattermost"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "指定的主题清单",
+        "Reddit 上检索到的相关帖子及其评论",
+        "帖子所链接文章的内容"
+      ],
+      "conditions": [
+        "按周定期执行",
+        "帖子需按点赞数等互动条件筛选，聚焦趋势内容",
+        "评论按评分取排名前 30 条"
+      ],
+      "allowed_actions": [
+        "在 Reddit 按主题检索帖子",
+        "按互动条件筛选帖子",
+        "获取并按评分取前 30 条评论",
+        "分析评论的整体情绪、主要叙事、受众洞察与公关启示",
+        "抽取链接文章正文并识别核心故事要素、技术层面要素、叙事机会与可传播要素",
+        "生成含报道机会、趋势放大选题、优先级、执行路线图与策略建议的报告",
+        "将报告转为文本文件并打包为压缩包",
+        "上传压缩包至 Google Drive",
+        "通过 Mattermost 将压缩包链接分享给团队成员"
+      ],
+      "visible_outcomes": [
+        "每篇入选帖子对应一份包含故事机会、受众洞察与策略建议的报告",
+        "Google Drive 中生成报告压缩包",
+        "团队成员通过 Mattermost 收到压缩包链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-034.packet.json",
+    "packet_sha256": "913da009dbc9ab7d9b567c64324e4aec75a06ee0890b52b7ec97c0d4ba5b478f",
+    "public_description_sha256": "964703a15528f7b1897fe3261a69284093d79bfb3799b66a41bd4dbeed4ce8e5"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-034.response.json",
+    "verification_response_sha256": "10c10a2a1d4ed011304f30c7f38c3086dc01f9c7f6fe1fe8d8acfb2b61128692",
+    "decision": "accept"
+  },
+  "formal_index": 45
+}

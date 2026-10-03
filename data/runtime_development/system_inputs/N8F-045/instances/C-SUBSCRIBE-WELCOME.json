@@ -1,0 +1,13 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-SUBSCRIBE-WELCOME",
+  "kind": "positive",
+  "input_data": {
+    "name": "Alice",
+    "email": "alice@example.com",
+    "last_period_start": "2026-08-01",
+    "cycle_length_days": 28
+  },
+  "input_sha256": "7ED14B40201D4AE369BB3A78D1706D0023B8E2006500F8CB1F6242FD07A69A65"
+}

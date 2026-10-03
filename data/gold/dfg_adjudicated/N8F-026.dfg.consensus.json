@@ -1,0 +1,131 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-026",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "检索配置（城市、品类、阈值与投递目标）",
+        "城市与品类配置"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "检索就绪的商家档案（快照结果）",
+        "检索结果（商家档案快照）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "打分后的商家档案",
+        "打分后的候选商家列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "候选商家档案与评论数据"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-026-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "抱怨主题抽取自候选商家三星及以下评分的评论，评论数据由 g3 下载商家档案产出，g4 过滤为透传、不产生新数据定义。",
+      "confidence": 0.7,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g6",
+      "data_items": [
+        "商家资料完整度评分"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-026-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "排名报告按商家得分排序，排名真实消费 g3 计算的完整度缺口评分。",
+      "confidence": 0.75,
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "过滤后的候选商家（含评论数据）",
+        "过滤后的候选商家"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "抱怨主题抽取结果",
+        "抱怨主题与候选商家数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "排名报告中的候选商家行",
+        "排名报告（逐行候选商家数据）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "格式化的排名摘要内容",
+        "带排名的格式化摘要"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g4",
+      "data_items": [
+        "已记录候选商家（历史写入记录）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-026-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "g4 读取 Google Sheets 中已记录候选商家做 90 天去重，这些记录由 g7 逐行追加维护，属跨运行写入-读取数据依赖。",
+      "confidence": 0.8,
+      "edge_id": "d10"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.823529411764706,
+    "shared_edge_count": 7,
+    "adjudicated_dispute_count": 3,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

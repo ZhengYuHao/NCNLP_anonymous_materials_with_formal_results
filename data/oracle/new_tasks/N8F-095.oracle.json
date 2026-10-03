@@ -1,0 +1,298 @@
+{
+  "task_id": "N8F-095",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "fa6134b3ff29eede29187b914a84d956494ca03cff7ae614f0a7803a96446175",
+  "fixtures": [
+    {
+      "fixture_id": "F-REQ-MVP-DEFAULT",
+      "purpose": "正常用例：标准请求，指定子版块、排序方式、点子数量上限与帖子数量上限",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "subreddits": ["startups"],
+          "sort": "top",
+          "idea_limit": 2,
+          "post_limit": 3
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REQ-MVP-LIMIT-1",
+      "purpose": "边界用例：点子数量上限为 1，验证返回数量不超过上限",
+      "input_data": {
+        "method": "POST",
+        "body": {
+          "subreddits": ["startups"],
+          "sort": "hot",
+          "idea_limit": 1,
+          "post_limit": 3
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-REDDIT-POSTS",
+      "dependency_type": "n8n-nodes-base.reddit",
+      "operation": "fetch_posts",
+      "request_contract": {
+        "subreddits": ["startups"],
+        "sort": "top",
+        "limit": 3
+      },
+      "response_contract": {
+        "posts": [
+          {"id": "t3-post1", "title": "We built a grocery delivery app for seniors", "selftext": "We are two founders helping elderly people order groceries.", "subreddit": "startups", "author": "user_a", "created_utc": 1756000000},
+          {"id": "t3-post2", "title": "AI tool for meeting notes", "selftext": "Our tool summarizes meetings automatically.", "subreddit": "startups", "author": "user_b", "created_utc": 1755900000},
+          {"id": "t3-post3", "title": "A pet-sitting marketplace", "selftext": "We connect pet owners with local sitters.", "subreddit": "startups", "author": "user_c", "created_utc": 1755800000}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-COMMENTS-P1",
+      "dependency_type": "n8n-nodes-base.reddit",
+      "operation": "fetch_top_comments",
+      "request_contract": {
+        "post_id": "t3-post1"
+      },
+      "response_contract": {
+        "comments": [
+          {"id": "t1-c1", "body": "Seniors really need this.", "score": 42},
+          {"id": "t1-c2", "body": "How do you handle delivery fees?", "score": 18}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-COMMENTS-P2",
+      "dependency_type": "n8n-nodes-base.reddit",
+      "operation": "fetch_top_comments",
+      "request_contract": {
+        "post_id": "t3-post2"
+      },
+      "response_contract": {
+        "comments": [
+          {"id": "t2-c1", "body": "Meeting notes AI is crowded.", "score": 25}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-COMMENTS-P3",
+      "dependency_type": "n8n-nodes-base.reddit",
+      "operation": "fetch_top_comments",
+      "request_contract": {
+        "post_id": "t3-post3"
+      },
+      "response_contract": {
+        "comments": [
+          {"id": "t3-c1", "body": "Local trust is the key.", "score": 31}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-IDEAS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "generate_mvp_ideas",
+      "request_contract": {
+        "enriched_posts": [
+          {"post_id": "t3-post1", "content": "We built a grocery delivery app for seniors. Seniors really need this. How do you handle delivery fees?"},
+          {"post_id": "t3-post2", "content": "AI tool for meeting notes. Meeting notes AI is crowded."},
+          {"post_id": "t3-post3", "content": "A pet-sitting marketplace. Local trust is the key."}
+        ]
+      },
+      "response_contract": {
+        "results": [
+          {"post_id": "t3-post1", "verdict": "idea", "title": "Senior Grocery Concierge", "summary": "A concierge grocery service for seniors with human support.", "sub_scores": {"problem": 9, "market": 8, "feasibility": 7, "novelty": 6}, "composite_score": 82},
+          {"post_id": "t3-post2", "verdict": "kill", "reason": "Market too crowded"},
+          {"post_id": "t3-post3", "verdict": "idea", "title": "Local Pet-Sitter Trust Network", "summary": "A vetted local pet-sitter network with trust scores.", "sub_scores": {"problem": 7, "market": 8, "feasibility": 8, "novelty": 5}, "composite_score": 74}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-POSTS-HOT",
+      "dependency_type": "n8n-nodes-base.reddit",
+      "operation": "fetch_posts",
+      "request_contract": {
+        "subreddits": ["startups"],
+        "sort": "hot",
+        "limit": 3
+      },
+      "response_contract": {
+        "posts": [
+          {"id": "t3-post1", "title": "We built a grocery delivery app for seniors", "selftext": "We are two founders helping elderly people order groceries.", "subreddit": "startups", "author": "user_a", "created_utc": 1756000000},
+          {"id": "t3-post2", "title": "AI tool for meeting notes", "selftext": "Our tool summarizes meetings automatically.", "subreddit": "startups", "author": "user_b", "created_utc": 1755900000},
+          {"id": "t3-post3", "title": "A pet-sitting marketplace", "selftext": "We connect pet owners with local sitters.", "subreddit": "startups", "author": "user_c", "created_utc": 1755800000}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-IDEAS-LIMIT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "generate_mvp_ideas",
+      "request_contract": {
+        "enriched_posts": [
+          {"post_id": "t3-post1", "content": "We built a grocery delivery app for seniors. Seniors really need this. How do you handle delivery fees?"},
+          {"post_id": "t3-post2", "content": "AI tool for meeting notes. Meeting notes AI is crowded."},
+          {"post_id": "t3-post3", "content": "A pet-sitting marketplace. Local trust is the key."}
+        ]
+      },
+      "response_contract": {
+        "results": [
+          {"post_id": "t3-post1", "verdict": "idea", "title": "Senior Grocery Concierge", "summary": "A concierge grocery service for seniors with human support.", "sub_scores": {"problem": 9, "market": 8, "feasibility": 7, "novelty": 6}, "composite_score": 82},
+          {"post_id": "t3-post2", "verdict": "kill", "reason": "Market too crowded"},
+          {"post_id": "t3-post3", "verdict": "idea", "title": "Local Pet-Sitter Trust Network", "summary": "A vetted local pet-sitter network with trust scores.", "sub_scores": {"problem": 7, "market": 8, "feasibility": 8, "novelty": 5}, "composite_score": 74}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-MVP-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REQ-MVP-DEFAULT"],
+      "mock_ids": ["M-REDDIT-POSTS", "M-REDDIT-COMMENTS-P1", "M-REDDIT-COMMENTS-P2", "M-REDDIT-COMMENTS-P3", "M-LLM-IDEAS"],
+      "assertions": [
+        {
+          "assertion_id": "A-095-1",
+          "target": "exec_log.normalized_input.sort",
+          "operator": "equals",
+          "expected": "top",
+          "rationale": "入参必须做规范化处理，排序方式必须与请求一致"
+        },
+        {
+          "assertion_id": "A-095-2",
+          "target": "exec_log.reddit.posts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "必须按指定子版块从 Reddit 抓取帖子，帖子数量必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-095-3",
+          "target": "exec_log.reddit.posts[0].id",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "帖子必须整理为带有来源元数据的条目，必须保留帖子标识"
+        },
+        {
+          "assertion_id": "A-095-4",
+          "target": "exec_log.reddit.posts[0].subreddit",
+          "operator": "equals",
+          "expected": "startups",
+          "rationale": "来源元数据必须包含子版块信息"
+        },
+        {
+          "assertion_id": "A-095-5",
+          "target": "exec_log.reddit.comments_fetched",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "必须逐条遍历每个帖子并获取热门评论，3 个帖子各需获取一次"
+        },
+        {
+          "assertion_id": "A-095-6",
+          "target": "exec_log.llm.prompt",
+          "operator": "contains",
+          "expected": "Seniors really need this.",
+          "rationale": "帖子正文与评论上下文必须合并为富文本内容交给语言模型，提示词必须包含评论内容"
+        },
+        {
+          "assertion_id": "A-095-7",
+          "target": "exec_log.llm.results",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "语言模型必须为每个帖子产出结构化创意或否决结论，结果数必须与帖子数一致"
+        },
+        {
+          "assertion_id": "A-095-8",
+          "target": "response.body.ideas",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "返回的创意数量不超过请求中的点子数量上限 2，且只包含未被否决的创意（固定模拟中有 2 个 idea）"
+        },
+        {
+          "assertion_id": "A-095-9",
+          "target": "response.body.ideas[0].composite_score",
+          "operator": "equals",
+          "expected": 82,
+          "rationale": "创意必须由多个分项得分计算出综合评分，首条创意的综合评分必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-095-10",
+          "target": "response.body.ideas[0].title",
+          "operator": "equals",
+          "expected": "Senior Grocery Concierge",
+          "rationale": "按综合评分排序后，评分最高的创意必须排在首位"
+        },
+        {
+          "assertion_id": "A-095-11",
+          "target": "response.body.killed",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "接口必须同时返回被否决（kill）的条目，固定模拟中有 1 条"
+        },
+        {
+          "assertion_id": "A-095-12",
+          "target": "response.body.killed[0].post_id",
+          "operator": "equals",
+          "expected": "t3-post2",
+          "rationale": "被否决条目的来源标识必须与原始帖子关联，不得丢失来源数据"
+        },
+        {
+          "assertion_id": "A-095-13",
+          "target": "response.body.ideas[0].sub_scores",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "创意结果必须保留分项得分，验证综合评分来源可计算"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MVP-LIMIT-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": ["F-REQ-MVP-LIMIT-1"],
+      "mock_ids": ["M-REDDIT-POSTS-HOT", "M-REDDIT-COMMENTS-P1", "M-REDDIT-COMMENTS-P2", "M-REDDIT-COMMENTS-P3", "M-LLM-IDEAS-LIMIT"],
+      "assertions": [
+        {
+          "assertion_id": "A-095-14",
+          "target": "response.body.ideas",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "点子数量上限为 1 时，返回的创意数量必须不超过 1"
+        },
+        {
+          "assertion_id": "A-095-15",
+          "target": "response.body.ideas[0].composite_score",
+          "operator": "equals",
+          "expected": 82,
+          "rationale": "上限收窄时仍必须按综合评分排序，保留评分最高的创意"
+        },
+        {
+          "assertion_id": "A-095-16",
+          "target": "response.body.killed",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "点子上限不影响被否决条目的返回，kill 条目仍须返回"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两条路径：正常请求（入参规范化→抓取 3 帖→逐帖获取热门评论→合并富文本→LLM 产出 2 个创意与 1 个 kill→合并来源数据、计算综合评分→按评分排序并限 2 条返回）与边界请求（点子上限 1 时仅返回评分最高的 1 条创意，kill 条目照常返回）。所有外部依赖（Reddit 帖子/评论、OpenRouter）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、内容包含与评分值检查。"
+}

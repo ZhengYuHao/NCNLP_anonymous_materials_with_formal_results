@@ -1,0 +1,23 @@
+{
+  "schema_version": "formal-runtime-lock-v1",
+  "locked_at": "2026-09-20T10:15:00+08:00",
+  "result_blind": true,
+  "formal_test_executed": false,
+  "model_id": "gemini-3.8-flash",
+  "temperature": 0.0,
+  "max_output_tokens": 8192,
+  "timeout_seconds": 360,
+  "max_attempts": 3,
+  "response_cache": false,
+  "client_factory": "formal_experiment.systems.common.create_formal_llm_client",
+  "applies_to": ["RQ2", "RQ3"],
+  "unchanged": [
+    "research_questions",
+    "dataset_partitions",
+    "comparison_systems",
+    "metrics",
+    "repetition_count",
+    "statistics",
+    "stopping_rules"
+  ]
+}

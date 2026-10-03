@@ -1,0 +1,114 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-006",
+  "source_id": "n8n:12142",
+  "workflow_sha256": "62e9ab90927e496a53708bb624ff74970ab9d56fa240e23c2e4152d470530aeb",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "ac45d955b0d7dcb3e4587f9932067b71b124ed23cf22d1cf00d6926a200ec942",
+  "requirement": {
+    "requirement_text": "系统用于自动生成针对特定疾病与患者人群的个性化自然健康指南。\n输入：用户通过网页表单提交患者信息，包括疾病、年龄和性别。\n处理过程：\n1. 内容生成：使用语言模型依据提交的疾病信息生成完整的健康指南，内容包括医学信息、自然疗法、预防策略和疗愈食谱，并按疾病、年龄、性别对内容进行个性化定制；\n2. 自动质量评估：由语言模型担任评估器，对生成内容的完整性与准确性进行审查；\n3. 迭代优化：未达到质量标准时，由语言模型自动优化内容并重新评估，最多迭代 5 次；\n4. 审核通过后，对内容进行专业排版（统一样式与分节标记），并附加本地时间与 UTC 双时区时间戳；\n5. 导出为 Google Docs 文档；同时记录执行指标，包括使用的 token 数、处理耗时和质量迭代次数，用于性能追踪。\n输出：生成的健康指南以 Google Docs 文档形式交付，用户可从 Google Docs 下载该指南。",
+    "source_spans": [
+      {
+        "start": 683,
+        "end": 787,
+        "text": "Creates disease-specific health guides with natural remedies, prevention strategies, and healing recipes"
+      },
+      {
+        "start": 788,
+        "end": 884,
+        "text": "Automated Quality Assurance:\nIntelligent evaluator reviews content for completeness and accuracy"
+      },
+      {
+        "start": 913,
+        "end": 998,
+        "text": "Automatically refines content through AI optimization until quality standards are met"
+      },
+      {
+        "start": 1022,
+        "end": 1075,
+        "text": "Tailors information based on disease, age, and gender"
+      },
+      {
+        "start": 1099,
+        "end": 1159,
+        "text": "Shows timestamps in both local time and UTC for global users"
+      },
+      {
+        "start": 1194,
+        "end": 1273,
+        "text": "Generates formatted documents with consistent styling and emoji section markers"
+      },
+      {
+        "start": 1294,
+        "end": 1369,
+        "text": "Logs metrics including tokens used, processing time, and quality iterations"
+      },
+      {
+        "start": 1466,
+        "end": 2004,
+        "text": "The workflow automates health content creation through intelligent AI agents: Users submit patient information via web form, triggering comprehensive content generation including medical information, natural remedies, and healing recipes. An automated quality evaluator reviews output for completeness and accuracy, initiating refinement loops as needed (max 5 iterations). Approved content is professionally formatted with dual timezone timestamps and exported to Google Docs, while execution metrics are logged for performance tracking."
+      },
+      {
+        "start": 2163,
+        "end": 2231,
+        "text": "Run: Submit patient information (disease, age, gender) via web form."
+      },
+      {
+        "start": 2232,
+        "end": 2289,
+        "text": "Access: Download generated health guide from Google Docs."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过网页表单提交的疾病信息",
+        "通过网页表单提交的年龄",
+        "通过网页表单提交的性别"
+      ],
+      "conditions": [
+        "生成内容须通过语言模型评估器对完整性与准确性的审查",
+        "未达到质量标准时由语言模型优化并重新评估，最多迭代 5 次",
+        "仅审核通过的内容进入排版与导出环节"
+      ],
+      "allowed_actions": [
+        "使用语言模型生成包含医学信息、自然疗法、预防策略与疗愈食谱的疾病专属健康指南",
+        "按疾病、年龄、性别定制内容",
+        "由语言模型对生成内容的完整性与准确性进行质量评估",
+        "由语言模型迭代优化内容直至达到质量标准",
+        "为审核通过的内容附加本地时间与 UTC 双时区时间戳",
+        "按统一样式与分节标记排版并导出为 Google Docs 文档",
+        "记录 token 用量、处理耗时与质量迭代次数等执行指标"
+      ],
+      "visible_outcomes": [
+        "Google Docs 中的格式化健康指南文档，可供下载",
+        "文档中显示的本地时间与 UTC 双时区时间戳",
+        "记录的执行指标：token 用量、处理耗时、质量迭代次数"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-006.packet.json",
+    "packet_sha256": "7a47117d64b8d24bfd936cc631545dedf447f0f0b66c25f0dd96b4c0004ca80e",
+    "public_description_sha256": "3b8ea9fa7b7930428eda8bfaa2d4205dd30f91a8a23ac89023f0c5dfdbee8de4"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-006.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/batch_01_revision_01/revision_records/N8F-006.revision.json",
+    "revision_record_sha256": "87610de80d3f8482a9c25150dc65b4a7b347f8814522c201889aa74f1bfa8008",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/batch_01_revision_01/verifier_confirmation/responses/N8F-006.response.json",
+    "final_confirmation_sha256": "44314828d38a988ff13a4cb1b1d6c39a91231238be80710a3ffd209c7225570f",
+    "decision": "accept"
+  },
+  "formal_index": 17
+}

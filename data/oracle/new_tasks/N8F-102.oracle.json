@@ -1,0 +1,303 @@
+{
+  "task_id": "N8F-102",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "b65f08b8d383ead29fe1930b7658208e56a8c5385c8feaa216bf7bacd6f16766",
+  "fixtures": [
+    {
+      "fixture_id": "F-SHEET-ONE-UNPOSTED",
+      "purpose": "正常用例：Sheets 含 3 行语录，其中第 1 行未发布、第 2 行已发布、第 3 行未发布，验证每次只处理一条未发布行且已发布行被跳过",
+      "input_data": {
+        "quotes_sheet": [
+          {
+            "quote_id": "q-01",
+            "quote": "Dream big, act daily.",
+            "tone": "inspirational",
+            "mood": "uplifting",
+            "style": "cinematic",
+            "voice_id": "voice-001",
+            "status": "unposted"
+          },
+          {
+            "quote_id": "q-02",
+            "quote": "Old wisdom quote.",
+            "tone": "calm",
+            "mood": "serene",
+            "style": "minimal",
+            "voice_id": "voice-002",
+            "status": "posted"
+          },
+          {
+            "quote_id": "q-03",
+            "quote": "Second unposted quote.",
+            "tone": "bold",
+            "mood": "energetic",
+            "style": "dynamic",
+            "voice_id": "voice-003",
+            "status": "unposted"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-SCRIPT-CAPTIONS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "write_storyboard_and_captions",
+      "request_contract": {
+        "quote": "Dream big, act daily.",
+        "tone": "inspirational",
+        "mood": "uplifting",
+        "style": "cinematic"
+      },
+      "response_contract": {
+        "storyboard": [
+          {"scene": 1, "description": "Sunrise over mountains", "duration_sec": 4},
+          {"scene": 2, "description": "Person walking forward", "duration_sec": 4}
+        ],
+        "captions": {
+          "tiktok": "Dream big. Act daily. #motivation",
+          "instagram_reels": "Your daily reminder: dream big, act daily.",
+          "youtube_shorts": "Dream big, act daily - a 8s dose of inspiration"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ELEVENLABS-VOICE",
+      "dependency_type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "operation": "generate_voiceover",
+      "request_contract": {
+        "quote": "Dream big, act daily.",
+        "voice_id": "voice-001"
+      },
+      "response_contract": {
+        "audio_url": "https://mock-audio.example.com/vo-001.mp3",
+        "duration_sec": 3.2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VEO3-RENDER",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "render_video",
+      "request_contract": {
+        "storyboard": "storyboard_data",
+        "resolution": "1080x1920",
+        "duration_sec": 8
+      },
+      "response_contract": {
+        "video_url": "https://mock-video.example.com/vid-001.mp4",
+        "rendered": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CREATOMATE-MERGE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "merge_audio_video_text",
+      "request_contract": {
+        "audio_url": "https://mock-audio.example.com/vo-001.mp3",
+        "video_url": "https://mock-video.example.com/vid-001.mp4"
+      },
+      "response_contract": {
+        "merged_url": "https://mock-merged.example.com/final-001.mp4",
+        "merged": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CLOUDINARY-UPScale",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "upscale_video",
+      "request_contract": {
+        "video_url": "https://mock-merged.example.com/final-001.mp4"
+      },
+      "response_contract": {
+        "upscaled_url": "https://mock-upscaled.example.com/hd-001.mp4",
+        "upscaled": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-POSTIZ-PUBLISH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "publish_to_platform",
+      "request_contract": {
+        "video_url": "https://mock-upscaled.example.com/hd-001.mp4",
+        "captions": "caption_text"
+      },
+      "response_contract": {
+        "tiktok": {"post_id": "tk-1", "published": true},
+        "instagram_reels": {"post_id": "ig-1", "published": true},
+        "youtube_shorts": {"post_id": "yt-1", "published": true}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-MARK-POSTED",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "mark_quote_posted",
+      "request_contract": {
+        "quote_id": "q-01",
+        "status": "posted"
+      },
+      "response_contract": {
+        "updated": true,
+        "row_number": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-ONE-UNPOSTED-QUOTE",
+      "kind": "positive",
+      "fixture_ids": ["F-SHEET-ONE-UNPOSTED"],
+      "mock_ids": [
+        "M-LLM-SCRIPT-CAPTIONS",
+        "M-ELEVENLABS-VOICE",
+        "M-VEO3-RENDER",
+        "M-CREATOMATE-MERGE",
+        "M-CLOUDINARY-UPScale",
+        "M-POSTIZ-PUBLISH",
+        "M-SHEETS-MARK-POSTED"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-UQ-1",
+          "target": "exec_log.selected_quote_id",
+          "operator": "equals",
+          "expected": "q-01",
+          "rationale": "每次运行必须只选取一条尚未发布的语录行，本用例应选中第一条未发布语录 q-01"
+        },
+        {
+          "assertion_id": "A-UQ-2",
+          "target": "exec_log.selected_quote_id",
+          "operator": "not_equals",
+          "expected": "q-02",
+          "rationale": "已发布（status=posted）的语录不得被再次处理"
+        },
+        {
+          "assertion_id": "A-UQ-3",
+          "target": "exec_log.processed_quote_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求要求每次运行只处理一条语录行，避免重复发布或遗漏"
+        },
+        {
+          "assertion_id": "A-UQ-4",
+          "target": "exec_log.storyboard",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "分镜脚本必须包含语言模型生成的全部场景"
+        },
+        {
+          "assertion_id": "A-UQ-5",
+          "target": "exec_log.captions.tiktok",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须生成适用于 TikTok 的发布文案"
+        },
+        {
+          "assertion_id": "A-UQ-6",
+          "target": "exec_log.captions.instagram_reels",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须生成适用于 Instagram Reels 的发布文案"
+        },
+        {
+          "assertion_id": "A-UQ-7",
+          "target": "exec_log.captions.youtube_shorts",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须生成适用于 YouTube Shorts 的发布文案"
+        },
+        {
+          "assertion_id": "A-UQ-8",
+          "target": "exec_log.render.resolution",
+          "operator": "equals",
+          "expected": "1080x1920",
+          "rationale": "视频必须为竖版 1080x1920 规格"
+        },
+        {
+          "assertion_id": "A-UQ-9",
+          "target": "exec_log.render.duration_sec",
+          "operator": "equals",
+          "expected": 8,
+          "rationale": "需求要求视频时长为 8 秒"
+        },
+        {
+          "assertion_id": "A-UQ-10",
+          "target": "exec_log.voiceover.duration_sec",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须为语录生成配音，配音结果须包含时长"
+        },
+        {
+          "assertion_id": "A-UQ-11",
+          "target": "exec_log.merge.merged",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "配音、视频与文字必须合成在一起"
+        },
+        {
+          "assertion_id": "A-UQ-12",
+          "target": "exec_log.upscale.upscaled",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "成片必须经过画质提升"
+        },
+        {
+          "assertion_id": "A-UQ-13",
+          "target": "exec_log.publish.tiktok.published",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "视频必须发布到 TikTok"
+        },
+        {
+          "assertion_id": "A-UQ-14",
+          "target": "exec_log.publish.instagram_reels.published",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "视频必须发布到 Instagram Reels"
+        },
+        {
+          "assertion_id": "A-UQ-15",
+          "target": "exec_log.publish.youtube_shorts.published",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "视频必须发布到 YouTube Shorts"
+        },
+        {
+          "assertion_id": "A-UQ-16",
+          "target": "exec_log.sheets.mark_posted.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "发布后必须在 Google Sheets 中将该条语录标记为已发布"
+        },
+        {
+          "assertion_id": "A-UQ-17",
+          "target": "exec_log.sheets.mark_posted.quote_id",
+          "operator": "equals",
+          "expected": "q-01",
+          "rationale": "标记已发布的行必须与本次处理的语录一致"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖每日/手动触发的单条未发布语录处理路径：只选一条未发布行、跳过已发布行、生成 2 场景分镜与三平台文案、ElevenLabs 配音、8 秒 1080x1920 渲染、合成、画质提升、三平台发布、标记已发布。Gemini/GPT 文案、ElevenLabs、VEO3、Creatomate、Cloudinary、Postiz 与 Sheets 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数量、数值、字段与布尔值相等以及内容存在等可计算条件。"
+}

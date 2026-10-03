@@ -1,0 +1,138 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-089",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "原始 UAT 反馈数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "规范化清洗后的反馈文本",
+        "规范化清洗后的反馈文本（测试人、版本、页面、反馈内容）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "模型分诊输出（类型、严重程度与情感、摘要与建议标题、置信度）",
+        "模型输出（类型、严重程度与情感、摘要、置信度）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g6",
+      "data_items": [
+        "分诊类型"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-089-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "『置信度充足时按类型分流』，分流依据的反馈类型由 g3 语言模型分析产出；g4 校验为透传，不产生新的类型数据定义。",
+      "confidence": 0.7,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "不可靠校验结果",
+        "待复核的反馈内容",
+        "判定为不可靠的模型输出与反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g10",
+      "data_items": [
+        "体验改进反馈及分诊结果",
+        "判定为体验改进的反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g11",
+      "data_items": [
+        "无效噪音反馈及分诊结果",
+        "判定为无效噪音的反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g12",
+      "data_items": [
+        "分流后的反馈与分诊处理结果",
+        "反馈类型与分诊处理结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "严重缺陷反馈及分诊结果",
+        "判定为严重缺陷的反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "严重缺陷反馈信息（告警内容）",
+        "判定为严重缺陷的反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g9",
+      "data_items": [
+        "功能需求反馈及分诊结果",
+        "判定为功能需求的反馈内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.9090909090909091,
+    "shared_edge_count": 10,
+    "adjudicated_dispute_count": 2,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

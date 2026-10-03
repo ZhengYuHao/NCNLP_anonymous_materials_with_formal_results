@@ -1,0 +1,86 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-003",
+  "source_id": "n8n:16049",
+  "workflow_sha256": "2b610d00034da163182146b59a62ff0b72b271900146ad05a3a3f90b8ba81308",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "276f4b7d2d4afd27954d22ccd62de95d9760e34508c5bb193dc6469262672012",
+  "requirement": {
+    "pilot_id": "N8C-003",
+    "requirement_text": "The system triggers when a new Gmail email arrives from the configured specific sender and downloads the attached document (a bill of lading). The system shall: (1) use a language model to analyze the attachment and rewrite the bill of lading content into a structured Markdown format; (2) use a second language model agent with a structured output schema to convert the Markdown into validated JSON fields for shipper, consignee, shipment details, and line items; (3) run a programmatic validation that compares customer order package/weight values against the carrier line items and append a validation result to the JSON; (4) send the resulting JSON payload to an external HTTP webhook endpoint; (5) use a language model to draft an HTML acceptance reply email based on the validated data and send it back to the original sender via Gmail. Visible outcomes: the structured JSON payload is delivered to the external webhook endpoint, and the original sender receives an HTML acceptance reply email. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 300,
+        "text": "This workflow triggers on a Gmail message from a specific sender, extracts bill of lading data from an email attachment using Google Gemini, validates the extracted values with Python, posts the structured JSON to a webhook URL, and replies to the sender with an HTML acceptance email."
+      },
+      {
+        "start": 315,
+        "end": 418,
+        "text": "Triggers when a new Gmail email arrives from the configured sender and downloads the attached document."
+      },
+      {
+        "start": 419,
+        "end": 537,
+        "text": "Uses Google Gemini to analyze the attachment and rewrite the bill of lading content into a structured Markdown format."
+      },
+      {
+        "start": 538,
+        "end": 712,
+        "text": "Uses a second Google Gemini agent with a structured output schema to convert the Markdown into validated JSON fields for shipper, consignee, shipment details, and line items."
+      },
+      {
+        "start": 713,
+        "end": 864,
+        "text": "Runs a Python validation that compares customer order package/weight values against the carrier line items and appends a validation result to the JSON."
+      },
+      {
+        "start": 865,
+        "end": 935,
+        "text": "Sends the resulting JSON payload to an external HTTP webhook endpoint."
+      },
+      {
+        "start": 936,
+        "end": 1074,
+        "text": "Uses Google Gemini to draft an HTML acceptance reply email based on the validated data and sends it back to the original sender via Gmail."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "A new Gmail email from the configured specific sender, carrying a bill of lading attachment"
+      ],
+      "conditions": [
+        "Processing is triggered only when a new Gmail email arrives from the configured sender"
+      ],
+      "allowed_actions": [
+        "Download the attached document from the email",
+        "Use a language model to analyze the attachment and rewrite the bill of lading content into a structured Markdown format",
+        "Use a second language model agent with a structured output schema to convert the Markdown into validated JSON fields for shipper, consignee, shipment details, and line items",
+        "Run a programmatic validation comparing customer order package/weight values against the carrier line items and append a validation result to the JSON",
+        "Send the resulting JSON payload to an external HTTP webhook endpoint",
+        "Use a language model to draft an HTML acceptance reply email based on the validated data and send it back to the original sender via Gmail"
+      ],
+      "visible_outcomes": [
+        "The structured JSON payload is delivered to the external webhook endpoint",
+        "The original sender receives an HTML acceptance reply email"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 3
+}

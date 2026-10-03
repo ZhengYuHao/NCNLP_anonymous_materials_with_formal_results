@@ -1,0 +1,65 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-058",
+  "source_id": "n8n:5962",
+  "workflow_sha256": "28298202d7bf7dbcc75786e0d7b66693eae06859c04f37adcc9abb3476a3532b",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "6cadc7231bcdb08ac2188070d2e9f30745aef53f7b768322f13f504ac6ed35dd",
+  "requirement": {
+    "requirement_text": "系统自动跟踪关键词在搜索引擎中的排名，用于衡量 SEO 表现并识别优化机会。\n\n1）自动抓取搜索引擎结果页（SERP），记录关键词排名、竞争对手排名以及搜索结果中的特殊展现（search features）。\n2）通过搜索结果抓取服务获取搜索结果，以避免访问受限。\n3）使用 AI 解析排名数据、跟踪排名变化，并识别 SEO 优化机会。\n4）将关键词排名数据及其变化保存到 Google Sheets。",
+    "source_spans": [
+      {
+        "start": 408,
+        "end": 706,
+        "text": "This workflow automatically scrapes search engine results pages (SERPs) to track keyword rankings, competitor positions, and search features. It uses Bright Data to access search results without restrictions and AI to intelligently parse ranking data, track changes, and identify SEO opportunities."
+      },
+      {
+        "start": 923,
+        "end": 993,
+        "text": "Google Sheets**: For storing keyword ranking data and tracking changes"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "搜索引擎结果页（SERP）数据",
+        "目标关键词与排名监控参数"
+      ],
+      "conditions": [
+        "需通过搜索结果抓取服务获取搜索结果，以避免被屏蔽或访问受限"
+      ],
+      "allowed_actions": [
+        "抓取搜索引擎结果页",
+        "使用 AI 解析排名数据",
+        "跟踪排名变化",
+        "识别 SEO 优化机会",
+        "将排名数据与变化写入 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中保存关键词排名数据及其变化",
+        "输出可供 SEO 决策使用的排名数据"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-058.packet.json",
+    "packet_sha256": "3ff574a95eda49a9d485f29a952f2e4074db0da1c4877e3b281157c3aae987ca",
+    "public_description_sha256": "c653e4df59c17f022064d4bf3ddb4a86c5d62dccff8e65914bdbb5de303e1ea0"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-058.response.json",
+    "verification_response_sha256": "50ba780226595dbec59209d75ad52a8d1d2ea6f9b09d8daaa532cb2b7c4c7b3c",
+    "decision": "accept"
+  },
+  "formal_index": 69
+}

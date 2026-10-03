@@ -1,0 +1,333 @@
+{
+  "task_id": "N8F-077",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "7890da3a90dd5b4f0d791afcbfa88c3752f3b7b3fb71714e986a4814cadaf86d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Slack @提及消息与线程标识",
+      "node_type": "code",
+      "operation_family": "input_reception",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "question",
+          "type": "string",
+          "description": "用户在 Slack 频道 @提及机器人时提出的问题"
+        },
+        {
+          "name": "thread_id",
+          "type": "string",
+          "description": "消息所在会话线程标识，用于保持同一会话连贯"
+        },
+        {
+          "name": "target_table",
+          "type": "string",
+          "description": "目标数据仓库中目标表标识"
+        }
+      ],
+      "native_evidence": ["When Slack Message Received", "Set Databricks Config"],
+      "requirement_evidence": [
+        "用户在 Slack 频道中 @提及机器人并提出问题；系统同时保留该会话线程标识，使同一会话保持连贯"
+      ],
+      "rationale": "接收 Slack @提及消息、问题与线程标识属确定性触发动作，判为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取目标表字段结构",
+      "node_type": "code",
+      "operation_family": "schema_fetch",
+      "inputs": [
+        {
+          "name": "target_table",
+          "type": "string",
+          "description": "目标数据仓库中目标表标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "table_schema",
+          "type": "object",
+          "description": "目标表的字段结构信息（可查询的字段列表）"
+        }
+      ],
+      "native_evidence": ["Fetch Databricks Schema", "Parse Table Schema"],
+      "requirement_evidence": [
+        "向数据仓库发送描述命令，获取目标表有哪些字段（如价格、日期、门店标识），使后续处理知道可以查询哪些内容"
+      ],
+      "rationale": "向数据仓库发送描述命令获取表结构，属确定性外部查询动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型结合问题与表结构生成 SQL 查询",
+      "node_type": "semantic",
+      "operation_family": "sql_generation",
+      "inputs": [
+        {
+          "name": "question",
+          "type": "string",
+          "description": "用户的自然语言问题"
+        },
+        {
+          "name": "thread_id",
+          "type": "string",
+          "description": "会话线程标识，用于结合线程历史上下文"
+        },
+        {
+          "name": "table_schema",
+          "type": "object",
+          "description": "目标表的字段结构信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "语言模型根据问题与表结构决定的 SQL 查询"
+        }
+      ],
+      "native_evidence": ["SQL Data Analyst Agent", "Redis Chat Memory"],
+      "requirement_evidence": [
+        "由语言模型结合用户问题与表结构决定要执行的 SQL 查询",
+        "保留同一会话线程中的历史消息，用户可就同一话题继续追问（例如“现在只显示前 5 条”）而无需重复完整上下文"
+      ],
+      "rationale": "由语言模型理解问题并结合表结构编写 SQL 属开放语义推理任务，判为 semantic；会话线程历史作为上下文输入，支持追问。"
+    },
+    {
+      "node_id": "n4",
+      "label": "在数据仓库执行 SQL 并取回数据",
+      "node_type": "code",
+      "operation_family": "data_query",
+      "inputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "语言模型生成的 SQL 查询"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "query_result",
+          "type": "object",
+          "description": "SQL 执行后取回的真实数据"
+        },
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "SQL 执行失败时的错误信息"
+        }
+      ],
+      "native_evidence": ["Run Primary SQL Query"],
+      "requirement_evidence": [
+        "在数据仓库上执行该 SQL 查询并取回真实数据，再由语言模型解读结果并生成会话式回复文本"
+      ],
+      "rationale": "在数据仓库上执行 SQL 并取回数据属确定性外部查询动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型解读结果生成会话式回复",
+      "node_type": "semantic",
+      "operation_family": "response_generation",
+      "inputs": [
+        {
+          "name": "query_result",
+          "type": "object",
+          "description": "SQL 执行取回的真实数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer_text",
+          "type": "string",
+          "description": "解读查询结果后生成的会话式回复文本"
+        },
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "未能产出可发送回复时的错误信息"
+        }
+      ],
+      "native_evidence": ["SQL Data Analyst Agent"],
+      "requirement_evidence": [
+        "再由语言模型解读结果并生成会话式回复文本"
+      ],
+      "rationale": "解读查询结果并生成自然语言回复属开放语义理解任务，判为 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "将答案回复到 Slack 会话",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "answer_text",
+          "type": "string",
+          "description": "会话式回复文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post to Slack Channel"],
+      "requirement_evidence": [
+        "把最终答案（例如“第三季度总营收为 420 万美元”）回复到用户所在的 Slack 会话中"
+      ],
+      "rationale": "把最终答案发送到 Slack 会话是用户可见的完成动作，无后续处理，判为 terminal。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送错误提示消息",
+      "node_type": "terminal",
+      "operation_family": "error_notification",
+      "inputs": [
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "处理受阻时的错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post Error to Slack"],
+      "requirement_evidence": [
+        "若处理未能产出可发送的回复，则向用户发送一条错误提示消息，避免用户空等"
+      ],
+      "rationale": "处理受阻时向用户发送错误提示是安全失败收尾动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收消息后获取目标表结构。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得表结构后交由语言模型生成 SQL。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成 SQL 后在数据仓库上执行。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "执行成功取回数据后由语言模型解读生成回复。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": "SQL 执行失败",
+      "rationale": "SQL 执行失败分支：向用户发送错误提示。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "产出有效回复后发送到 Slack 会话。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": "未能产出可发送的回复",
+      "rationale": "未能产出可发送回复分支：向用户发送错误提示。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "target_table",
+      "condition": null,
+      "rationale": "目标表标识传给表结构获取节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "question",
+      "condition": null,
+      "rationale": "用户问题传给语言模型用于生成 SQL。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n1",
+      "target": "n3",
+      "variable": "thread_id",
+      "condition": null,
+      "rationale": "线程标识传给语言模型以结合会话历史，保持连贯。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n2",
+      "target": "n3",
+      "variable": "table_schema",
+      "condition": null,
+      "rationale": "表结构信息传给语言模型用于编写 SQL。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n3",
+      "target": "n4",
+      "variable": "sql_query",
+      "condition": null,
+      "rationale": "生成的 SQL 查询传给执行节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "query_result",
+      "condition": null,
+      "rationale": "取回的真实数据传给解读节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "answer_text",
+      "condition": null,
+      "rationale": "会话式回复文本传给 Slack 发送节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n4",
+      "target": "n7",
+      "variable": "error_detail",
+      "condition": null,
+      "rationale": "SQL 执行失败的错误信息传给错误提示节点。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n5",
+      "target": "n7",
+      "variable": "error_detail",
+      "condition": null,
+      "rationale": "未产出有效回复的错误信息传给错误提示节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6", "n7"],
+  "confidence": 0.92,
+  "notes": "按需求将流程建模为 7 节点：接收消息→获取表结构→语言模型生成 SQL→执行 SQL→语言模型解读生成回复，成功路径发送答案、失败路径发送错误提示。会话线程历史作为语言模型生成 SQL 时的上下文输入，折叠进节点契约。原生图中的 Set Databricks Config、Parse Table Schema、Gemini Model、Redis Chat Memory 等为配置/模型依赖或数据整理细节，未在需求中声明，未单列。"
+}

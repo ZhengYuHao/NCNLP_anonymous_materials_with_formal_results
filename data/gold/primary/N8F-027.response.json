@@ -1,0 +1,630 @@
+{
+  "task_id": "N8F-027",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "85bfaf7aa4dc571771b0c085792051e4299f299d3860d9ce3d4b3ecef4fe7b77",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "本次运行的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "按设定时间间隔运行",
+        "Schedule Trigger – Runs the workflow at set intervals."
+      ],
+      "rationale": "需求声明按设定时间间隔运行，原生图 Schedule Trigger 为入口，映射为定时触发代码节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取线索并按状态或日期筛选",
+      "node_type": "code",
+      "operation_family": "load_and_filter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "leads",
+          "type": "array",
+          "description": "筛选出的需要跟进的线索列表"
+        }
+      ],
+      "native_evidence": [
+        "Get row(s) in sheet",
+        "If"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 读取线索数据，并按状态或日期筛选出需要跟进的线索",
+        "Get row(s) in sheet – Fetches lead data from Google Sheets.",
+        "If – Filters leads that need action based on status or date."
+      ],
+      "rationale": "需求声明从 Google Sheets 读取线索并按状态或日期筛选，为确定性读取与过滤动作，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "规范化字段并按受控批次分批处理",
+      "node_type": "code",
+      "operation_family": "normalize_and_batch",
+      "inputs": [
+        {
+          "name": "leads",
+          "type": "array",
+          "description": "筛选出的线索列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_leads",
+          "type": "array",
+          "description": "规范化邮箱、姓名、公司等字段后按批次划分的线索"
+        }
+      ],
+      "native_evidence": [
+        "Code in JavaScript",
+        "Loop Over Items"
+      ],
+      "requirement_evidence": [
+        "规范化邮箱、姓名、公司等字段",
+        "以受控批次的方式分批处理",
+        "Code in JavaScript – Normalizes fields like email, name, and company.",
+        "Loop Over Items – Processes leads in controlled batches."
+      ],
+      "rationale": "需求声明规范化字段并以受控批次分批处理，为确定性变换动作，判为代码节点；分批循环折叠进节点契约（终止条件：所有批次处理完毕，max_iterations=批次数量≤20）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型评估线索质量并给出评分与优先级",
+      "node_type": "semantic",
+      "operation_family": "lead_scoring",
+      "inputs": [
+        {
+          "name": "normalized_leads",
+          "type": "array",
+          "description": "规范化并分批后的线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "带评分与优先级的线索记录"
+        }
+      ],
+      "native_evidence": [
+        "AI-Lead-Analysis",
+        "Parse AI"
+      ],
+      "requirement_evidence": [
+        "由语言模型评估线索质量并给出评分与优先级",
+        "AI-Lead-Analysis – Evaluates lead quality and assigns score and priority."
+      ],
+      "rationale": "需求声明由语言模型评估线索质量并给出评分与优先级，需开放语义评估，判为语义节点；结果解析并入节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "根据跟进阶段或线索状态分流",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "带评分与优先级的线索记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Switch"
+      ],
+      "requirement_evidence": [
+        "根据跟进阶段或线索状态对线索进行分流",
+        "Switch – Routes leads based on outreach step or status."
+      ],
+      "rationale": "需求声明根据跟进阶段或线索状态分流（首次触达 vs 跟进），为确定性路由动作，判为代码节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成个性化首次触达冷邮件",
+      "node_type": "semantic",
+      "operation_family": "cold_email_generation",
+      "inputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "进入首次触达的线索记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "first_email",
+          "type": "string",
+          "description": "个性化冷邮件内容"
+        }
+      ],
+      "native_evidence": [
+        "First AI mail"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成一封个性化的冷邮件",
+        "First AI mail – Generates a personalized cold email."
+      ],
+      "rationale": "需求声明由语言模型生成个性化冷邮件，需开放文本创作，判为语义节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "保存邮件内容",
+      "node_type": "code",
+      "operation_family": "message_storage",
+      "inputs": [
+        {
+          "name": "first_email",
+          "type": "string",
+          "description": "生成的冷邮件内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "first_email",
+          "type": "string",
+          "description": "保存后的邮件内容"
+        }
+      ],
+      "native_evidence": [
+        "Save Message"
+      ],
+      "requirement_evidence": [
+        "保存该邮件内容",
+        "Save Message – Stores the generated message."
+      ],
+      "rationale": "需求明确声明保存生成的邮件内容，为确定性存储动作，判为代码节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过 Gmail 发送首次触达邮件",
+      "node_type": "code",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "first_email",
+          "type": "string",
+          "description": "保存后的冷邮件内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a message"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 发送该邮件",
+        "Send a message – Sends the email via Gmail."
+      ],
+      "rationale": "需求声明通过 Gmail 发送冷邮件，为外部发送动作，判为代码节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "在 Google Sheets 更新首次触达跟进信息",
+      "node_type": "code",
+      "operation_family": "crm_update",
+      "inputs": [
+        {
+          "name": "first_email",
+          "type": "string",
+          "description": "已发送的冷邮件内容（含线索记录信息）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Update row in sheet"
+      ],
+      "requirement_evidence": [
+        "在 Google Sheets 中更新该线索的跟进信息",
+        "Update row in sheet – Updates CRM with outreach details."
+      ],
+      "rationale": "需求声明发送后更新 Google Sheets 中的跟进信息，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n10",
+      "label": "生成跟进邮件",
+      "node_type": "semantic",
+      "operation_family": "followup_generation",
+      "inputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "进入跟进阶段的线索记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "followup_email",
+          "type": "string",
+          "description": "生成的跟进邮件内容"
+        }
+      ],
+      "native_evidence": [
+        "AI-Follow-up",
+        "Parse Follow-up"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成跟进邮件并发送",
+        "AI-Follow-up – Creates a follow-up email using AI."
+      ],
+      "rationale": "需求声明由语言模型生成跟进邮件，需开放文本创作，判为语义节点；结果解析并入节点契约。"
+    },
+    {
+      "node_id": "n11",
+      "label": "通过 Gmail 发送跟进邮件",
+      "node_type": "code",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "followup_email",
+          "type": "string",
+          "description": "生成的跟进邮件内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a message1"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成跟进邮件并发送",
+        "Send a message1 – Sends the follow-up email."
+      ],
+      "rationale": "需求声明发送跟进邮件，为外部发送动作，判为代码节点。"
+    },
+    {
+      "node_id": "n12",
+      "label": "在 Google Sheets 更新跟进信息",
+      "node_type": "code",
+      "operation_family": "crm_update",
+      "inputs": [
+        {
+          "name": "followup_email",
+          "type": "string",
+          "description": "已发送的跟进邮件内容（含线索记录信息）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Update row in sheet1"
+      ],
+      "requirement_evidence": [
+        "在 Google Sheets 中更新跟进信息",
+        "Update row in sheet1 – Updates CRM with follow-up info."
+      ],
+      "rationale": "需求声明跟进邮件发送后更新 Google Sheets 跟进信息，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n13",
+      "label": "等待一段时间",
+      "node_type": "code",
+      "operation_family": "wait",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Wait1"
+      ],
+      "requirement_evidence": [
+        "随后等待一段时间再检查线索是否回复",
+        "Wait – Delays before checking for response."
+      ],
+      "rationale": "需求声明等待一段时间后再检查回复，为确定性延时控制节点，判为代码节点。"
+    },
+    {
+      "node_id": "n14",
+      "label": "检查线索是否回复",
+      "node_type": "code",
+      "operation_family": "reply_check",
+      "inputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "线索记录（含回复状态字段）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "If1"
+      ],
+      "requirement_evidence": [
+        "随后等待一段时间再检查线索是否回复",
+        "If1 – Checks if the lead replied or not."
+      ],
+      "rationale": "需求声明等待后检查线索是否回复，为确定性条件判断，判为代码节点。"
+    },
+    {
+      "node_id": "n15",
+      "label": "在 Google Sheets 标记线索为已关闭",
+      "node_type": "code",
+      "operation_family": "crm_update",
+      "inputs": [
+        {
+          "name": "scored_leads",
+          "type": "array",
+          "description": "未回复的线索记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Update row in sheet2"
+      ],
+      "requirement_evidence": [
+        "若线索未回复，则在 Google Sheets 中将该线索标记为已关闭",
+        "Update row in sheet2 – Marks lead as closed if no response."
+      ],
+      "rationale": "需求声明线索未回复时在 Google Sheets 中标记为已关闭，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n16",
+      "label": "本轮线索培育流程完成",
+      "node_type": "terminal",
+      "operation_family": "completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Loop Over Items（批次循环结束）"
+      ],
+      "requirement_evidence": [
+        "整个流程自动更新线索记录并跟踪线索进展",
+        "It runs on a schedule, processes leads in batches, and routes them based on their status and step."
+      ],
+      "rationale": "各分支（首次触达完成、线索已回复、线索标记关闭）汇合表示本轮培育流程处理完成，作为终止节点；批次循环已折叠进 n3 契约。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后读取并筛选线索。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选出线索后规范化并分批。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "批次就绪后由语言模型评估线索。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "评分完成后按跟进阶段分流。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "线索为新线索（首次触达）",
+      "rationale": "新线索进入首次触达分支。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n10",
+      "variable": null,
+      "condition": "线索处于跟进阶段",
+      "rationale": "需跟进的线索进入跟进分支。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成冷邮件后保存邮件内容。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件内容保存后通过 Gmail 发送。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送完成后更新 Google Sheets 跟进信息。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "首次触达分支完成，进入流程完成。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成跟进邮件后发送。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送完成后更新跟进信息。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "更新完成后等待一段时间。"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "等待结束后检查是否回复。"
+    },
+    {
+      "edge_id": "c15",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": "线索未回复",
+      "rationale": "未回复时标记线索为已关闭。"
+    },
+    {
+      "edge_id": "c16",
+      "source": "n14",
+      "target": "n16",
+      "variable": null,
+      "condition": "线索已回复",
+      "rationale": "已回复时该线索培育流程完成。"
+    },
+    {
+      "edge_id": "c17",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "标记关闭后本轮流程完成。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "leads",
+      "condition": null,
+      "rationale": "筛选出的线索供规范化分批使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "normalized_leads",
+      "condition": null,
+      "rationale": "规范化后的线索供语言模型评估。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "scored_leads",
+      "condition": null,
+      "rationale": "带评分优先级的线索供分流（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "scored_leads",
+      "condition": null,
+      "rationale": "线索记录供首次触达邮件生成使用。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "first_email",
+      "condition": null,
+      "rationale": "生成的冷邮件供保存（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "first_email",
+      "condition": null,
+      "rationale": "保存的邮件内容供 Gmail 发送。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n9",
+      "variable": "first_email",
+      "condition": null,
+      "rationale": "邮件内容供更新 Google Sheets 跟进信息使用。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n4",
+      "target": "n10",
+      "variable": "scored_leads",
+      "condition": null,
+      "rationale": "线索记录供跟进邮件生成使用。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n10",
+      "target": "n11",
+      "variable": "followup_email",
+      "condition": null,
+      "rationale": "生成的跟进邮件供发送（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n10",
+      "target": "n12",
+      "variable": "followup_email",
+      "condition": null,
+      "rationale": "跟进邮件内容供更新 Google Sheets 跟进信息使用。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n4",
+      "target": "n14",
+      "variable": "scored_leads",
+      "condition": null,
+      "rationale": "线索记录（含回复状态）供回复检查使用。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n4",
+      "target": "n15",
+      "variable": "scored_leads",
+      "condition": null,
+      "rationale": "未回复线索记录供标记关闭使用。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n16"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：定时触发→读取筛选→规范化分批→LLM 评分→按阶段分流→首次触达（生成/保存/发送/更新）与跟进（生成/发送/更新/等待/检查回复/未回复标记关闭）双分支。分批循环折叠进规范化节点契约（终止条件：批次全部处理完毕，max_iterations≤20）。需求未声明已回复分支的具体后续动作，故已回复与标记关闭均汇合至流程完成终止节点。"
+}

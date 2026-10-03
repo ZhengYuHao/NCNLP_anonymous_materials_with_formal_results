@@ -1,0 +1,151 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-009",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "产品图片与 UGC 提示词、选定的视频风格",
+        "产品图片、UGC 提示词与选定的视频风格"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g11",
+      "target_group": "g12",
+      "data_items": [
+        "最终任务元数据与任务记录"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-009-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "完成通知针对具体任务发送，需读取已设定的任务元数据与保存的任务记录来标识本次任务完成。",
+      "confidence": 0.6,
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "模型返回的 UGC 提示词内容（图片提示词、视频提示词、反向约束）",
+        "语言模型返回的提示词生成结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "规整后的图片提示词",
+        "解析后的图片提示词与反向约束"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "规整后的 UGC 提示词字段"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-009-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "提示词预览的内容包含解析出的规整提示词字段，发布预览真实读取解析结果。",
+      "confidence": 0.8,
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g9",
+      "data_items": [
+        "规整后的视频提示词",
+        "解析后的视频提示词"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "生成的图片"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "审核人决定（通过/需修改/拒绝）与反馈",
+        "审核人的决定（通过/需修改/拒绝）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "审核人要求修改时给出的反馈"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-009-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求『需修改：依据审核人反馈重新生成提示词』，重新生成步骤直接消费审核人反馈内容。",
+      "confidence": 0.85,
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g14",
+      "data_items": [
+        "重新生成的模型返回内容",
+        "重新生成的模型输出"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "生成的视频链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g11",
+      "data_items": [
+        "视频生成结果",
+        "视频生成结果（链接与最终状态）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.8181818181818182,
+    "shared_edge_count": 9,
+    "adjudicated_dispute_count": 4,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

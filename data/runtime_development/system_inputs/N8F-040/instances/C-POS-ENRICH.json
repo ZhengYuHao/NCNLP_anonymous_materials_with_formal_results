@@ -1,0 +1,26 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-040",
+  "case_id": "C-POS-ENRICH",
+  "kind": "positive",
+  "input_data": {
+    "rows": [
+      {
+        "company_name": "Acme Corp",
+        "website": "https://acme.example.com",
+        "enriched": "No"
+      },
+      {
+        "company_name": "Globex Ltd",
+        "website": "https://globex.example.io",
+        "enriched": "Yes"
+      },
+      {
+        "company_name": "Initech Co",
+        "website": "https://initech.example.org",
+        "enriched": "No"
+      }
+    ]
+  },
+  "input_sha256": "14E768DE7E1600E8FC51B0B7B82B7F86CA42281C521E7F302572AB52AEDB4CF3"
+}

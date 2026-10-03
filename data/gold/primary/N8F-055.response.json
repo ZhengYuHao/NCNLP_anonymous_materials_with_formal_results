@@ -1,0 +1,387 @@
+{
+  "task_id": "N8F-055",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "bdf8109a339f048901f6603230239de2a5116f77209d3a5f5844e21464e8ae44",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动触发",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "人工手动触发的运行事件"
+        }
+      ],
+      "native_evidence": [
+        "When clicking 'Execute workflow'"
+      ],
+      "requirement_evidence": [
+        "由人工手动触发后开始处理"
+      ],
+      "rationale": "需求声明由人工手动触发开始处理，为流程入口的确定性触发动作，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "搜索 JSON 工作流文件",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "手动触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_list",
+          "type": "array",
+          "description": "指定 Google Drive 文件夹中找到的 JSON 工作流文件列表"
+        }
+      ],
+      "native_evidence": [
+        "Search files and folders"
+      ],
+      "requirement_evidence": [
+        "在指定的 Google Drive 文件夹中搜索 JSON 格式的工作流文件"
+      ],
+      "rationale": "需求声明在指定 Google Drive 文件夹中搜索 JSON 工作流文件，为确定性外部搜索动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "下载 JSON 文件",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "file_list",
+          "type": "array",
+          "description": "匹配的 JSON 文件列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_content",
+          "type": "string",
+          "description": "下载的文件内容，供数据提取"
+        }
+      ],
+      "native_evidence": [
+        "Download file",
+        "Loop Over JSONS"
+      ],
+      "requirement_evidence": [
+        "逐个处理该文件夹中找到的每个 JSON 文件：下载文件并准备用于数据提取"
+      ],
+      "rationale": "需求声明逐个下载每个 JSON 文件并准备提取，为确定性外部下载动作，判 code；按文件逐个迭代作为该节点内部行为。"
+    },
+    {
+      "node_id": "n4",
+      "label": "解析工作流数据",
+      "node_type": "code",
+      "operation_family": "data_parsing",
+      "inputs": [
+        {
+          "name": "file_content",
+          "type": "string",
+          "description": "JSON 文件内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "workflow_data",
+          "type": "object",
+          "description": "从 JSON 内容解析出的工作流数据"
+        }
+      ],
+      "native_evidence": [
+        "Extract from File"
+      ],
+      "requirement_evidence": [
+        "从下载的 JSON 内容中解析出工作流数据"
+      ],
+      "rationale": "需求声明从下载的 JSON 内容解析工作流数据，为确定性解析变换，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成标题与描述",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "workflow_data",
+          "type": "object",
+          "description": "解析出的工作流数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_description",
+          "type": "object",
+          "description": "简洁的标题与详细的描述"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent",
+        "Connect to Azure OpenAI GPT Model"
+      ],
+      "requirement_evidence": [
+        "使用语言模型生成简洁的标题与详细的描述"
+      ],
+      "rationale": "需求声明使用语言模型生成标题与描述，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "转换为 Markdown",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "generated_description",
+          "type": "object",
+          "description": "生成的标题与描述"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "markdown_description",
+          "type": "string",
+          "description": "用于模板发布的结构化 Markdown 描述"
+        }
+      ],
+      "native_evidence": [
+        "Format Markdown Description"
+      ],
+      "requirement_evidence": [
+        "将生成结果转换为结构化的 Markdown，用于模板发布"
+      ],
+      "rationale": "需求声明将生成结果转换为结构化 Markdown，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成 HTML 版本",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "markdown_description",
+          "type": "string",
+          "description": "同一份描述的 Markdown 内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_description",
+          "type": "string",
+          "description": "用于邮件发送的 HTML 版本描述"
+        }
+      ],
+      "native_evidence": [
+        "Format HTML Email"
+      ],
+      "requirement_evidence": [
+        "再生成同一份描述的 HTML 版本，用于邮件发送"
+      ],
+      "rationale": "需求声明生成同一份描述的 HTML 版本，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "记入 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "markdown_description",
+          "type": "string",
+          "description": "生成的描述信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "archive_record",
+          "type": "object",
+          "description": "写入 Google Sheets 的存档记录"
+        }
+      ],
+      "native_evidence": [
+        "Save To Google Sheets"
+      ],
+      "requirement_evidence": [
+        "将生成的信息记入 Google Sheets 以备存档"
+      ],
+      "rationale": "需求声明将生成信息记入 Google Sheets 存档，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送描述邮件",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "markdown_description",
+          "type": "string",
+          "description": "Markdown 格式描述内容"
+        },
+        {
+          "name": "html_description",
+          "type": "string",
+          "description": "HTML 格式描述内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Email  With Description"
+      ],
+      "requirement_evidence": [
+        "向指定收件人发送邮件，正文包含 Markdown 与 HTML 两种格式的描述内容"
+      ],
+      "rationale": "需求声明向指定收件人发送包含 Markdown 与 HTML 两种格式的邮件，为确定性外部发送动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发后搜索 JSON 文件。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "搜索完成后逐个下载文件。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "下载后解析工作流数据。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析完成后由语言模型生成描述。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "描述生成后转换为 Markdown。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "Markdown 完成后生成 HTML 版本。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "两种格式就绪后记入 Google Sheets 存档。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "存档完成后发送邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "file_list",
+      "condition": null,
+      "rationale": "文件列表传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "file_content",
+      "condition": null,
+      "rationale": "文件内容传给解析节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "workflow_data",
+      "condition": null,
+      "rationale": "工作流数据传给描述生成节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "generated_description",
+      "condition": null,
+      "rationale": "生成的描述传给 Markdown 转换节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "markdown_description",
+      "condition": null,
+      "rationale": "Markdown 内容传给 HTML 生成节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n8",
+      "variable": "markdown_description",
+      "condition": null,
+      "rationale": "Markdown 描述传给存档节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n9",
+      "variable": "markdown_description",
+      "condition": null,
+      "rationale": "Markdown 描述传给邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n7",
+      "target": "n9",
+      "variable": "html_description",
+      "condition": null,
+      "rationale": "HTML 描述传给邮件发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.92,
+  "notes": "按冻结需求建模：手动触发为入口；逐个处理 JSON 文件的循环作为下载节点内部行为；标题与描述由语言模型生成判 semantic，其余为确定性 code。Markdown 与 HTML 两种格式转换、存档与邮件发送按需求步骤顺序建模。原生中的 LangChain 记忆、输出解析器、Azure 模型连接等为需求未声明的实现细节，未纳入。"
+}

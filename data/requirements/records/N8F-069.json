@@ -1,0 +1,115 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-069",
+  "source_id": "n8n:13541",
+  "workflow_sha256": "6e503cf9623ce3d46000fa26d724cd2c92c1784ef1c9dde2809645af0768623e",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cb3fb2565acca31191debd4a5eb05e21849ea9c19c666c8c3da1a17f3872cdf1",
+  "requirement": {
+    "requirement_text": "业务用户提交一张商品图片，可以是移动端上传的图片文件，也可以是通过接口传入的远程图片地址。系统接收该图片后，先交由图片托管服务进行托管，并生成一个可供店铺使用的固定访问链接。随后由具备图像理解能力的语言模型识别图片中的商品，据此生成商品标题、HTML 格式的商品描述、SEO 标签以及建议的商品分类，同时生成五条要点式的产品卖点、最长 70 字符的 SEO 标题，以及基于建议商品名称生成的 URL 友好标识。系统还会对 SKU、价格与库存数据进行清洗与规整，形成可直接上架的条目。最后，系统按目标电商平台（Shopify 或 WooCommerce）对商品数据进行相应格式化，并在该平台上创建商品条目。若图片上传或电商平台接口调用失败，系统向调用方返回结构化错误信息。",
+    "source_spans": [
+      {
+        "start": 322,
+        "end": 397,
+        "text": "Turns a single product photo into a comprehensive, SEO-ready store listing:"
+      },
+      {
+        "start": 399,
+        "end": 500,
+        "text": "📝 Captures Product Assets - Receives an image via mobile upload (binary) or a remote URL via Webhook."
+      },
+      {
+        "start": 501,
+        "end": 612,
+        "text": "☁️ Instant CDN Hosting - UploadToURL hosts the image and generates a permanent, high-speed link for your store."
+      },
+      {
+        "start": 613,
+        "end": 753,
+        "text": "👁️ Vision AI Analysis - GPT-4o Vision \"looks\" at the product to generate titles, HTML descriptions, SEO tags, and even suggested categories."
+      },
+      {
+        "start": 754,
+        "end": 849,
+        "text": "🚦 Smart Platform Routing - Automatically detects your target platform and formats the data for:"
+      },
+      {
+        "start": 850,
+        "end": 932,
+        "text": "   Shopify: Creates products via GraphQL-compatible REST with full SEO metafields."
+      },
+      {
+        "start": 933,
+        "end": 1023,
+        "text": "   WooCommerce: Creates listings via REST API with Yoast SEO support and marketing blurbs."
+      },
+      {
+        "start": 1024,
+        "end": 1130,
+        "text": "📊 Data Enrichment - Sanitizes SKUs, coerces pricing, and maps inventory data for a production-ready entry."
+      },
+      {
+        "start": 1269,
+        "end": 1390,
+        "text": "Zero-Copywriting Required**: AI generates 5-point bullet features, SEO titles (max 70 chars), and rich HTML descriptions."
+      },
+      {
+        "start": 1481,
+        "end": 1569,
+        "text": "Automated Slugs**: Generates URL-friendly \"handles\" based on AI-suggested product names."
+      },
+      {
+        "start": 1570,
+        "end": 1676,
+        "text": "Robust Error Handling**: Centralized logic to catch upload or API failures and return structured feedback."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "业务用户提交的商品图片（移动端上传的图片文件或通过接口传入的远程图片地址）",
+        "随提交传入的商品数据（SKU、价格、库存等）"
+      ],
+      "conditions": [
+        "按目标电商平台（Shopify 或 WooCommerce）对商品数据进行相应格式化",
+        "图片上传或电商平台接口调用失败时进入错误返回分支"
+      ],
+      "allowed_actions": [
+        "将商品图片交由图片托管服务托管并生成固定访问链接",
+        "由具备图像理解能力的语言模型识别商品并生成标题、HTML 描述、SEO 标签与建议分类",
+        "生成五条要点式产品卖点、最长 70 字符的 SEO 标题与 URL 友好标识",
+        "清洗并规整 SKU、价格与库存数据",
+        "在 Shopify 或 WooCommerce 上创建商品条目",
+        "捕获图片上传或电商平台接口调用失败并返回结构化错误信息"
+      ],
+      "visible_outcomes": [
+        "Shopify 或 WooCommerce 上生成一个可直接上架的商品条目",
+        "商品图片拥有可供店铺使用的固定访问链接",
+        "失败时调用方收到结构化错误信息"
+      ],
+      "failure_behavior": [
+        "图片上传或电商平台接口调用失败时，返回结构化错误信息"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-069.packet.json",
+    "packet_sha256": "f51d6bc21f06082d8684784e403111189e7369210645791cccb696546ea5e7cb",
+    "public_description_sha256": "db32e2f8b27580184bdd4e1f2fb0a7e12e9aabba5c08614fcb2a7531c06112c0"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-069.response.json",
+    "verification_response_sha256": "62a09feeaf130c272c1f27995a9c28f1d138404c2fd81582a1f85ad15f53c7aa",
+    "decision": "accept"
+  },
+  "formal_index": 80
+}

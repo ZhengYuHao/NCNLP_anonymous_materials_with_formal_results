@@ -1,0 +1,104 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-013",
+  "source_id": "n8n:16235",
+  "workflow_sha256": "9bd784e7b584cd293cba69553acd9ae098868fe54b44b56db4d85809fc963b6d",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "d03143cde3f221518292eccff8138749c1dca4c12491874d4e7267246a72a273",
+  "requirement": {
+    "requirement_text": "系统用于对客服收件箱中的邮件进行自动分诊与回复。\n输入：通过 EmailConnect webhook 接收到的入站邮件内容，包含发件人与邮件正文，以及邮件携带的垃圾邮件评分。\n处理过程：\n1. 垃圾邮件过滤：若邮件携带的垃圾邮件评分存在且大于 10，则丢弃该邮件，不再继续处理；\n2. 知识库加载：从 Notion 数据库中读取全部问答条目，并与发件人、邮件正文一起整理成待比对列表；\n3. 匹配：使用语言模型（按发件人维护记忆）从知识库中选出最匹配的问答条目 ID；当匹配置信度低于 85% 时返回无匹配结果；\n4. 校验与路由：将返回的 ID 与 Notion 数据核对，据此将请求路由到自动回答路径或人工升级路径；\n5. 匹配成功时：使用语言模型基于匹配到的 Notion 答案起草结构化回复，并通过邮件发送给客户；\n6. 无匹配时：使用语言模型起草结构化的受理确认，通过邮件将原始请求发送给内部团队，并通过邮件将受理确认发送给客户。",
+    "source_spans": [
+      {
+        "start": 309,
+        "end": 371,
+        "text": "Receives an inbound email payload via an EmailConnect webhook."
+      },
+      {
+        "start": 372,
+        "end": 447,
+        "text": "Drops the message if the provided spam score exists and is greater than 10."
+      },
+      {
+        "start": 448,
+        "end": 571,
+        "text": "Loads all Q&A entries from a Notion database and formats them into a comparison list alongside the sender and message text."
+      },
+      {
+        "start": 572,
+        "end": 724,
+        "text": "Uses an OpenRouter chat model (with per-sender memory) to select the closest knowledge base question ID or return NO_MATCH when confidence is below 85%."
+      },
+      {
+        "start": 725,
+        "end": 847,
+        "text": "Validates the returned ID against the Notion data and routes the request to either the answer path or the escalation path."
+      },
+      {
+        "start": 848,
+        "end": 1028,
+        "text": "If a match is found, uses an OpenRouter chat model (with per-sender memory) to draft a structured reply grounded in the matched Notion answer and sends it to the customer via SMTP."
+      },
+      {
+        "start": 1029,
+        "end": 1248,
+        "text": "If no match is found, uses an OpenRouter chat model (with per-sender memory) to draft a structured acknowledgement, emails your team the original request via SMTP, and sends the acknowledgement to the customer via SMTP."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过 EmailConnect webhook 接收的入站邮件（含发件人与邮件正文）",
+        "邮件携带的垃圾邮件评分",
+        "Notion 数据库中的问答条目"
+      ],
+      "conditions": [
+        "垃圾邮件评分存在且大于 10 时丢弃该邮件",
+        "匹配置信度低于 85% 时返回无匹配结果",
+        "返回的问答 ID 须与 Notion 数据核对后再路由",
+        "匹配成功走自动回答路径，无匹配走人工升级路径",
+        "语言模型按发件人维护记忆"
+      ],
+      "allowed_actions": [
+        "接收入站邮件",
+        "按垃圾邮件评分丢弃邮件",
+        "加载 Notion 问答条目并整理为待比对列表",
+        "选出最匹配的问答 ID，或在低置信度时返回无匹配",
+        "核对 ID 并路由请求",
+        "基于匹配到的知识库答案起草结构化回复",
+        "起草结构化受理确认",
+        "向客户发送回复或受理确认",
+        "向内部团队转发原始请求"
+      ],
+      "visible_outcomes": [
+        "匹配成功时客户收到的自动回复",
+        "无匹配时客户收到的受理确认",
+        "无匹配时内部团队收到的原始请求邮件",
+        "因垃圾邮件评分超过阈值而被丢弃、不再处理的邮件"
+      ],
+      "failure_behavior": [
+        "垃圾邮件评分存在且大于 10 的邮件被丢弃，不再处理",
+        "匹配置信度低于 85% 时转人工升级路径"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-013.packet.json",
+    "packet_sha256": "23f472498128f77ec3295747bbadff51fdf13019b53679aa4b6875a16aa69408",
+    "public_description_sha256": "099265610ba0c0c5b880a2676037e3f675d43a2a7738eaa249333b7be0a49585"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-013.response.json",
+    "verification_response_sha256": "dbb2db88c04f6d0bfaf40fa2f15ca7352c7d46448d4ae184f1f94eebd67ab5e1",
+    "decision": "accept"
+  },
+  "formal_index": 24
+}

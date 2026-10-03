@@ -1,0 +1,68 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-056",
+  "source_id": "n8n:6765",
+  "workflow_sha256": "8b8b9efe6139ae9320edf3c7a1767fdb95011020e043e63b64450972cfcfc6d3",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "3ac942fe64fa7c33357ab7ea41439ae8178e6f2497cf101396403169b859ebb7",
+  "requirement": {
+    "requirement_text": "系统在指定话题标签下自动为 Instagram 上的新帖点赞，并保持低频与去重。\n\n1）每 2 小时在指定分钟触发一次。\n2）按时间段从已配置的 Instagram 账号中轮换选择一个账号。\n3）由语言模型生成一个贴合 AI/BPA 领域的真实话题标签。\n4）按该话题标签抓取最近的帖子，抓取数量不超过配置的上限。\n5）从抓取结果中随机选择一条帖子，并通过查重确认该帖子此前未被点赞过。\n6）生成待点赞清单并上传至在线存储，随后启动自动点赞操作，对该帖子完成点赞。\n7）将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞。\n8）通过等待进行节流，将每个账号每天的点赞次数控制在约 12 次以内。",
+    "source_spans": [
+      {
+        "start": 218,
+        "end": 905,
+        "text": "Schedule Trigger runs every 2 hours at a specified minute.  \nSelect Cookie chooses a rotating Instagram session-cookie\n   (time-slice logic).  \nGenerate Random Hashtag (GPT-4o) outputs a realistic AI/BPA\n   hashtag.  \nInstagram Hashtag Agent (Phantombuster) scrapes up to\n   ENV_MAX_POSTS_PER_HASHTAG recent posts.  \nGet Random Post selects one; duplicate checker ensures it\n   hasn’t been liked before (SharePoint CSV).  \nBuilds instagram_posts_to_like.csv, uploads to SharePoint, then\n   launches the Auto-like Agent which likes the post.  \nPost URL is appended to instagram_posts_already_liked.csv to avoid\n   duplicates.  \nWait nodes throttle launches to ~12 likes per profile daily."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "已配置的 Instagram 账号集合",
+        "配置的话题标签抓取数量上限",
+        "在线存储中的已点赞帖子记录",
+        "按话题标签抓取到的最近帖子"
+      ],
+      "conditions": [
+        "每 2 小时在指定分钟触发一次",
+        "按时间段轮换使用已配置的 Instagram 账号",
+        "每次仅从抓取结果中随机选择一条帖子",
+        "仅对未点赞过的帖子执行点赞",
+        "每个账号每天的点赞次数控制在约 12 次以内"
+      ],
+      "allowed_actions": [
+        "按时间段选择本次使用的 Instagram 账号",
+        "生成话题标签",
+        "按话题标签抓取最近帖子",
+        "对候选帖子查重",
+        "生成待点赞清单并启动点赞",
+        "追加已点赞记录",
+        "等待以节流"
+      ],
+      "visible_outcomes": [
+        "目标帖子被点赞",
+        "在线存储中的已点赞记录新增该帖子链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-056.packet.json",
+    "packet_sha256": "e4ed7d882bb4c906f1160cf947e7c17b77509d5bc6753903262472838d6e8ab6",
+    "public_description_sha256": "0bc0b8d13c1e3886b2eed8f6ef77018ff15b04a92d9b680ac68e3dda102f14fa"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-056.response.json",
+    "verification_response_sha256": "613b525ec1c1b0e74a8b43ce8002d09766820a88cccb5973e89f566793147c10",
+    "decision": "accept"
+  },
+  "formal_index": 67
+}

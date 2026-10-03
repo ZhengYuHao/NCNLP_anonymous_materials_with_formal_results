@@ -1,0 +1,63 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-044",
+  "source_id": "n8n:7996",
+  "workflow_sha256": "2f48b687bd9e989a7f3063e672dba903b470643049f17b44eda7e6199b91a191",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "da4b467856b0718bff1440b64ce9c0bd3298e0e8391f276d5c01be61d9d3d2f6",
+  "requirement": {
+    "requirement_text": "系统从 Google Sheets 输入表读取检索关键词，通过新闻数据源服务采集英文与日文来源的最新新闻文章，并交由语言模型生成摘要，摘要为约 50 个字符的日文简述，便于快速浏览要点；每篇结果按日期、关键词、摘要与链接追加写入 Google Sheets 的输出表。处理可由人工手动启动，也可按每日 13:00 的定时计划执行。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 317,
+        "text": "How it works\nThis workflow automatically collects the latest news articles from both English and Japanese sources using NewsAPI, summarizes them with OpenAI, and appends the results into a Google Sheet. The summaries are concise (about 50 characters) in Japanese, making it easy to review news highlights at a glance."
+      },
+      {
+        "start": 660,
+        "end": 729,
+        "text": "Run the workflow manually or use the daily schedule trigger at 13:00."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 输入表中的检索关键词",
+        "新闻数据源服务返回的英文与日文来源新闻文章"
+      ],
+      "conditions": [
+        "可由人工手动启动",
+        "可按每日 13:00 的定时计划执行"
+      ],
+      "allowed_actions": [
+        "读取检索关键词",
+        "采集英文与日文来源的最新新闻文章",
+        "生成约 50 个字符的日文摘要",
+        "按日期、关键词、摘要与链接追加写入输出表"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 输出表中新增日期、关键词、日文摘要与原文链接记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-044.packet.json",
+    "packet_sha256": "1ed50c4046cf5217d6623299ba58250cbf03dfd7b18d0673f4a38aed6ae9d725",
+    "public_description_sha256": "ef7606771f83841cc787fbba302355740e1379a1170e6f1fe2376df08c4a0cec"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-044.response.json",
+    "verification_response_sha256": "c19bfa602fbf83a14e662fedb12969e4c8c5da050305977d9665bde1d00c0b55",
+    "decision": "accept"
+  },
+  "formal_index": 55
+}

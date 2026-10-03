@@ -1,0 +1,18 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-065",
+  "case_id": "C-PARTIAL-TRANSLATION-BOUNDARY",
+  "kind": "boundary",
+  "input_data": {
+    "event": "post_updated",
+    "post_id": 6,
+    "target_languages": [
+      "es",
+      "fr"
+    ],
+    "existing_translation_languages": [
+      "es"
+    ]
+  },
+  "input_sha256": "EF879A0E94FF316ED1EC3488EB41B5971E1007A9C5A1AA1CDB1CDAC3C4A5D56A"
+}

@@ -1,0 +1,403 @@
+{
+  "task_id": "N8F-106",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "17e07482fe3e9e3a56e1fc702b22f3b2da1e111bc9a7b8b0c053231556eeaefa",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发开始每日内容生成",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Trigger: Start Daily Content Generation"
+      ],
+      "requirement_evidence": [
+        "自动化生产可直接发布到社交平台的短视频"
+      ],
+      "rationale": "定时触发启动生产流程"
+    },
+    {
+      "node_id": "n2",
+      "label": "语言模型生成创意点子",
+      "node_type": "semantic",
+      "operation_family": "ideation",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "创意点子（含环境与音效概念）"
+        }
+      ],
+      "native_evidence": [
+        "Generate Creative Video Idea",
+        "Tool: Inject Creative Perspective (Idea)",
+        "LLM: Generate Raw Idea (GPT-5)"
+      ],
+      "requirement_evidence": [
+        "流程首先使用语言模型生成一个创意点子"
+      ],
+      "rationale": "创意生成需语言模型"
+    },
+    {
+      "node_id": "n3",
+      "label": "基于创意创建详细视频提示词",
+      "node_type": "semantic",
+      "operation_family": "text_generation",
+      "inputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "创意点子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_prompts",
+          "type": "object",
+          "description": "详细的视频提示词"
+        }
+      ],
+      "native_evidence": [
+        "Generate Detailed Video Prompts",
+        "LLM: Draft Video Prompt Details (GPT-4.1)",
+        "Tool: Refine and Validate Prompts1"
+      ],
+      "requirement_evidence": [
+        "再基于该创意创建详细的视频提示词"
+      ],
+      "rationale": "提示词创作需语言模型"
+    },
+    {
+      "node_id": "n4",
+      "label": "通过视频生成能力生成视频片段",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "video_prompts",
+          "type": "object",
+          "description": "详细的视频提示词"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_clips",
+          "type": "object[]",
+          "description": "生成的视频片段"
+        }
+      ],
+      "native_evidence": [
+        "Generate Video Clips (seedance)",
+        "Extract Individual Scene Descriptions",
+        "Wait for Clip Generation (Wavespeed AI)",
+        "Retrieve Video Clips"
+      ],
+      "requirement_evidence": [
+        "随后通过视频生成能力生成视频片段"
+      ],
+      "rationale": "逐片段生成与异步等待折叠进契约，max_iterations<=20"
+    },
+    {
+      "node_id": "n5",
+      "label": "通过音效生成能力生成配套音效",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "创意点子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sound_effects",
+          "type": "object",
+          "description": "生成的配套音效"
+        }
+      ],
+      "native_evidence": [
+        "Generate ASMR Sound (Fal AI)",
+        "Wait for Sound Generation (Fal AI)",
+        "Retrieve Final Sound Output"
+      ],
+      "requirement_evidence": [
+        "通过音效生成能力生成配套音效"
+      ],
+      "rationale": "外部音效服务调用为确定性动作，异步等待折叠进契约"
+    },
+    {
+      "node_id": "n6",
+      "label": "通过视频合成能力拼接片段与音效为最终视频",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "video_clips",
+          "type": "object[]",
+          "description": "生成的视频片段"
+        },
+        {
+          "name": "sound_effects",
+          "type": "object",
+          "description": "生成的配套音效"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "最终合成视频"
+        }
+      ],
+      "native_evidence": [
+        "List Clip URLs for Stitching",
+        "Merge Clips into Final Video (Fal AI)",
+        "Wait for Video Rendering (Fal AI)",
+        "Retrieve Final Merged Video"
+      ],
+      "requirement_evidence": [
+        "再通过视频合成能力将各片段与音效拼接合成为最终视频"
+      ],
+      "rationale": "外部合成服务调用为确定性动作"
+    },
+    {
+      "node_id": "n7",
+      "label": "将元数据与视频链接记录到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "最终合成视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheet_record",
+          "type": "object",
+          "description": "Sheets 记录写入结果"
+        }
+      ],
+      "native_evidence": [
+        "Save Idea & Metadata to Google Sheets",
+        "URL Final Video",
+        "Update Status to \"DONE\""
+      ],
+      "requirement_evidence": [
+        "流程将本次的元数据与视频链接记录到 Google Sheets，用于追踪创意与产出"
+      ],
+      "rationale": "确定性 Sheets 写入"
+    },
+    {
+      "node_id": "n8",
+      "label": "将最终视频上传至 Blotato",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "最终合成视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "uploaded_video",
+          "type": "object",
+          "description": "Blotato 上的视频"
+        }
+      ],
+      "native_evidence": [
+        "Upload Video to BLOTATO"
+      ],
+      "requirement_evidence": [
+        "将最终视频上传至 Blotato"
+      ],
+      "rationale": "确定性上传动作"
+    },
+    {
+      "node_id": "n9",
+      "label": "自动发布到 TikTok、YouTube、Instagram 及其他平台",
+      "node_type": "terminal",
+      "operation_family": "publish",
+      "inputs": [
+        {
+          "name": "uploaded_video",
+          "type": "object",
+          "description": "Blotato 上的视频"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Youtube",
+        "Tiktok",
+        "Instagram",
+        "Linkedin",
+        "Facebook",
+        "Threads",
+        "Bluesky",
+        "Pinterest",
+        "Twitter (X)"
+      ],
+      "requirement_evidence": [
+        "并自动发布到 TikTok、YouTube、Instagram 及其他平台"
+      ],
+      "rationale": "多平台发布为最终可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后生成创意"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "创意生成后创建提示词"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "提示词用于生成片段"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "创意并行用于生成音效"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段用于合成"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "音效用于合成"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "合成后记录 Sheets"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录后上传 Blotato"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "上传后发布平台"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "creative_idea",
+      "condition": null,
+      "rationale": "创意用于提示词创作"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n5",
+      "variable": "creative_idea",
+      "condition": null,
+      "rationale": "创意（含音效概念）用于音效生成"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "video_prompts",
+      "condition": null,
+      "rationale": "提示词用于片段生成"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "video_clips",
+      "condition": null,
+      "rationale": "片段用于合成"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "sound_effects",
+      "condition": null,
+      "rationale": "音效用于合成"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_video",
+      "condition": null,
+      "rationale": "视频元数据与链接记录 Sheets"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n8",
+      "variable": "final_video",
+      "condition": null,
+      "rationale": "视频用于上传"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "uploaded_video",
+      "condition": null,
+      "rationale": "上传后的视频用于发布"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "定时→LLM 创意点子→LLM 详细视频提示词→视频片段与音效生成并行→合成最终视频→记录 Sheets→上传 Blotato→发布多平台为终止。音效输入源自创意点子（原生解析输出含环境与音效概念）。"
+}

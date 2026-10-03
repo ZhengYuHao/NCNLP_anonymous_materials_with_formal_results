@@ -1,0 +1,12 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-099",
+  "case_id": "C-POS-REPORT-GENERATED",
+  "kind": "positive",
+  "input_data": {
+    "slack_command": "/check-linkedin Jane Smith",
+    "full_name": "Jane Smith",
+    "recipient_email": "cs@example.com"
+  },
+  "input_sha256": "3D618E4B1B050401B42DB7616CD7A081E0F54A8820CB476A2F2D75ED2A830292"
+}

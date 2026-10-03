@@ -1,0 +1,14 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-006",
+  "case_id": "C-DIABETES-ITERATION",
+  "kind": "positive",
+  "input_data": {
+    "form": {
+      "disease": "type 2 diabetes",
+      "age": 55,
+      "gender": "female"
+    }
+  },
+  "input_sha256": "F0F9C853025A34C11FA9EF42C2DBA1677EA5DD9D559C6C0A45B9EBD240C6F843"
+}

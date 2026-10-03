@@ -1,0 +1,319 @@
+{
+  "task_id": "N8F-005",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "4c4474220641eb053aa44e37e2e028a8fc69af414e843f2f51660cbcdeedba59",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 输入并鉴权",
+      "node_type": "code",
+      "operation_family": "input_and_auth",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_input",
+          "type": "object",
+          "description": "经 Telegram ID 鉴权通过的用户输入，含输入类型（text/voice/image）与原始内容"
+        }
+      ],
+      "native_evidence": ["Get Message", "Code"],
+      "requirement_evidence": [
+        "输入与鉴权：用户通过 Telegram 发送消息、语音留言或图片；系统依据用户的 Telegram ID 进行鉴权，仅通过鉴权的用户可使用该服务。"
+      ],
+      "rationale": "需求声明从 Telegram 接收文本/语音/图片并按 Telegram ID 鉴权，鉴权失败则不可用服务；该动作是确定性触发与鉴权，归为 code 节点，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语音转写为文本",
+      "node_type": "semantic",
+      "operation_family": "speech_to_text",
+      "inputs": [
+        {
+          "name": "user_input",
+          "type": "object",
+          "description": "含语音内容的用户输入"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "语音消息转写得到的文本"
+        }
+      ],
+      "native_evidence": ["Transcribe recording", "Get input text from voice"],
+      "requirement_evidence": [
+        "语音消息：先经语音转写能力转换为文本"
+      ],
+      "rationale": "语音转写属于开放语义理解任务，需语言模型能力，判为 semantic；仅语音输入分支可达。"
+    },
+    {
+      "node_id": "n3",
+      "label": "下载图片并上传至文件托管生成公开 URL",
+      "node_type": "code",
+      "operation_family": "image_hosting",
+      "inputs": [
+        {
+          "name": "user_input",
+          "type": "object",
+          "description": "含图片内容的用户输入"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_url",
+          "type": "string",
+          "description": "图片上传至文件托管服务后生成的公开访问 URL"
+        }
+      ],
+      "native_evidence": ["Get image file", "Upload image", "Set Image Url"],
+      "requirement_evidence": [
+        "图片：从 Telegram 下载后上传至文件托管服务，并生成可公开访问的 URL。"
+      ],
+      "rationale": "下载、上传与生成 URL 均为确定性外部动作，判为 code；仅图片输入分支可达。"
+    },
+    {
+      "node_id": "n4",
+      "label": "AI 智能体分析输入并判断文生图/图生图",
+      "node_type": "semantic",
+      "operation_family": "intent_classification",
+      "inputs": [
+        {
+          "name": "user_input",
+          "type": "object",
+          "description": "鉴权通过的用户输入（文本/语音/图片）"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "文本内容或语音转写结果"
+        },
+        {
+          "name": "image_url",
+          "type": "string",
+          "description": "图片托管后的公开 URL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generation_decision",
+          "type": "object",
+          "description": "生成方式判断结果，含 mode（text2image/image2image）与提示词"
+        }
+      ],
+      "native_evidence": ["Grok Imagine Agent"],
+      "requirement_evidence": [
+        "AI 智能体分析用户输入，判断执行文生图（根据文字描述生成新图片）还是图生图（依据提示词修改已有图片）"
+      ],
+      "rationale": "对用户输入进行开放语义理解并决定生成方式，需语言模型，判为 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "调用图像生成能力提交异步生成任务",
+      "node_type": "code",
+      "operation_family": "image_generation_submit",
+      "inputs": [
+        {
+          "name": "generation_decision",
+          "type": "object",
+          "description": "含生成方式与提示词的决策"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generation_task_id",
+          "type": "string",
+          "description": "异步生成任务的任务标识"
+        }
+      ],
+      "native_evidence": ["Run text to image1", "Run image to image1", "Switch"],
+      "requirement_evidence": [
+        "智能体调用相应的图像生成能力执行生成任务",
+        "生成采用异步方式：提交任务后按任务标识轮询生成结果，直至结果返回"
+      ],
+      "rationale": "调用图像生成外部服务并提交任务，接口调用属确定性契约，判为 code；按 mode 分支调用文生图或图生图能力。"
+    },
+    {
+      "node_id": "n6",
+      "label": "按任务标识轮询异步生成结果",
+      "node_type": "code",
+      "operation_family": "async_poll",
+      "inputs": [
+        {
+          "name": "generation_task_id",
+          "type": "string",
+          "description": "异步生成任务的任务标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_image",
+          "type": "object",
+          "description": "生成完成后的图片结果"
+        }
+      ],
+      "native_evidence": ["Wait1", "Wait2", "Result text to image", "Result image to image"],
+      "requirement_evidence": [
+        "提交任务后按任务标识轮询生成结果，直至结果返回"
+      ],
+      "rationale": "异步轮询属确定性控制逻辑，折叠进本节点契约；终止条件为任务状态完成/成功，max_iterations<=20，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "通过 Telegram 将图片发回用户",
+      "node_type": "terminal",
+      "operation_family": "deliver_output",
+      "inputs": [
+        {
+          "name": "generated_image",
+          "type": "object",
+          "description": "生成完成的图片结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send a text message"],
+      "requirement_evidence": [
+        "输出：图片生成完成后，通过 Telegram 消息将图片发回给用户。"
+      ],
+      "rationale": "向用户发送最终图片是用户可见的完成动作，无后续处理，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": "user_input.type == 'voice'",
+      "rationale": "语音输入分支：进入语音转写。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": "user_input.type == 'image'",
+      "rationale": "图片输入分支：下载并托管图片。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": "user_input.type == 'text'",
+      "rationale": "文本输入分支：直接交给智能体。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "语音转写为文本后交智能体分析。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片托管生成 URL 后交智能体分析。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "智能体输出生成决策后提交生成任务。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交任务后按任务标识轮询结果。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成完成后将图片发回用户。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_input",
+      "condition": null,
+      "rationale": "语音输入内容传递给转写节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "user_input",
+      "condition": null,
+      "rationale": "图片输入内容传递给下载托管节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "user_input",
+      "condition": null,
+      "rationale": "用户输入（文本路径）交给智能体分析。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "text",
+      "condition": null,
+      "rationale": "语音转写得到的文本交给智能体。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n3",
+      "target": "n4",
+      "variable": "image_url",
+      "condition": null,
+      "rationale": "图片托管 URL 交给智能体用于图生图。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "generation_decision",
+      "condition": null,
+      "rationale": "生成决策传递给生成任务提交节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "generation_task_id",
+      "condition": null,
+      "rationale": "任务标识传递给轮询节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "generated_image",
+      "condition": null,
+      "rationale": "生成结果传递给发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7"],
+  "confidence": 0.95,
+  "notes": "按需求将输入处理拆为文本/语音/图片三分支：语音经转写、图片经托管 URL 后统一交给智能体判定文生图/图生图；异步生成折叠为提交任务+轮询两个 code 节点，轮询终止条件为任务完成且 max_iterations<=20。原生图中的 Get input text from voice 等 set 节点为数据整理细节，未在需求中声明，未单列。"
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-101",
+  "case_id": "C-REVENUE-BY-COUNTRY",
+  "kind": "positive",
+  "input_data": {
+    "chat_session_id": "chat-0002",
+    "question": "Revenue by country?",
+    "sheet_data": [
+      {
+        "Country": "US",
+        "Revenue": 2000
+      },
+      {
+        "Country": "DE",
+        "Revenue": 1200
+      },
+      {
+        "Country": "US",
+        "Revenue": 500
+      }
+    ]
+  },
+  "input_sha256": "081CCCF9EC9E854A87C068028851A13BE6D34AA5FCDBA6055EC78BB1F8F7B201"
+}

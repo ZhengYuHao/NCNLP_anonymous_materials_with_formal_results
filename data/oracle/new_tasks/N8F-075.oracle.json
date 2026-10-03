@@ -1,0 +1,231 @@
+{
+  "task_id": "N8F-075",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "044c35a6501445e6b8f1135e7ced3f035a6b40a07ab82bd45a9db7d103796a97",
+  "fixtures": [
+    {
+      "fixture_id": "F-HISTORY-AND-TOPIC",
+      "purpose": "正常用例：历史选题 3 个，语言模型生成的新选题不与历史重复，且 Slack 审核通过",
+      "input_data": {
+        "history_topics": [
+          "How to improve sleep quality",
+          "10 minute morning routine",
+          "Beginner guide to meditation"
+        ],
+        "generated_topic": "5 daily habits for better focus",
+        "approval": "approved"
+      }
+    },
+    {
+      "fixture_id": "F-REJECTED-TOPIC",
+      "purpose": "负例：Slack 人工审核不通过，验证不发布到 Instagram 且不保存选题",
+      "input_data": {
+        "history_topics": ["Old topic one", "Old topic two"],
+        "generated_topic": "Another focus tips video",
+        "approval": "rejected"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-HISTORY",
+      "dependency_type": "googleSheets",
+      "operation": "read_past_topics",
+      "request_contract": {
+        "sheet": "topics"
+      },
+      "response_contract": {
+        "topics": [
+          "How to improve sleep quality",
+          "10 minute morning routine",
+          "Beginner guide to meditation"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TOPIC",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_quiz_topic",
+      "request_contract": {
+        "past_topics": "array"
+      },
+      "response_contract": {
+        "topic": "5 daily habits for better focus",
+        "script": "Here is a quiz: which habit helps most?",
+        "image_prompt": "focused person at a desk"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CREATOMATE-RENDER",
+      "dependency_type": "httpRequest",
+      "operation": "render_video_from_template",
+      "request_contract": {
+        "template_id": "reels-template",
+        "script": "string",
+        "image_prompt": "string"
+      },
+      "response_contract": {
+        "render_id": "cm-fixed-001",
+        "video_url": "https://creatomate.example.com/video/cm-fixed-001.mp4"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-REVIEW",
+      "dependency_type": "slack",
+      "operation": "post_for_approval",
+      "request_contract": {
+        "video_url": "string",
+        "topic": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed-003",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IG-POST",
+      "dependency_type": "facebookGraphApi",
+      "operation": "upload_reel",
+      "request_contract": {
+        "video_url": "string",
+        "caption": "string"
+      },
+      "response_contract": {
+        "media_id": "ig-fixed-001",
+        "permalink": "https://instagram.com/reel/ig-fixed-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-SAVE",
+      "dependency_type": "googleSheets",
+      "operation": "append_topic",
+      "request_contract": {
+        "topic": "string"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-NOTIFY",
+      "dependency_type": "slack",
+      "operation": "post_publish_success",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed-004",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-APPROVED-PUBLISH",
+      "kind": "positive",
+      "fixture_ids": ["F-HISTORY-AND-TOPIC"],
+      "mock_ids": ["M-SHEETS-HISTORY", "M-LLM-TOPIC", "M-CREATOMATE-RENDER", "M-SLACK-REVIEW", "M-IG-POST", "M-SHEETS-SAVE", "M-SLACK-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-TOPIC-NO-DUPLICATE",
+          "target": "llm_topic.output.topic",
+          "operator": "not_equals",
+          "expected": "How to improve sleep quality",
+          "rationale": "新选题必须与历史选题不重复（逐项比对模拟历史列表）"
+        },
+        {
+          "assertion_id": "A-TOPIC-NEW",
+          "target": "llm_topic.output.topic",
+          "operator": "equals",
+          "expected": "5 daily habits for better focus",
+          "rationale": "语言模型应生成固定的新问答式内容方案"
+        },
+        {
+          "assertion_id": "A-REVIEW-VIDEO-SENT",
+          "target": "slack_review.post_for_approval.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "生成的视频必须发送到 Slack 供人工审核"
+        },
+        {
+          "assertion_id": "A-REVIEW-URL",
+          "target": "slack_review.post_for_approval.calls[0].video_url",
+          "operator": "matches",
+          "expected": "^https?://\\S+",
+          "rationale": "Slack 审核消息必须携带视频链接"
+        },
+        {
+          "assertion_id": "A-IG-POST-ONCE",
+          "target": "ig.upload_reel.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "审核通过后应把视频作为 Reel 上传到 Instagram 一次"
+        },
+        {
+          "assertion_id": "A-SHEETS-SAVED",
+          "target": "sheets_save.append_topic.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "发布成功后应把本次新选题保存回 Google Sheets"
+        },
+        {
+          "assertion_id": "A-NOTIFY-SUCCESS",
+          "target": "slack_notify.post_publish_success.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "发布成功后应在 Slack 发出通知"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-REJECTED-NO-PUBLISH",
+      "kind": "negative",
+      "fixture_ids": ["F-REJECTED-TOPIC"],
+      "mock_ids": ["M-SHEETS-HISTORY", "M-LLM-TOPIC", "M-CREATOMATE-RENDER", "M-SLACK-REVIEW", "M-IG-POST", "M-SHEETS-SAVE", "M-SLACK-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-REJECT-NO-IG",
+          "target": "ig.upload_reel.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "审核不通过时不得上传到 Instagram"
+        },
+        {
+          "assertion_id": "A-REJECT-NO-SAVE",
+          "target": "sheets_save.append_topic.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "审核不通过时不得把选题保存回 Google Sheets"
+        },
+        {
+          "assertion_id": "A-REJECT-NO-NOTIFY",
+          "target": "slack_notify.post_publish_success.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "未发布成功时不得发送发布成功通知"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：新选题与历史去重、视频渲染、Slack 审核、审核通过后发布/保存/通知，以及审核不通过时停止发布。历史选题、语言模型、视频渲染、Slack、Instagram、Sheets 全部确定性模拟。"
+}

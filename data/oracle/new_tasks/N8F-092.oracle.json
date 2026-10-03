@@ -1,0 +1,418 @@
+{
+  "task_id": "N8F-092",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "a7a176255dbd9ff31fbf008c4f31a4236368c966592b34fd44f8ea63c426cf4e",
+  "fixtures": [
+    {
+      "fixture_id": "F-vectors",
+      "purpose": "生成轮播主题所用的三类随机向量：主题起始点、焦点、卖点",
+      "input_data": {
+        "topic_starter": "AI tools",
+        "focus": "productivity",
+        "benefit": "time savings"
+      }
+    },
+    {
+      "fixture_id": "F-history-themes",
+      "purpose": "向量数据库中已存储的历史轮播主题",
+      "input_data": {
+        "themes": [
+          "AI productivity tools for busy teams",
+          "Time saving AI apps"
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-llm-theme-1",
+      "dependency_type": "llm",
+      "operation": "generate_theme",
+      "request_contract": {
+        "attempt": 1,
+        "topic_starter": "AI tools",
+        "focus": "productivity",
+        "benefit": "time savings"
+      },
+      "response_contract": {
+        "theme": "AI productivity tools for busy teams"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-theme-2",
+      "dependency_type": "llm",
+      "operation": "generate_theme",
+      "request_contract": {
+        "attempt": 2
+      },
+      "response_contract": {
+        "theme": "Habit tracking with retro notebooks"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-embed-high",
+      "dependency_type": "embeddings",
+      "operation": "embed_theme",
+      "request_contract": {
+        "theme": "AI productivity tools for busy teams"
+      },
+      "response_contract": {
+        "vector_id": "v_high",
+        "vector": [
+          0.9,
+          0.8,
+          0.7
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-embed-low",
+      "dependency_type": "embeddings",
+      "operation": "embed_theme",
+      "request_contract": {
+        "theme": "Habit tracking with retro notebooks"
+      },
+      "response_contract": {
+        "vector_id": "v_low",
+        "vector": [
+          0.1,
+          0.2,
+          0.3
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sim-high",
+      "dependency_type": "vector_db",
+      "operation": "max_similarity",
+      "request_contract": {
+        "vector_id": "v_high"
+      },
+      "response_contract": {
+        "max_similarity": 0.95
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sim-low",
+      "dependency_type": "vector_db",
+      "operation": "max_similarity",
+      "request_contract": {
+        "vector_id": "v_low"
+      },
+      "response_contract": {
+        "max_similarity": 0.3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-slides",
+      "dependency_type": "llm",
+      "operation": "generate_slides",
+      "request_contract": {
+        "theme": "Habit tracking with retro notebooks"
+      },
+      "response_contract": {
+        "slides": [
+          {
+            "page": 1,
+            "title": "Track daily habits",
+            "caption": "Retro notebooks meet modern habits",
+            "hashtags": [
+              "#Habits"
+            ],
+            "cta": "Learn more"
+          },
+          {
+            "page": 2,
+            "title": "Why consistency wins",
+            "caption": "Small steps add up",
+            "hashtags": [
+              "#Habits"
+            ],
+            "cta": "Save this"
+          },
+          {
+            "page": 3,
+            "title": "Design your tracker",
+            "caption": "Make it beautiful",
+            "hashtags": [
+              "#Design"
+            ],
+            "cta": "Follow us"
+          },
+          {
+            "page": 4,
+            "title": "Start today",
+            "caption": "One habit at a time",
+            "hashtags": [
+              "#Start"
+            ],
+            "cta": "Share"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-slides-invalid",
+      "dependency_type": "llm",
+      "operation": "generate_slides",
+      "request_contract": {
+        "invalid": true
+      },
+      "response_contract": {
+        "raw": "not valid json at all",
+        "slides": null
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-image-gen",
+      "dependency_type": "image_generation",
+      "operation": "generate_graphic",
+      "request_contract": {
+        "width": 1024,
+        "height": 1024
+      },
+      "response_contract": {
+        "image_url": "https://gen.example/g1.png",
+        "width": 1024,
+        "height": 1024
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-imgur-upload",
+      "dependency_type": "imgur",
+      "operation": "upload_image",
+      "request_contract": {
+        "image_url": "https://gen.example/g1.png"
+      },
+      "response_contract": {
+        "link": "https://imgur.example/i/g1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "carousel_metadata"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 7
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ig-container",
+      "dependency_type": "instagram_graph",
+      "operation": "create_media_containers",
+      "request_contract": {
+        "image_links": [
+          "https://imgur.example/i/g1",
+          "https://imgur.example/i/g1",
+          "https://imgur.example/i/g1",
+          "https://imgur.example/i/g1"
+        ]
+      },
+      "response_contract": {
+        "container_ids": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ig-publish",
+      "dependency_type": "instagram_graph",
+      "operation": "publish_carousel",
+      "request_contract": {
+        "container_ids": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ]
+      },
+      "response_contract": {
+        "post_id": "ig_001",
+        "status": "PUBLISHED"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-full",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-vectors",
+        "F-history-themes"
+      ],
+      "mock_ids": [
+        "M-llm-theme-1",
+        "M-llm-theme-2",
+        "M-embed-high",
+        "M-embed-low",
+        "M-sim-high",
+        "M-sim-low",
+        "M-llm-slides",
+        "M-image-gen",
+        "M-imgur-upload",
+        "M-sheets-append",
+        "M-ig-container",
+        "M-ig-publish"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.theme",
+          "operator": "equals",
+          "expected": "Habit tracking with retro notebooks",
+          "rationale": "首次生成的主题与历史相似度 0.95 超过阈值，须重新生成并最终采用第二次生成的主题"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.theme_attempts",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "相似度超阈值触发一次重新生成，共生成 2 次主题"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.slides",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "轮播包含 4 页，每页生成标题、说明文字、话题标签与行动号召"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.images[].width",
+          "operator": "equals",
+          "expected": 1024,
+          "rationale": "每页配图须为 1024x1024"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.images[].height",
+          "operator": "equals",
+          "expected": 1024,
+          "rationale": "每页配图高度须为 1024"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.image_links",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "每页配图须上传至图片托管服务并取得公开访问链接"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.sheets.metadata.slide_count",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "Google Sheets 元数据须记录页数"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.sheets.metadata.theme",
+          "operator": "exists",
+          "rationale": "Google Sheets 元数据须记录标题",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.sheets.metadata.scheduled_date",
+          "operator": "exists",
+          "rationale": "Google Sheets 元数据须记录计划发布日期",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.container_ids",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "Instagram Graph API 须为每页创建媒体容器"
+        },
+        {
+          "assertion_id": "A-11",
+          "target": "output.post_id",
+          "operator": "exists",
+          "rationale": "须成功发布轮播帖并返回发布标识",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-neg-invalid-structure",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-vectors",
+        "F-history-themes"
+      ],
+      "mock_ids": [
+        "M-llm-theme-1",
+        "M-llm-theme-2",
+        "M-embed-high",
+        "M-embed-low",
+        "M-sim-high",
+        "M-sim-low",
+        "M-llm-slides-invalid"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-neg-invalid-structure",
+          "target": "output.slides",
+          "operator": "not_exists",
+          "rationale": "生成内容结构解析与校验不通过时，不得进入后续环节",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-2-neg-invalid-structure",
+          "target": "output.post_id",
+          "operator": "not_exists",
+          "rationale": "结构校验不通过的内容不得发布到 Instagram",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-3-neg-invalid-structure",
+          "target": "output.sheets.metadata",
+          "operator": "not_exists",
+          "rationale": "校验不通过时不得将元数据写入 Google Sheets（避免记录无效内容）",
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "相似度阈值在用例中取 0.8：0.95 触发重新生成，0.3 通过；配图固定为 1024x1024；结构校验通过后才会生成配图、上传、写 Sheets 与发布，校验失败时全部跳过。"
+}

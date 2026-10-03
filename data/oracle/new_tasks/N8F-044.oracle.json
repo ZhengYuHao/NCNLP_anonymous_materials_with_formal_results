@@ -1,0 +1,274 @@
+{
+  "task_id": "N8F-044",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "da4b467856b0718bff1440b64ce9c0bd3298e0e8391f276d5c01be61d9d3d2f6",
+  "fixtures": [
+    {
+      "fixture_id": "F-keywords",
+      "purpose": "Google Sheets 输入表中的检索关键词",
+      "input_data": {
+        "keywords": [
+          "AI",
+          "ロボット"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-news-en",
+      "purpose": "英文来源的最新新闻文章 2 篇",
+      "input_data": {
+        "articles": [
+          {
+            "title": "AI breakthrough in protein folding",
+            "url": "https://en.example/1",
+            "source_lang": "en"
+          },
+          {
+            "title": "Robot vacuum market grows",
+            "url": "https://en.example/2",
+            "source_lang": "en"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-news-ja",
+      "purpose": "日文来源的最新新闻文章 1 篇",
+      "input_data": {
+        "articles": [
+          {
+            "title": "AI技術の新たな進展",
+            "url": "https://ja.example/1",
+            "source_lang": "ja"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-sheets-read-input",
+      "dependency_type": "google_sheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "sheet": "input"
+      },
+      "response_contract": {
+        "keywords": [
+          "AI",
+          "ロボット"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-newsapi-en",
+      "dependency_type": "news_api",
+      "operation": "search_news",
+      "request_contract": {
+        "lang": "en"
+      },
+      "response_contract": {
+        "articles": [
+          {
+            "title": "AI breakthrough in protein folding",
+            "url": "https://en.example/1",
+            "source_lang": "en"
+          },
+          {
+            "title": "Robot vacuum market grows",
+            "url": "https://en.example/2",
+            "source_lang": "en"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-newsapi-ja",
+      "dependency_type": "news_api",
+      "operation": "search_news",
+      "request_contract": {
+        "lang": "ja"
+      },
+      "response_contract": {
+        "articles": [
+          {
+            "title": "AI技術の新たな進展",
+            "url": "https://ja.example/1",
+            "source_lang": "ja"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-summarize",
+      "dependency_type": "llm",
+      "operation": "summarize_ja_50",
+      "request_contract": {
+        "lang": "ja"
+      },
+      "response_contract": {
+        "summary": "AI技術の最新動向を簡潔にまとめたニュース要約です。今後の展望にも注目が集まっています。"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-output",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "output"
+      },
+      "response_contract": {
+        "appended": 3,
+        "first_row": 21
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-manual",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-keywords",
+        "F-news-en",
+        "F-news-ja"
+      ],
+      "mock_ids": [
+        "M-sheets-read-input",
+        "M-newsapi-en",
+        "M-newsapi-ja",
+        "M-llm-summarize",
+        "M-sheets-append-output"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.summaries",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "英文 2 篇与日文 1 篇共 3 篇文章，每篇生成一条摘要"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.summaries[].link",
+          "operator": "contains",
+          "expected": "https://en.example/1",
+          "rationale": "输出记录应保留原文链接"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.sheets_appended",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "输出表应追加 3 行记录"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-fields",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-keywords",
+        "F-news-en",
+        "F-news-ja"
+      ],
+      "mock_ids": [
+        "M-sheets-read-input",
+        "M-newsapi-en",
+        "M-newsapi-ja",
+        "M-llm-summarize",
+        "M-sheets-append-output"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-fields",
+          "target": "output.summaries[0].date",
+          "operator": "exists",
+          "rationale": "每条输出须包含日期字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-2-pos-fields",
+          "target": "output.summaries[0].keyword",
+          "operator": "exists",
+          "rationale": "每条输出须包含检索关键词字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-3-pos-fields",
+          "target": "output.summaries[0].summary",
+          "operator": "exists",
+          "rationale": "每条输出须包含日文摘要字段",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.summaries[0].link",
+          "operator": "exists",
+          "rationale": "每条输出须包含原文链接字段",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-summary-length",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-keywords",
+        "F-news-en",
+        "F-news-ja"
+      ],
+      "mock_ids": [
+        "M-sheets-read-input",
+        "M-newsapi-en",
+        "M-newsapi-ja",
+        "M-llm-summarize",
+        "M-sheets-append-output"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-summary-length",
+          "target": "output.summaries[0].summary",
+          "operator": "matches",
+          "expected": "^[^\\r\\n]{40,60}$",
+          "rationale": "摘要长度约 50 字符，程序可校验字符数落在 40-60 区间"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-schedule",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-keywords"
+      ],
+      "mock_ids": [
+        "M-sheets-read-input"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-schedule",
+          "target": "output.schedule.time",
+          "operator": "equals",
+          "expected": "13:00",
+          "rationale": "每日定时计划须配置在 13:00 触发"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "NewsAPI 英文与日文来源、语言模型摘要与 Google Sheets 读写均为固定模拟响应；摘要“约 50 字符”用 40-60 字符正则区间判定，避免主观判断。"
+}

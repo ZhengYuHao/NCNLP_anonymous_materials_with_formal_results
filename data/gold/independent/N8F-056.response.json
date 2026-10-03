@@ -1,0 +1,253 @@
+{
+  "task_id": "N8F-056",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "3ac942fe64fa7c33357ab7ea41439ae8178e6f2497cf101396403169b859ebb7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_trigger",
+          "type": "trigger_event",
+          "description": "每 2 小时在指定分钟触发的运行事件"
+        }
+      ],
+      "native_evidence": ["Schedule Trigger (scheduleTrigger, every 2 hours)"],
+      "requirement_evidence": ["每 2 小时在指定分钟触发一次", "每 2 小时在指定分钟触发一次"],
+      "rationale": "周期调度为确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "轮换选择 Instagram 账号",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "schedule_trigger",
+          "type": "trigger_event",
+          "description": "每 2 小时在指定分钟触发的运行事件（提供时间段信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_account",
+          "type": "object",
+          "description": "按时间段轮换选出的本次使用的 Instagram 账号（会话凭据）"
+        }
+      ],
+      "native_evidence": ["Get Available Session Cookies (microsoftSharePoint)", "Extract Cookies (extractFromFile)", "Select Cookie (langchain.agent)"],
+      "requirement_evidence": ["按时间段从已配置的 Instagram 账号中轮换选择一个账号", "按时间段选择本次使用的 Instagram 账号", "按时间段轮换使用已配置的 Instagram 账号"],
+      "rationale": "需求声明的是按时间段轮换选择的确定性时间片规则，判 code。原生以语言模型 agent 实现该选择，但需求未声明语义判断行为，按需求优先原则判 code（原生实现与需求声明的差异已在此说明）。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成话题标签",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "贴合 AI/BPA 领域的真实话题标签"
+        }
+      ],
+      "native_evidence": ["Generate Random Hashtag (langchain.agent)", "OpenAI Chat Model (lmChatOpenAi)"],
+      "requirement_evidence": ["由语言模型生成一个贴合 AI/BPA 领域的真实话题标签", "生成话题标签"],
+      "rationale": "需求明确声明由语言模型生成话题标签，属开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "按话题标签抓取最近帖子",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "贴合 AI/BPA 领域的话题标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scraped_posts",
+          "type": "array",
+          "description": "按该话题标签抓取到的最近帖子（数量不超过配置上限）"
+        }
+      ],
+      "native_evidence": ["Set ENV Variables (set)", "Get Hashtag Agent (phantombuster)", "Launch Agent (phantombuster)", "Wait (wait)", "Get Posts (phantombuster)", "Wait2 (wait)", "Get Response (phantombuster)"],
+      "requirement_evidence": ["按该话题标签抓取最近的帖子，抓取数量不超过配置的上限", "按话题标签抓取最近帖子"],
+      "rationale": "以确定性契约启动抓取代理并取回结果，数量上限折叠进节点契约；代理结果轮询等待折叠进本节点契约（终止条件：结果返回）。节流等待为运行间控制细节，不单列节点。判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "随机选择并查重",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "scraped_posts",
+          "type": "array",
+          "description": "按话题标签抓取到的最近帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "candidate_post",
+          "type": "object",
+          "description": "随机选出且经查重确认此前未被点赞过的帖子（含链接）"
+        }
+      ],
+      "native_evidence": ["Get Random Post (code)", "Download file (microsoftSharePoint)", "Extract from File (extractFromFile)", "Check if in List (code)", "If (if)"],
+      "requirement_evidence": ["从抓取结果中随机选择一条帖子，并通过查重确认该帖子此前未被点赞过", "对候选帖子查重", "仅对未点赞过的帖子执行点赞"],
+      "rationale": "随机选取与对照在线存储中已点赞记录的查重均为确定性规则，已点赞记录读取折叠进本节点查重契约，判 code。查重未通过时按条件不进入点赞，该分支需求未声明后续行为。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成待点赞清单并启动点赞",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "candidate_post",
+          "type": "object",
+          "description": "随机选出且经查重确认未被点赞过的帖子（含链接）"
+        },
+        {
+          "name": "selected_account",
+          "type": "object",
+          "description": "本次轮换使用的 Instagram 账号（会话凭据）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "like_result",
+          "type": "object",
+          "description": "自动点赞操作结果（目标帖子被点赞）"
+        }
+      ],
+      "native_evidence": ["Create CSV Binary (code)", "Upload CSV (microsoftSharePoint)", "Get Autoliking Agent (phantombuster)", "Launch AL Agent (phantombuster)", "Wait1 (wait)"],
+      "requirement_evidence": ["生成待点赞清单并上传至在线存储，随后启动自动点赞操作，对该帖子完成点赞", "生成待点赞清单并启动点赞", "目标帖子被点赞"],
+      "rationale": "需求将清单生成、上传与点赞启动声明为一个动作；CSV 构造、上传与代理启动均为确定性契约，结果轮询折叠进本节点，判 code。节流（每账号每日约 12 次）折叠进本节点契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "追加已点赞记录",
+      "node_type": "terminal",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "like_result",
+          "type": "object",
+          "description": "自动点赞操作结果（含已点赞帖子链接）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Prepare Updated Data (code)", "Convert to File (convertToFile)", "Update file (microsoftSharePoint)"],
+      "requirement_evidence": ["将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞", "追加已点赞记录", "在线存储中的已点赞记录新增该帖子链接"],
+      "rationale": "点赞成功后追加记录形成去重闭环，是需求声明的最终可见结果，无 CFG 出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后按时间段轮换选择账号。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "账号选定后生成话题标签。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "以生成的标签抓取最近帖子。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取结果进入随机选择与查重。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "post_not_liked == true",
+      "rationale": "仅对查重确认未被点赞过的帖子执行点赞；已点赞过时该轮结束（需求未声明后续行为）。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "点赞完成后追加已点赞记录。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n3",
+      "target": "n4",
+      "variable": "hashtag",
+      "condition": null,
+      "rationale": "抓取消费生成的话题标签（semantic 到 code 的有类型数据边）。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "scraped_posts",
+      "condition": null,
+      "rationale": "随机选择与查重消费抓取结果。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "candidate_post",
+      "condition": null,
+      "rationale": "点赞清单与点赞操作消费候选帖子。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n2",
+      "target": "n6",
+      "variable": "selected_account",
+      "condition": null,
+      "rationale": "点赞以轮换选出的账号执行。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "like_result",
+      "condition": null,
+      "rationale": "记录追加消费点赞结果中的帖子链接。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7"],
+  "confidence": 0.8,
+  "notes": "关键取舍：1) 账号轮换选择：需求声明为按时间段轮换的确定性规则，原生却用语言模型 agent 实现；按需求优先与行为分类规则判 code，差异已在节点理由中披露，此处置信度略降。2) 抓取与点赞的代理轮询等待（Wait/Get Posts/Get Response/Wait1）分别折叠进抓取与点赞节点契约；节流等待（每日约 12 次/账号）折叠进点赞节点契约，不单列节点。3) 查重未通过分支需求未声明后续行为，仅以 CFG 条件表达不进入点赞。4) 在线存储中已点赞记录的下载读取折叠进查重节点契约。"
+}

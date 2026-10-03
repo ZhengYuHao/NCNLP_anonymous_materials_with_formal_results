@@ -1,0 +1,228 @@
+{
+  "task_id": "N8F-055",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "bdf8109a339f048901f6603230239de2a5116f77209d3a5f5844e21464e8ae44",
+  "fixtures": [
+    {
+      "fixture_id": "F-MANUAL-TRIGGER",
+      "purpose": "正常用例：人工手动触发，指定 Google Drive 文件夹与收件人",
+      "input_data": {
+        "trigger": "manual",
+        "drive_folder_id": "folder-templates-001",
+        "recipient_email": "templates@example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DRIVE-SEARCH",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "search_json_files",
+      "request_contract": {
+        "folder_id": "folder-templates-001",
+        "mime_type": "application/json"
+      },
+      "response_contract": {
+        "files": [
+          {"id": "wf-json-1", "name": "workflow-a.json"},
+          {"id": "wf-json-2", "name": "workflow-b.json"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-DOWNLOAD-A",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "wf-json-1"
+      },
+      "response_contract": {
+        "file_id": "wf-json-1",
+        "name": "workflow-a.json",
+        "content": "{\"name\": \"Email Digest\", \"nodes\": [{\"type\": \"n8n-nodes-base.gmail\"}]}"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-DOWNLOAD-B",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "wf-json-2"
+      },
+      "response_contract": {
+        "file_id": "wf-json-2",
+        "name": "workflow-b.json",
+        "content": "{\"name\": \"Slack Notifier\", \"nodes\": [{\"type\": \"n8n-nodes-base.slack\"}]}"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DESCRIBE-A",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "operation": "generate_template_description",
+      "request_contract": {
+        "workflow_name": "Email Digest",
+        "workflow_data": "{\"name\": \"Email Digest\", \"nodes\": [{\"type\": \"n8n-nodes-base.gmail\"}]}"
+      },
+      "response_contract": {
+        "title": "Email Digest",
+        "description": "Automatically compiles incoming emails into a daily digest and forwards it to your inbox."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DESCRIBE-B",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "operation": "generate_template_description",
+      "request_contract": {
+        "workflow_name": "Slack Notifier",
+        "workflow_data": "{\"name\": \"Slack Notifier\", \"nodes\": [{\"type\": \"n8n-nodes-base.slack\"}]}"
+      },
+      "response_contract": {
+        "title": "Slack Notifier",
+        "description": "Sends customized messages to a Slack channel when a webhook is triggered."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "template_descriptions",
+        "rows": [
+          {"title": "Email Digest", "description": "Automatically compiles incoming emails into a daily digest and forwards it to your inbox."},
+          {"title": "Slack Notifier", "description": "Sends customized messages to a Slack channel when a webhook is triggered."}
+        ]
+      },
+      "response_contract": {
+        "appended_rows": 2,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "templates@example.com"
+      },
+      "response_contract": {
+        "message_id": "mail-055-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TEMPLATE-DESC-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-MANUAL-TRIGGER"],
+      "mock_ids": ["M-DRIVE-SEARCH", "M-DRIVE-DOWNLOAD-A", "M-DRIVE-DOWNLOAD-B", "M-LLM-DESCRIBE-A", "M-LLM-DESCRIBE-B", "M-SHEETS-LOG", "M-GMAIL-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-055-1",
+          "target": "exec_log.trigger",
+          "operator": "equals",
+          "expected": "manual",
+          "rationale": "需求要求由人工手动触发后开始处理，触发方式必须为手动"
+        },
+        {
+          "assertion_id": "A-055-2",
+          "target": "exec_log.googleDrive.search.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须在指定的 Google Drive 文件夹中搜索 JSON 工作流文件，搜索动作应执行一次"
+        },
+        {
+          "assertion_id": "A-055-3",
+          "target": "exec_log.googleDrive.downloaded_files",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "文件夹中找到 2 个 JSON 文件，必须逐个下载全部文件"
+        },
+        {
+          "assertion_id": "A-055-4",
+          "target": "exec_log.parsed_workflows",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "必须从每个下载的 JSON 内容中解析出工作流数据，解析结果数量必须与文件数一致"
+        },
+        {
+          "assertion_id": "A-055-5",
+          "target": "exec_log.llm.descriptions[0].title",
+          "operator": "equals",
+          "expected": "Email Digest",
+          "rationale": "语言模型必须为每个工作流生成简洁标题，标题必须与固定模拟输出一致"
+        },
+        {
+          "assertion_id": "A-055-6",
+          "target": "exec_log.llm.descriptions[0].description",
+          "operator": "contains",
+          "expected": "daily digest",
+          "rationale": "语言模型必须生成详细描述，描述内容必须与固定模拟输出一致"
+        },
+        {
+          "assertion_id": "A-055-7",
+          "target": "exec_log.markdown_output",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "生成结果必须转换为结构化的 Markdown 用于模板发布"
+        },
+        {
+          "assertion_id": "A-055-8",
+          "target": "exec_log.html_output",
+          "operator": "contains",
+          "expected": "<h1>",
+          "rationale": "必须生成同一份描述的 HTML 版本用于邮件发送，HTML 必须包含标题标签"
+        },
+        {
+          "assertion_id": "A-055-9",
+          "target": "exec_log.googleSheets.append.row_count",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "生成信息必须记入 Google Sheets，记录数必须与处理的文件数一致"
+        },
+        {
+          "assertion_id": "A-055-10",
+          "target": "exec_log.gmail.send.to",
+          "operator": "equals",
+          "expected": "templates@example.com",
+          "rationale": "邮件必须发送给指定的收件人"
+        },
+        {
+          "assertion_id": "A-055-11",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "Email Digest",
+          "rationale": "邮件正文必须包含 Markdown 描述内容"
+        },
+        {
+          "assertion_id": "A-055-12",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "<h1>",
+          "rationale": "邮件正文必须包含 HTML 格式的描述内容"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常流程：手动触发→搜索 Drive 文件夹→逐个下载 2 个 JSON 文件→解析工作流数据→LLM 生成标题与描述→转换 Markdown 与 HTML→记入 Sheets→向指定收件人发送含两种格式内容的邮件。所有外部依赖（Google Drive、Azure OpenAI、Google Sheets、Gmail）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、内容包含与目标检查。"
+}

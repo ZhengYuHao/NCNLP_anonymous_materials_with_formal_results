@@ -1,0 +1,62 @@
+{
+  "schema_version": "rq3-condition-registry-v1",
+  "partition_policy": "development_qualification_only_until_g2",
+  "conditions": [
+    {
+      "name": "Full NCNLP",
+      "changed_component": "none",
+      "held_constant": ["M1", "M2", "M3", "deterministic_assignment", "DSL_renderer", "DSL_compiler", "M0", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_development.py",
+      "implementation_status": "READY",
+      "note": "The development runner executes compiled local DSL steps and public operations through the same evaluator. D34 qualification produced complete method, executor, and Oracle evidence; task failure remains an outcome rather than an infrastructure error."
+    },
+    {
+      "name": "Staged-LLM-Assign",
+      "changed_component": "replace deterministic node assignment with an LLM assigner after fact recovery",
+      "held_constant": ["M1", "M2", "fact_recovery", "DSL_renderer", "DSL_compiler", "M0", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_development.py",
+      "implementation_status": "READY",
+      "note": "The isolated LLM assignment hook preserves recovered facts and changes only node strategy assignment. Tests enforce fact preservation, and D34 records assignment parse failures as method outcomes."
+    },
+    {
+      "name": "Coarse M3",
+      "changed_component": "merge fact recovery and node assignment into one model call",
+      "held_constant": ["M1", "M2", "DSL_renderer", "DSL_compiler", "M0", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_development.py",
+      "implementation_status": "READY",
+      "note": "The joint condition performs fact recovery and node assignment in exactly one provider call after M2, while retaining the fixed classifier representation boundary and DSL compiler. D35 qualification preserved a strict schema violation as METHOD_ERROR instead of repairing it; this is a measured method outcome, not missing infrastructure."
+    },
+    {
+      "name": "w/o M0",
+      "changed_component": "disable validation, repair, rejection and tracing as one package",
+      "held_constant": ["M1", "M2", "M3", "node_assignment", "DSL_renderer", "DSL_compiler", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_development.py",
+      "implementation_status": "READY",
+      "note": "The condition uses the same extractor once but disables decomposition retry, binding/program repair, rule fallback, pre-execution contract rejection, and M0 intervention tracing. Compiler language checks and experiment evidence remain. D35 compiled and executed N8F-063, exposing missing arguments as replay failures rather than repairing or rejecting them."
+    },
+    {
+      "name": "LLM-generated Python",
+      "changed_component": "replace deterministic DSL-to-Python compilation with model-generated Python",
+      "held_constant": ["M1", "M2", "M3", "node_assignment", "M0", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_boundary_development.py",
+      "implementation_status": "READY",
+      "note": "A dedicated development runner replaces deterministic DSL-to-Python compilation with the existing llm_skeleton backend while holding the task, model, executor, evaluator, and repetitions fixed. D34 completed 2/2 executions; Oracle failures remain measured outcomes."
+    },
+    {
+      "name": "Rule-only M3",
+      "changed_component": "replace model fact recovery with a frozen best-effort rule set",
+      "held_constant": ["M1", "M2", "node_assignment", "DSL_renderer", "DSL_compiler", "M0", "M5"],
+      "entrypoint": "formal_experiment/run_rq3_development.py",
+      "implementation_status": "READY",
+      "note": "Uses the frozen deterministic fact-recovery rules without calling the LLM extractor. Missing bindings and DSL name-resolution failures are retained as method outcomes."
+    },
+    {
+      "name": "All-LLM boundary",
+      "changed_component": "replace the full staged architecture with direct model execution",
+      "held_constant": ["model", "public_input", "instances", "executor", "evaluator", "repetitions"],
+      "entrypoint": "formal_experiment/run_rq3_boundary_development.py",
+      "implementation_status": "READY",
+      "note": "The dedicated development runner uses the Direct-LLM adapter with the same public input, model, executor, evaluator, and repetition count. D34 completed 2/2 executions and retained the observed Oracle outcomes."
+    }
+  ]
+}

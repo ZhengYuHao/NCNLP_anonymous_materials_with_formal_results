@@ -1,0 +1,32 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-093",
+  "case_id": "C-MULTI-PLATFORM-DRAFTS",
+  "kind": "positive",
+  "input_data": {
+    "channel_id": "UC_promotion",
+    "accounts": [
+      {
+        "id": "acc-x-1",
+        "platform": "twitter",
+        "active": true
+      },
+      {
+        "id": "acc-x-2",
+        "platform": "twitter",
+        "active": true
+      },
+      {
+        "id": "acc-li-1",
+        "platform": "linkedin",
+        "active": true
+      },
+      {
+        "id": "acc-ig-disabled",
+        "platform": "instagram",
+        "active": false
+      }
+    ]
+  },
+  "input_sha256": "418F317893FD04D15529434DDE960814B18DE01EA31604851CBC0F0DEC8D142B"
+}

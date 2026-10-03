@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-009",
+  "source_id": "n8n:18326",
+  "workflow_sha256": "fd422c1947a13493b6d11223e69709078819c55e44596f56d06335d3de3e965a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "3c68c0e7d47b9f027dd25c6f3df2d1a32ea99de2fe778f41e0e3bb29558c0f76",
+  "requirement": {
+    "requirement_text": "系统用于处理 UGC（用户生成内容）广告视频的制作请求，并在人工审核通过后生成视频。\n输入：通过表单提交的制作请求，包含产品图片、UGC 提示词和选定的视频风格。\n处理过程：\n1. 将产品图片与提示词提交给语言模型进行产品细节提取，然后使用语言模型生成结构化的 UGC 图片提示词、视频提示词以及反向约束；\n2. 将模型返回内容解析为规整的字段，调用图像生成能力生成图片，随后将提示词预览发布到 Discord；\n3. 通过第二个表单收集审核人的决定：\n   - 通过：启动视频生成；\n   - 需修改：依据审核人反馈重新生成提示词；\n   - 拒绝：终止流程；\n4. 若审核通过，将视频提示词提交给视频生成能力，等待并轮询预测状态直至成功，然后将生成的视频链接发布到 Discord；\n5. 设定最终的任务元数据，将任务记录保存到数据表，并向 Discord 发送完成通知。",
+    "source_spans": [
+      {
+        "start": 334,
+        "end": 432,
+        "text": "Receives a submission from an n8n Form with a product image, UGC prompt, and selected video style."
+      },
+      {
+        "start": 433,
+        "end": 617,
+        "text": "Sends the image and prompt to OpenRouter for product-detail extraction, then uses an OpenRouter chat model to generate structured UGC image and video prompts plus negative constraints."
+      },
+      {
+        "start": 618,
+        "end": 759,
+        "text": "Parses the AI response into clean JSON fields and calls the Fal API (fal-ai/nano-banana-2/edit) before posting the prompt preview to Discord."
+      },
+      {
+        "start": 760,
+        "end": 931,
+        "text": "Collects a reviewer decision in a second n8n Form and either starts Replicate video generation, regenerates the prompts using the reviewer feedback, or stops on rejection."
+      },
+      {
+        "start": 932,
+        "end": 1102,
+        "text": "If approved, submits the video prompt to Replicate (minimax/video-01), waits, polls the prediction status until it succeeds, and posts the resulting video URL to Discord."
+      },
+      {
+        "start": 1103,
+        "end": 1216,
+        "text": "Sets final job metadata, saves a job record to an n8n Data Table, and sends a completion notification to Discord."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "表单提交的制作请求：产品图片",
+        "UGC 提示词",
+        "选定的视频风格",
+        "审核人在第二个表单中提交的审核决定（通过 / 需修改 / 拒绝）",
+        "审核人要求修改时给出的反馈"
+      ],
+      "conditions": [
+        "审核通过才启动视频生成",
+        "审核要求修改时依据反馈重新生成提示词",
+        "审核拒绝时终止流程",
+        "视频生成需轮询预测状态直至成功"
+      ],
+      "allowed_actions": [
+        "提取产品细节",
+        "生成结构化的图片提示词、视频提示词与反向约束",
+        "将模型返回内容解析为规整字段",
+        "调用图像生成能力生成图片",
+        "将提示词预览发布到 Discord",
+        "收集审核人决定",
+        "提交视频生成任务并等待、轮询预测状态",
+        "将生成的视频链接发布到 Discord",
+        "设定最终任务元数据并保存任务记录到数据表",
+        "向 Discord 发送完成通知"
+      ],
+      "visible_outcomes": [
+        "Discord 中的提示词预览",
+        "Discord 中的生成视频链接",
+        "数据表中的任务记录与最终元数据",
+        "Discord 中的完成通知"
+      ],
+      "failure_behavior": [
+        "审核人拒绝时流程终止"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-009.packet.json",
+    "packet_sha256": "50e8bc1ea2dec60be245546ef1b867a11fbc689ca2c32fd2b8cc9aeef5614f6d",
+    "public_description_sha256": "b097475a91000f292f547314f55f79a149bea923335b2a93e5a2152b6833428b"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-009.response.json",
+    "verification_response_sha256": "dafd51648fd5d5e996ee59975f6a0c8ed70c68a725509a6fb3f473f49b45f545",
+    "decision": "accept"
+  },
+  "formal_index": 20
+}

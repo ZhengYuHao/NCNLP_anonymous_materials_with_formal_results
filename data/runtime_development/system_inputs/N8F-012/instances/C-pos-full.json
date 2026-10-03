@@ -1,0 +1,62 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-012",
+  "case_id": "C-pos-full",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-rss-articles": {
+        "feeds": [
+          {
+            "name": "TechCrunch AI",
+            "items": [
+              {
+                "id": "tc1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://techcrunch.example/ai-chip"
+              },
+              {
+                "id": "tc2",
+                "title": "New open source model released",
+                "url": "https://techcrunch.example/oss-model"
+              }
+            ]
+          },
+          {
+            "name": "The Verge AI",
+            "items": [
+              {
+                "id": "vg1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://verge.example/ai-chip"
+              },
+              {
+                "id": "vg2",
+                "title": "Robotics roundup this week",
+                "url": "https://verge.example/robotics"
+              }
+            ]
+          }
+        ]
+      },
+      "F-airtable-history": {
+        "records": [
+          {
+            "id": "rec1",
+            "title": "Robotics roundup this week",
+            "published_at": "2026-09-01"
+          }
+        ]
+      },
+      "F-publish-config": {
+        "mode": "production",
+        "quality_threshold": 0.8,
+        "hashtag_count_min": 2,
+        "hashtag_count_max": 3,
+        "timezone": "Europe/Madrid",
+        "posting_hour": 9
+      }
+    }
+  },
+  "input_sha256": "6AB8FB1DC883FE2ECAC9FF7C5B083850D8BBB523AAA2C4343463E555C76D64F5"
+}

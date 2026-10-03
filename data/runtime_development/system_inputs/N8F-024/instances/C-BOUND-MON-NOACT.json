@@ -1,0 +1,48 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-024",
+  "case_id": "C-BOUND-MON-NOACT",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-SWEEP-MON-NOACT": {
+        "sweep_date": "2026-09-07",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ],
+        "cleaning_tasks": []
+      },
+      "F-PLAYBOOK": {
+        "properties": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "635E20EE8C3625BE154116A10D7035D8BE018385D3B8D83EB53B6BC88B7F4242"
+}

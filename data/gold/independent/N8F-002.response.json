@@ -1,0 +1,426 @@
+{
+  "task_id": "N8F-002",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "e17fac7db51704c8bd8e7a3933e941196fcc1e06167e5e95d1844616ab81ae48",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发预警监测",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "monitor_cycle",
+          "type": "trigger_event",
+          "description": "周期性监测触发的运行事件"
+        }
+      ],
+      "native_evidence": ["⏰ Check for Disaster Alerts (scheduleTrigger, hourly interval)"],
+      "requirement_evidence": ["系统持续监测来自权威来源的天气、地震和洪水三类预警信息", "对上述三类预警来源进行持续监测"],
+      "rationale": "需求声明对三类预警来源进行持续监测，对应周期性调度触发；确定性契约，无开放文本理解，判 code。为图中唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "采集三类预警数据",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "monitor_cycle",
+          "type": "trigger_event",
+          "description": "周期性监测触发的运行事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weather_alerts",
+          "type": "array",
+          "description": "来自权威来源的天气预警列表"
+        },
+        {
+          "name": "seismic_alerts",
+          "type": "array",
+          "description": "来自权威来源的地震预警列表"
+        },
+        {
+          "name": "flood_alerts",
+          "type": "array",
+          "description": "来自权威来源的洪水预警列表"
+        }
+      ],
+      "native_evidence": ["🌤️ Fetch Weather Alerts (httpRequest)", "🌍 Fetch Seismic Alerts (RSS)", "💧 Fetch Flood Alerts (RSS)"],
+      "requirement_evidence": ["来自权威来源的天气预警信息", "来自权威来源的地震预警信息", "来自权威来源的洪水预警信息"],
+      "rationale": "按需求声明的三类权威预警来源拉取数据。三个拉取动作契约同构（外部确定性读取），合并为一个采集节点的并行子契约，不按原生三节点机械一对一展开。判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "解析并筛选有效威胁预警",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "weather_alerts",
+          "type": "array",
+          "description": "来自权威来源的天气预警列表"
+        },
+        {
+          "name": "seismic_alerts",
+          "type": "array",
+          "description": "来自权威来源的地震预警列表"
+        },
+        {
+          "name": "flood_alerts",
+          "type": "array",
+          "description": "来自权威来源的洪水预警列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "active_alerts",
+          "type": "array",
+          "description": "判定为有效威胁的活跃预警列表（可为空）"
+        }
+      ],
+      "native_evidence": ["🔀 Combine All Alerts (merge)", "🔍 Parse and Filter Active Alerts (code)"],
+      "requirement_evidence": ["监测到威胁时才触发后续的比对、计算与评估处理"],
+      "rationale": "合并三类预警并按状态/严重度筛选出有效威胁，是基于类型化数据的确定性过滤与路由，判 code。威胁判定门控内嵌于该节点契约：无有效威胁时输出为空，后续流程自然终止，无需额外分支节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "读取房产数据库",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "active_alerts",
+          "type": "array",
+          "description": "判定为有效威胁的活跃预警列表（可为空）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "property_records",
+          "type": "array",
+          "description": "房产数据库记录（含位置、价值、保险及所有人联系方式等字段）"
+        }
+      ],
+      "native_evidence": ["📊 Get Property Database (googleSheets appendOrUpdate/read)"],
+      "requirement_evidence": ["房产数据库记录", "将预警信息与房产数据库进行交叉比对"],
+      "rationale": "交叉比对以房产数据库记录为输入，需求将其列为契约输入；读取数据库记录是确定性的外部读取动作，单列一个节点以便 DFG 明确传递 property_records。判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "交叉比对识别受影响房产",
+      "node_type": "code",
+      "operation_family": "matching_lookup",
+      "inputs": [
+        {
+          "name": "active_alerts",
+          "type": "array",
+          "description": "判定为有效威胁的活跃预警列表（可为空）"
+        },
+        {
+          "name": "property_records",
+          "type": "array",
+          "description": "房产数据库记录（含位置、价值、保险及所有人联系方式等字段）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "affected_properties",
+          "type": "array",
+          "description": "受影响房产列表（含命中预警及位置信息）"
+        }
+      ],
+      "native_evidence": ["🗺️ Map Affected Properties (code)"],
+      "requirement_evidence": ["将预警信息与房产数据库交叉比对，识别受影响的房产位置", "受影响房产位置"],
+      "rationale": "预警与房产记录的匹配是确定性规则（位置/区域比对），需求明确声明该行为及其可见结果。判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "计算保险风险敞口",
+      "node_type": "code",
+      "operation_family": "deterministic_calculation",
+      "inputs": [
+        {
+          "name": "affected_properties",
+          "type": "array",
+          "description": "受影响房产列表（含命中预警及位置信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "insurance_exposure",
+          "type": "object",
+          "description": "每处受影响房产的保险风险敞口及后续处理所需字段（损失估计、理赔金额、损害等级、维护窗口、所有人联系方式等）"
+        }
+      ],
+      "native_evidence": ["💰 Calculate Insurance Claims (code)"],
+      "requirement_evidence": ["计算保险风险敞口"],
+      "rationale": "基于受影响房产属性执行声明化的确定性金额/等级计算，判 code。原生该节点还顺带计算维护窗口与描述字段，属需求允许的后续动作（生成维护排期、生成报告）所需的前置数据，折叠进本节点输出契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成受损评估报告",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "insurance_exposure",
+          "type": "object",
+          "description": "每处受影响房产的保险风险敞口及后续处理所需字段（损失估计、理赔金额、损害等级、维护窗口、所有人联系方式等）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "damage_report",
+          "type": "string",
+          "description": "完整的受损评估报告文本"
+        }
+      ],
+      "native_evidence": ["🤖 Damage Prediction Agent (langchain.agent)", "📝 Report Generation Agent (langchain.agent)", "🧠 OpenAI GPT-4 (lmChatOpenAi)", "🧠 OpenAI GPT-4 for Reports (lmChatOpenAi)"],
+      "requirement_evidence": ["使用语言模型生成受损评估报告", "受损评估报告"],
+      "rationale": "报告生成需开放文本理解与生成，确定性规则无法无损替代，判 semantic。原生含两个 agent 与两个模型依赖节点，但需求仅声明一个 LLM 行为（生成受损评估报告），故合并为一个语义节点，不机械一对一映射。"
+    },
+    {
+      "node_id": "n8",
+      "label": "下发维护排期",
+      "node_type": "terminal",
+      "operation_family": "external_action_delivery",
+      "inputs": [
+        {
+          "name": "insurance_exposure",
+          "type": "object",
+          "description": "每处受影响房产的保险风险敞口及后续处理所需字段（含维护窗口与损害等级）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["📅 Schedule Maintenance Teams (googleCalendar)"],
+      "requirement_evidence": ["为维护团队生成并自动下发维护排期", "维护团队收到的自动维护排期"],
+      "rationale": "处理完成后向维护团队自动下发维护排期，是需求声明的用户可见完成动作（日历排期交付），为本分支终点，无 CFG 出边，判 terminal。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送房产所有人通知邮件",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "damage_report",
+          "type": "string",
+          "description": "完整的受损评估报告文本"
+        },
+        {
+          "name": "insurance_exposure",
+          "type": "object",
+          "description": "受影响房产字段（含所有人邮箱、地址、损害等级与金额）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["✉️ Send Report to Property Owners (gmail)"],
+      "requirement_evidence": ["向房产所有人和保险公司即时发送电子邮件通知，通知中附带完整的报告", "房产所有人和保险公司收到的、附带完整报告的即时电子邮件通知"],
+      "rationale": "向房产所有人发送附带完整报告的即时邮件通知，是用户可见完成动作，分支终点无出边，判 terminal。"
+    },
+    {
+      "node_id": "n10",
+      "label": "发送保险公司通知邮件",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "damage_report",
+          "type": "string",
+          "description": "完整的受损评估报告文本"
+        },
+        {
+          "name": "insurance_exposure",
+          "type": "object",
+          "description": "受影响房产字段（含房产信息、理赔金额与损害等级）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["✉️ Send Report to Insurers (gmail)"],
+      "requirement_evidence": ["向房产所有人和保险公司即时发送电子邮件通知，通知中附带完整的报告", "房产所有人和保险公司收到的、附带完整报告的即时电子邮件通知"],
+      "rationale": "向保险公司发送附带完整报告的即时邮件通知，为并列的另一个用户可见完成动作，单独成节点以表达两类收件人的并列可见结果，分支终点无出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后进入预警采集。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "采集完成后合并解析并筛选有效威胁。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "存在有效威胁时继续；威胁门控内嵌于 n3 契约，无有效威胁时输出为空、流程自然终止。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得房产记录后执行交叉比对。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "识别受影响房产后计算保险风险敞口，与需求步骤 1→2 顺序一致。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "敞口计算完成后由语言模型生成受损评估报告，与需求步骤 2→3 顺序一致。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "处理完成后向维护团队下发维护排期。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "处理完成后并行向房产所有人发送邮件通知。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "处理完成后并行向保险公司发送邮件通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "weather_alerts",
+      "condition": null,
+      "rationale": "天气预警列表供合并筛选消费。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "seismic_alerts",
+      "condition": null,
+      "rationale": "地震预警列表供合并筛选消费。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "flood_alerts",
+      "condition": null,
+      "rationale": "洪水预警列表供合并筛选消费。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "active_alerts",
+      "condition": null,
+      "rationale": "有效威胁预警作为交叉比对的一方输入。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "property_records",
+      "condition": null,
+      "rationale": "房产数据库记录作为交叉比对的另一方输入。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "affected_properties",
+      "condition": null,
+      "rationale": "受影响房产是敞口计算的对象。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "insurance_exposure",
+      "condition": null,
+      "rationale": "敞口计算结果为报告生成的输入语境。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n6",
+      "target": "n8",
+      "variable": "insurance_exposure",
+      "condition": null,
+      "rationale": "维护窗口与损害等级字段用于生成并下发维护排期。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n6",
+      "target": "n9",
+      "variable": "insurance_exposure",
+      "condition": null,
+      "rationale": "所有人邮件需房产地址、收件邮箱、损害等级与金额等字段。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n6",
+      "target": "n10",
+      "variable": "insurance_exposure",
+      "condition": null,
+      "rationale": "保险公司邮件需房产与理赔明细字段。"
+    },
+    {
+      "edge_id": "e_dfg_11",
+      "source": "n7",
+      "target": "n9",
+      "variable": "damage_report",
+      "condition": null,
+      "rationale": "所有人通知邮件须附带完整报告。"
+    },
+    {
+      "edge_id": "e_dfg_12",
+      "source": "n7",
+      "target": "n10",
+      "variable": "damage_report",
+      "condition": null,
+      "rationale": "保险公司通知邮件须附带完整报告。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n8", "n9", "n10"],
+  "confidence": 0.85,
+  "notes": "关键取舍：1) 原生含两个 LLM agent（Damage Prediction / Report Generation），但冻结需求仅声明一个语言模型行为（生成受损评估报告），故合并为单一 semantic 节点，未按原生一对一映射。2) 三类预警采集契约同构，合并为一个采集节点。3) 维护排期下发与两路邮件通知均为需求声明的可见完成动作，建模为报告生成后的三个并列 terminal 分支；原生中排期先于报告生成的顺序与需求（处理完成后同时下发/通知）不一致，以需求为准。4) 威胁门控（监测到威胁才触发）折叠进筛选节点契约，未单列分支节点。5) 需求未声明失败行为，无安全拒绝分支。"
+}

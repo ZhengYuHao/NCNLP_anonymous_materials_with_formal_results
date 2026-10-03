@@ -1,0 +1,328 @@
+{
+  "task_id": "N8F-075",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "044c35a6501445e6b8f1135e7ced3f035a6b40a07ab82bd45a9db7d103796a97",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每天 09:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "本次执行的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "系统每天上午 9:00 运行"
+      ],
+      "rationale": "需求声明每天上午 9:00 运行，为定时调度入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取历史选题",
+      "node_type": "code",
+      "operation_family": "data_loading",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "past_topics",
+          "type": "array",
+          "description": "Google Sheets 中记录的历史选题"
+        }
+      ],
+      "native_evidence": [
+        "Get Past Topics"
+      ],
+      "requirement_evidence": [
+        "系统对照 Google Sheets 中记录的历史选题以避免重复"
+      ],
+      "rationale": "需求声明对照 Google Sheets 历史选题以避免重复，为外部读取动作，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型生成新问答式内容方案",
+      "node_type": "semantic",
+      "operation_family": "ai_generation",
+      "inputs": [
+        {
+          "name": "past_topics",
+          "type": "array",
+          "description": "历史选题，用于去重参考"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_plan",
+          "type": "object",
+          "description": "新生成的问答式内容方案（含文案与图片描述等模板字段）"
+        }
+      ],
+      "native_evidence": [
+        "Generate Content Plan"
+      ],
+      "requirement_evidence": [
+        "然后由语言模型生成一个新的问答式内容方案"
+      ],
+      "rationale": "需求声明由语言模型生成新问答式内容方案，需开放文本创作与内容策划，判为语义节点；对照历史选题去重为提示约束，折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "调用视频渲染服务生成视频",
+      "node_type": "code",
+      "operation_family": "video_rendering",
+      "inputs": [
+        {
+          "name": "content_plan",
+          "type": "object",
+          "description": "语言模型生成的内容方案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "object",
+          "description": "基于模板渲染生成的视频（含地址）"
+        }
+      ],
+      "native_evidence": [
+        "Generate Video",
+        "Wait for Rendering"
+      ],
+      "requirement_evidence": [
+        "系统调用视频渲染服务，基于模板生成视频，并把生成好的文案与图片动态填入"
+      ],
+      "rationale": "需求声明调用视频渲染服务基于模板生成视频并动态填入文案与图片，为确定性外部渲染动作，判为代码节点；渲染等待为实现细节，折叠进节点契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发送视频到 Slack 供人工审核",
+      "node_type": "code",
+      "operation_family": "human_approval",
+      "inputs": [
+        {
+          "name": "video",
+          "type": "object",
+          "description": "生成的待审核视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_result",
+          "type": "object",
+          "description": "人工审核结果（通过/未通过）及视频信息"
+        }
+      ],
+      "native_evidence": [
+        "Slack Approval Request",
+        "Check Approval"
+      ],
+      "requirement_evidence": [
+        "生成的视频被发送到 Slack，供人工审核",
+        "只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram"
+      ],
+      "rationale": "需求声明将视频发送到 Slack 供人工审核，为外部交互动作，判为代码节点；审核循环（未通过则重新送审直至通过）折叠进节点契约，终止条件为审核通过，max_iterations=5。"
+    },
+    {
+      "node_id": "n6",
+      "label": "审核通过后上传 Reel 到 Instagram",
+      "node_type": "code",
+      "operation_family": "social_publish",
+      "inputs": [
+        {
+          "name": "approval_result",
+          "type": "object",
+          "description": "审核通过结果及视频信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "Instagram 发布结果（含本次选题信息）"
+        }
+      ],
+      "native_evidence": [
+        "Instagram Upload",
+        "Wait (1 min)",
+        "Instagram Publish"
+      ],
+      "requirement_evidence": [
+        "只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram"
+      ],
+      "rationale": "需求声明审核通过后将视频作为 Reel 上传到 Instagram，为确定性外部发布动作，判为代码节点；上传与发布间隔为实现细节，折叠进节点契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "保存新选题回 Google Sheets",
+      "node_type": "code",
+      "operation_family": "spreadsheet_write",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果（含本次选题信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果（保存后续用于通知）"
+        }
+      ],
+      "native_evidence": [
+        "Save New Topic"
+      ],
+      "requirement_evidence": [
+        "发布成功后，系统将本次的新选题保存回 Google Sheets"
+      ],
+      "rationale": "需求声明发布成功后保存新选题回 Google Sheets，为确定性外部写入动作，判为代码节点。需求将保存置于发布成功之后，按冻结需求顺序建模。"
+    },
+    {
+      "node_id": "n8",
+      "label": "Slack 发布成功通知",
+      "node_type": "terminal",
+      "operation_family": "slack_notification",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果（含视频链接等）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Slack Notification"
+      ],
+      "requirement_evidence": [
+        "并在 Slack 中发出发布成功通知"
+      ],
+      "rationale": "需求声明发布成功后 Slack 发出通知，为流程最终的用户可见完成动作（通知），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每日触发后读取历史选题。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "历史选题就绪后生成新内容方案。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "内容方案确定后生成视频。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "视频生成后发送至 Slack 审核。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "人工审核通过",
+      "rationale": "仅审核通过后才上传 Instagram（未通过则循环重新送审，折叠进 n5 契约）。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布成功后保存新选题。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "选题保存后发出发布成功通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "past_topics",
+      "condition": null,
+      "rationale": "历史选题供去重参考（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "content_plan",
+      "condition": null,
+      "rationale": "内容方案供视频渲染（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "video",
+      "condition": null,
+      "rationale": "生成的视频供人工审核。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "approval_result",
+      "condition": null,
+      "rationale": "审核结果与视频信息供发布。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布结果（含选题信息）供保存回 Sheets。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布结果供 Slack 成功通知。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.88,
+  "notes": "按冻结需求建模：每日 09:00 触发→读取历史选题→LLM 生成新问答式内容方案→视频渲染服务生成视频→Slack 人工审核→审核通过后上传 Reel 到 Instagram→发布成功后保存新选题回 Sheets→Slack 成功通知。审核循环折叠进 n5 契约（未通过不进入发布分支，重新送审直至通过，max_iterations=5）。需求声明保存选题在发布成功之后，原生图中保存节点位于生成视频之前属实现顺序差异，以冻结需求为准。"
+}

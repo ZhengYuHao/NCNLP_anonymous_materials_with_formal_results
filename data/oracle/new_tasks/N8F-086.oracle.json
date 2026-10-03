@@ -1,0 +1,222 @@
+{
+  "task_id": "N8F-086",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "65f546f7c4438931f3844181fca98ae8c8885971924154569a0c9e4150e776e4",
+  "fixtures": [
+    {
+      "fixture_id": "F-WEBHOOK-ABANDONED",
+      "purpose": "正常用例：回调推送弃购购物车数据，再次查询确认商品仍在且付款待支付，验证生成并发送提醒",
+      "input_data": {
+        "webhook_payload": {
+          "cart_id": "cart-7711",
+          "customer_email": "buyer@example.com",
+          "customer_name": "Alex",
+          "items": [
+            {"product_id": "prod-90", "name": "Wireless Headphones", "qty": 1}
+          ]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-WEBHOOK-COMPLETED",
+      "purpose": "终止条件用例：回调推送弃购购物车数据，再次查询确认购物车已完成结账，验证流程自动停止",
+      "input_data": {
+        "webhook_payload": {
+          "cart_id": "cart-8822",
+          "customer_email": "done@example.com",
+          "customer_name": "Sam",
+          "items": [
+            {"product_id": "prod-91", "name": "Keyboard", "qty": 2}
+          ]
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-COCART-RECHECK-ABANDONED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "recheck_cart_status",
+      "request_contract": {
+        "cart_id": "cart-7711"
+      },
+      "response_contract": {
+        "status": "pending",
+        "items_present": true,
+        "payment_status": "pending"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-COCART-RECHECK-COMPLETED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "recheck_cart_status",
+      "request_contract": {
+        "cart_id": "cart-8822"
+      },
+      "response_contract": {
+        "status": "completed",
+        "items_present": false,
+        "payment_status": "paid"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REMINDER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_reminder_email",
+      "request_contract": {
+        "cart": "cart-7711",
+        "customer_name": "Alex",
+        "items": ["Wireless Headphones"]
+      },
+      "response_contract": {
+        "subject": "Your Wireless Headphones are still waiting!",
+        "body": "Hi Alex, your Wireless Headphones are still in your cart. Complete your purchase now."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_reminder_email",
+      "request_contract": {
+        "to": "buyer@example.com",
+        "subject": "Your Wireless Headphones are still waiting!"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-086",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-NOTIFY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_internal_notice",
+      "request_contract": {
+        "channel": "#sales-alerts",
+        "text": "abandoned_cart_notice"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "3333333333.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-ABANDONED-REMINDER-SENT",
+      "kind": "positive",
+      "fixture_ids": ["F-WEBHOOK-ABANDONED"],
+      "mock_ids": ["M-COCART-RECHECK-ABANDONED", "M-LLM-REMINDER", "M-GMAIL-SEND", "M-SLACK-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-AR-1",
+          "target": "exec_log.recheck.status",
+          "operator": "equals",
+          "expected": "pending",
+          "rationale": "再次查询得到的购物车状态必须为待支付才继续"
+        },
+        {
+          "assertion_id": "A-AR-2",
+          "target": "exec_log.recheck.items_present",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "校验要求商品仍在购物车中，必须确认 items_present 为 true"
+        },
+        {
+          "assertion_id": "A-AR-3",
+          "target": "exec_log.recheck.payment_status",
+          "operator": "equals",
+          "expected": "pending",
+          "rationale": "校验要求付款仍为待支付，payment_status 必须为 pending"
+        },
+        {
+          "assertion_id": "A-AR-4",
+          "target": "exec_log.llm_reminder.subject",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求从模型输出中提取邮件主题，输出必须包含主题字段"
+        },
+        {
+          "assertion_id": "A-AR-5",
+          "target": "exec_log.llm_reminder.subject",
+          "operator": "contains",
+          "expected": "Wireless Headphones",
+          "rationale": "个性化提醒邮件主题必须引用购物车中的商品"
+        },
+        {
+          "assertion_id": "A-AR-6",
+          "target": "final_output.email.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "提醒邮件必须通过 Gmail 发送成功"
+        },
+        {
+          "assertion_id": "A-AR-7",
+          "target": "final_output.email.to",
+          "operator": "equals",
+          "expected": "buyer@example.com",
+          "rationale": "邮件必须发送给弃购客户提供的邮箱"
+        },
+        {
+          "assertion_id": "A-AR-8",
+          "target": "exec_log.slack.notify.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求同时向 Slack 发送内部通知，发送必须成功"
+        }
+      ]
+    },
+    {
+      "case_id": "C-COMPLETED-STOPS",
+      "kind": "safe_rejection",
+      "fixture_ids": ["F-WEBHOOK-COMPLETED"],
+      "mock_ids": ["M-COCART-RECHECK-COMPLETED"],
+      "assertions": [
+        {
+          "assertion_id": "A-CC-1",
+          "target": "exec_log.recheck.status",
+          "operator": "equals",
+          "expected": "completed",
+          "rationale": "再次查询返回已完成状态，流程应据此终止"
+        },
+        {
+          "assertion_id": "A-CC-2",
+          "target": "exec_log.reminder_sent",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "购物车已完成结账时不得发送提醒邮件"
+        },
+        {
+          "assertion_id": "A-CC-3",
+          "target": "exec_log.slack_notified",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "购物车已完成结账时不得发送 Slack 内部通知"
+        },
+        {
+          "assertion_id": "A-CC-4",
+          "target": "exec_log.mock_calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "终止路径只允许执行一次状态查询，不得调用语言模型、Gmail 或 Slack"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖弃购有效路径（状态校验通过、LLM 生成主题与正文、Gmail 发送、Slack 通知）与购物车已结账终止路径（需求终止条件明确规定：不发送任何提醒、仅一次状态查询）。需求未规定输入缺失时的错误返回格式，故不设缺邮箱负例、不断言具体错误字段。CoCart 状态查询、OpenAI 邮件生成、Gmail、Slack 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为字段相等、布尔值相等与调用次数。"
+}

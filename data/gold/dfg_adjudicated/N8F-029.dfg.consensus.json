@@ -1,0 +1,280 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-029",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g11",
+      "data_items": [
+        "用户标识、渠道、消息、时间戳"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-029-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "记录字段中的用户标识、渠道、消息、时间戳来自 g1 归一化产出的消息数据，且无其他共享边把该数据送达 g11。",
+      "confidence": 0.7,
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "归一化后的客户消息（内容与渠道等元数据）",
+        "归一化后的统一消息结构（含渠道、消息内容、用户标识）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g9",
+      "data_items": [
+        "原始渠道与客户邮件主题等消息元数据",
+        "原始渠道信息与客户原始主题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g11",
+      "target_group": "g12",
+      "data_items": [
+        "已记录的会话数据"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-029-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "每周任务发布的是真实数据，其来源为 g11 记录到 Google Sheets 的会话记录，属跨运行写入-读取数据依赖。",
+      "confidence": 0.65,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g13",
+      "data_items": [
+        "聚合后的周统计数据",
+        "汇总后的每周统计数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g14",
+      "data_items": [
+        "周统计数据",
+        "待归档的周统计数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g15",
+      "target_group": "g5",
+      "data_items": [
+        "导入向量知识库的自有文档"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-029-D04",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "答复生成通过向量知识库以工具方式检索自有文档，g15 导入的文档内容被 g5 检索真实消费，属跨分支数据依赖。",
+      "confidence": 0.8,
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "前置检查未通过的消息及未通过原因",
+        "是否来自在线聊天渠道",
+        "未通过的前置检查类型与消息信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "转人工请求匹配等检查判定结果（升级原因来源）",
+        "客户消息上下文",
+        "六种语言匹配的明确转人工请求检测结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g5",
+      "data_items": [
+        "通过前置检查的客户消息",
+        "通过全部前置检查的归一化消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g6",
+      "data_items": [
+        "客户消息文本",
+        "待情绪分析的消息内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g10",
+      "data_items": [
+        "升级原因",
+        "为人工客服撰写的简短说明",
+        "升级原因与给人工客服的简短说明"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g11",
+      "data_items": [
+        "升级原因"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-029-D06",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "记录字段中的升级原因由 g4 记录转人工升级原因真实产出并被日志写入。",
+      "confidence": 0.7,
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g11",
+      "data_items": [
+        "答复内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g14",
+      "data_items": [
+        "过期的会话记忆记录"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-029-D07",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "清理旧会话记忆需读取 g5 持久化保存的会话记忆，删除操作以读取该存储为前提，属写入-读取维护关系。",
+      "confidence": 0.65,
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "生成的答复内容",
+        "检索依据信息（是否检索知识库、是否返回内容）",
+        "是否检索了知识库及知识库返回的内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d16"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g9",
+      "data_items": [
+        "生成的答复内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d17"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g10",
+      "data_items": [
+        "情绪结果",
+        "情绪结果（用于推导工单优先级）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d18"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g11",
+      "data_items": [
+        "情绪",
+        "情绪结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d19"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "情绪分析结果",
+        "情绪判定结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d20"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g11",
+      "data_items": [
+        "置信度",
+        "置信度得分"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d21"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "置信度得分",
+        "置信度得分（含问候致谢短路标志）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d22"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g4",
+      "data_items": [
+        "升级判定结论（置信度或情绪判定结果）",
+        "升级判定结果与触发原因（置信度不足或负面情绪）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d23"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.8372093023255814,
+    "shared_edge_count": 18,
+    "adjudicated_dispute_count": 7,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

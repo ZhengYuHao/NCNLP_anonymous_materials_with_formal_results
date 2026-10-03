@@ -1,0 +1,805 @@
+{
+  "task_id": "N8F-024",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "93f5004b713fdebfd1e5cc98b3633bc9c9a3904768d35db1dd3f75a5a7cea098",
+  "fixtures": [
+    {
+      "fixture_id": "F-BOOKING-VALID",
+      "purpose": "外部预订来源提交的有效预订请求",
+      "input_data": {
+        "guest_name": "Alice Chen",
+        "guest_email": "alice.chen@example.com",
+        "property": "Sunny Villa",
+        "check_in": "2026-09-10",
+        "check_out": "2026-09-13",
+        "host_email": "host@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-BOOKING-INVALID",
+      "purpose": "缺少必填邮箱且退房早于入住的无效预订",
+      "input_data": {
+        "guest_name": "Bob",
+        "guest_email": "",
+        "property": "Sea House",
+        "check_in": "2026-09-20",
+        "check_out": "2026-09-18",
+        "host_email": "host@example.com"
+      }
+    },
+    {
+      "fixture_id": "F-SWEEP-DUE",
+      "purpose": "每日扫描（2026-09-02）：入住明天/退房今天/评价请求(退房+2天)三类到期行程",
+      "input_data": {
+        "sweep_date": "2026-09-02",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-001",
+            "guest_name": "Alice Chen",
+            "guest_email": "alice@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-09-03",
+            "check_out": "2026-09-05"
+          },
+          {
+            "booking_id": "B-002",
+            "guest_name": "Bob",
+            "guest_email": "bob@example.com",
+            "property": "Sea House",
+            "check_in": "2026-08-29",
+            "check_out": "2026-09-02"
+          },
+          {
+            "booking_id": "B-003",
+            "guest_name": "Carol",
+            "guest_email": "carol@example.com",
+            "property": "Mountain Cabin",
+            "check_in": "2026-08-15",
+            "check_out": "2026-08-31"
+          },
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-PLAYBOOK",
+      "purpose": "手册工作表中的房源信息",
+      "input_data": {
+        "properties": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-CLEANER-SET",
+      "purpose": "已设置清洁人员邮箱的配置",
+      "input_data": {
+        "cleaner_email": "cleaner@cleaning.example.com"
+      }
+    },
+    {
+      "fixture_id": "F-CLEANER-UNSET",
+      "purpose": "未设置清洁人员邮箱的配置",
+      "input_data": {
+        "cleaner_email": null
+      }
+    },
+    {
+      "fixture_id": "F-SWEEP-MON-NOACT",
+      "purpose": "周一(2026-09-07)扫描：本周无任何到期活动",
+      "input_data": {
+        "sweep_date": "2026-09-07",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ],
+        "cleaning_tasks": []
+      }
+    },
+    {
+      "fixture_id": "F-SWEEP-MON-ACTIVE",
+      "purpose": "周一(2026-09-07)扫描：存在当天退房行程与本周清洁任务",
+      "input_data": {
+        "sweep_date": "2026-09-07",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-005",
+            "guest_name": "Eve",
+            "guest_email": "eve@example.com",
+            "property": "City Loft",
+            "check_in": "2026-08-31",
+            "check_out": "2026-09-07"
+          },
+          {
+            "booking_id": "B-006",
+            "guest_name": "Frank",
+            "guest_email": "frank@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-04"
+          }
+        ],
+        "cleaning_tasks": [
+          {
+            "task_id": "CT-1",
+            "property": "City Loft",
+            "date": "2026-09-07",
+            "status": "done"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-APPEND-BOOKING",
+      "dependency_type": "googleSheets",
+      "operation": "append_booking",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "appended_row": 7
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-DUE",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-001",
+            "guest_name": "Alice Chen",
+            "guest_email": "alice@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-09-03",
+            "check_out": "2026-09-05"
+          },
+          {
+            "booking_id": "B-002",
+            "guest_name": "Bob",
+            "guest_email": "bob@example.com",
+            "property": "Sea House",
+            "check_in": "2026-08-29",
+            "check_out": "2026-09-02"
+          },
+          {
+            "booking_id": "B-003",
+            "guest_name": "Carol",
+            "guest_email": "carol@example.com",
+            "property": "Mountain Cabin",
+            "check_in": "2026-08-15",
+            "check_out": "2026-08-31"
+          },
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-NOACT",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-MON",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-005",
+            "guest_name": "Eve",
+            "guest_email": "eve@example.com",
+            "property": "City Loft",
+            "check_in": "2026-08-31",
+            "check_out": "2026-09-07"
+          },
+          {
+            "booking_id": "B-006",
+            "guest_name": "Frank",
+            "guest_email": "frank@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-04"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-PLAYBOOK",
+      "dependency_type": "googleSheets",
+      "operation": "read_playbook",
+      "request_contract": {
+        "tab": "Playbook"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CLEANING-EMPTY",
+      "dependency_type": "googleSheets",
+      "operation": "read_cleaning_tasks",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "rows": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CLEANING-MON",
+      "dependency_type": "googleSheets",
+      "operation": "read_cleaning_tasks",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "task_id": "CT-1",
+            "property": "City Loft",
+            "date": "2026-09-07",
+            "status": "done"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-GUEST-MSG",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_guest_message",
+      "request_contract": {},
+      "response_contract": {
+        "message": "Hi, this is your host message for the stay."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DIGEST",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_weekly_digest",
+      "request_contract": {},
+      "response_contract": {
+        "digest": "Weekly digest: 2 bookings, 1 cleaning task, occupancy 42%."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-GUESTLOG",
+      "dependency_type": "googleSheets",
+      "operation": "append_guest_log",
+      "request_contract": {
+        "tab": "GuestLog"
+      },
+      "response_contract": {
+        "appended_row": 10
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-CLEANING",
+      "dependency_type": "googleSheets",
+      "operation": "append_cleaning_task",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "appended_row": 4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {},
+      "response_contract": {
+        "message_id": "msg-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM",
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_contract": {},
+      "response_contract": {
+        "ok": true,
+        "message_id": 500
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-VALID-BOOKING",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-BOOKING-VALID"
+      ],
+      "mock_ids": [
+        "M-APPEND-BOOKING",
+        "M-TELEGRAM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.booking.valid",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "必填字段齐全且日期先后有序时判定有效"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.booking.booking_id",
+          "operator": "matches",
+          "expected": "^B-[0-9]{3,}$",
+          "rationale": "为有效预订生成预订编号"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.sheets.bookings_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "有效预订追加到预订工作表"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.sheets.bookings_appended[0].guest_name",
+          "operator": "equals",
+          "expected": "Alice Chen",
+          "rationale": "规范化后的预订数据被写入"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets.bookings_appended[0].check_out",
+          "operator": "equals",
+          "expected": "2026-09-13",
+          "rationale": "日期字段原样规范化保留"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.telegram.notifications",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "有效预订通知房东"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.telegram.notifications[0].text",
+          "operator": "contains",
+          "expected": "B-",
+          "rationale": "房东通知包含预订编号"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID-BOOKING",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-BOOKING-INVALID"
+      ],
+      "mock_ids": [
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-BOOKING"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-INVALID-BOOKING",
+          "target": "output.booking.valid",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "缺少必填邮箱且退房早于入住时判定无效"
+        },
+        {
+          "assertion_id": "A-2-NEG-INVALID-BOOKING",
+          "target": "output.sheets.bookings_appended",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无效预订被跳过，不写入预订工作表"
+        },
+        {
+          "assertion_id": "A-3-NEG-INVALID-BOOKING",
+          "target": "output.telegram.alerts",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "无效预订向 Telegram 发送告警"
+        },
+        {
+          "assertion_id": "A-4-NEG-INVALID-BOOKING",
+          "target": "output.emails.host_skip_alert.recipient",
+          "operator": "equals",
+          "expected": "host@example.com",
+          "rationale": "跳过内容邮件发送给房东"
+        },
+        {
+          "assertion_id": "A-5-NEG-INVALID-BOOKING",
+          "target": "output.emails.host_skip_alert.body",
+          "operator": "contains",
+          "expected": "Bob",
+          "rationale": "邮件包含被跳过的预订内容（客人姓名）"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-DAILY-SWEEP",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-SWEEP-DUE",
+        "F-PLAYBOOK",
+        "F-CLEANER-SET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-DUE",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-LLM-GUEST-MSG",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-POS-DAILY-SWEEP",
+          "target": "output.sweep.due_stays",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "识别入住(明天)、退房(今天)、评价请求(退房后两天)三类到期行程"
+        },
+        {
+          "assertion_id": "A-2-POS-DAILY-SWEEP",
+          "target": "output.sweep.due_stays",
+          "operator": "contains",
+          "expected": "B-001",
+          "rationale": "明天入住行程被识别"
+        },
+        {
+          "assertion_id": "A-3-POS-DAILY-SWEEP",
+          "target": "output.sweep.due_stays",
+          "operator": "contains",
+          "expected": "B-002",
+          "rationale": "今天退房行程被识别"
+        },
+        {
+          "assertion_id": "A-4-POS-DAILY-SWEEP",
+          "target": "output.sweep.due_stays",
+          "operator": "contains",
+          "expected": "B-003",
+          "rationale": "退房后两天(评价请求)行程被识别；远期行程 B-004 不入选"
+        },
+        {
+          "assertion_id": "A-5-POS-DAILY-SWEEP",
+          "target": "output.guest_messages",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每个到期行程生成一条纯文本消息"
+        },
+        {
+          "assertion_id": "A-6-POS-DAILY-SWEEP",
+          "target": "output.sheets.guest_log_appended",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每条消息记录到客人日志工作表"
+        },
+        {
+          "assertion_id": "A-7-POS-DAILY-SWEEP",
+          "target": "output.emails.to_guests",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每条消息通过邮件发送给对应客人"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.emails.to_guests",
+          "operator": "contains",
+          "expected": "alice@example.com",
+          "rationale": "入住消息收件人为对应客人邮箱"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.telegram.confirmations",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每条消息在 Telegram 发布确认"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.sheets.cleaning_tasks_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅退房当天行程创建清洁任务"
+        },
+        {
+          "assertion_id": "A-11",
+          "target": "output.sheets.cleaning_tasks_appended[0].property",
+          "operator": "equals",
+          "expected": "Sea House",
+          "rationale": "清洁任务对应退房当天房源"
+        },
+        {
+          "assertion_id": "A-12",
+          "target": "output.emails.to_cleaner.recipient",
+          "operator": "equals",
+          "expected": "cleaner@cleaning.example.com",
+          "rationale": "已设置清洁人员邮箱时通过邮件通知清洁人员"
+        },
+        {
+          "assertion_id": "A-13",
+          "target": "output.telegram.alerts",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "同时提醒房东"
+        },
+        {
+          "assertion_id": "A-14",
+          "target": "output.telegram.alerts[0].text",
+          "operator": "contains",
+          "expected": "Sea House",
+          "rationale": "房东提醒包含退房房源信息"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-NO-CLEANER",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-SWEEP-DUE",
+        "F-PLAYBOOK",
+        "F-CLEANER-UNSET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-DUE",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-LLM-GUEST-MSG",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-NO-CLEANER",
+          "target": "output.emails.to_cleaner",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "未设置清洁人员邮箱时不发送清洁邮件"
+        },
+        {
+          "assertion_id": "A-2-BOUND-NO-CLEANER",
+          "target": "output.sheets.cleaning_tasks_appended",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "清洁任务仍然创建"
+        },
+        {
+          "assertion_id": "A-3-BOUND-NO-CLEANER",
+          "target": "output.telegram.alerts",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "提醒房东"
+        },
+        {
+          "assertion_id": "A-4-BOUND-NO-CLEANER",
+          "target": "output.telegram.alerts[0].text",
+          "operator": "contains",
+          "expected": "no cleaner email",
+          "rationale": "告警明确说明未设置清洁人员邮箱"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-MON-NOACT",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-SWEEP-MON-NOACT",
+        "F-PLAYBOOK"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-NOACT",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-EMAIL",
+        "M-TELEGRAM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-MON-NOACT",
+          "target": "output.guest_messages",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "本周无到期行程时不生成客人消息"
+        },
+        {
+          "assertion_id": "A-2-BOUND-MON-NOACT",
+          "target": "output.weekly.digest.text",
+          "operator": "equals",
+          "expected": "一切正常",
+          "rationale": "本周无任何活动时改为发送'一切正常'消息"
+        },
+        {
+          "assertion_id": "A-3-BOUND-MON-NOACT",
+          "target": "output.emails.weekly_digest.body",
+          "operator": "contains",
+          "expected": "一切正常",
+          "rationale": "周报邮件发送一切正常消息"
+        },
+        {
+          "assertion_id": "A-4-BOUND-MON-NOACT",
+          "target": "output.telegram.weekly.text",
+          "operator": "contains",
+          "expected": "一切正常",
+          "rationale": "周报 Telegram 消息包含一切正常"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-MON-ACTIVE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-SWEEP-MON-ACTIVE",
+        "F-PLAYBOOK",
+        "F-CLEANER-SET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-MON",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-MON",
+        "M-LLM-GUEST-MSG",
+        "M-LLM-DIGEST",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-POS-MON-ACTIVE",
+          "target": "output.weekly.stats",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周一读取预订与清洁任务并计算本周统计"
+        },
+        {
+          "assertion_id": "A-2-POS-MON-ACTIVE",
+          "target": "output.weekly.digest.text",
+          "operator": "equals",
+          "expected": "Weekly digest: 2 bookings, 1 cleaning task, occupancy 42%.",
+          "rationale": "周报文本等于语言模型固定输出"
+        },
+        {
+          "assertion_id": "A-3-POS-MON-ACTIVE",
+          "target": "output.emails.weekly_digest.recipient",
+          "operator": "equals",
+          "expected": "host@example.com",
+          "rationale": "周报通过邮件发送给房东"
+        },
+        {
+          "assertion_id": "A-4-POS-MON-ACTIVE",
+          "target": "output.emails.weekly_digest.body",
+          "operator": "contains",
+          "expected": "42%",
+          "rationale": "周报含量化统计"
+        },
+        {
+          "assertion_id": "A-5-POS-MON-ACTIVE",
+          "target": "output.telegram.weekly.text",
+          "operator": "contains",
+          "expected": "Weekly digest",
+          "rationale": "周报通过 Telegram 发送给房东"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；日期以 fixture 固定 sweep_date 保证确定性（2026-09-02 每日扫描、2026-09-07 周一）；邮件/Sheets/Telegram/LLM 均固定模拟，无真实副作用；输出按 output.* JSON 路径表达。"
+}

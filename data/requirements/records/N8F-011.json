@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-011",
+  "source_id": "n8n:3408",
+  "workflow_sha256": "d4b63d3b1d2f2cd961f045389cb2760ff17367d7cef3484e652278becf66ac38",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4db09e5b16b441dbcdb8b105b8f903ba8d9793aba214e8169045d7b69aadb6c4",
+  "requirement": {
+    "requirement_text": "系统把整个 YouTube 播放列表或单个视频转换为可对话的互动知识库，使用户无需完整观看即可提问并获取摘要。\n输入：用户提供一个 YouTube 播放列表或单个视频的链接。\n处理过程：\n1. 内容获取：自动抓取该链接对应的视频详情与字幕文本；若为播放列表，可一次处理其中的多个视频（可能会询问需要处理的数量）；\n2. 内容理解：由语言模型阅读字幕文本、理解内容并生成摘要；\n3. 存储与上下文：将处理后的信息与摘要存入向量数据库，以便进行对话检索；同时使用上下文存储记住当前正在讨论的视频或播放列表。\n交互与输出：用户可就播放列表或视频内容向 AI 助手提问。由于上下文被保持，用户可以就同一视频或播放列表连续追问，而无需再次提供链接。支持的具体问法包括：\n- 获取单个视频或整个播放列表的快速摘要；\n- 询问要点或讨论过的主要话题；\n- 查询视频中提到的特定信息；\n- 要求对之前提到的某一点展开说明；\n- 在不必完整观看的情况下理解复杂主题。",
+    "source_spans": [
+      {
+        "start": 45,
+        "end": 167,
+        "text": "This n8n workflow transforms entire YouTube playlists or single videos into interactive knowledge bases you can chat with."
+      },
+      {
+        "start": 262,
+        "end": 354,
+        "text": "Provide a Link: Start by giving the workflow a URL for a YouTube playlist or a single video."
+      },
+      {
+        "start": 357,
+        "end": 552,
+        "text": "Content Retrieval: The workflow automatically fetches the video details and transcripts for the provided link. For playlists, it can process multiple videos at once (you might be asked how many)."
+      },
+      {
+        "start": 555,
+        "end": 667,
+        "text": "AI Processing: Google's Gemini AI reads through the transcripts, understands the content, and creates summaries."
+      },
+      {
+        "start": 670,
+        "end": 896,
+        "text": "Storage & Context: The processed information and summaries are stored in a vector database (Qdrant), making them ready for conversation. Context is managed using Redis, remembering the current video/playlist you're discussing."
+      },
+      {
+        "start": 899,
+        "end": 1119,
+        "text": "Chat & Ask: Now, you can ask the AI agent questions about the playlist or video content! Because context is maintained, you can ask follow-up questions (like \"expand on point X\") without needing to provide the URL again."
+      },
+      {
+        "start": 1721,
+        "end": 1887,
+        "text": "Engage with the AI agent to explore the video content. Since the agent remembers the context of your conversation, you can ask detailed follow-up questions naturally:"
+      },
+      {
+        "start": 1889,
+        "end": 2186,
+        "text": "Get a quick summary of a single video or an entire playlist.\nAsk for key takeaways or main topics discussed.\nQuery for specific information mentioned in the videos.\nAsk the agent to elaborate on a specific point previously mentioned.\nUnderstand complex subjects without watching the full duration."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户提供的 YouTube 播放列表链接或单个视频链接",
+        "用户在对话中提出的问题（含连续追问）",
+        "播放列表一次处理的视频数量（可能被询问）"
+      ],
+      "conditions": [
+        "链接可以是播放列表或单个视频",
+        "播放列表可一次处理其中多个视频",
+        "上下文被保持，同一视频或播放列表下可连续追问而无需再次提供链接"
+      ],
+      "allowed_actions": [
+        "抓取视频详情与字幕文本",
+        "使用语言模型理解内容并生成摘要",
+        "将处理后的信息与摘要写入向量数据库以支持对话检索",
+        "使用上下文存储记录当前讨论的视频或播放列表",
+        "回答用户关于视频内容的问题"
+      ],
+      "visible_outcomes": [
+        "单个视频或整个播放列表的快速摘要",
+        "视频要点与讨论过的主要话题",
+        "视频中特定信息的查询结果",
+        "对之前提及内容的展开说明"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-011.packet.json",
+    "packet_sha256": "de61a63949fdd8b04b79c3d7ddecd3f8e3da343c2554acbb27d85a3615497c6f",
+    "public_description_sha256": "739202cbab9321892257ed377a77d03bab2ca66601bfecbefa48bca2c11f8a42"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-011.response.json",
+    "verification_response_sha256": "3ce43bf73b2060f1bbe6ec03c11004003eb5a637cfac16aa7d4d5cd34f78c6ae",
+    "decision": "accept"
+  },
+  "formal_index": 22
+}

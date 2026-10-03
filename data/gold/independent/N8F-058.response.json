@@ -1,0 +1,137 @@
+{
+  "task_id": "N8F-058",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "6cadc7231bcdb08ac2188070d2e9f30745aef53f7b768322f13f504ac6ed35dd",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发（每日/每周）",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_event",
+          "type": "object",
+          "description": "定时运行触发事件"
+        }
+      ],
+      "native_evidence": ["🕒 Trigger: Run Daily/Weekly"],
+      "requirement_evidence": ["系统自动跟踪关键词在搜索引擎中的排名"],
+      "rationale": "定时自动触发为确定性调度行为，判为 code；作为流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取目标关键词与监控参数",
+      "node_type": "code",
+      "operation_family": "config_read",
+      "inputs": [
+        {
+          "name": "run_event",
+          "type": "object",
+          "description": "触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyword_config",
+          "type": "object",
+          "description": "目标关键词与域名及排名监控参数"
+        }
+      ],
+      "native_evidence": ["📝 Input: Keyword & Domain"],
+      "requirement_evidence": ["目标关键词与排名监控参数"],
+      "rationale": "读取关键词与监控配置为确定性配置读取，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "经抓取服务获取 SERP 并解析排名数据、跟踪变化、识别优化机会",
+      "node_type": "semantic",
+      "operation_family": "serp_analysis",
+      "inputs": [
+        {
+          "name": "keyword_config",
+          "type": "object",
+          "description": "目标关键词与监控参数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rank_report",
+          "type": "object",
+          "description": "关键词排名、竞争对手排名、特殊展现（search features）、排名变化与 SEO 优化机会"
+        }
+      ],
+      "native_evidence": ["🤖 SERP Scraper Agent (MCP)", "MCP Client", "OpenAI Chat Model", "Auto-fixing Output Parser", "Structured Output Parser1", "🧠 Format SERP Results"],
+      "requirement_evidence": ["自动抓取搜索引擎结果页（SERP），记录关键词排名、竞争对手排名以及搜索结果中的特殊展现（search features）", "通过搜索结果抓取服务获取搜索结果，以避免访问受限", "使用 AI 解析排名数据、跟踪排名变化，并识别 SEO 优化机会"],
+      "rationale": "需求将抓取、解析、变化跟踪与机会识别统一表述为'使用 AI 解析排名数据'的语义行为，原生图中抓取代理与格式化解析同属一条 AI 链路，故合并为一个 semantic 节点；抓取服务（MCP 工具）为该节点的内嵌检索能力，排名变化跟踪所需的历史数据访问未在需求中单独声明行为节点，折叠进本节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "将排名数据及变化保存到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "data_persistence",
+      "inputs": [
+        {
+          "name": "rank_report",
+          "type": "object",
+          "description": "排名数据、变化与优化机会"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["📊 Log to Google Sheets"],
+      "requirement_evidence": ["将关键词排名数据及其变化保存到 Google Sheets"],
+      "rationale": "写入 Google Sheets 是本流程的最终可见完成动作（排名数据可供 SEO 决策使用），判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后读取关键词配置。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置就绪后执行 SERP 抓取与解析。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析结果写入 Google Sheets。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "keyword_config",
+      "condition": null,
+      "rationale": "抓取与解析消费关键词配置。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "rank_report",
+      "condition": null,
+      "rationale": "保存消费排名分析结果。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n4"],
+  "confidence": 0.8,
+  "notes": "关键取舍：原生的 SERP 抓取代理（MCP 工具）与 Format SERP Results（代码格式化）在需求中被统一表述为'使用 AI 解析排名数据'的单一语义行为，Gold 合并为一个 semantic 节点，抓取服务为其内嵌工具而非独立 code 节点；'跟踪排名变化'所需的历史数据读取未在需求中单独声明，折叠进该节点契约；输出解析器（Auto-fixing/Structured Output Parser）为模型依赖，折叠进节点契约。"
+}

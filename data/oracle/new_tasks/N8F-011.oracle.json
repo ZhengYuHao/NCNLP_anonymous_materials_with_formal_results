@@ -1,0 +1,214 @@
+{
+  "task_id": "N8F-011",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "4db09e5b16b441dbcdb8b105b8f903ba8d9793aba214e8169045d7b69aadb6c4",
+  "fixtures": [
+    {
+      "fixture_id": "F-VIDEO-SINGLE",
+      "purpose": "正常用例：单个视频链接，验证单视频抓取、摘要生成与问答链路",
+      "input_data": {
+        "link": "https://www.youtube.com/watch?v=abc123",
+        "user_question": "What are the main topics?",
+        "follow_up_question": "Expand on point X"
+      }
+    },
+    {
+      "fixture_id": "F-PLAYLIST-TWO",
+      "purpose": "正常用例：播放列表链接且指定一次处理 2 个视频，验证多视频处理",
+      "input_data": {
+        "link": "https://www.youtube.com/playlist?list=PL001",
+        "video_count": 2,
+        "user_question": "Summarize the playlist"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-YT-TRANSCRIPT-VIDEO",
+      "dependency_type": "httpRequest",
+      "operation": "fetch_video",
+      "request_contract": {
+        "url": "https://www.youtube.com/watch?v=abc123"
+      },
+      "response_contract": {
+        "video_id": "abc123",
+        "title": "Intro to neural networks",
+        "transcript": "Neural networks learn patterns from data. Backpropagation updates weights. GPUs accelerate training.",
+        "duration_seconds": 600
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-TRANSCRIPT-PLAYLIST",
+      "dependency_type": "httpRequest",
+      "operation": "fetch_playlist",
+      "request_contract": {
+        "url": "https://www.youtube.com/playlist?list=PL001",
+        "count": 2
+      },
+      "response_contract": {
+        "videos": [
+          {
+            "video_id": "v1",
+            "title": "Video one",
+            "transcript": "Video one transcript content."
+          },
+          {
+            "video_id": "v2",
+            "title": "Video two",
+            "transcript": "Video two transcript content."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "generate_summary",
+      "request_contract": {
+        "transcript": "string"
+      },
+      "response_contract": {
+        "summary": "This video introduces neural networks, backpropagation, and GPU acceleration.",
+        "key_points": ["neural networks", "backpropagation", "GPU acceleration"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VECTOR-STORE",
+      "dependency_type": "vectorStoreQdrant",
+      "operation": "upsert_documents",
+      "request_contract": {
+        "documents": "array"
+      },
+      "response_contract": {
+        "stored_count": 2,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CHAT",
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "answer_question",
+      "request_contract": {
+        "question": "string",
+        "context": "string"
+      },
+      "response_contract": {
+        "answer": "The main topics are neural networks and training acceleration."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDIS-CTX",
+      "dependency_type": "redis",
+      "operation": "set_get_context",
+      "request_contract": {
+        "key": "string",
+        "value": "string"
+      },
+      "response_contract": {
+        "stored": true,
+        "context_key": "current_video",
+        "context_value": "abc123"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-VIDEO-QA",
+      "kind": "positive",
+      "fixture_ids": ["F-VIDEO-SINGLE"],
+      "mock_ids": ["M-YT-TRANSCRIPT-VIDEO", "M-LLM-SUMMARY", "M-VECTOR-STORE", "M-LLM-CHAT", "M-REDIS-CTX"],
+      "assertions": [
+        {
+          "assertion_id": "A-TRANSCRIPT-FETCHED",
+          "target": "fetch_video.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "单视频输入应恰好抓取一次视频详情与字幕"
+        },
+        {
+          "assertion_id": "A-SUMMARY-KEYWORD",
+          "target": "lm_summary.output.summary",
+          "operator": "contains",
+          "expected": "neural networks",
+          "rationale": "摘要应基于模拟字幕内容生成，包含字幕中的核心关键词"
+        },
+        {
+          "assertion_id": "A-VECTOR-STORED",
+          "target": "vector_store.upsert_documents.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "处理后的信息与摘要应写入向量数据库以支持对话检索"
+        },
+        {
+          "assertion_id": "A-VECTOR-NONEMPTY",
+          "target": "vector_store.upsert_documents.calls[0].documents",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "写入向量库的文档内容不能为空，否则无法支持后续检索"
+        },
+        {
+          "assertion_id": "A-ANSWER-NONEMPTY",
+          "target": "lm_chat.output.answer",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "对用户问题的回答必须非空"
+        },
+        {
+          "assertion_id": "A-ANSWER-CONTENT",
+          "target": "lm_chat.output.answer",
+          "operator": "contains",
+          "expected": "neural networks",
+          "rationale": "回答应来源于摘要或字幕内容，验证基于视频内容作答"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-PLAYLIST-TWO",
+      "kind": "positive",
+      "fixture_ids": ["F-PLAYLIST-TWO"],
+      "mock_ids": ["M-YT-TRANSCRIPT-PLAYLIST", "M-LLM-SUMMARY", "M-VECTOR-STORE", "M-LLM-CHAT"],
+      "assertions": [
+        {
+          "assertion_id": "A-PLAYLIST-FETCHED",
+          "target": "fetch_playlist.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "播放列表应被抓取一次"
+        },
+        {
+          "assertion_id": "A-PLAYLIST-COUNT",
+          "target": "fetch_playlist.calls[0].videos",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "指定处理数量为 2，模拟返回 2 个视频，后续处理应覆盖全部 2 个"
+        },
+        {
+          "assertion_id": "A-PLAYLIST-SUMMARY",
+          "target": "lm_summary.output.summary",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "播放列表也应生成非空摘要"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。冻结需求仅覆盖有效的单视频链接与播放列表链接，故输入只覆盖这两类有效场景；字幕抓取、语言模型、向量库与 Redis 上下文均使用确定性模拟。断言聚焦可计算结果：抓取调用次数、视频数量、摘要与回答的关键词包含、向量库写入次数。"
+}

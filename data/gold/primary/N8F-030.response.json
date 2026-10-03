@@ -1,0 +1,446 @@
+{
+  "task_id": "N8F-030",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "6cd504c4a44fa1d7abc4f9ace89de206be8224f9ac043a71e66c918794ff47b5",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发并读取竞品数据",
+      "node_type": "code",
+      "operation_family": "scheduled_data_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "competitor_data",
+          "type": "object",
+          "description": "Google Sheets 中的竞品数据与商品链接"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger",
+        "Get row(s) in sheet"
+      ],
+      "requirement_evidence": [
+        "按计划时间自动监控 Google Sheets 中记录的竞品商品价格",
+        "运行时读取竞品数据与商品链接"
+      ],
+      "rationale": "按计划触发并读取竞品数据，为确定性读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "逐条抓取并清洗商品页面",
+      "node_type": "code",
+      "operation_family": "content_fetch_and_clean",
+      "inputs": [
+        {
+          "name": "competitor_data",
+          "type": "object",
+          "description": "竞品数据与商品链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cleaned_content",
+          "type": "string",
+          "description": "清洗整理后的商品页面文本"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over Items",
+        "HTTP Request3",
+        "Clean Content"
+      ],
+      "requirement_evidence": [
+        "逐条处理每个竞品条目：抓取商品页面原始内容，并清洗整理出供模型处理的文本"
+      ],
+      "rationale": "逐条目抓取页面并清洗整理，为确定性循环与文本清洗操作，判定为 code 节点；循环终止条件为全部竞品条目处理完毕。"
+    },
+    {
+      "node_id": "n3",
+      "label": "抽取商品名称价格与优惠",
+      "node_type": "semantic",
+      "operation_family": "price_extraction",
+      "inputs": [
+        {
+          "name": "cleaned_content",
+          "type": "string",
+          "description": "清洗后的商品页面文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "product_info",
+          "type": "object",
+          "description": "商品名称、价格与优惠的结构化数据"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent1",
+        "Groq Chat Model1",
+        "current Price and offer"
+      ],
+      "requirement_evidence": [
+        "由语言模型抽取商品名称、价格与优惠信息，并转换为结构化数据"
+      ],
+      "rationale": "需求声明由语言模型抽取商品信息并结构化，需要开放文本理解，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "首次记录判断与价格更新",
+      "node_type": "code",
+      "operation_family": "first_time_check_and_update",
+      "inputs": [
+        {
+          "name": "product_info",
+          "type": "object",
+          "description": "抽取的商品名称、价格与优惠"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "update_result",
+          "type": "object",
+          "description": "首次保存或比较更新后的记录结果"
+        }
+      ],
+      "native_evidence": [
+        "If2",
+        "If1",
+        "First time price and offer added",
+        "Updated current price and offer in sheet",
+        "If No changes then update"
+      ],
+      "requirement_evidence": [
+        "判断该商品是否为首次记录：若是，则保存初始值；否则将当前价格与优惠同历史值比较，检测到变化时更新记录",
+        "即使未检测到变化，也会更新记录，因此价格变化与无变化两种情形都会被处理"
+      ],
+      "rationale": "首次判断与历史值比较并更新记录，为确定性的条件路由与存储操作，判定为 code 节点；需求声明有变化与无变化两种情形都会被处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "取回更新数据并汇总市场对比",
+      "node_type": "code",
+      "operation_family": "data_aggregation",
+      "inputs": [
+        {
+          "name": "update_result",
+          "type": "object",
+          "description": "全部条目更新完成后的结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comparison_data",
+          "type": "object",
+          "description": "结构化的市场对比数据"
+        }
+      ],
+      "native_evidence": [
+        "Get row(s) in sheet1",
+        "Data Aggregator"
+      ],
+      "requirement_evidence": [
+        "全部条目处理完毕后，取回更新后的数据集，汇总为结构化的市场对比数据"
+      ],
+      "rationale": "全部条目处理后取回数据集并汇总为结构化对比数据，为确定性外部读取与聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成战略洞察与建议",
+      "node_type": "semantic",
+      "operation_family": "insight_generation",
+      "inputs": [
+        {
+          "name": "comparison_data",
+          "type": "object",
+          "description": "市场对比数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "insights",
+          "type": "string",
+          "description": "语言模型生成的市场战略洞察与建议"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent",
+        "Groq Chat Model",
+        "Simple Memory"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成战略洞察与建议"
+      ],
+      "rationale": "需求声明由语言模型生成战略洞察与建议，需要开放文本生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "保存分析摘要到工作表",
+      "node_type": "code",
+      "operation_family": "insight_persistence",
+      "inputs": [
+        {
+          "name": "insights",
+          "type": "string",
+          "description": "战略洞察与建议文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "saved_summary",
+          "type": "object",
+          "description": "保存到 Google Sheets 的分析摘要"
+        }
+      ],
+      "native_evidence": [
+        "Update row in sheet"
+      ],
+      "requirement_evidence": [
+        "并把生成的分析摘要保存回 Google Sheets"
+      ],
+      "rationale": "将分析摘要保存回 Google Sheets，为确定性外部存储操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "排版 HTML 邮件报告",
+      "node_type": "code",
+      "operation_family": "report_formatting",
+      "inputs": [
+        {
+          "name": "saved_summary",
+          "type": "object",
+          "description": "保存的分析摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "HTML 格式的最终报告"
+        }
+      ],
+      "native_evidence": [
+        "Edit Fields1"
+      ],
+      "requirement_evidence": [
+        "把报告排版为 HTML 邮件格式"
+      ],
+      "rationale": "将报告排版为 HTML 邮件格式，为确定性格式化操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "通过 Gmail 发送最终报告",
+      "node_type": "code",
+      "operation_family": "report_delivery",
+      "inputs": [
+        {
+          "name": "html_report",
+          "type": "string",
+          "description": "HTML 格式的最终报告"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_sent",
+          "type": "object",
+          "description": "邮件发送结果"
+        }
+      ],
+      "native_evidence": [
+        "Send a message"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 发送最终报告"
+      ],
+      "rationale": "通过 Gmail 发送报告为确定性外部发送操作；因需求声明其后还有数据重置环节，故判定为 code 节点而非 terminal。"
+    },
+    {
+      "node_id": "n10",
+      "label": "重置数据转入历史记录",
+      "node_type": "terminal",
+      "operation_family": "data_reset",
+      "inputs": [
+        {
+          "name": "email_sent",
+          "type": "object",
+          "description": "邮件发送完成信号"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Get row(s) in sheet2",
+        "Update row in sheet1"
+      ],
+      "requirement_evidence": [
+        "最后取回本轮处理后的数据，把当前数据转入历史记录并清空相应字段，为下一轮执行做准备"
+      ],
+      "rationale": "取回本轮数据、转入历史记录并清空字段为每轮流程的收尾动作，判定为 terminal 节点（本轮流程终点）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取竞品数据后进入逐条处理循环。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "has_next_item",
+      "rationale": "存在下一个条目时抓取并清洗页面。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "抽取商品信息后进入首次判断与更新。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "更新完成后回到循环头处理下一个条目（max_iterations=竞品条目总数）。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "all_items_processed",
+      "rationale": "全部条目处理完毕后取回数据并汇总。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总对比数据后生成战略洞察。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成洞察后保存分析摘要。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "保存摘要后排版 HTML 报告。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "排版完成后发送报告邮件。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件发送后重置数据，本轮流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "competitor_data",
+      "condition": null,
+      "rationale": "竞品数据送入逐条抓取节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "cleaned_content",
+      "condition": null,
+      "rationale": "清洗后的页面文本送入抽取节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "product_info",
+      "condition": null,
+      "rationale": "商品信息送入首次判断与更新节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "update_result",
+      "condition": null,
+      "rationale": "更新完成结果送入汇总节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "comparison_data",
+      "condition": null,
+      "rationale": "对比数据送入洞察生成节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "insights",
+      "condition": null,
+      "rationale": "洞察文本送入摘要保存节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "saved_summary",
+      "condition": null,
+      "rationale": "已保存摘要送入报告排版节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "html_report",
+      "condition": null,
+      "rationale": "HTML 报告送入邮件发送节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "email_sent",
+      "condition": null,
+      "rationale": "邮件发送完成信号送入数据重置节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n10"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：定时读取（code）、逐条抓取清洗（code，循环）、价格抽取（semantic）、首次判断与更新（code，首次保存初始值、非首次比较、有变化与无变化均更新）、汇总对比（code）、洞察生成（semantic）、保存摘要（code）、HTML 排版（code）、Gmail 发送（code，因后续有重置环节）、数据重置（terminal）。混合任务满足 semantic→code 的有类型 DFG 边（product_info、insights）。"
+}

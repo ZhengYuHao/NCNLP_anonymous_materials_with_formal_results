@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-029",
+  "case_id": "C-WA-UNGROUNDED-FALLBACK",
+  "kind": "negative",
+  "input_data": {
+    "channel": "whatsapp",
+    "normalized_message": {
+      "user_id": "wa-5007",
+      "body": "What is your refund policy?",
+      "phone": "+15551234567"
+    },
+    "config": {
+      "confidence_threshold": 0.7,
+      "max_message_length": 4000
+    }
+  },
+  "input_sha256": "31598DD5FB4C74249D584F4FA1EC486CF80E84626EDE82FC990CA94E6592395E"
+}

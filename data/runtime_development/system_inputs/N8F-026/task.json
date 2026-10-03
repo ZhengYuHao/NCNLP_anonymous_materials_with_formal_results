@@ -1,0 +1,702 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-026",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "af2fdd0d50d54d7b8d86e1558f4c0f315b809051a807f2d7e4f33f082fb8add7",
+  "natural_language_requirement": "每周按计划运行一次，读取设定的城市、品类、阈值与投递目标。\n\n对每个品类分别触发一次 Google Maps 商家发现检索，并轮询检索进度直到结果就绪。随后下载检索到的商家档案，并按可度量的商家资料完整度缺口、以“用户还搜索过”的同类商家集合为基准，对每个商家打分。\n\n读取 Google Sheets 中已记录的候选商家，过滤掉最近 90 天内已经联系过的商家。对其余候选商家，由语言模型从三星及以下评分的评论中抽取抱怨主题。\n\n最后生成一份排名报告，把每个候选商家逐行追加到 Google Sheets，并向指定的 Slack 频道发送一份格式化的摘要。",
+  "public_interfaces": [
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "one_row_per_candidate": {
+            "type": "boolean"
+          },
+          "sheet_id": {
+            "type": "string"
+          },
+          "row_data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "business_id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "score": {
+                  "type": "number"
+                },
+                "complaint_themes": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "contacted": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "business_id",
+                "name",
+                "score",
+                "complaint_themes",
+                "contacted"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "one_row_per_candidate",
+          "sheet_id",
+          "row_data"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "row_number": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "row_number",
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_rows",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "sheet_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "business_id": {
+                  "type": "string"
+                },
+                "last_contacted": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "business_id",
+                "last_contacted",
+                "name"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "httpRequest",
+      "operation": "bright_data_maps_discovery",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "type": "string"
+          },
+          "one_call_per_category": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "city",
+          "one_call_per_category"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "httpRequest",
+      "operation": "download_business_profiles",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "profiles": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "business_id": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "completeness_gaps": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "hours": {
+                              "type": "boolean"
+                            },
+                            "photos": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "hours",
+                            "photos"
+                          ],
+                          "type": "object"
+                        },
+                        "last_contacted": {
+                          "type": "null"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "reviews": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "stars": {
+                                "type": "integer"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "stars",
+                              "text"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "business_id",
+                        "category",
+                        "completeness_gaps",
+                        "last_contacted",
+                        "name",
+                        "reviews"
+                      ],
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "business_id": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "completeness_gaps": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "hours": {
+                              "type": "boolean"
+                            },
+                            "photos": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "hours",
+                            "photos"
+                          ],
+                          "type": "object"
+                        },
+                        "last_contacted": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "reviews": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "stars": {
+                                "type": "integer"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "stars",
+                              "text"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "business_id",
+                        "category",
+                        "completeness_gaps",
+                        "last_contacted",
+                        "name",
+                        "reviews"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "profiles"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "profiles": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "profiles"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "httpRequest",
+      "operation": "poll_snapshot_progress",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "extract_complaint_themes",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "reviews_stars_lte": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "reviews_stars_lte"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "per_business": {
+            "additionalProperties": {
+              "additionalProperties": false,
+              "properties": {
+                "themes": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": [
+                "themes"
+              ],
+              "type": "object"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "per_business"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "message_is_ranked_digest": {
+            "type": "boolean"
+          },
+          "summary_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "message_is_ranked_digest",
+          "summary_text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "ts"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "ranking_report",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "business_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "rank": {
+                "type": "integer"
+              },
+              "score": {
+                "type": "number"
+              },
+              "complaint_themes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "contacted": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "business_id",
+              "name",
+              "rank",
+              "score",
+              "complaint_themes",
+              "contacted"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "候选商家排名报告",
+        "requirement_evidence": [
+          "最后生成一份排名报告"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n6.ranking_report"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "scored_profiles",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "business_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "completeness_gaps": {
+                "type": "object",
+                "properties": {
+                  "hours": {
+                    "type": "boolean"
+                  },
+                  "photos": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "hours",
+                  "photos"
+                ],
+                "additionalProperties": false
+              },
+              "score": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "business_id",
+              "name",
+              "category",
+              "completeness_gaps",
+              "score"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "带完整度缺口的商家档案",
+        "requirement_evidence": [
+          "随后下载检索到的商家档案，并按可度量的商家资料完整度缺口、以“用户还搜索过”的同类商家集合为基准，对每个商家打分"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n3.scored_profiles"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "eligible_prospects",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "business_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "last_contacted": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "business_id",
+              "name",
+              "last_contacted"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "可投递的候选商家",
+        "requirement_evidence": [
+          "读取 Google Sheets 中已记录的候选商家，过滤掉最近 90 天内已经联系过的商家"
+        ],
+        "source_operations": [
+          "read_rows"
+        ],
+        "design_sources": [
+          "n4.eligible_prospects"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "complaint_themes",
+        "schema": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "themes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "themes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "各候选商家的抱怨主题",
+        "requirement_evidence": [
+          "对其余候选商家，由语言模型从三星及以下评分的评论中抽取抱怨主题"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.complaint_themes"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sheet_log",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "business_id": {
+                "type": "string"
+              },
+              "row_number": {
+                "type": "integer"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "business_id",
+              "row_number",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "写入结果",
+        "requirement_evidence": [
+          "把每个候选商家逐行追加到 Google Sheets"
+        ],
+        "source_operations": [
+          "append_row"
+        ],
+        "design_sources": [
+          "n7.sheet_log"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_post_status",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "ts": {
+              "type": "string"
+            },
+            "summary_text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "ts",
+            "summary_text"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Slack 频道发送状态",
+        "requirement_evidence": [
+          "并向指定的 Slack 频道发送一份格式化的摘要"
+        ],
+        "source_operations": [
+          "post_message"
+        ],
+        "design_sources": [
+          "n8"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "A05D74A5C1E81AB19CBCD3554961C71D6B0F860D0418FAAE493F0E6058868258",
+  "public_interface_sha256": "5CB5323AD7A398A766BE0EE5A83CF46EBF94F60F92CCB80A09095402AB6E7B00",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

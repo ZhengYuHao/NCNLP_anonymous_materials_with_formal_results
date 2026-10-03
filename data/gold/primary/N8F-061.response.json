@@ -1,0 +1,261 @@
+{
+  "task_id": "N8F-061",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "f585622a5997b539bbdf227a5ec3642dd27d32df96ef0d774e3e3c23ab047e2b",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单提交的主题",
+      "node_type": "code",
+      "operation_family": "receive_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "topic",
+          "type": "string",
+          "description": "业务用户通过网页表单提交的主题"
+        }
+      ],
+      "native_evidence": ["On form submission", "Mapper"],
+      "requirement_evidence": [
+        "业务用户通过网页表单提交一个主题。"
+      ],
+      "rationale": "表单触发与主题映射是确定性动作，判为 code，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成帖子正文与图像描述",
+      "node_type": "semantic",
+      "operation_family": "content_generation",
+      "inputs": [
+        {
+          "name": "topic",
+          "type": "string",
+          "description": "用户提交的主题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "llm_output",
+          "type": "object",
+          "description": "语言模型输出，含帖子正文与用于生成配图的图像描述"
+        }
+      ],
+      "native_evidence": ["AI Agent", "Google Gemini Chat Model"],
+      "requirement_evidence": [
+        "交给语言模型生成 LinkedIn 帖子正文，并由语言模型同时生成一段用于生成配图的图像描述"
+      ],
+      "rationale": "生成帖子正文与图像描述需语言模型开放生成，判为 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "清洗并规范化语言模型输出",
+      "node_type": "code",
+      "operation_family": "output_normalization",
+      "inputs": [
+        {
+          "name": "llm_output",
+          "type": "object",
+          "description": "语言模型原始输出"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_text",
+          "type": "string",
+          "description": "规范化后的帖子正文"
+        },
+        {
+          "name": "image_description",
+          "type": "string",
+          "description": "规范化后的图像描述"
+        }
+      ],
+      "native_evidence": ["Normalizer"],
+      "requirement_evidence": [
+        "随后系统对语言模型的输出进行清洗与规范化处理"
+      ],
+      "rationale": "清洗与规范化语言模型输出是确定性数据处理，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "依据图像描述生成配图",
+      "node_type": "code",
+      "operation_family": "image_generation",
+      "inputs": [
+        {
+          "name": "image_description",
+          "type": "string",
+          "description": "用于生成配图的图像描述"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "object",
+          "description": "生成的配图"
+        }
+      ],
+      "native_evidence": ["Text to image1"],
+      "requirement_evidence": [
+        "系统再调用图像生成服务，依据上述图像描述生成一张配图"
+      ],
+      "rationale": "调用图像生成服务属确定性外部契约（创意部分已由图像描述承担），判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "将帖子正文转换为 LinkedIn 展示格式",
+      "node_type": "code",
+      "operation_family": "format_conversion",
+      "inputs": [
+        {
+          "name": "post_text",
+          "type": "string",
+          "description": "规范化后的帖子正文（Markdown 格式）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "linkedin_text",
+          "type": "string",
+          "description": "适合 LinkedIn 展示的文本格式"
+        }
+      ],
+      "native_evidence": ["Code", "Convert to binary buffer"],
+      "requirement_evidence": [
+        "帖子正文被转换为适合 LinkedIn 展示的文本格式（由 Markdown 格式转换而来）"
+      ],
+      "rationale": "Markdown 转 LinkedIn 文本格式是确定性格式转换，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "发布正文与配图到 LinkedIn",
+      "node_type": "terminal",
+      "operation_family": "publish",
+      "inputs": [
+        {
+          "name": "image",
+          "type": "object",
+          "description": "生成的配图"
+        },
+        {
+          "name": "linkedin_text",
+          "type": "string",
+          "description": "适合 LinkedIn 展示的帖子正文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Register Image Upload", "Upload Image to LinkedIn1", "HTTP Request"],
+      "requirement_evidence": [
+        "最后，系统将正文与配图一并发布到 LinkedIn 信息流，形成一条完整的帖子"
+      ],
+      "rationale": "将正文与配图发布到 LinkedIn 是用户可见的完成动作，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收主题后生成内容。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成后清洗规范化输出。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "图像描述用于生成配图。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "帖子正文用于格式转换。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "配图完成后参与发布。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "正文格式化后参与发布。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "topic",
+      "condition": null,
+      "rationale": "主题传给内容生成节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "llm_output",
+      "condition": null,
+      "rationale": "语言模型输出传给清洗规范化节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "image_description",
+      "condition": null,
+      "rationale": "图像描述传给配图生成节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "post_text",
+      "condition": null,
+      "rationale": "帖子正文传给格式转换节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "image",
+      "condition": null,
+      "rationale": "配图传给发布节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "linkedin_text",
+      "condition": null,
+      "rationale": "格式化正文传给发布节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6"],
+  "confidence": 0.95,
+  "notes": "按需求建模为线性链：表单主题→LLM 生成正文与图像描述（semantic）→清洗规范化→并行生成配图与格式转换→发布 LinkedIn。原生图中 Register Image Upload/Convert to binary buffer 等上传细节并入发布节点；需求未声明具体 LinkedIn API 流程，未单列。"
+}

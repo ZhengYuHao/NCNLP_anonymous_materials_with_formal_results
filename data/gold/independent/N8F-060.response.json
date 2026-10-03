@@ -1,0 +1,323 @@
+{
+  "task_id": "N8F-060",
+  "annotator_id": "GM-B-03",
+  "status": "submitted",
+  "requirement_sha256": "fdd7e19785cc8344ddc914dd2fcb4ba9c922651b27199254db761917d1aca607",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "表单收集人脸照片与名人参考图",
+      "node_type": "code",
+      "operation_family": "form_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "face_inputs",
+          "type": "object",
+          "description": "用户人脸照片与最多 4 张名人参考图"
+        }
+      ],
+      "native_evidence": [
+        "📝 Form Input",
+        "⚙️ Config",
+        "📥 Process & Split"
+      ],
+      "requirement_evidence": [
+        "通过网页表单收集用户的人脸照片，以及最多 4 张名人参考图"
+      ],
+      "rationale": "表单接收与输入规整（含 4 张上限的确定性校验）为确定性 IO，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成真实感合照构图提示词",
+      "node_type": "semantic",
+      "operation_family": "llm_prompt_generation",
+      "inputs": [
+        {
+          "name": "face_inputs",
+          "type": "object",
+          "description": "用户人脸照片与最多 4 张名人参考图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "composition_prompts",
+          "type": "array",
+          "description": "用于真实感合照构图的优化提示词"
+        }
+      ],
+      "native_evidence": [
+        "🤖 AI Generate Prompt",
+        "GPT-4 Language Model",
+        "Parse Prompt Response",
+        "🔗 Merge Prompt",
+        "🔄 Loop Each Celebrity"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成用于真实感合照构图的优化提示词"
+      ],
+      "rationale": "构图提示词生成需要开放文本理解与生成，判 semantic；逐位名人的提示词生成为无循环携带依赖的逐项映射，折叠进节点契约。"
+    },
+    {
+      "node_id": "n3",
+      "label": "调用图像生成服务生成合照图像",
+      "node_type": "code",
+      "operation_family": "external_api_image_generation",
+      "inputs": [
+        {
+          "name": "composition_prompts",
+          "type": "array",
+          "description": "用于真实感合照构图的优化提示词"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "composite_images",
+          "type": "array",
+          "description": "生成的照片级真实合照图像"
+        }
+      ],
+      "native_evidence": [
+        "🎨 SeedDream Generate",
+        "💾 Store Request",
+        "⏳ Wait 45s",
+        "📊 Check Status",
+        "🔗 Merge Status",
+        "✅ Ready?",
+        "⏳ Retry 20s",
+        "🔄 Retry",
+        "📥 Get Result"
+      ],
+      "requirement_evidence": [
+        "由图像生成服务据此生成照片级真实的合照图像"
+      ],
+      "rationale": "图像生成类外部服务调用判 code（确定性契约：提交提示词、取回成品图）；异步渲染轮询（等待+状态检查+重试）折叠进契约，终止条件为渲染状态就绪，max_iterations<=20。"
+    },
+    {
+      "node_id": "n4",
+      "label": "保存合照结果到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_io_write",
+      "inputs": [
+        {
+          "name": "composite_images",
+          "type": "array",
+          "description": "生成的照片级真实合照图像"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "saved_results",
+          "type": "array",
+          "description": "已保存到 Sheets 的合照结果记录"
+        }
+      ],
+      "native_evidence": [
+        "📋 Prepare Output",
+        "📊 Save to Sheets"
+      ],
+      "requirement_evidence": [
+        "所有生成结果自动保存到 Google Sheets"
+      ],
+      "rationale": "外部存储写入为确定性 IO 动作，判 code；输出为留存的记录供视频阶段使用。"
+    },
+    {
+      "node_id": "n5",
+      "label": "配对合照图像（名人 1 → 名人 2）",
+      "node_type": "code",
+      "operation_family": "data_pairing",
+      "inputs": [
+        {
+          "name": "saved_results",
+          "type": "array",
+          "description": "已保存到 Sheets 的合照结果记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_pairs",
+          "type": "array",
+          "description": "两两配对的合照图像（名人 1 → 名人 2）"
+        }
+      ],
+      "native_evidence": [
+        "▶️ Start Video Generation",
+        "⚙️ Video Config",
+        "📊 Read from Sheets",
+        "🔍 Filter Ready Rows",
+        "📝 Build Video Prompt",
+        "🔄 Loop Each Video"
+      ],
+      "requirement_evidence": [
+        "将生成的合照图像两两配对（名人 1 → 名人 2）"
+      ],
+      "rationale": "确定性配对与视频提示词组装，判 code；原生第二部分由独立手动触发器从 Sheets 回读结果，需求以连续流程声明第 5 步承接第 4 步产物，故建模为承接节点（见 notes）。"
+    },
+    {
+      "node_id": "n6",
+      "label": "调用视频生成服务生成行走过渡视频",
+      "node_type": "code",
+      "operation_family": "external_api_video_generation",
+      "inputs": [
+        {
+          "name": "image_pairs",
+          "type": "array",
+          "description": "两两配对的合照图像（名人 1 → 名人 2）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transition_videos",
+          "type": "array",
+          "description": "生成的平滑行走过渡视频及其元数据"
+        }
+      ],
+      "native_evidence": [
+        "🎥 Kling Generate Video",
+        "💾 Store Video Request",
+        "⏳ Wait 120s",
+        "📊 Check Video Status",
+        "🔗 Merge Video Status",
+        "✅ Video Ready?",
+        "⏳ Retry 60s",
+        "🔄 Retry Video Check",
+        "📥 Get Video Result"
+      ],
+      "requirement_evidence": [
+        "由视频生成服务据此生成平滑的行走过渡视频"
+      ],
+      "rationale": "视频生成类外部服务调用判 code；异步渲染轮询折叠进契约，终止条件为渲染状态就绪，max_iterations<=20。"
+    },
+    {
+      "node_id": "n7",
+      "label": "保存视频与元数据到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_io_write",
+      "inputs": [
+        {
+          "name": "transition_videos",
+          "type": "array",
+          "description": "生成的平滑行走过渡视频及其元数据"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📋 Prepare Update",
+        "📊 Save to CelebrityVideos"
+      ],
+      "requirement_evidence": [
+        "将生成的视频连同元数据一并保存回 Google Sheets"
+      ],
+      "rationale": "用户可见完成动作（视频与元数据留存）且为流程末端，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "表单收集完成后生成构图提示词。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "提示词就绪后调用图像生成服务。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "合照生成后保存到 Sheets（需求第 4 步）。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "需求第 5 步承接第 4 步产物进行配对。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "配对完成后调用视频生成服务。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "视频生成后连同元数据保存回 Sheets（需求第 7 步）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "face_inputs",
+      "condition": null,
+      "rationale": "提示词生成消费用户照片与名人参考图。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "composition_prompts",
+      "condition": null,
+      "rationale": "图像生成消费构图提示词。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "composite_images",
+      "condition": null,
+      "rationale": "保存消费生成的合照图像。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "saved_results",
+      "condition": null,
+      "rationale": "配对消费留存的合照结果记录（原生经 Sheets 回读，数据源为第 4 步产物）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "image_pairs",
+      "condition": null,
+      "rationale": "视频生成消费配对的合照图像。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "transition_videos",
+      "condition": null,
+      "rationale": "保存消费生成的过渡视频及其元数据。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.85,
+  "notes": "原生第二部分由独立手动触发器（▶️ Start Video Generation）启动并从 Sheets 回读（双入口结构），需求将两部分声明为连续流程（第 5 步承接第 4 步产物『生成出的合照图像』），故按需求建模为单链单入口；若按原生证据建模，n5 应为第二入口。逐名人/逐视频对的循环为无循环携带依赖的逐项映射，折叠进节点契约；两处渲染轮询折叠并声明终止条件（状态就绪，max_iterations<=20）。"
+}

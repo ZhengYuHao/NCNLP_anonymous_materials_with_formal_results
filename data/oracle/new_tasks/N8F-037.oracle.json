@@ -1,0 +1,348 @@
+{
+  "task_id": "N8F-037",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "6a162c99d379991ec2db1d3db3dbd6ee23a56afce8212d2c50d972dd5dc5e4d0",
+  "fixtures": [
+    {
+      "fixture_id": "F-DPDP-ELIGIBLE",
+      "purpose": "正常用例：字段齐备的合格申请，应写入初始受理记录、进行资格评估并判定合格，通过 Gmail 通知合规团队，最终更新登记表资格状态为合格",
+      "input_data": {
+        "action": "register",
+        "organizationName": "Acme Consent Ltd",
+        "applicationType": "consent_manager",
+        "contactEmail": "ops@acme-consent.example.com",
+        "netWorth": "25000000",
+        "technicalCapacity": "ISO 27001 certified team of 40 engineers",
+        "operationalCapacity": "24x7 support with SLA 99.9%",
+        "documentAttached": [
+          "certificate_of_incorporation.pdf",
+          "dpdp_policy.pdf"
+        ],
+        "submittedAt": "2026-08-01T09:00:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-DPDP-INELIGIBLE",
+      "purpose": "正常用例：字段齐备但不合格的申请，应评估为不合格并通过 Gmail 向申请人发送拒绝邮件，同时更新登记表最终资格状态为不合格",
+      "input_data": {
+        "action": "register",
+        "organizationName": "Small Start Co",
+        "applicationType": "consent_manager",
+        "contactEmail": "owner@small-start.example.com",
+        "netWorth": "500000",
+        "technicalCapacity": "No dedicated security team",
+        "operationalCapacity": "Part-time support only",
+        "documentAttached": [],
+        "submittedAt": "2026-08-02T10:30:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-DPDP-MISSING-FIELDS",
+      "purpose": "安全拒绝用例：必填字段缺失的申请，不得进入资格评估，应记入审计记录表用于后续跟进与重新提交",
+      "input_data": {
+        "action": "register",
+        "organizationName": "Incomplete Org",
+        "applicationType": "",
+        "contactEmail": "not-an-email",
+        "netWorth": "",
+        "technicalCapacity": "",
+        "operationalCapacity": "",
+        "documentAttached": [],
+        "submittedAt": "2026-08-03T11:00:00Z"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DPDP-EVAL-ELIGIBLE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "operation": "evaluate_eligibility",
+      "request_contract": {
+        "org": "Acme Consent Ltd",
+        "aspects": [
+          "financial",
+          "technical",
+          "operational",
+          "documentation"
+        ]
+      },
+      "response_contract": {
+        "eligible": true,
+        "riskLevel": "low",
+        "decisionReason": "Meets DPDP financial and operational thresholds; documentation complete.",
+        "missingItems": [],
+        "recommendedNextSteps": [
+          "Proceed to verification"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-EVAL-INELIGIBLE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "operation": "evaluate_eligibility",
+      "request_contract": {
+        "org": "Small Start Co",
+        "aspects": [
+          "financial",
+          "technical",
+          "operational",
+          "documentation"
+        ]
+      },
+      "response_contract": {
+        "eligible": false,
+        "riskLevel": "high",
+        "decisionReason": "Insufficient financial capacity and no technical security capability.",
+        "missingItems": [
+          "security_certification",
+          "financial_statement"
+        ],
+        "recommendedNextSteps": [
+          "Strengthen technical capability",
+          "Submit audited financials"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-SHEETS-INITIAL",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_initial_row",
+      "request_contract": {
+        "contactEmail_present": true,
+        "intake_status": "received"
+      },
+      "response_contract": {
+        "row_appended": true,
+        "row_number": 101
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-SHEETS-AUDIT",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_audit_row",
+      "request_contract": {
+        "reason": "incomplete_or_malformed"
+      },
+      "response_contract": {
+        "row_appended": true,
+        "row_number": 55
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-SHEETS-UPDATE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_eligibility_status",
+      "request_contract": {
+        "key_field": "contactEmail",
+        "status": "ineligible"
+      },
+      "response_contract": {
+        "updated": true,
+        "updated_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-GMAIL-COMPLIANCE",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "notify_compliance_team",
+      "request_contract": {
+        "recipient": "compliance@internal.example.com",
+        "eligible": true
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "gmail-c-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DPDP-GMAIL-REJECT",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_rejection_email",
+      "request_contract": {
+        "to": "owner@small-start.example.com",
+        "lists_issues": true
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "gmail-r-0002"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-ELIGIBLE-APPROVED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-DPDP-ELIGIBLE"
+      ],
+      "mock_ids": [
+        "M-DPDP-SHEETS-INITIAL",
+        "M-DPDP-EVAL-ELIGIBLE",
+        "M-DPDP-GMAIL-COMPLIANCE",
+        "M-DPDP-SHEETS-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-ELIG-1",
+          "target": "exec_log.googleSheets.append_initial_row.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每次处理均须先写入初始受理记录"
+        },
+        {
+          "assertion_id": "A-ELIG-2",
+          "target": "exec_log.lmChatAzureOpenAi.evaluate_eligibility.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "字段齐备的申请必须进入资格评估"
+        },
+        {
+          "assertion_id": "A-ELIG-3",
+          "target": "exec_log.lmChatAzureOpenAi.evaluate_eligibility.response.eligible",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "财务、技术、运营与材料均达标的申请应判定合格"
+        },
+        {
+          "assertion_id": "A-ELIG-4",
+          "target": "exec_log.gmail.notify_compliance_team.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "合格的申请必须通知合规团队可进入核验"
+        },
+        {
+          "assertion_id": "A-ELIG-5",
+          "target": "exec_log.googleSheets.update_eligibility_status.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "最终必须以申请人联系邮箱为标识更新登记表的资格状态"
+        },
+        {
+          "assertion_id": "A-ELIG-6",
+          "target": "exec_log.googleSheets.update_eligibility_status.request.key_field",
+          "operator": "equals",
+          "expected": "contactEmail",
+          "rationale": "登记表更新必须使用申请人联系邮箱作为标识"
+        },
+        {
+          "assertion_id": "A-ELIG-7",
+          "target": "exec_log.gmail.send_rejection_email.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "合格的申请不得发送拒绝邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-INELIGIBLE-REJECTED",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-DPDP-INELIGIBLE"
+      ],
+      "mock_ids": [
+        "M-DPDP-SHEETS-INITIAL",
+        "M-DPDP-EVAL-INELIGIBLE",
+        "M-DPDP-GMAIL-REJECT",
+        "M-DPDP-SHEETS-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-REJ-1",
+          "target": "exec_log.lmChatAzureOpenAi.evaluate_eligibility.response.eligible",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "财务与技术能力不足的申请应判定不合格"
+        },
+        {
+          "assertion_id": "A-REJ-2",
+          "target": "exec_log.gmail.send_rejection_email.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "不合格的申请必须向申请人发送拒绝邮件"
+        },
+        {
+          "assertion_id": "A-REJ-3",
+          "target": "exec_log.gmail.send_rejection_email.request.to",
+          "operator": "equals",
+          "expected": "owner@small-start.example.com",
+          "rationale": "拒绝邮件必须发送到申请人联系邮箱"
+        },
+        {
+          "assertion_id": "A-REJ-4",
+          "target": "exec_log.gmail.send_rejection_email.request.lists_issues",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "拒绝邮件必须列出存在的问题与重新提交要求"
+        },
+        {
+          "assertion_id": "A-REJ-5",
+          "target": "exec_log.googleSheets.update_eligibility_status.request.status",
+          "operator": "equals",
+          "expected": "ineligible",
+          "rationale": "登记表中该申请人的最终资格状态必须更新为不合格"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MISSING-FIELDS-AUDITED",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-DPDP-MISSING-FIELDS"
+      ],
+      "mock_ids": [
+        "M-DPDP-SHEETS-AUDIT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-MISS-1",
+          "target": "exec_log.googleSheets.append_audit_row.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "字段缺失或格式不完整的申请必须记入审计记录表"
+        },
+        {
+          "assertion_id": "A-MISS-2",
+          "target": "exec_log.googleSheets.append_audit_row.request.reason",
+          "operator": "equals",
+          "expected": "incomplete_or_malformed",
+          "rationale": "审计记录应标注原因以支持后续跟进与重新提交"
+        },
+        {
+          "assertion_id": "A-MISS-3",
+          "target": "exec_log.lmChatAzureOpenAi.evaluate_eligibility.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "字段缺失的申请不得进入资格评估"
+        },
+        {
+          "assertion_id": "A-MISS-4",
+          "target": "exec_log.gmail.send_rejection_email.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "字段缺失的申请只记入审计，不进入拒绝邮件流程"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖字段校验分流（齐备进入资格评估、缺失记入审计表）、合格通知合规团队、不合格发送拒绝邮件、以联系邮箱为标识更新最终资格状态。注意材料缺失不作为拒绝条件（F-DPDP-INELIGIBLE 材料列表为空仍走评估流程）。外部依赖（LLM 资格评估、Google Sheets 初始/审计/更新、Gmail 两类邮件）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言均为调用次数、请求字段相等、响应字段相等与存在性检查。"
+}

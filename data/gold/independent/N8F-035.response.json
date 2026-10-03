@@ -1,0 +1,361 @@
+{
+  "task_id": "N8F-035",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "3e626d1bed7c5b59603d5c5aa55f0d2481c1dfdf3e699586c8338507d110e8fa",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收视频制作请求（Reddit 链接与配音参数）",
+      "node_type": "code",
+      "operation_family": "request_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "video_request",
+          "type": "object",
+          "description": "制作请求：Reddit 帖子链接、配音音色、语速、目标视频时长"
+        }
+      ],
+      "native_evidence": ["Webhook"],
+      "requirement_evidence": ["系统以一条 Reddit 帖子链接为输入，并接收配音音色、语速与目标视频时长等参数"],
+      "rationale": "请求接收为确定性入口行为，判为 code；作为流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取 Reddit 帖子及评论",
+      "node_type": "code",
+      "operation_family": "content_fetching",
+      "inputs": [
+        {
+          "name": "video_request",
+          "type": "object",
+          "description": "含帖子链接的制作请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reddit_content",
+          "type": "object",
+          "description": "Reddit 帖子正文与评论数据"
+        }
+      ],
+      "native_evidence": ["get reddit token", "get reddit thread", "Convert url to reddit api url", "combine token and url", "Limit comments length"],
+      "requirement_evidence": ["系统获取该 Reddit 帖子及其评论"],
+      "rationale": "API 鉴权、地址转换与帖子获取为确定性外部调用，判为 code；评论长度限制折叠进节点契约。"
+    },
+    {
+      "node_id": "n3",
+      "label": "将帖子整理为结构化片段（含素材检索词）",
+      "node_type": "semantic",
+      "operation_family": "content_segmentation",
+      "inputs": [
+        {
+          "name": "reddit_content",
+          "type": "object",
+          "description": "Reddit 帖子与评论数据"
+        },
+        {
+          "name": "video_request",
+          "type": "object",
+          "description": "目标视频时长等参数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clips",
+          "type": "object[]",
+          "description": "结构化片段列表，每片段含文本与用于检索库存素材的检索词"
+        }
+      ],
+      "native_evidence": ["OpenAI (ChatGPT)", "Split Clips"],
+      "requirement_evidence": ["使用语言模型将整个帖子整理为若干结构化片段", "为每个片段生成用于检索库存素材的检索词"],
+      "rationale": "片段整理与检索词生成为开放文本生成，判为 semantic；检索词按需求声明随片段结构化输出折叠进本节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "查询匹配的竖版库存视频素材",
+      "node_type": "code",
+      "operation_family": "stock_footage_query",
+      "inputs": [
+        {
+          "name": "clips",
+          "type": "object[]",
+          "description": "片段（含检索词）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "broll_videos",
+          "type": "object[]",
+          "description": "各片段匹配的竖版库存视频素材"
+        }
+      ],
+      "native_evidence": ["Pexels Query", "Extract 3 videos per item", "Combine 3 into 1", "Get video urls"],
+      "requirement_evidence": ["从库存视频素材服务查询与之匹配的竖版视频"],
+      "rationale": "调用库存素材服务查询与结果整理为确定性外部动作与变换，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成片段配音音频",
+      "node_type": "code",
+      "operation_family": "tts_generation",
+      "inputs": [
+        {
+          "name": "clips",
+          "type": "object[]",
+          "description": "片段文本（配音对象）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tts_audio",
+          "type": "binary[]",
+          "description": "各片段的配音音频"
+        }
+      ],
+      "native_evidence": ["Generate TTS", "Split Out TTS settings", "Merge clips and TTS settings", "Code"],
+      "requirement_evidence": ["随后为每个片段生成配音音频"],
+      "rationale": "TTS 为外部服务的确定性契约调用（文本+音色+语速→音频），按规则判为 code；参数拆分折叠进节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成与音频同步的字幕",
+      "node_type": "code",
+      "operation_family": "subtitle_generation",
+      "inputs": [
+        {
+          "name": "clips",
+          "type": "object[]",
+          "description": "片段文本（字幕内容）"
+        },
+        {
+          "name": "tts_audio",
+          "type": "binary[]",
+          "description": "配音音频（对齐依据）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "subtitles",
+          "type": "object[]",
+          "description": "与音频时间轴同步的字幕"
+        }
+      ],
+      "native_evidence": ["Get audio URLs", "If Status=Ready then continue", "create timeline with video"],
+      "requirement_evidence": ["并生成与音频同步的字幕"],
+      "rationale": "由音频时长与文本确定性对齐生成字幕为确定性变换，判为 code；音频就绪等待折叠进节点契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "提交素材与音频渲染 720×1280 竖版视频",
+      "node_type": "code",
+      "operation_family": "video_rendering",
+      "inputs": [
+        {
+          "name": "broll_videos",
+          "type": "object[]",
+          "description": "库存视频素材"
+        },
+        {
+          "name": "tts_audio",
+          "type": "binary[]",
+          "description": "配音音频"
+        },
+        {
+          "name": "subtitles",
+          "type": "object[]",
+          "description": "同步字幕"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rendered_video",
+          "type": "object",
+          "description": "渲染完成的 720×1280 竖版视频（含访问信息）"
+        }
+      ],
+      "native_evidence": ["Get upload links", "Upload videos to ShotStack", "Upload TTS to Shotstack", "Merge media, audio and subtitles", "create timeline with video", "Render the video", "Wait", "Get video link", "If rendered", "Wait 10s"],
+      "requirement_evidence": ["素材与音频提交至视频渲染服务后，渲染输出一段 720×1280 的竖版视频，其中包含同步的配音、字幕与 B-roll 画面"],
+      "rationale": "素材上传、时间轴组装与渲染提交为确定性外部动作，判为 code；渲染状态等待按需求声明的'渲染输出'折叠进节点契约，终止条件为渲染完成，max_iterations=20。"
+    },
+    {
+      "node_id": "n8",
+      "label": "返回成品视频访问链接",
+      "node_type": "terminal",
+      "operation_family": "result_delivery",
+      "inputs": [
+        {
+          "name": "rendered_video",
+          "type": "object",
+          "description": "渲染完成的成品视频"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Respond to Webhook", "Get the URL"],
+      "requirement_evidence": ["最终返回成品视频的访问链接"],
+      "rationale": "返回成品链接是用户可见的最终完成动作，判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到请求后获取 Reddit 帖子。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "帖子获取后由语言模型整理片段。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段就绪后检索库存素材。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段就绪后生成配音音频。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频生成后生成同步字幕。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "素材就绪后提交渲染。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "字幕就绪后提交渲染。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "渲染完成后返回成品链接。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video_request",
+      "condition": null,
+      "rationale": "帖子获取消费请求中的链接。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "reddit_content",
+      "condition": null,
+      "rationale": "片段整理消费帖子与评论。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n1",
+      "target": "n3",
+      "variable": "video_request",
+      "condition": null,
+      "rationale": "片段整理消费目标时长参数。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "clips",
+      "condition": null,
+      "rationale": "素材检索消费片段检索词。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "clips",
+      "condition": null,
+      "rationale": "配音生成消费片段文本。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n3",
+      "target": "n6",
+      "variable": "clips",
+      "condition": null,
+      "rationale": "字幕生成消费片段文本。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "tts_audio",
+      "condition": null,
+      "rationale": "字幕与音频时间轴对齐。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n4",
+      "target": "n7",
+      "variable": "broll_videos",
+      "condition": null,
+      "rationale": "渲染提交消费库存素材。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n5",
+      "target": "n7",
+      "variable": "tts_audio",
+      "condition": null,
+      "rationale": "渲染提交消费配音音频。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n6",
+      "target": "n7",
+      "variable": "subtitles",
+      "condition": null,
+      "rationale": "渲染提交消费同步字幕。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n7",
+      "target": "n8",
+      "variable": "rendered_video",
+      "condition": null,
+      "rationale": "链接返回消费成品视频。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n8"],
+  "confidence": 0.8,
+  "notes": "关键取舍：(1) 检索词生成按需求'为每个片段生成用于检索库存素材的检索词'折叠进片段整理节点（原生图同样由语言模型输出驱动 Pexels 查询）；(2) TTS 判为 code（外部服务确定性契约），而非沿用原生 discovery class 的 semantic 标记；(3) 渲染状态轮询（Wait/If rendered/Get video link）未在需求中显式声明，按'渲染输出'折叠进渲染节点契约，终止条件渲染完成，max_iterations=20；(4) 原生的 Merge/Rename Keys/等待节点等中间实现细节未纳入 Gold。"
+}

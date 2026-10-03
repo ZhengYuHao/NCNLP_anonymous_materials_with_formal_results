@@ -1,0 +1,265 @@
+{
+  "task_id": "N8F-062",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "d84cb171fbc7b41193178c534f0b6f810ac735afd0b4252578facc12af3a3d97",
+  "fixtures": [
+    {
+      "fixture_id": "F-FIVE-TABS-STABLE",
+      "purpose": "正常用例：五个标签页最新数据行，收入环比下降 5%（未超 10%），验证正常简报且不触发紧急告警",
+      "input_data": {
+        "sheet_tabs": {
+          "CashFlow": {"latest_row": {"date": "2026-09-01", "cash_balance": 500000}},
+          "Revenue": {"latest_row": {"date": "2026-09-01", "revenue": 190000, "previous": 200000}},
+          "Payroll": {"latest_row": {"date": "2026-09-01", "payroll": 80000}},
+          "Subscriptions": {"latest_row": {"date": "2026-09-01", "sub_revenue": 45000}},
+          "Expenses": {"latest_row": {"date": "2026-09-01", "expenses": 120000}}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FIVE-TABS-REVENUE-DROP",
+      "purpose": "正常用例（告警路径）：收入环比下降 15%（超 10%），验证额外触发 Telegram 紧急告警",
+      "input_data": {
+        "sheet_tabs": {
+          "CashFlow": {"latest_row": {"date": "2026-09-01", "cash_balance": 400000}},
+          "Revenue": {"latest_row": {"date": "2026-09-01", "revenue": 170000, "previous": 200000}},
+          "Payroll": {"latest_row": {"date": "2026-09-01", "payroll": 80000}},
+          "Subscriptions": {"latest_row": {"date": "2026-09-01", "sub_revenue": 40000}},
+          "Expenses": {"latest_row": {"date": "2026-09-01", "expenses": 130000}}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FIVE-TABS-EMPTY",
+      "purpose": "负例：某个标签页无最新数据行，验证系统拒绝生成简报并触发 Slack 错误告警",
+      "input_data": {
+        "sheet_tabs": {
+          "CashFlow": {"latest_row": {"date": "2026-09-01", "cash_balance": 500000}},
+          "Revenue": {"latest_row": null},
+          "Payroll": {"latest_row": {"date": "2026-09-01", "payroll": 80000}},
+          "Subscriptions": {"latest_row": {"date": "2026-09-01", "sub_revenue": 45000}},
+          "Expenses": {"latest_row": {"date": "2026-09-01", "expenses": 120000}}
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-BRIEFING",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_executive_briefing",
+      "request_contract": {
+        "kpi_summary": "kpi_summary_data"
+      },
+      "response_contract": {
+        "briefing": "📊 Daily Financial Briefing\nRevenue: $190,000 (-5.0%)\nCash runway: 4.2 months\nStatus: Stable"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NOTION-CREATE",
+      "dependency_type": "n8n-nodes-base.notion",
+      "operation": "create_database_page",
+      "request_contract": {
+        "content": "telegram_formatted_briefing"
+      },
+      "response_contract": {
+        "page_id": "notion-page-001",
+        "created": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM-SEND",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "tg-exec-001",
+        "text": "briefing_text"
+      },
+      "response_contract": {
+        "message_id": 5001,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM-ALERT",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_critical_alert",
+      "request_contract": {
+        "chat_id": "tg-exec-001",
+        "text": "critical_revenue_alert"
+      },
+      "response_contract": {
+        "message_id": 5002,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ERROR",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_error_alert",
+      "request_contract": {
+        "channel": "#fin-ops",
+        "text": "workflow_error"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "9876543210.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-STABLE-BRIEFING",
+      "kind": "positive",
+      "fixture_ids": ["F-FIVE-TABS-STABLE"],
+      "mock_ids": ["M-LLM-BRIEFING", "M-NOTION-CREATE", "M-TELEGRAM-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-SB-1",
+          "target": "exec_log.sheets_read",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "需求要求从五个标签页读取最新数据行，必须全部读取"
+        },
+        {
+          "assertion_id": "A-SB-2",
+          "target": "kpi.revenue_total",
+          "operator": "equals",
+          "expected": 190000,
+          "rationale": "收入合计必须等于标签页最新行数值"
+        },
+        {
+          "assertion_id": "A-SB-3",
+          "target": "kpi.revenue_change_pct",
+          "operator": "equals",
+          "expected": -5.0,
+          "rationale": "收入百分比变化必须按（当前-上期）/上期计算，结果为 -5.0"
+        },
+        {
+          "assertion_id": "A-SB-4",
+          "target": "kpi.cash_runway_months",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求计算现金可支撑时长（cash runway），KPI 必须包含该指标"
+        },
+        {
+          "assertion_id": "A-SB-5",
+          "target": "kpi.status_label",
+          "operator": "equals",
+          "expected": "Stable",
+          "rationale": "状态标签必须按指标结果生成且与固定模型输出一致"
+        },
+        {
+          "assertion_id": "A-SB-6",
+          "target": "exec_log.notion.create_database_page.created",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "简报必须保存为 Notion 数据库页面"
+        },
+        {
+          "assertion_id": "A-SB-7",
+          "target": "exec_log.telegram.send_message.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "简报必须发送到指定 Telegram 会话"
+        },
+        {
+          "assertion_id": "A-SB-8",
+          "target": "exec_log.telegram.alert_sent",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "收入下降 5% 未超过 10%，不得触发紧急告警"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REVENUE-DROP-ALERT",
+      "kind": "positive",
+      "fixture_ids": ["F-FIVE-TABS-REVENUE-DROP"],
+      "mock_ids": ["M-LLM-BRIEFING", "M-NOTION-CREATE", "M-TELEGRAM-SEND", "M-TELEGRAM-ALERT"],
+      "assertions": [
+        {
+          "assertion_id": "A-RD-1",
+          "target": "kpi.revenue_change_pct",
+          "operator": "equals",
+          "expected": -15.0,
+          "rationale": "收入下降 15% 必须被正确计算"
+        },
+        {
+          "assertion_id": "A-RD-2",
+          "target": "exec_log.revenue_drop_exceeds_10",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "下降 15% 超过 10% 阈值，必须判定触发告警条件"
+        },
+        {
+          "assertion_id": "A-RD-3",
+          "target": "exec_log.telegram.alert_sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求收入下降超过 10% 时额外发送紧急告警消息"
+        },
+        {
+          "assertion_id": "A-RD-4",
+          "target": "exec_log.telegram.alert_message_id",
+          "operator": "equals",
+          "expected": 5002,
+          "rationale": "紧急告警必须作为独立消息发送，消息 ID 与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-RD-5",
+          "target": "exec_log.telegram.send_message.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "正常简报仍须发送到 Telegram 会话"
+        }
+      ]
+    },
+    {
+      "case_id": "C-EMPTY-TAB-ERROR",
+      "kind": "negative",
+      "fixture_ids": ["F-FIVE-TABS-EMPTY"],
+      "mock_ids": ["M-SLACK-ERROR"],
+      "assertions": [
+        {
+          "assertion_id": "A-ET-1",
+          "target": "exec_log.slack.error_alert.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求执行中任一环节失败时向 Slack 发送错误告警"
+        },
+        {
+          "assertion_id": "A-ET-2",
+          "target": "exec_log.error_reason",
+          "operator": "contains",
+          "expected": "Revenue",
+          "rationale": "错误告警必须指明缺失数据的标签页，便于定位故障环节"
+        },
+        {
+          "assertion_id": "A-ET-3",
+          "target": "exec_log.notion.created",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "数据缺失导致流程失败时不得生成 Notion 页面"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常简报（5 标签页读取、KPI 计算、Notion 保存、Telegram 发送、收入下降 5% 不告警）、收入下降 15% 触发紧急告警，以及标签页缺数据触发 Slack 错误告警。OpenAI 简报、Notion、Telegram、Slack 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数值相等、布尔值相等、字段存在与内容包含等可计算条件。"
+}

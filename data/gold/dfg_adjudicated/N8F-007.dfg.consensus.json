@@ -1,0 +1,179 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-007",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "待分析话题列表",
+        "待分析话题列表及取样参数"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g5",
+      "data_items": [
+        "阈值参数（取样帖数、最低播放量、提升幅度）",
+        "提升幅度与帖子数量等阈值参数"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g6",
+      "data_items": [
+        "冷却期参数"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-007-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冷却过滤须读取统一配置中的冷却期参数，才能剔除冷却窗口内已报送的标签或配乐，属真实数据消费。",
+      "confidence": 0.85,
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "就绪快照中的帖子数据",
+        "抓取快照中的帖子数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "每篇帖子的互动率数据",
+        "每篇帖子的互动率及帖子数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g11",
+      "data_items": [
+        "互动指标数据与表现最好帖子链接"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-007-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求明确摘要包含指标数据和表现最好帖子的链接，Slack 摘要组装真实消费聚合筛选产出的指标与最佳帖子信息。",
+      "confidence": 0.8,
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "达标的标签/配乐分组",
+        "达标的标签与配乐分组"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "入选标签下表现最好帖子的文案",
+        "入选标签及其表现最好帖子的文案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "冷却过滤后的入选标签/配乐及互动指标"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-007-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "排序的最终列表即冷却过滤后的入选标签/配乐及其互动指标，排序步骤真实读取过滤结果。",
+      "confidence": 0.75,
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "各标签的内容形式、切入角度与主题"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-007-D04",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "提取出的内容形式、切入角度与主题构成最终列表条目内容并随排序输出，排序步骤读取该提取结果。",
+      "confidence": 0.7,
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g9",
+      "data_items": [
+        "提取的内容形式、切入角度与主题"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-007-D05",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "策略简报围绕各标签的内容形式、切入角度与主题生成，真实消费提取结果。",
+      "confidence": 0.7,
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g10",
+      "data_items": [
+        "排序后的入选标签/配乐记录",
+        "每个入选标签/配乐对应的记录行"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g11",
+      "data_items": [
+        "排名摘要所需的指标数据与最佳帖子链接",
+        "按排名排列的标签/配乐列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "排序后的最终列表",
+        "排序后的最终标签列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.7826086956521738,
+    "shared_edge_count": 9,
+    "adjudicated_dispute_count": 5,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

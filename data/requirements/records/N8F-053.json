@@ -1,0 +1,89 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-053",
+  "source_id": "n8n:11121",
+  "workflow_sha256": "dbbed44b585298afb08c775098f6b10ea6c8571283e0c3f52dcdeb5388fc78fb",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "5b168f54febaf6bb7458152bdd0b6ed7d7a86fc4e683009e4a2e7ba21d3ad69f",
+  "requirement": {
+    "requirement_text": "系统把 Telegram 变成撰写并发布 X 长帖的助手。\n\n1）用户在聊天中发送一条想法，可以是文本消息，也可以是语音消息。\n2）若消息中没有文本内容，则按语音处理：先取得该语音内容，再通过语音转写服务转换为文本。\n3）由语言模型分析该想法、起草 X 长帖内容，并依据用户在聊天中提出的修改意见进行修订；修订时保留最近若干轮对话上下文，以便理解“改短一些”这类指代性要求。\n4）将模型生成的帖子草稿发回用户的 Telegram 聊天，供其审阅与反馈，形成多轮协作编辑。\n5）当用户在聊天中给出批准关键词（例如“ok”或“approved”）时，视为批准发布；此时从结果中提取出可直接发布的干净正文。\n6）将定稿内容发布到用户已关联的 X 账号。\n7）发布后向发布服务查询帖子状态，判断其处于已发布、处理中还是失败：状态为已发布时，向 Telegram 发送确认消息与已发布帖子的直链；状态为处理中时，短暂等待后再次查询状态，直至有结果；若上传或处理过程中出错，则向 Telegram 发送错误通知。",
+    "source_spans": [
+      {
+        "start": 47,
+        "end": 164,
+        "text": "This n8n workflow transforms your Telegram messenger into a personal assistant for creating and publishing X-Threads."
+      },
+      {
+        "start": 165,
+        "end": 346,
+        "text": "You can simply send an idea as a text or voice message, collaboratively edit the AI’s suggestion in a chat, and then publish the finished thread directly to X just by saying “Okay.”"
+      },
+      {
+        "start": 1721,
+        "end": 2015,
+        "text": "Checks the incoming message for text. If text is empty, it proceeds to voice handling.\nGet Voice File\tIf a voice note is detected, this node downloads the raw audio file from Telegram.\nSpeech to Text\tThis node uses the OpenAI Whisper API to convert the downloaded audio file into a text string."
+      },
+      {
+        "start": 2194,
+        "end": 2860,
+        "text": "It analyzes your request, applies the “System Prompt” rules, drafts the post, and handles revisions based on your feedback.\nOpenAI Chat Model\tDefines the large language model (LLM) used for generating and revising the post.\nWindow Buffer Memory\tA memory buffer that stores the last turns of the conversation, allowing the AI to maintain context when you request changes (e.g., “Make it shorter”).\nCheck if Approved\tThis crucial node detects the specific JSON structure the AI outputs only when you provide an approval keyword (like “ok” or “approved”).\nPost Suggestion Or Ask For Approval\tSends the AI’s post draft back to your Telegram chat for review and feedback."
+      },
+      {
+        "start": 3241,
+        "end": 4186,
+        "text": "Parses the incoming JSON, extracting only the clean text ready for publishing.\nCreate post with Blotato\tUses the Blotato API to upload the finalized content to your connected X account.\nGive Blotat 5s :)\tA brief pause to allow the publishing service to start processing the request.\nCheck post status\tChecks back with Blotato to determine if the post is published, in progress, or failed.\nPublished?\tChecks if the status is “published” to send the success message.\nIn Progress?\tChecks if the post is still being processed. If so, it loops back to the next wait period.\nGive Blotat other 5s :)\tPauses the workflow before re-checking the post status, preventing unnecessary API calls.\nFinal Notification\nNode Name\tRole in Workflow\nSend a confirmation message\tSends a confirmation message and the direct link to the published X post.\nSend an error message\tSends a notification if the post failed to upload or encountered an error during processing."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户在 Telegram 中发送的文本消息或语音消息",
+        "用户在聊天中提出的修改意见与批准回复"
+      ],
+      "conditions": [
+        "消息中没有文本内容时按语音处理并转写为文本",
+        "仅当用户回复批准关键词（如“ok”或“approved”）时才视为批准发布",
+        "发布状态为已发布时发送成功通知与帖子直链",
+        "发布状态为处理中时等待后再次查询状态",
+        "上传或处理出错时发送错误通知"
+      ],
+      "allowed_actions": [
+        "将语音消息转写为文本",
+        "使用语言模型起草并修订长帖内容",
+        "将草稿发回 Telegram 供审阅与反馈",
+        "在批准后提取可直接发布的正文",
+        "将定稿内容发布到 X 账号",
+        "查询发布状态并按需再次查询",
+        "向 Telegram 发送确认消息或错误通知"
+      ],
+      "visible_outcomes": [
+        "X 账号上发布的长帖",
+        "Telegram 中收到的帖子草稿、确认消息与已发布帖子的直链",
+        "发布失败时 Telegram 收到的错误通知"
+      ],
+      "failure_behavior": [
+        "帖子上传或处理过程中出错时，向 Telegram 发送错误通知"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-053.packet.json",
+    "packet_sha256": "4136c222f1be78552b701095faad52863dc286911120740b2bb88aceb4737487",
+    "public_description_sha256": "2fd4be7837ee88b920f27a447a9958875297fc620f247a24da1865709443cfa7"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-053.response.json",
+    "verification_response_sha256": "e5394c12b6f38b199b46c10ae42b80bb04c95109210810d42216aa7e6c5914ff",
+    "decision": "accept"
+  },
+  "formal_index": 64
+}

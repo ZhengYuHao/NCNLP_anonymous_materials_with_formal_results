@@ -1,0 +1,15 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-024",
+  "case_id": "C-NEG-INVALID-BOOKING",
+  "kind": "negative",
+  "input_data": {
+    "guest_name": "Bob",
+    "guest_email": "",
+    "property": "Sea House",
+    "check_in": "2026-09-20",
+    "check_out": "2026-09-18",
+    "host_email": "host@example.com"
+  },
+  "input_sha256": "676C80C312703BB05CC7769997E9C6FCD77921BE99440F722866FF15E50E82ED"
+}

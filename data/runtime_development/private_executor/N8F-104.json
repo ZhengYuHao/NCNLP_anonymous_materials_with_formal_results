@@ -1,0 +1,175 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-104",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-RSS",
+      "dependency_type": "rssFeedReadTrigger",
+      "operation": "read_feed",
+      "request_contract": {},
+      "response_contract": {
+        "entries": [
+          {
+            "post_id": 201,
+            "title": "RSS Post One",
+            "content": "Content of post one about automation."
+          },
+          {
+            "post_id": 202,
+            "title": "RSS Post Two",
+            "content": "Content of post two about low-code."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-TAGS",
+      "dependency_type": "wordpress",
+      "operation": "list_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          {
+            "id": 1,
+            "name": "AI"
+          },
+          {
+            "id": 2,
+            "name": "n8n"
+          },
+          {
+            "id": 3,
+            "name": "Workflow"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TAGS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          "AI",
+          "Automation",
+          "Low-code"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TAGS-EXIST",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_tags",
+      "request_contract": {},
+      "response_contract": {
+        "tags": [
+          "AI",
+          "n8n"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-AUTOMATION",
+      "dependency_type": "wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Automation"
+      },
+      "response_contract": {
+        "tag": {
+          "id": 11,
+          "name": "Automation"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-LOWCODE",
+      "dependency_type": "wordpress",
+      "operation": "create_tag",
+      "request_contract": {
+        "name": "Low-code"
+      },
+      "response_contract": {
+        "tag": {
+          "id": 12,
+          "name": "Low-code"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-UPDATE",
+      "dependency_type": "wordpress",
+      "operation": "update_post",
+      "request_contract": {},
+      "response_contract": {
+        "post": {
+          "id": 123,
+          "tags": [
+            1,
+            11,
+            12
+          ]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-MANUAL",
+      "fixture_ids": [
+        "F-POST-MANUAL",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-WP-TAGS",
+        "M-LLM-TAGS",
+        "M-WP-CREATE-AUTOMATION",
+        "M-WP-CREATE-LOWCODE",
+        "M-WP-UPDATE"
+      ]
+    },
+    {
+      "case_id": "C-POS-RSS",
+      "fixture_ids": [
+        "F-RSS",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-RSS",
+        "M-WP-TAGS",
+        "M-LLM-TAGS",
+        "M-WP-CREATE-AUTOMATION",
+        "M-WP-CREATE-LOWCODE",
+        "M-WP-UPDATE"
+      ]
+    },
+    {
+      "case_id": "C-BOUND-ALL-EXIST",
+      "fixture_ids": [
+        "F-POST-MANUAL",
+        "F-EXISTING-TAGS"
+      ],
+      "mock_ids": [
+        "M-WP-TAGS",
+        "M-LLM-TAGS-EXIST",
+        "M-WP-UPDATE"
+      ]
+    }
+  ]
+}

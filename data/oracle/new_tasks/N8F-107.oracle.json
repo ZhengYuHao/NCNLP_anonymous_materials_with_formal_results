@@ -1,0 +1,321 @@
+{
+  "task_id": "N8F-107",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "140a964cf62073f331a34c55c77f43f960ee3f146cfdb1f61fbd02fc98037fc3",
+  "fixtures": [
+    {
+      "fixture_id": "F-PROMPT-WITH-SCHEMA",
+      "purpose": "正常用例：POST 请求携带自然语言指令与合法 JSON Schema",
+      "input_data": {
+        "prompt": "Find the latest AI news and list the top 3 stories with their titles",
+        "output_schema": {
+          "type": "object",
+          "properties": {
+            "stories": {
+              "type": "array",
+              "items": {"type": "object", "properties": {"title": {"type": "string"}}}
+            }
+          }
+        }
+      }
+    },
+    {
+      "fixture_id": "F-PROMPT-NO-SCHEMA",
+      "purpose": "正常用例：仅提供自然语言指令，未提供输出结构",
+      "input_data": {
+        "prompt": "Summarize the current state of electric vehicle sales"
+      }
+    },
+    {
+      "fixture_id": "F-SCHEMA-EMPTY",
+      "purpose": "边界用例：输出结构为空对象，验证回退到宽松默认结构",
+      "input_data": {
+        "prompt": "Find pricing pages of CRM software",
+        "output_schema": {}
+      }
+    },
+    {
+      "fixture_id": "F-BAD-SCHEMA-STRING",
+      "purpose": "负例：输出结构是字符串而非 JSON 对象，验证返回错误响应",
+      "input_data": {
+        "prompt": "Scrape product prices",
+        "output_schema": "oops"
+      }
+    },
+    {
+      "fixture_id": "F-BAD-SCHEMA-NO-TYPE",
+      "purpose": "负例：输出结构缺少 type 属性，验证返回错误响应",
+      "input_data": {
+        "prompt": "Scrape product prices",
+        "output_schema": {
+          "properties": {"name": {"type": "string"}}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-BAD-SCHEMA-TYPE",
+      "purpose": "负例：输出结构 type 取值非法，验证返回错误响应",
+      "input_data": {
+        "prompt": "Scrape product prices",
+        "output_schema": {
+          "type": "invalid"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-FIRECRAWL-SEARCH",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "search",
+      "request_contract": {
+        "query": "string"
+      },
+      "response_contract": {
+        "results": [
+          {"url": "https://news.example.com/a", "title": "AI story one"},
+          {"url": "https://news.example.com/b", "title": "AI story two"},
+          {"url": "https://news.example.com/c", "title": "AI story three"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FIRECRAWL-SCRAPE",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "scrape",
+      "request_contract": {
+        "url": "string"
+      },
+      "response_contract": {
+        "content": "Clean structured page content",
+        "metadata": {"title": "AI story"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FIRECRAWL-INTERACT",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "interact",
+      "request_contract": {
+        "action": "string"
+      },
+      "response_contract": {
+        "status": "completed",
+        "extracted_data": {"button_label": "Load more"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-AGENT",
+      "dependency_type": "lmChatOpenRouter",
+      "operation": "research_and_extract",
+      "request_contract": {
+        "prompt": "string"
+      },
+      "response_contract": {
+        "stories": [
+          {"title": "AI story one"},
+          {"title": "AI story two"},
+          {"title": "AI story three"}
+        ],
+        "summary": "EV sales are growing in all major markets."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-STRUCTURED-PARSER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "operation": "format_to_schema",
+      "request_contract": {
+        "schema": "object"
+      },
+      "response_contract": {
+        "formatted": true,
+        "output": {"stories": [{"title": "AI story one"}, {"title": "AI story two"}, {"title": "AI story three"}]}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-WITH-SCHEMA",
+      "kind": "positive",
+      "fixture_ids": ["F-PROMPT-WITH-SCHEMA"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-FIRECRAWL-SCRAPE", "M-FIRECRAWL-INTERACT", "M-LLM-AGENT", "M-STRUCTURED-PARSER"],
+      "assertions": [
+        {
+          "assertion_id": "A-RESPONSE-OBJECT",
+          "target": "response.json",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "调用方应收到结构化的 JSON 结果"
+        },
+        {
+          "assertion_id": "A-STORIES-FIELD",
+          "target": "response.json.stories",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "返回结果必须包含所提供结构声明的 stories 字段"
+        },
+        {
+          "assertion_id": "A-STORIES-LENGTH",
+          "target": "response.json.stories",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "模拟抓取到 3 条新闻，返回数组长度应为 3"
+        },
+        {
+          "assertion_id": "A-STORIES-TITLE",
+          "target": "response.json.stories[0].title",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "数组元素必须包含非空的 title 字段，符合结构定义"
+        },
+        {
+          "assertion_id": "A-SEARCH-USED",
+          "target": "firecrawl.search.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "智能体应通过检索发现相关页面与信息来源"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-NO-SCHEMA",
+      "kind": "positive",
+      "fixture_ids": ["F-PROMPT-NO-SCHEMA"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-FIRECRAWL-SCRAPE", "M-LLM-AGENT", "M-STRUCTURED-PARSER"],
+      "assertions": [
+        {
+          "assertion_id": "A-NOSCHEMA-OBJECT",
+          "target": "response.json",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "未提供结构时调用方仍应收到一个 JSON 数据对象"
+        },
+        {
+          "assertion_id": "A-NOSCHEMA-SUMMARY",
+          "target": "response.json.summary",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "默认宽松结构下应返回包含实际研究内容的灵活对象"
+        },
+        {
+          "assertion_id": "A-NOSCHEMA-NO-ERROR",
+          "target": "response.error",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "未提供结构是正常情况，不应返回错误"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-EMPTY-SCHEMA",
+      "kind": "boundary",
+      "fixture_ids": ["F-SCHEMA-EMPTY"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-LLM-AGENT", "M-STRUCTURED-PARSER"],
+      "assertions": [
+        {
+          "assertion_id": "A-EMPTY-FALLBACK-OK",
+          "target": "response.json",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "输出结构为空时应回退到宽松默认结构并正常返回数据对象"
+        },
+        {
+          "assertion_id": "A-EMPTY-SEARCH-RAN",
+          "target": "firecrawl.search.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "空结构回退后智能体仍应正常研究并抓取网页数据"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-STRING-SCHEMA",
+      "kind": "negative",
+      "fixture_ids": ["F-BAD-SCHEMA-STRING"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-LLM-AGENT"],
+      "assertions": [
+        {
+          "assertion_id": "A-STR-ERROR-RESPONSE",
+          "target": "response.error",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "输出结构是字符串时必须返回错误响应"
+        },
+        {
+          "assertion_id": "A-STR-EXAMPLE-STRUCTURE",
+          "target": "response.error.example_schema",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "错误响应必须包含示例结构以帮助调用方修正"
+        },
+        {
+          "assertion_id": "A-STR-NO-AGENT",
+          "target": "firecrawl.search.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "结构校验失败时不得进入网页研究与抓取环节"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-MISSING-TYPE",
+      "kind": "negative",
+      "fixture_ids": ["F-BAD-SCHEMA-NO-TYPE"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-LLM-AGENT"],
+      "assertions": [
+        {
+          "assertion_id": "A-NOTYPE-ERROR",
+          "target": "response.error",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "输出结构缺少 type 属性时必须返回错误响应"
+        },
+        {
+          "assertion_id": "A-NOTYPE-NO-SEARCH",
+          "target": "firecrawl.search.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "缺少 type 的非法结构不得进入智能体处理"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID-TYPE",
+      "kind": "negative",
+      "fixture_ids": ["F-BAD-SCHEMA-TYPE"],
+      "mock_ids": ["M-FIRECRAWL-SEARCH", "M-LLM-AGENT"],
+      "assertions": [
+        {
+          "assertion_id": "A-BADTYPE-ERROR",
+          "target": "response.error",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "type 取值不在对象/数组/字符串/数字/布尔之一时必须返回错误响应"
+        },
+        {
+          "assertion_id": "A-BADTYPE-NO-SEARCH",
+          "target": "firecrawl.search.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "type 非法的结构不得进入网页研究与抓取环节"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：合法结构返回符合结构的 JSON（字段存在与数量）、无结构与空结构回退默认、字符串/缺 type/type 非法三种非法结构均在交给智能体前返回含说明与示例结构的错误响应且不触发检索。Firecrawl 检索/抓取/交互与语言模型全部确定性模拟。"
+}

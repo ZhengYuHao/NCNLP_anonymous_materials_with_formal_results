@@ -1,0 +1,395 @@
+{
+  "task_id": "N8F-056",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "3ac942fe64fa7c33357ab7ea41439ae8178e6f2497cf101396403169b859ebb7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "每 2 小时指定分钟触发的调度事件"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "每 2 小时在指定分钟触发一次"
+      ],
+      "rationale": "需求声明按固定周期定时触发，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "轮换选择 Instagram 账号",
+      "node_type": "code",
+      "operation_family": "account_selection",
+      "inputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "account",
+          "type": "object",
+          "description": "按时间段轮换选出的 Instagram 账号"
+        }
+      ],
+      "native_evidence": [
+        "Get Available Session Cookies",
+        "Extract Cookies",
+        "Select Cookie"
+      ],
+      "requirement_evidence": [
+        "按时间段从已配置的 Instagram 账号中轮换选择一个账号"
+      ],
+      "rationale": "需求声明按时间段从已配置账号中轮换选择，为确定性轮换逻辑（账号会话的具体获取方式为原生细节），判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成话题标签",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "object",
+          "description": "选出的账号"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "贴合 AI/BPA 领域的真实话题标签"
+        }
+      ],
+      "native_evidence": [
+        "Generate Random Hashtag"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成一个贴合 AI/BPA 领域的真实话题标签"
+      ],
+      "rationale": "需求声明由语言模型生成话题标签，需开放内容生成，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "抓取最近帖子",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "话题标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "按话题标签抓取的最近帖子，数量不超过配置上限"
+        }
+      ],
+      "native_evidence": [
+        "Get Hashtag Agent",
+        "Launch Agent",
+        "Get Posts"
+      ],
+      "requirement_evidence": [
+        "按该话题标签抓取最近的帖子，抓取数量不超过配置的上限"
+      ],
+      "rationale": "需求声明按话题标签抓取最近帖子并受数量上限约束，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "随机选择一条帖子",
+      "node_type": "code",
+      "operation_family": "selection",
+      "inputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "最近帖子列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "随机选中的一条帖子"
+        }
+      ],
+      "native_evidence": [
+        "Get Random Post"
+      ],
+      "requirement_evidence": [
+        "从抓取结果中随机选择一条帖子"
+      ],
+      "rationale": "需求声明从抓取结果中随机选择一条帖子，为确定性随机选择，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "查重确认帖子未点赞",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "选中的帖子"
+        },
+        {
+          "name": "liked_posts",
+          "type": "object",
+          "description": "已点赞记录中的帖子链接集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unliked_post",
+          "type": "object",
+          "description": "通过查重的帖子"
+        }
+      ],
+      "native_evidence": [
+        "Check if in List",
+        "If"
+      ],
+      "requirement_evidence": [
+        "并通过查重确认该帖子此前未被点赞过"
+      ],
+      "rationale": "需求声明查重确认帖子此前未被点赞，为确定性过滤，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成待点赞清单并上传在线存储",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "unliked_post",
+          "type": "object",
+          "description": "通过查重的帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "like_list",
+          "type": "object",
+          "description": "已上传到在线存储的待点赞清单"
+        }
+      ],
+      "native_evidence": [
+        "Create CSV Binary",
+        "Upload CSV"
+      ],
+      "requirement_evidence": [
+        "生成待点赞清单并上传至在线存储"
+      ],
+      "rationale": "需求声明生成待点赞清单并上传至在线存储，为确定性文件处理与外部写入，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "启动自动点赞",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "like_list",
+          "type": "object",
+          "description": "待点赞清单"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "like_result",
+          "type": "object",
+          "description": "自动点赞操作的执行结果"
+        }
+      ],
+      "native_evidence": [
+        "Get Autoliking Agent",
+        "Launch AL Agent",
+        "Get Response"
+      ],
+      "requirement_evidence": [
+        "随后启动自动点赞操作，对该帖子完成点赞"
+      ],
+      "rationale": "需求声明启动自动点赞操作完成点赞，为确定性外部动作，其后仍需追加记录，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "追加已点赞记录",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "like_result",
+          "type": "object",
+          "description": "点赞结果，含帖子链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Prepare Updated Data",
+        "Convert to File",
+        "Update file"
+      ],
+      "requirement_evidence": [
+        "将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞"
+      ],
+      "rationale": "需求声明把已点赞帖子链接追加到已点赞记录，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后轮换选择账号。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "选定账号后生成话题标签。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "话题标签生成后抓取帖子。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后随机选帖。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "选帖后查重。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "帖子此前未被点赞过",
+      "rationale": "未点赞过的帖子才生成清单；已点赞帖子不再处理。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "清单上传后启动自动点赞。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "点赞完成后追加已点赞记录。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "schedule_event",
+      "condition": null,
+      "rationale": "触发事件传给账号选择节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "account",
+      "condition": null,
+      "rationale": "选出的账号传给话题标签生成节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "hashtag",
+      "condition": null,
+      "rationale": "话题标签传给帖子抓取节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "recent_posts",
+      "condition": null,
+      "rationale": "最近帖子传给随机选择节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "选中的帖子传给查重节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "unliked_post",
+      "condition": null,
+      "rationale": "通过查重的帖子传给清单生成节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "like_list",
+      "condition": null,
+      "rationale": "待点赞清单传给自动点赞节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "like_result",
+      "condition": null,
+      "rationale": "点赞结果（含帖子链接）传给记录节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "账号轮换为确定性选择判 code（会话 Cookie 的获取与 LLM 选择为原生实现细节，未声明未纳入）；节流（每账号每天约 12 次）作为自动点赞动作的外部约束，不单列节点；查重分支中已点赞帖子不再处理。"
+}

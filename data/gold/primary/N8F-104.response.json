@@ -1,0 +1,252 @@
+{
+  "task_id": "N8F-104",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "b10cbe9f5c9e07d38d66b0d30ef524a4f82b52c6d329c87b956e860ae8e2e9e6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "获取文章正文与元数据",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "article",
+          "type": "object",
+          "description": "来自 RSS 订阅源或手动输入的 WordPress 文章"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article",
+          "type": "object",
+          "description": "含正文与元数据的文章"
+        }
+      ],
+      "native_evidence": [
+        "RSS Feed Trigger",
+        "Split Out",
+        "Loop over articles"
+      ],
+      "requirement_evidence": [
+        "获取文章正文与元数据",
+        "文章内容来源可以是 RSS 订阅源或手动输入。"
+      ],
+      "rationale": "需求声明获取文章正文与元数据且来源可为 RSS 或手动输入，为确定性入站获取，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成与上下文相关的标签",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "article",
+          "type": "object",
+          "description": "文章正文与元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_tags",
+          "type": "array",
+          "description": "语言模型生成的与上下文相关的标签"
+        }
+      ],
+      "native_evidence": [
+        "Generate tags for article"
+      ],
+      "requirement_evidence": [
+        "使用语言模型生成与上下文相关的标签"
+      ],
+      "rationale": "需求声明由语言模型生成与上下文相关的标签，需开放语义理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "核对 WordPress 已有标签",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "generated_tags",
+          "type": "array",
+          "description": "生成的标签"
+        },
+        {
+          "name": "existing_wp_tags",
+          "type": "array",
+          "description": "WordPress 中已存在的标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "missing_tags",
+          "type": "array",
+          "description": "WordPress 中不存在的标签"
+        },
+        {
+          "name": "existing_tags",
+          "type": "array",
+          "description": "WordPress 中已存在的标签"
+        }
+      ],
+      "native_evidence": [
+        "GET WP tags",
+        "Keep matches",
+        "Combine tag_ids",
+        "Combine slugs"
+      ],
+      "requirement_evidence": [
+        "核对 WordPress 中已存在的标签，必要时创建新标签"
+      ],
+      "rationale": "需求声明核对 WordPress 中已有标签并判断缺失项，为确定性外部读取与比对，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "创建缺失的新标签",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "missing_tags",
+          "type": "array",
+          "description": "WordPress 中不存在的标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "created_tags",
+          "type": "array",
+          "description": "在 WordPress 中新建的标签"
+        }
+      ],
+      "native_evidence": [
+        "POST WP tags",
+        "GET updated WP tags"
+      ],
+      "requirement_evidence": [
+        "必要时创建新标签"
+      ],
+      "rationale": "需求声明仅在标签不存在时创建新标签，为确定性外部写入，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "更新文章标签",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "existing_tags",
+          "type": "array",
+          "description": "已存在的标签"
+        },
+        {
+          "name": "created_tags",
+          "type": "array",
+          "description": "新建的标签"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Wordpress"
+      ],
+      "requirement_evidence": [
+        "随后用准确且经过优化的标签自动更新文章"
+      ],
+      "rationale": "需求声明用生成的标签更新文章，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取文章后生成标签。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "标签生成后核对已有标签。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "存在 WordPress 中不存在的标签",
+      "rationale": "存在缺失标签时创建新标签。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": "全部标签均已在 WordPress 中",
+      "rationale": "无缺失标签时直接更新文章。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "创建缺失标签后更新文章。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "article",
+      "condition": null,
+      "rationale": "文章正文与元数据传给标签生成节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "generated_tags",
+      "condition": null,
+      "rationale": "生成的标签传给核对节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "missing_tags",
+      "condition": null,
+      "rationale": "缺失标签传给创建节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "existing_tags",
+      "condition": null,
+      "rationale": "已存在的标签传给文章更新节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "created_tags",
+      "condition": null,
+      "rationale": "新建标签传给文章更新节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.92,
+  "notes": "内容来源（RSS 订阅源或手动输入）合并为获取文章节点；创建标签仅在存在缺失时执行（条件边），全部标签已存在时直接更新文章；输出解析器、演示子流程等原生细节未在需求中声明，未纳入。"
+}

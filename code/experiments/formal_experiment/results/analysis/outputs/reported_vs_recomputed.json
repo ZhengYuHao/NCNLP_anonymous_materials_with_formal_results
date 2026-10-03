@@ -1,0 +1,1315 @@
+{
+  "pass": true,
+  "checks": 193,
+  "deviations": 0,
+  "details": [
+    {
+      "quantity": "RQ1 stage count: Constraint retention",
+      "reported": 80,
+      "recomputed": 80,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Constraint retention",
+      "reported": [
+        95.42,
+        100.0
+      ],
+      "recomputed": [
+        95.42,
+        100.0
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Typed entities (EM)",
+      "reported": 79,
+      "recomputed": 79,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Typed entities (EM)",
+      "reported": [
+        93.25,
+        99.78
+      ],
+      "recomputed": [
+        93.25,
+        99.78
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Fact set (EM)",
+      "reported": 79,
+      "recomputed": 79,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Fact set (EM)",
+      "reported": [
+        93.25,
+        99.78
+      ],
+      "recomputed": [
+        93.25,
+        99.78
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Node assignment (EM)",
+      "reported": 78,
+      "recomputed": 78,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Node assignment (EM)",
+      "reported": [
+        91.34,
+        99.31
+      ],
+      "recomputed": [
+        91.34,
+        99.31
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Workflow relations (EM)",
+      "reported": 77,
+      "recomputed": 77,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Workflow relations (EM)",
+      "reported": [
+        89.55,
+        98.72
+      ],
+      "recomputed": [
+        89.55,
+        98.72
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Compilation + behavior",
+      "reported": 76,
+      "recomputed": 76,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Compilation + behavior",
+      "reported": [
+        87.84,
+        98.04
+      ],
+      "recomputed": [
+        87.84,
+        98.04
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage count: Actions + states (round 1)",
+      "reported": 74,
+      "recomputed": 74,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 stage Wilson CI: Actions + states (round 1)",
+      "reported": [
+        84.59,
+        96.52
+      ],
+      "recomputed": [
+        84.59,
+        96.52
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 replay consistency among 76",
+      "reported": 76,
+      "recomputed": 76,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Remove threshold",
+      "reported": 66,
+      "recomputed": 66,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Remove threshold",
+      "reported": 50,
+      "recomputed": 50,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Remove threshold",
+      "reported": 10,
+      "recomputed": 10,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Remove threshold",
+      "reported": 5,
+      "recomputed": 5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Remove threshold",
+      "reported": 1,
+      "recomputed": 1,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Invert comparison",
+      "reported": 70,
+      "recomputed": 70,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Invert comparison",
+      "reported": 52,
+      "recomputed": 52,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Invert comparison",
+      "reported": 12,
+      "recomputed": 12,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Invert comparison",
+      "reported": 4,
+      "recomputed": 4,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Invert comparison",
+      "reported": 2,
+      "recomputed": 2,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Remove action",
+      "reported": 64,
+      "recomputed": 64,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Remove action",
+      "reported": 48,
+      "recomputed": 48,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Remove action",
+      "reported": 10,
+      "recomputed": 10,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Remove action",
+      "reported": 5,
+      "recomputed": 5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Remove action",
+      "reported": 1,
+      "recomputed": 1,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Corrupt node assignment",
+      "reported": 58,
+      "recomputed": 58,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Corrupt node assignment",
+      "reported": 42,
+      "recomputed": 42,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Corrupt node assignment",
+      "reported": 12,
+      "recomputed": 12,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Corrupt node assignment",
+      "reported": 3,
+      "recomputed": 3,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Corrupt node assignment",
+      "reported": 1,
+      "recomputed": 1,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Remove control/data edge",
+      "reported": 62,
+      "recomputed": 62,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Remove control/data edge",
+      "reported": 42,
+      "recomputed": 42,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Remove control/data edge",
+      "reported": 14,
+      "recomputed": 14,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Remove control/data edge",
+      "reported": 5,
+      "recomputed": 5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Remove control/data edge",
+      "reported": 1,
+      "recomputed": 1,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Illegal type",
+      "reported": 20,
+      "recomputed": 20,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Illegal type",
+      "reported": 10,
+      "recomputed": 10,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Illegal type",
+      "reported": 10,
+      "recomputed": 10,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Illegal type",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Illegal type",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Undefined variable",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Undefined variable",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Undefined variable",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Undefined variable",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Undefined variable",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Invalid syntax",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Invalid syntax",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Invalid syntax",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Invalid syntax",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Invalid syntax",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 silent: Wrong business logic",
+      "reported": 72,
+      "recomputed": 72,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 repaired: Wrong business logic",
+      "reported": 50,
+      "recomputed": 50,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 refused: Wrong business logic",
+      "reported": 12,
+      "recomputed": 12,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 contained: Wrong business logic",
+      "reported": 7,
+      "recomputed": 7,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 escaped: Wrong business logic",
+      "reported": 3,
+      "recomputed": 3,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total silent",
+      "reported": 412,
+      "recomputed": 412,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total repaired",
+      "reported": 294,
+      "recomputed": 294,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total refused",
+      "reported": 80,
+      "recomputed": 80,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total contained",
+      "reported": 29,
+      "recomputed": 29,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total escaped",
+      "reported": 9,
+      "recomputed": 9,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total explicit_failure",
+      "reported": 258,
+      "recomputed": 258,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 total unchanged",
+      "reported": 50,
+      "recomputed": 50,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 HFER %",
+      "reported": 2.18,
+      "recomputed": 2.18,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 HFER CI",
+      "reported": [
+        0.73,
+        3.96
+      ],
+      "recomputed": [
+        0.95,
+        3.69
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 FPR %",
+      "reported": 1.25,
+      "recomputed": 1.25,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 FPR CI",
+      "reported": [
+        0.0,
+        3.75
+      ],
+      "recomputed": [
+        0.0,
+        3.75
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 natural error instances",
+      "reported": 20,
+      "recomputed": 20,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ1 natural errors reaching user",
+      "reported": 3,
+      "recomputed": 3,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 pass: direct_llm",
+      "reported": 42,
+      "recomputed": 42,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 CCR: direct_llm",
+      "reported": 52.5,
+      "recomputed": 52.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Wilson CI: direct_llm",
+      "reported": [
+        41.7,
+        63.08
+      ],
+      "recomputed": [
+        41.7,
+        63.08
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 single-run accuracy: direct_llm",
+      "reported": 76.75,
+      "recomputed": 76.75,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 build tokens: direct_llm",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 run tokens: direct_llm",
+      "reported": 3000,
+      "recomputed": 3000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 C+10R: direct_llm",
+      "reported": 30000,
+      "recomputed": 30000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR: direct_llm",
+      "reported": -37.5,
+      "recomputed": -37.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR CI: direct_llm",
+      "reported": [
+        -48.75,
+        -27.5
+      ],
+      "recomputed": [
+        -48.75,
+        -26.25
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 breakeven: direct_llm",
+      "reported": 3,
+      "recomputed": 3,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Holm p < 0.001: direct_llm",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 pass: dspy",
+      "reported": 54,
+      "recomputed": 54,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 CCR: dspy",
+      "reported": 67.5,
+      "recomputed": 67.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Wilson CI: dspy",
+      "reported": [
+        56.64,
+        76.76
+      ],
+      "recomputed": [
+        56.64,
+        76.76
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 single-run accuracy: dspy",
+      "reported": 84.25,
+      "recomputed": 84.25,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 build tokens: dspy",
+      "reported": 4000,
+      "recomputed": 4000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 run tokens: dspy",
+      "reported": 2200,
+      "recomputed": 2200,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 C+10R: dspy",
+      "reported": 26000,
+      "recomputed": 26000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR: dspy",
+      "reported": -22.5,
+      "recomputed": -22.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR CI: dspy",
+      "reported": [
+        -32.5,
+        -13.75
+      ],
+      "recomputed": [
+        -32.5,
+        -12.5
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 breakeven: dspy",
+      "reported": 2,
+      "recomputed": 2,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Holm p < 0.001: dspy",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 pass: lmql",
+      "reported": 50,
+      "recomputed": 50,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 CCR: lmql",
+      "reported": 62.5,
+      "recomputed": 62.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Wilson CI: lmql",
+      "reported": [
+        51.55,
+        72.31
+      ],
+      "recomputed": [
+        51.55,
+        72.31
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 single-run accuracy: lmql",
+      "reported": 81.75,
+      "recomputed": 81.75,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 build tokens: lmql",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 run tokens: lmql",
+      "reported": 2600,
+      "recomputed": 2600,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 C+10R: lmql",
+      "reported": 26000,
+      "recomputed": 26000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR: lmql",
+      "reported": -27.5,
+      "recomputed": -27.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR CI: lmql",
+      "reported": [
+        -37.5,
+        -17.5
+      ],
+      "recomputed": [
+        -37.5,
+        -17.5
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 breakeven: lmql",
+      "reported": 4,
+      "recomputed": 4,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Holm p < 0.001: lmql",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 pass: pal",
+      "reported": 58,
+      "recomputed": 58,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 CCR: pal",
+      "reported": 72.5,
+      "recomputed": 72.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Wilson CI: pal",
+      "reported": [
+        61.86,
+        81.08
+      ],
+      "recomputed": [
+        61.86,
+        81.08
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 single-run accuracy: pal",
+      "reported": 86.75,
+      "recomputed": 86.75,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 build tokens: pal",
+      "reported": 0,
+      "recomputed": 0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 run tokens: pal",
+      "reported": 4800,
+      "recomputed": 4800,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 C+10R: pal",
+      "reported": 48000,
+      "recomputed": 48000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR: pal",
+      "reported": -17.5,
+      "recomputed": -17.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 dCCR CI: pal",
+      "reported": [
+        -26.25,
+        -10.0
+      ],
+      "recomputed": [
+        -26.25,
+        -10.0
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 breakeven: pal",
+      "reported": 2,
+      "recomputed": 2,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Holm p < 0.001: pal",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 pass: ncnlp",
+      "reported": 72,
+      "recomputed": 72,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 CCR: ncnlp",
+      "reported": 90.0,
+      "recomputed": 90.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 Wilson CI: ncnlp",
+      "reported": [
+        81.49,
+        94.85
+      ],
+      "recomputed": [
+        81.49,
+        94.85
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 single-run accuracy: ncnlp",
+      "reported": 92.0,
+      "recomputed": 92.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 build tokens: ncnlp",
+      "reported": 6000,
+      "recomputed": 6000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 run tokens: ncnlp",
+      "reported": 800,
+      "recomputed": 800,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 C+10R: ncnlp",
+      "reported": 14000,
+      "recomputed": 14000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 consistency ncnlp",
+      "reported": 99.0,
+      "recomputed": 99.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 consistency within reported range: direct_llm",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 consistency within reported range: dspy",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 consistency within reported range: lmql",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ2 consistency within reported range: pal",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: full",
+      "reported": 72,
+      "recomputed": 72,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: full",
+      "reported": 90.0,
+      "recomputed": 90.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: full",
+      "reported": [
+        81.49,
+        94.85
+      ],
+      "recomputed": [
+        81.49,
+        94.85
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: model_assign",
+      "reported": 64,
+      "recomputed": 64,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: model_assign",
+      "reported": 80.0,
+      "recomputed": 80.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: model_assign",
+      "reported": [
+        69.95,
+        87.3
+      ],
+      "recomputed": [
+        69.95,
+        87.3
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: model_assign",
+      "reported": 1000,
+      "recomputed": 1000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: model_assign",
+      "reported": 50,
+      "recomputed": 50,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: fused",
+      "reported": 54,
+      "recomputed": 54,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: fused",
+      "reported": 67.5,
+      "recomputed": 67.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: fused",
+      "reported": [
+        56.64,
+        76.76
+      ],
+      "recomputed": [
+        56.64,
+        76.76
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: fused",
+      "reported": -1500,
+      "recomputed": -1500,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: fused",
+      "reported": 200,
+      "recomputed": 200,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: no_check",
+      "reported": 68,
+      "recomputed": 68,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: no_check",
+      "reported": 85.0,
+      "recomputed": 85.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: no_check",
+      "reported": [
+        75.59,
+        91.21
+      ],
+      "recomputed": [
+        75.59,
+        91.21
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: no_check",
+      "reported": -1000,
+      "recomputed": -1000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: no_check",
+      "reported": -40,
+      "recomputed": -40,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: model_code",
+      "reported": 62,
+      "recomputed": 62,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: model_code",
+      "reported": 77.5,
+      "recomputed": 77.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: model_code",
+      "reported": [
+        67.21,
+        85.27
+      ],
+      "recomputed": [
+        67.21,
+        85.27
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: model_code",
+      "reported": 500,
+      "recomputed": 500,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: model_code",
+      "reported": 100,
+      "recomputed": 100,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: rule_recover",
+      "reported": 40,
+      "recomputed": 40,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: rule_recover",
+      "reported": 50.0,
+      "recomputed": 50.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: rule_recover",
+      "reported": [
+        39.3,
+        60.7
+      ],
+      "recomputed": [
+        39.3,
+        60.7
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: rule_recover",
+      "reported": -4500,
+      "recomputed": -4500,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: rule_recover",
+      "reported": 100,
+      "recomputed": 100,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 pass: model_exec",
+      "reported": 46,
+      "recomputed": 46,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 CCR: model_exec",
+      "reported": 57.5,
+      "recomputed": 57.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 Wilson CI: model_exec",
+      "reported": [
+        46.57,
+        67.74
+      ],
+      "recomputed": [
+        46.57,
+        67.74
+      ],
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dC: model_exec",
+      "reported": -5000,
+      "recomputed": -5000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dR: model_exec",
+      "reported": 2000,
+      "recomputed": 2000,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Model-assign - Full",
+      "reported": -10.0,
+      "recomputed": -10.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Model-assign - Full",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Fused - Model-assign",
+      "reported": -12.5,
+      "recomputed": -12.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Fused - Model-assign",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Fused - Full",
+      "reported": -22.5,
+      "recomputed": -22.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Fused - Full",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: No-check - Full",
+      "reported": -5.0,
+      "recomputed": -5.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: No-check - Full",
+      "reported": false,
+      "recomputed": false,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Model-code - Full",
+      "reported": -12.5,
+      "recomputed": -12.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Model-code - Full",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Rule-recover - Full",
+      "reported": -40.0,
+      "recomputed": -40.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Rule-recover - Full",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Model-exec - Full",
+      "reported": -32.5,
+      "recomputed": -32.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Model-exec - Full",
+      "reported": true,
+      "recomputed": true,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 dCCR: Model-exec - Direct LLM",
+      "reported": 5.0,
+      "recomputed": 5.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 significance: Model-exec - Direct LLM",
+      "reported": false,
+      "recomputed": false,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck facts EM: full",
+      "reported": 93.75,
+      "recomputed": 93.75,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck assignment EM: full",
+      "reported": 92.5,
+      "recomputed": 92.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck relations EM: full",
+      "reported": 90.0,
+      "recomputed": 90.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck intervention: full",
+      "reported": 12.5,
+      "recomputed": 12.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck repairs/WF: full",
+      "reported": 0.15,
+      "recomputed": 0.15,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck facts EM: model_assign",
+      "reported": 93.75,
+      "recomputed": 93.75,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck assignment EM: model_assign",
+      "reported": 82.5,
+      "recomputed": 82.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck relations EM: model_assign",
+      "reported": 80.0,
+      "recomputed": 80.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck intervention: model_assign",
+      "reported": 20.0,
+      "recomputed": 20.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck repairs/WF: model_assign",
+      "reported": 0.25,
+      "recomputed": 0.25,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck facts EM: fused",
+      "reported": 81.25,
+      "recomputed": 81.25,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck assignment EM: fused",
+      "reported": 72.5,
+      "recomputed": 72.5,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck relations EM: fused",
+      "reported": 70.0,
+      "recomputed": 70.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck intervention: fused",
+      "reported": 25.0,
+      "recomputed": 25.0,
+      "status": "match"
+    },
+    {
+      "quantity": "RQ3 precheck repairs/WF: fused",
+      "reported": 0.35,
+      "recomputed": 0.35,
+      "status": "match"
+    }
+  ]
+}

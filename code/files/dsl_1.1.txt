@@ -1,0 +1,156 @@
+# DSL 语法规范 v1.1
+
+## 1. 变量声明与赋值
+DEFINE {{variable_name}}: Type [= initial_value]
+{{variable_name}} = value
+
+支持类型: String, Integer, Float, Boolean, List, Dict, Any
+
+示例:
+DEFINE {{user_name}}: String
+DEFINE {{score}}: Integer = 0
+DEFINE {{items}}: List = []
+
+## 2. 条件控制
+IF condition
+    # 代码块
+ELIF condition
+    # 代码块
+ELSE
+    # 代码块
+ENDIF
+
+重要：IF-ELIF-ELSE-ENDIF 必须成对出现，不能单独使用 ELIF 或 ELSE。
+
+条件支持运算符: ==, !=, >, <, >=, <=, AND, OR, NOT, IN, IS, IS NOT, CONTAINS
+
+示例:
+IF {{score}} >= 90
+    {{grade}} = "A"
+ELIF {{score}} >= 60
+    {{grade}} = "B"
+ELSE
+    {{grade}} = "C"
+ENDIF
+
+## 3. 循环控制
+FOR {{item}} IN {{collection}}
+    # 代码块
+ENDFOR
+
+WHILE condition
+    # 代码块
+ENDWHILE
+
+示例:
+FOR {{user}} IN {{user_list}}
+    {{result}} = CALL send_email({{user}})
+ENDFOR
+
+## 4. 函数调用（LLM生成接口）
+{{result}} = CALL function_name(arg1, arg2, ...)
+
+这是唯一允许调用 LLM 进行自然语言生成的接口。
+
+示例:
+{{email_body}} = CALL generate_email({{user_name}}, {{discount}})
+{{summary}} = CALL summarize_text({{article}}, max_length=100)
+
+## 4.1 带实现的函数调用（重要新特性）
+{{result}} = CALL function_name(arg1, arg2, ...) = await actual_implementation
+
+当函数实现已知时，可以在 CALL 语句中直接包含实现代码，跳过注册表查找。
+
+**语法格式：**
+```
+{{result}} = CALL function_name({{param1}}, {{param2}}, ...) = await actual_code
+```
+
+**⚠️ 重要约束：禁止自创函数名！**
+
+实现代码中的函数调用必须是**真实存在的**：
+- ✅ 正确：`= await vector_db.query(...)`, `= await llm.chat(...)`, `= await sorted(...)`
+- ❌ 错误：`= await sort_results_by_time(...)` —— 这个函数不存在！
+- ❌ 错误：`= await filter_by_criteria(...)` —— 这个函数不存在！
+
+**如果不确定函数是否存在，请改用不带实现的 CALL 语法！**
+
+**示例：**
+```
+# ✅ 正确示例（使用已知对象）
+{{results}} = CALL semantic_search({{query}}) = await vector_db.query(collection="documents", text={{query}}, top_k=10)
+{{sorted}} = CALL sort_by_time({{results}}) = await sorted({{results}}, key=lambda x: x.time)
+{{filtered}} = CALL filter({{items}}) = await [x for x in {{items}} if x.score > 0.5]
+
+# ✅ 正确示例（不知道实现，只声明调用，不写 = await 部分）
+{{results}} = CALL custom_operation({{input}})
+
+# ❌ 错误示例（自创函数名，无法执行）
+{{sorted}} = CALL sort({{results}}) = await sort_results_by_time({{results}})  # sort_results_by_time 不存在！
+```
+
+**约束：**
+- 实现代码必须是可执行的 Python 表达式；异步调用需要使用 await
+- 实现代码中的变量引用必须使用 {{{{variable}}}} 格式
+- 实现代码中的函数必须是真实存在的，禁止自创函数名
+
+## 5. 返回值（重要约束）
+RETURN {{variable}}
+
+约束：
+- RETURN 语句只能返回一个变量或表达式
+- ❌ 禁止在 RETURN 语句中进行赋值操作
+- ❌ 禁止：RETURN {{var}}.field = value
+- ✅ 正确：RETURN {{var}}
+- ✅ 正确：{{var}}.field = value（先赋值）\n    RETURN {{var}}（后返回）
+
+示例：
+❌ 错误写法：
+RETURN {{results}}.top_n = {{limit}}
+
+✅ 正确写法：
+{{results}}.top_n = {{limit}}
+RETURN {{results}}
+
+## 6. 注释
+# 这是注释
+
+## 7. 约束规则
+### 7.1 基本规则
+- 所有配置参数必须先 DEFINE 后使用
+- 控制结构必须严格闭合（IF-ENDIF, FOR-ENDFOR）
+- 禁止嵌套过深（建议最多3层）
+- 变量名使用 {{var}} 格式包裹
+- 一行一条语句，禁止分号分隔
+
+### 7.2 变量使用规则
+- 只能使用【变量定义】中列出的配置参数名称
+- 运行时变量（如 query, result, user_input 等）可以动态使用，不需要 DEFINE
+- ❌ 禁止创造新的配置参数名称（如 custom_threshold, new_limit 等）
+- 如果需要临时变量，可以使用常见运行时变量名：temp_result, intermediate_value, etc.
+
+### 7.3 控制流规则
+- ❌ 禁止单独使用 ELIF 或 ELSE（必须跟在 IF 之后）
+- ❌ 禁止 IF 不闭合（必须有对应的 ENDIF）
+- ✅ 必须保证完整的 IF-ELIF-ELSE-ENDIF 结构
+
+### 7.4 时间/持续条件规则（重要）
+- ❌ 禁止使用非标准的 FOR ... MINUTES 语法
+- ❌ 禁止：IF {{condition}} FOR {{duration}} MINUTES:
+- ✅ 正确：使用标准的 IF 条件，时间检查应该放在函数内部实现
+
+示例：
+❌ 错误写法：
+IF {{qps}} < 10 FOR {{alert_duration}} MINUTES:
+    CALL trigger_alert()
+
+✅ 正确写法：
+IF {{qps}} < 10:
+    CALL trigger_alert()
+
+### 7.5 赋值规则
+- ✅ 支持标准的赋值语法
+- ✅ 支持属性访问：{{obj}}.field = value
+- ✅ 支持字典/列表访问：{{dict}}['key'] = value, {{list}}[0] = value
+- ❌ 禁止在 RETURN 中赋值（见第5节）
+"""

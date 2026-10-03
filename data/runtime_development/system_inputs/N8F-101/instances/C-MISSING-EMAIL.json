@@ -1,0 +1,29 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-101",
+  "case_id": "C-MISSING-EMAIL",
+  "kind": "positive",
+  "input_data": {
+    "chat_session_id": "chat-0003",
+    "question": "Which rows are missing an email?",
+    "sheet_data": [
+      {
+        "Name": "Alice",
+        "Email": "alice@example.com"
+      },
+      {
+        "Name": "Bob",
+        "Email": ""
+      },
+      {
+        "Name": "Carol",
+        "Email": "carol@example.com"
+      },
+      {
+        "Name": "Dan",
+        "Email": null
+      }
+    ]
+  },
+  "input_sha256": "1DAA0EC0E55E7702B7BE0CBB0FE506319D4069EA8B40EE762855470883B0B867"
+}

@@ -1,0 +1,242 @@
+{
+  "task_id": "N8F-067",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "4c2d929f22e617cccf94800be9fe9fc3885ba014c22e00b8f0d0ebd6230840e6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每小时定时或手动触发",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_signal",
+          "type": "object",
+          "description": "本次执行的触发信号"
+        }
+      ],
+      "native_evidence": [
+        "Hourly Content Check",
+        "Manual Post Trigger",
+        "Merge Triggers"
+      ],
+      "requirement_evidence": [
+        "系统按小时定时触发，也可以通过手动方式触发"
+      ],
+      "rationale": "需求声明按小时定时触发或手动触发，为两种触发方式的统一入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取排期内容并识别可发布条目",
+      "node_type": "code",
+      "operation_family": "filter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "ready_posts",
+          "type": "array",
+          "description": "已到排期时间、可发布的条目列表"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Content Queue",
+        "Filter Ready Posts"
+      ],
+      "requirement_evidence": [
+        "从指定的 Google Sheets 中读取已排期的内容，并识别出已经可以发布的条目"
+      ],
+      "rationale": "需求声明从指定 Google Sheets 读取排期内容并识别可发布条目，为外部读取与确定性过滤，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型生成双平台优化版本与互动建议",
+      "node_type": "semantic",
+      "operation_family": "ai_generation",
+      "inputs": [
+        {
+          "name": "ready_posts",
+          "type": "array",
+          "description": "可发布的原始内容条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "optimized_posts",
+          "type": "array",
+          "description": "含 Twitter 版（短小精悍、受字符限制）、LinkedIn 版（正式详实）、话题标签与互动建议的优化结果"
+        }
+      ],
+      "native_evidence": [
+        "AI Content Optimizer",
+        "Parse AI Content"
+      ],
+      "requirement_evidence": [
+        "由语言模型分析这些原始内容，为每个条目生成两个优化版本：一版是短小精悍、受字符数限制的 Twitter 帖子，另一版是更正式、更详实的 LinkedIn 帖子。系统同时生成相关的话题标签与互动建议"
+      ],
+      "rationale": "需求声明由语言模型分析原始内容并生成双平台优化版本、话题标签与互动建议，需开放文本创作与改写，判为语义节点；逐条优化的原生循环折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "同时发布帖子到对应平台",
+      "node_type": "code",
+      "operation_family": "social_publish",
+      "inputs": [
+        {
+          "name": "optimized_posts",
+          "type": "array",
+          "description": "优化后的双平台帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_results",
+          "type": "array",
+          "description": "各平台发布结果（含线上链接）"
+        }
+      ],
+      "native_evidence": [
+        "Post to Twitter",
+        "Post to LinkedIn"
+      ],
+      "requirement_evidence": [
+        "系统把这些帖子同时发布到对应平台"
+      ],
+      "rationale": "需求声明将优化后的帖子同时发布到 Twitter 与 LinkedIn，为确定性外部发布动作，判为代码节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "将线上链接回写到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "spreadsheet_writeback",
+      "inputs": [
+        {
+          "name": "publish_results",
+          "type": "array",
+          "description": "各平台发布结果与线上链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_results",
+          "type": "array",
+          "description": "含线上链接的发布结果（回写后继续用于摘要）"
+        }
+      ],
+      "native_evidence": [
+        "Update Content Status"
+      ],
+      "requirement_evidence": [
+        "将已发布内容的线上链接回写到该 Google Sheets"
+      ],
+      "rationale": "需求声明发布完成后将线上链接回写 Google Sheets，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "发送发布情况摘要到 Slack",
+      "node_type": "terminal",
+      "operation_family": "slack_notification",
+      "inputs": [
+        {
+          "name": "publish_results",
+          "type": "array",
+          "description": "含线上链接的发布结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Summary to Slack"
+      ],
+      "requirement_evidence": [
+        "向指定的 Slack 频道发送一份发布情况摘要，便于追踪"
+      ],
+      "rationale": "需求声明向指定 Slack 频道发送发布情况摘要，为流程最终的用户可见完成动作（通知），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后读取排期内容。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "存在已可发布的条目",
+      "rationale": "识别出可发布条目后交由语言模型优化；无可发布条目时流程自然结束（需求未声明该场景的可见行为）。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "优化完成后发布到对应平台。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后回写线上链接。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "回写完成后发送发布摘要。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "ready_posts",
+      "condition": null,
+      "rationale": "可发布条目供语言模型优化（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "optimized_posts",
+      "condition": null,
+      "rationale": "优化后的双平台帖子供发布（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "publish_results",
+      "condition": null,
+      "rationale": "发布结果与线上链接供回写。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "publish_results",
+      "condition": null,
+      "rationale": "含线上链接的发布结果供 Slack 摘要。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：定时/手动触发→读取排期内容并识别可发布条目→LLM 生成 Twitter 与 LinkedIn 双版本及话题标签/互动建议→同时发布→回写线上链接→Slack 发布摘要。无可发布条目时流程自然结束，需求未声明该场景的可见行为，故未建模。原生图中合并触发、有无内容分支的 webhook 响应等为实现细节，未单独建模。"
+}

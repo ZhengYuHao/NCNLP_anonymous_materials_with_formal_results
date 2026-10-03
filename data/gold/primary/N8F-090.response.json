@@ -1,0 +1,261 @@
+{
+  "task_id": "N8F-090",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "dc325ca7610f117abb47a02042635345eef3fb8721bfb6ad88e8d7cf1027b5de",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Slack /trans 命令与待翻译文本",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "command_input",
+          "type": "object",
+          "description": "命令文本与可选目标语言前缀"
+        }
+      ],
+      "native_evidence": [
+        "Webhook (Slash Command)"
+      ],
+      "requirement_evidence": [
+        "用户在 Slack 中输入 /trans 命令并跟随待翻译的文本；也支持以 en: 或 ja: 作为前缀显式指定目标语言"
+      ],
+      "rationale": "接收命令并解析目标语言前缀"
+    },
+    {
+      "node_id": "n2",
+      "label": "检测输入文本语言",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "command_input",
+          "type": "object",
+          "description": "命令文本与可选目标语言前缀"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "detected_lang",
+          "type": "string",
+          "description": "检测到的源语言"
+        }
+      ],
+      "native_evidence": [
+        "Detect Language (Code)"
+      ],
+      "requirement_evidence": [
+        "自动检测输入文本的语言"
+      ],
+      "rationale": "确定性语言检测"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型在日本语与英语之间翻译",
+      "node_type": "semantic",
+      "operation_family": "translation",
+      "inputs": [
+        {
+          "name": "command_input",
+          "type": "object",
+          "description": "命令文本与可选目标语言前缀"
+        },
+        {
+          "name": "detected_lang",
+          "type": "string",
+          "description": "检测到的源语言"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "translated_text",
+          "type": "string",
+          "description": "译文"
+        }
+      ],
+      "native_evidence": [
+        "OpenAI (Chat) - Translate"
+      ],
+      "requirement_evidence": [
+        "由语言模型在日本语与英语之间进行翻译"
+      ],
+      "rationale": "翻译需语言模型"
+    },
+    {
+      "node_id": "n4",
+      "label": "构造回传译文消息（含可见范围）",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "translated_text",
+          "type": "string",
+          "description": "译文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reply_payload",
+          "type": "object",
+          "description": "待回传的译文消息"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Response",
+        "Merge (Combine Response)"
+      ],
+      "requirement_evidence": [
+        "随后把译文回传到 Slack；回复的可见范围可选公开或私密"
+      ],
+      "rationale": "确定性构造回传消息；需求未命名处由本节点输出契约命名"
+    },
+    {
+      "node_id": "n5",
+      "label": "发送“正在翻译”即时提示",
+      "node_type": "code",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "command_input",
+          "type": "object",
+          "description": "命令文本与可选目标语言前缀"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Code (Ack)",
+        "HTTP Request"
+      ],
+      "requirement_evidence": [
+        "先向会话发送一条“正在翻译”的即时提示"
+      ],
+      "rationale": "即时提示为中间通知动作"
+    },
+    {
+      "node_id": "n6",
+      "label": "回传译文到 Slack",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "reply_payload",
+          "type": "object",
+          "description": "待回传的译文消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Respond to Webhook",
+        "HTTP Request"
+      ],
+      "requirement_evidence": [
+        "随后把译文回传到 Slack；回复的可见范围可选公开或私密"
+      ],
+      "rationale": "译文回传为最终用户可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收命令后检测语言"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "检测后翻译"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "翻译后构造回传消息"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "构造后发送即时提示"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "提示后回传译文"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "command_input",
+      "condition": null,
+      "rationale": "命令文本供语言检测"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "command_input",
+      "condition": null,
+      "rationale": "文本与目标语言供翻译"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "detected_lang",
+      "condition": null,
+      "rationale": "源语言用于翻译"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "translated_text",
+      "condition": null,
+      "rationale": "译文用于构造消息"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "reply_payload",
+      "condition": null,
+      "rationale": "消息用于回传"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n1",
+      "target": "n5",
+      "variable": "command_input",
+      "condition": null,
+      "rationale": "命令上下文用于即时提示"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "Slash 命令→检测语言→LLM 互译→构造回传消息→先发'正在翻译'提示→回传译文为终止。'构造回传消息'为确定性整理，形成 semantic→code 数据链。"
+}

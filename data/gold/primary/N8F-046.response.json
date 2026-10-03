@@ -1,0 +1,459 @@
+{
+  "task_id": "N8F-046",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "24f7a2f31482da327d5a0675a9620f3e1e4c1851355eef433237aee98fb5d3fe",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每天 07:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "When Daily at 7AM"
+      ],
+      "requirement_evidence": [
+        "系统每天定时执行一次",
+        "每天 07:00 触发一次执行"
+      ],
+      "rationale": "按计划每天 07:00 触发执行，为确定性定时触发操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取州配置并筛选生效州",
+      "node_type": "code",
+      "operation_family": "config_read_and_filter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "active_states",
+          "type": "object",
+          "description": "从 States 标签页读取并标记为 Active 的州配置行"
+        }
+      ],
+      "native_evidence": [
+        "Set Configuration Values",
+        "Read States from Sheets",
+        "Filter for Active States"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 的“States”标签页读取配置，仅保留标记为 Active 的行"
+      ],
+      "rationale": "读取 States 配置并仅保留 Active 行，为确定性的外部读取与条件筛选操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按关键词展开搜索词",
+      "node_type": "code",
+      "operation_family": "search_query_expansion",
+      "inputs": [
+        {
+          "name": "active_states",
+          "type": "object",
+          "description": "生效的州配置行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_queries",
+          "type": "array",
+          "description": "按“关键词 in 州”形式组合生成的搜索词列表"
+        }
+      ],
+      "native_evidence": [
+        "Expand State Keywords",
+        "Build Search Query"
+      ],
+      "requirement_evidence": [
+        "将每个生效的州按已配置关键词展开为多个搜索词，并按“关键词 in 州”的形式组合"
+      ],
+      "rationale": "将每个州按配置关键词展开为多个搜索词并按固定形式组合，为确定性变换操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "逐查询调用商家搜索服务并拆分线索",
+      "node_type": "code",
+      "operation_family": "search_and_lead_split",
+      "inputs": [
+        {
+          "name": "search_queries",
+          "type": "array",
+          "description": "展开后的搜索词列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "leads",
+          "type": "object",
+          "description": "从搜索结果拆分为单条线索的本地商家结果"
+        },
+        {
+          "name": "search_error",
+          "type": "object",
+          "description": "商家搜索服务返回的错误信息"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over Search Queries",
+        "FETCH SerpAPI Search Results",
+        "Split Local Results"
+      ],
+      "requirement_evidence": [
+        "对每个搜索词调用 Google Maps 商家搜索服务",
+        "将返回的本地商家结果拆分为单条线索"
+      ],
+      "rationale": "循环处理每个搜索词并调用商家搜索服务，成功时拆分结果、失败时走错误分支，为确定性外部调用与循环操作，判定为 code 节点；循环终止条件为全部搜索词处理完毕。"
+    },
+    {
+      "node_id": "n5",
+      "label": "记录搜索错误到 Errors 标签页",
+      "node_type": "code",
+      "operation_family": "error_logging",
+      "inputs": [
+        {
+          "name": "search_error",
+          "type": "object",
+          "description": "商家搜索服务返回的错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log Errors in Sheets"
+      ],
+      "requirement_evidence": [
+        "若搜索服务返回错误，将错误记录到 Google Sheets 的“Errors”标签页"
+      ],
+      "rationale": "将搜索服务错误追加记录到 Errors 标签页，为确定性外部写入操作，判定为 code 节点；记录后回到循环头处理下一个搜索词。"
+    },
+    {
+      "node_id": "n6",
+      "label": "线索规范化、过滤与去重",
+      "node_type": "code",
+      "operation_family": "lead_normalization",
+      "inputs": [
+        {
+          "name": "leads",
+          "type": "object",
+          "description": "拆分为单条的商家线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "deduped_leads",
+          "type": "object",
+          "description": "规范化、过滤不完整条目并按“名称+电话”去重后的线索"
+        }
+      ],
+      "native_evidence": [
+        "Set Lead Information",
+        "Filter Valid Leads",
+        "Deduplicate by Key"
+      ],
+      "requirement_evidence": [
+        "对每条线索规范化名称、电话、网站、地址、州、关键词；过滤信息不完整的条目；按“名称+电话”的去重键去除重复线索"
+      ],
+      "rationale": "规范化字段、过滤不完整条目并按名称+电话去重，为确定性变换与条件过滤操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "抓取联系页面并提取邮箱",
+      "node_type": "code",
+      "operation_family": "contact_email_extraction",
+      "inputs": [
+        {
+          "name": "deduped_leads",
+          "type": "object",
+          "description": "规范化并去重后的线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enriched_lead",
+          "type": "object",
+          "description": "含提取到的联系邮箱的线索"
+        }
+      ],
+      "native_evidence": [
+        "Filter Leads with Website",
+        "GET Contact Page",
+        "Parse Contact Email",
+        "Wait 1 Second"
+      ],
+      "requirement_evidence": [
+        "若线索包含网站，则抓取该网站的联系页面，并从页面中提取第一个有效邮箱地址"
+      ],
+      "rationale": "仅当线索包含网站时抓取联系页面并提取第一个有效邮箱，为确定性的外部抓取与规则提取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "生成 B2B 开发信",
+      "node_type": "semantic",
+      "operation_family": "outreach_email_generation",
+      "inputs": [
+        {
+          "name": "enriched_lead",
+          "type": "object",
+          "description": "含联系邮箱的线索明细（有网站分支）"
+        },
+        {
+          "name": "deduped_leads",
+          "type": "object",
+          "description": "未提取邮箱的线索明细（无网站分支）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "outreach_email",
+          "type": "string",
+          "description": "语言模型生成的简洁 B2B 开发信文本"
+        }
+      ],
+      "native_evidence": [
+        "AI Generate Email"
+      ],
+      "requirement_evidence": [
+        "使用语言模型为每条线索生成一封简洁的 B2B 开发信"
+      ],
+      "rationale": "需求声明使用语言模型为每条线索生成 B2B 开发信，需要开放文本生成，判定为 semantic 节点；无网站线索不执行邮箱提取，直接进入本环节。"
+    },
+    {
+      "node_id": "n9",
+      "label": "追加写入 Leads 标签页",
+      "node_type": "code",
+      "operation_family": "lead_persistence",
+      "inputs": [
+        {
+          "name": "enriched_lead",
+          "type": "object",
+          "description": "有网站线索的明细与提取到的联系邮箱"
+        },
+        {
+          "name": "deduped_leads",
+          "type": "object",
+          "description": "无网站线索的明细（无提取邮箱）"
+        },
+        {
+          "name": "outreach_email",
+          "type": "string",
+          "description": "生成的 B2B 开发信文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Set Final Lead Object",
+        "Append to Leads Sheet",
+        "Wait 3 Seconds"
+      ],
+      "requirement_evidence": [
+        "将线索明细、提取到的联系邮箱与生成的开发信追加写入 Google Sheets 的“Leads”标签页"
+      ],
+      "rationale": "将线索明细、联系邮箱与开发信追加写入 Leads 标签页，为确定性外部写入操作，判定为 code 节点；写入后回到循环头处理下一个搜索词。"
+    },
+    {
+      "node_id": "n10",
+      "label": "全部搜索词处理完毕",
+      "node_type": "terminal",
+      "operation_family": "workflow_completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Loop Over Search Queries"
+      ],
+      "requirement_evidence": [
+        "系统每天定时执行一次"
+      ],
+      "rationale": "当全部搜索词均处理完毕时循环退出，本轮采集流程结束，无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后读取州配置。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选出生效州后展开搜索词。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "搜索词构建完成后进入逐查询循环。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "search_error",
+      "rationale": "商家搜索服务返回错误时记录到 Errors 标签页。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "search_success",
+      "rationale": "搜索成功时将拆分出的线索送入规范化环节。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "错误记录完成后回到循环头处理下一个搜索词（max_iterations=搜索词总数）。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n4",
+      "target": "n10",
+      "variable": null,
+      "condition": "no_more_queries",
+      "rationale": "全部搜索词处理完毕时循环退出，流程结束。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "has_website",
+      "rationale": "线索包含网站时抓取联系页面并提取邮箱。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "no_website",
+      "rationale": "需求仅声明“包含网站时才抓取联系页面并提取邮箱”，未声明无网站线索的任何额外动作；无网站线索跳过邮箱提取，直接进入开发信生成。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮箱提取完成后生成开发信。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "开发信生成后追加写入 Leads 标签页。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n9",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入完成后回到循环头处理下一个搜索词（max_iterations=搜索词总数）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "active_states",
+      "condition": null,
+      "rationale": "生效州配置送入搜索词展开节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "search_queries",
+      "condition": null,
+      "rationale": "搜索词列表送入逐查询搜索节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "search_error",
+      "condition": null,
+      "rationale": "搜索错误信息送入错误记录节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "leads",
+      "condition": null,
+      "rationale": "拆分后的线索送入规范化过滤去重节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "deduped_leads",
+      "condition": null,
+      "rationale": "规范化后的线索送入联系页面抓取节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n8",
+      "variable": "deduped_leads",
+      "condition": null,
+      "rationale": "无网站分支不执行邮箱提取，线索明细直接送入开发信生成节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "enriched_lead",
+      "condition": null,
+      "rationale": "含联系邮箱的线索送入开发信生成节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "outreach_email",
+      "condition": null,
+      "rationale": "生成的开发信送入写入节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n7",
+      "target": "n9",
+      "variable": "enriched_lead",
+      "condition": null,
+      "rationale": "有网站线索的明细与联系邮箱送入写入节点。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n6",
+      "target": "n9",
+      "variable": "deduped_leads",
+      "condition": null,
+      "rationale": "无网站线索的明细同样送入写入节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n10"
+  ],
+  "confidence": 0.92,
+  "notes": "按需求建模：定时触发（code）、读取并筛选州配置（code）、展开搜索词（code）、逐查询搜索与拆分线索（code，循环，错误分支记录到 Errors 标签页）、线索规范化过滤去重（code）、包含网站时抓取联系页面并提取邮箱（code）、生成 B2B 开发信（semantic）、追加写入 Leads 标签页（code，写回后循环）、全部处理完毕（terminal）。需求仅声明“包含网站时才抓取联系页面并提取邮箱”，未声明无网站时的任何动作（如邮箱置空），故无网站线索直接跳过邮箱提取进入开发信生成，不单列“置空”节点。需求未声明的实现细节（请求间隔 Wait、工作流级错误日志、Set Configuration 内部取值）未纳入。混合任务满足 semantic→code 有类型 DFG 边（outreach_email）。"
+}

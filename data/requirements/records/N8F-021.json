@@ -1,0 +1,95 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-021",
+  "source_id": "n8n:18227",
+  "workflow_sha256": "00a12ea31e2240029a168d065b5eba3decdda7b72c14779811ff4ddaa7f758c9",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "e459c0e51c5d26da6982e0555552c8e415e03211db74b30ba721cedb5abbcdb1",
+  "requirement": {
+    "requirement_text": "通过表单收集一个自家商品的亚马逊商品链接，以及最多三个竞品商品的亚马逊链接。\n\n对提交的全部商品，触发评论数据抓取任务，并每 30 秒轮询一次任务状态，直到结果就绪（最长等待 10 分钟）。随后下载评论数据，清洗重复字段，并按商品保留一组经过加权的评论集合，重点纳入差评与最有帮助的评论。\n\n把每个商品的评论集合交给语言模型，抽取结构化的抱怨主题、好评主题与功能诉求。再将自家商品的抱怨主题与竞品的好评主题进行比对，识别两者重叠的部分作为“竞争缺口”，并由语言模型撰写一份简短的竞争简报。\n\n最后，把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets，并向指定的 Slack 频道发送一份格式化的摘要，摘要中包含上述竞争简报。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 291,
+        "text": "This workflow collects Amazon product URLs via an n8n form, pulls reviews from Bright Data, extracts complaint and praise themes with OpenAI (GPT-5.6), identifies competitive gaps versus up to three competitors, then logs findings to Google Sheets and posts a digest to Slack."
+      },
+      {
+        "start": 306,
+        "end": 391,
+        "text": "Receives your product URL and up to three competitor Amazon URLs through an n8n form."
+      },
+      {
+        "start": 392,
+        "end": 561,
+        "text": "Triggers the Bright Data Amazon reviews dataset for all submitted products and polls the snapshot status every 30 seconds until the results are ready (up to 10 minutes)."
+      },
+      {
+        "start": 562,
+        "end": 697,
+        "text": "Downloads the review data, cleans duplicated fields, and keeps a weighted set focused on critical and most-helpful reviews per product."
+      },
+      {
+        "start": 698,
+        "end": 826,
+        "text": "Sends each product’s review set to OpenAI (GPT-5.6) to extract structured complaint themes, praise themes, and feature requests."
+      },
+      {
+        "start": 827,
+        "end": 992,
+        "text": "Compares your complaint themes to competitors’ praise themes to identify overlapping “competitive gaps” and uses OpenAI (GPT-5.6) to write a short competitive brief."
+      },
+      {
+        "start": 993,
+        "end": 1122,
+        "text": "Appends one row per top complaint and gap to Google Sheets and posts a formatted digest (including the brief) to a Slack channel."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "表单提交的自家商品亚马逊链接",
+        "表单提交的最多三个竞品亚马逊链接",
+        "评论数据抓取服务返回的评论数据"
+      ],
+      "conditions": [
+        "竞品链接最多三个",
+        "每 30 秒轮询一次抓取任务状态，最长等待 10 分钟",
+        "每个商品保留一组经过加权的评论集合，重点为差评与最有帮助的评论",
+        "竞争缺口定义为自家抱怨主题与竞品好评主题之间的重叠部分"
+      ],
+      "allowed_actions": [
+        "触发评论数据抓取任务并轮询其状态",
+        "下载并清洗评论数据",
+        "调用语言模型抽取抱怨主题、好评主题与功能诉求",
+        "比对抱怨主题与竞品好评主题以识别竞争缺口",
+        "调用语言模型撰写竞争简报",
+        "向 Google Sheets 逐条追加抱怨与缺口记录",
+        "向 Slack 频道发送格式化摘要"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中每个重点抱怨与每个竞争缺口各新增一行",
+        "Slack 频道收到一份包含竞争简报的格式化摘要"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-021.packet.json",
+    "packet_sha256": "01a7a050cdd15e08089b3858a8b6509051a1fc7b4057057066be7898dcd074bd",
+    "public_description_sha256": "a2bdf991d67320ed560639202f3d9b437ed313acefbd38c7390d168a8a9bdef4"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-021.response.json",
+    "verification_response_sha256": "63b5434b80bc838250b10e39a398d4e5a2ac3f957cf9c293737f4e463089cd87",
+    "decision": "accept"
+  },
+  "formal_index": 32
+}

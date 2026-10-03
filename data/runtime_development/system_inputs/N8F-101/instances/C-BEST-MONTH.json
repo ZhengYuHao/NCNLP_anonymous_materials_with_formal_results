@@ -1,0 +1,25 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-101",
+  "case_id": "C-BEST-MONTH",
+  "kind": "positive",
+  "input_data": {
+    "chat_session_id": "chat-0001",
+    "question": "Which month was best?",
+    "sheet_data": [
+      {
+        "Month": "2026-04",
+        "Revenue": 800
+      },
+      {
+        "Month": "2026-05",
+        "Revenue": 1000
+      },
+      {
+        "Month": "2026-06",
+        "Revenue": 1500
+      }
+    ]
+  },
+  "input_sha256": "451CB4CC80E79FAB7A11C1CDF8B51B3385EAC4ADA497BF4E5877AD52CF403E4D"
+}

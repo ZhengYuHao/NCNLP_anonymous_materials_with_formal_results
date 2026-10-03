@@ -1,0 +1,239 @@
+{
+  "task_id": "N8F-060",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "fdd7e19785cc8344ddc914dd2fcb4ba9c922651b27199254db761917d1aca607",
+  "fixtures": [
+    {
+      "fixture_id": "F-form-3",
+      "purpose": "表单提交：1 张用户人脸照片 + 3 张名人参考图",
+      "input_data": {
+        "face_photo": "face.png",
+        "celebrity_photos": [
+          "c1.png",
+          "c2.png",
+          "c3.png"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-form-4",
+      "purpose": "边界用例：1 张用户人脸照片 + 4 张名人参考图（达到数量上限）",
+      "input_data": {
+        "face_photo": "face.png",
+        "celebrity_photos": [
+          "c1.png",
+          "c2.png",
+          "c3.png",
+          "c4.png"
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-llm-prompt",
+      "dependency_type": "llm",
+      "operation": "compose_selfie_prompt",
+      "request_contract": {
+        "face_photo": "face.png"
+      },
+      "response_contract": {
+        "prompt": "photorealistic selfie composition with celebrity, studio lighting"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-image-gen",
+      "dependency_type": "image_generation",
+      "operation": "generate_selfie",
+      "request_contract": {
+        "prompt": "photorealistic selfie composition with celebrity, studio lighting"
+      },
+      "response_contract": {
+        "image_url": "https://img.example/selfie_c1.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-save-image",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "selfies"
+      },
+      "response_contract": {
+        "appended": 3,
+        "first_row": 5
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-save-image-4",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "selfies",
+        "expected_count": 4
+      },
+      "response_contract": {
+        "appended": 4,
+        "first_row": 5
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-video-gen",
+      "dependency_type": "video_generation",
+      "operation": "generate_transition_video",
+      "request_contract": {
+        "from_image": "https://img.example/selfie_c1.png",
+        "to_image": "https://img.example/selfie_c2.png"
+      },
+      "response_contract": {
+        "video_url": "https://video.example/trans_c1_c2.mp4",
+        "metadata": {
+          "type": "walking_transition"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-save-video",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "videos"
+      },
+      "response_contract": {
+        "appended": 2,
+        "first_row": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-save-video-3",
+      "dependency_type": "google_sheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "sheet": "videos",
+        "expected_count": 3
+      },
+      "response_contract": {
+        "appended": 3,
+        "first_row": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-3",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-form-3"
+      ],
+      "mock_ids": [
+        "M-llm-prompt",
+        "M-image-gen",
+        "M-sheets-save-image",
+        "M-video-gen",
+        "M-sheets-save-video"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.selfies",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "3 张名人参考图应生成 3 张合照图像"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.videos",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "3 张合照图像两两配对（名人1→名人2，名人2→名人3）应生成 2 个过渡视频"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.videos[0].pair",
+          "operator": "equals",
+          "expected": "c1->c2",
+          "rationale": "第一段视频应由名人 1 到名人 2 的合照图像配对生成"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.videos[1].pair",
+          "operator": "equals",
+          "expected": "c2->c3",
+          "rationale": "第二段视频应由名人 2 到名人 3 的合照图像配对生成"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.sheets.selfie_rows",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "生成的合照图像结果应保存到 Google Sheets 共 3 条"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.sheets.video_rows",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "生成的视频及其元数据应保存回 Google Sheets 共 2 条"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.videos[0].video_url",
+          "operator": "exists",
+          "rationale": "每条视频记录应含可访问的视频链接",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-4",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-form-4"
+      ],
+      "mock_ids": [
+        "M-llm-prompt",
+        "M-image-gen",
+        "M-sheets-save-image-4",
+        "M-video-gen",
+        "M-sheets-save-video-3"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-4",
+          "target": "output.selfies",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "名人参考图数量达到上限 4 张时应生成 4 张合照"
+        },
+        {
+          "assertion_id": "A-2-bnd-4",
+          "target": "output.videos",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "4 张合照两两顺序配对应生成 3 个过渡视频"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "视频配对严格按顺序两两配对（第 i 张与第 i+1 张），配对数量 = 合照数 - 1；名人参考图数量上限为 4，超出部分不处理（以固定输入为准）。"
+}

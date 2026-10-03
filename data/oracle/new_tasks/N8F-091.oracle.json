@@ -1,0 +1,299 @@
+{
+  "task_id": "N8F-091",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "bfc5a0174f2f47a03aab3322797672e7237acc7f2fac5a1468eef5caa756abe4",
+  "fixtures": [
+    {
+      "fixture_id": "F-LEADS-PROCESS",
+      "purpose": "正常用例：3 条线索中 1 条待处理（可精确匹配企业）、1 条待处理（无精确匹配需回退）、1 条已处理应跳过",
+      "input_data": {
+        "leads": [
+          {
+            "lead_id": "L1",
+            "company_name": "Acme Analytics",
+            "domain": "acme-analytics.com",
+            "contact_email": "lead@acme-analytics.com",
+            "industry": "SaaS",
+            "research_status": ""
+          },
+          {
+            "lead_id": "L2",
+            "company_name": "Novel Corp",
+            "domain": "novel-corp.io",
+            "contact_email": "lead@novel-corp.io",
+            "industry": "Fintech",
+            "research_status": ""
+          },
+          {
+            "lead_id": "L3",
+            "company_name": "Old Client",
+            "domain": "old-client.com",
+            "contact_email": "lead@old-client.com",
+            "industry": "E-commerce",
+            "research_status": "Completed"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_leads",
+      "request_contract": {
+        "sheet": "leads"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "lead_id": "L1",
+            "company_name": "Acme Analytics",
+            "domain": "acme-analytics.com",
+            "contact_email": "lead@acme-analytics.com",
+            "industry": "SaaS",
+            "research_status": ""
+          },
+          {
+            "lead_id": "L2",
+            "company_name": "Novel Corp",
+            "domain": "novel-corp.io",
+            "contact_email": "lead@novel-corp.io",
+            "industry": "Fintech",
+            "research_status": ""
+          },
+          {
+            "lead_id": "L3",
+            "company_name": "Old Client",
+            "domain": "old-client.com",
+            "contact_email": "lead@old-client.com",
+            "industry": "E-commerce",
+            "research_status": "Completed"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-UPDATE",
+      "dependency_type": "googleSheets",
+      "operation": "update_lead_row",
+      "request_contract": {
+        "lead_id": "string",
+        "fields": "object"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SONA-EXACT",
+      "dependency_type": "httpRequest",
+      "operation": "enrich_company",
+      "request_contract": {
+        "domain_or_email": "acme-analytics.com"
+      },
+      "response_contract": {
+        "exact_match": true,
+        "company": {
+          "name": "Acme Analytics",
+          "industry": "SaaS",
+          "tech_stack": ["Snowflake", "dbt"],
+          "revenue": "10M-50M",
+          "employee_count": 120,
+          "social_profiles": ["https://linkedin.com/company/acme-analytics"]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SONA-FALLBACK",
+      "dependency_type": "httpRequest",
+      "operation": "enrich_company",
+      "request_contract": {
+        "domain_or_email": "novel-corp.io"
+      },
+      "response_contract": {
+        "exact_match": false,
+        "results": [
+          {
+            "name": "Novel Corp Holdings",
+            "industry": "Fintech",
+            "tech_stack": ["AWS"],
+            "revenue": "1M-10M",
+            "employee_count": 45,
+            "social_profiles": []
+          },
+          {
+            "name": "Novel Payments",
+            "industry": "Payments",
+            "tech_stack": [],
+            "revenue": "unknown",
+            "employee_count": 15,
+            "social_profiles": []
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_company",
+      "request_contract": {
+        "company": "object"
+      },
+      "response_contract": {
+        "analysis": {
+          "pain_points": ["Data pipeline maintenance cost", "Slow anomaly detection", "Duplicate data quality work"],
+          "growth_opportunities": ["Automate schema checks", "Reduce query cost"],
+          "personalization_hooks": ["Similar SaaS scale", "Snowflake stack alignment", "Analytics team size"],
+          "tone": "consultative",
+          "cta": "Book a 15-minute demo",
+          "one_liner_insight": "Your analytics team likely spends most time on pipeline upkeep.",
+          "fit_score": "High"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EMAIL",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_cold_email",
+      "request_contract": {
+        "analysis": "object"
+      },
+      "response_contract": {
+        "email": {
+          "subject": "Revolutionize your analytics stack",
+          "body": "Hi there, I noticed that your team manages a large analytics workload across multiple data sources and likely spends significant engineering time maintaining pipelines. We help companies like yours cut that maintenance burden by automating schema detection and quality checks. Our platform connects directly to your existing warehouse and flags anomalies before they affect downstream reports. Teams typically see a measurable reduction in manual data work within the first month. I would love to walk you through a short demo tailored to your infrastructure. Would you be open to a fifteen minute call next week? No commitment needed and we can adapt the session to your priorities. If that sounds useful just reply to this email and we will find a time that works for your calendar. Looking forward to hearing from you and happy to share references from similar deployments in your industry as well.",
+          "gmail_compose_link": "https://mail.google.com/mail/?view=cm&to=lead%40acme-analytics.com"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-EXACT-MATCH",
+      "kind": "positive",
+      "fixture_ids": ["F-LEADS-PROCESS"],
+      "mock_ids": ["M-SHEETS-READ", "M-SHEETS-UPDATE", "M-SONA-EXACT", "M-LLM-ANALYSIS", "M-LLM-EMAIL"],
+      "assertions": [
+        {
+          "assertion_id": "A-SKIP-COMPLETED",
+          "target": "sona.enrich_company.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅 Research Status 为空的线索进入企业检索，已处理的 L3 必须被跳过，故只检索 1 次"
+        },
+        {
+          "assertion_id": "A-STATUS-PENDING-FIRST",
+          "target": "sheets_update.calls[0].fields.research_status",
+          "operator": "equals",
+          "expected": "Pending",
+          "rationale": "处理开始时必须先将线索状态更新为 Pending"
+        },
+        {
+          "assertion_id": "A-STATUS-COMPLETED-LAST",
+          "target": "sheets_update.calls[1].fields.research_status",
+          "operator": "equals",
+          "expected": "Completed",
+          "rationale": "处理完成后必须将线索状态置为 Completed"
+        },
+        {
+          "assertion_id": "A-PAIN-POINTS-RANGE",
+          "target": "llm_analysis.output.analysis.pain_points",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "痛点数量必须为 3–5 条，模拟固定生成 3 条"
+        },
+        {
+          "assertion_id": "A-GROWTH-RANGE",
+          "target": "llm_analysis.output.analysis.growth_opportunities",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "增长机会数量必须为 2–3 条，模拟固定生成 2 条"
+        },
+        {
+          "assertion_id": "A-HOOKS-RANGE",
+          "target": "llm_analysis.output.analysis.personalization_hooks",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "个性化切入点数量必须为 3–4 条，模拟固定生成 3 条"
+        },
+        {
+          "assertion_id": "A-FIT-SCORE-ENUM",
+          "target": "llm_analysis.output.analysis.fit_score",
+          "operator": "matches",
+          "expected": "^(High|Medium|Low)$",
+          "rationale": "契合度评分必须为 High、Medium 或 Low 之一"
+        },
+        {
+          "assertion_id": "A-SUBJECT-WORD-COUNT",
+          "target": "llm_email.output.email.subject",
+          "operator": "matches",
+          "expected": "^\\S+(\\s+\\S+){0,7}$",
+          "rationale": "邮件主题行不超过 8 个词"
+        },
+        {
+          "assertion_id": "A-BODY-WORD-COUNT",
+          "target": "llm_email.output.email.body",
+          "operator": "matches",
+          "expected": "^\\S+(\\s+\\S+){119,149}$",
+          "rationale": "邮件正文词数必须落在 120–150 词范围"
+        },
+        {
+          "assertion_id": "A-WRITEBACK-FIELDS",
+          "target": "sheets_update.calls[1].fields",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "写回结果必须包含痛点、关键洞察、邮件主题、邮件正文、Gmail 撰写链接、生成日期与发送状态等字段"
+        },
+        {
+          "assertion_id": "A-COMPOSE-LINK",
+          "target": "llm_email.output.email.gmail_compose_link",
+          "operator": "matches",
+          "expected": "^https?://\\S+",
+          "rationale": "必须生成预填内容的一键 Gmail 撰写链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FALLBACK-FIRST-RESULT",
+      "kind": "boundary",
+      "fixture_ids": ["F-LEADS-PROCESS"],
+      "mock_ids": ["M-SHEETS-READ", "M-SHEETS-UPDATE", "M-SONA-FALLBACK", "M-LLM-ANALYSIS", "M-LLM-EMAIL"],
+      "assertions": [
+        {
+          "assertion_id": "A-FALLBACK-USED",
+          "target": "llm_analysis.request.company.name",
+          "operator": "equals",
+          "expected": "Novel Corp Holdings",
+          "rationale": "无精确匹配时必须回退使用检索结果中的第一条，即 Novel Corp Holdings"
+        },
+        {
+          "assertion_id": "A-FALLBACK-EXACT-FALSE",
+          "target": "sona.enrich_company.calls[0].exact_match",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "模拟的检索结果声明无精确匹配，以验证回退路径被触发"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：仅处理 Research Status 为空的线索、Pending→Completed 状态流转、Sona 精确匹配与无精确匹配回退第一条、分析产出数量范围（痛点 3–5、增长机会 2–3、切入点 3–4）、邮件主题 ≤8 词与正文 120–150 词、Gmail 撰写链接与字段写回。所有外部服务确定性模拟。"
+}

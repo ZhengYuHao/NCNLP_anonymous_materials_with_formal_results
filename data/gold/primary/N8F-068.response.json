@@ -1,0 +1,445 @@
+{
+  "task_id": "N8F-068",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "adf87990f265948866cfe06cdb46d65753798883bb6a8dd24108cb0d03f28f81",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "收到新邮件时触发处理",
+      "node_type": "code",
+      "operation_family": "email_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "收到的邮件正文与附件"
+        }
+      ],
+      "native_evidence": [
+        "Gmail Trigger (gmailTrigger)"
+      ],
+      "requirement_evidence": [
+        "当收到新邮件时系统被触发"
+      ],
+      "rationale": "需求声明的邮件触发入口，为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "筛选邮件附件，只保留 Word 与 PDF 格式并剔除其他格式",
+      "node_type": "code",
+      "operation_family": "filter",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "收到的邮件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "filtered_attachments",
+          "type": "array",
+          "description": "仅含 Word 与 PDF 的附件"
+        }
+      ],
+      "native_evidence": [
+        "Code: delete all but pdf and word (code)"
+      ],
+      "requirement_evidence": [
+        "首先对邮件附件进行筛选，只保留 Word 和 PDF 格式的文档，其他格式（如 JPG）被剔除"
+      ],
+      "rationale": "附件格式筛选为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "无剩余附件时直接处理邮件正文内联消息内容",
+      "node_type": "code",
+      "operation_family": "extract",
+      "inputs": [
+        {
+          "name": "email",
+          "type": "object",
+          "description": "邮件正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "邮件正文内容"
+        }
+      ],
+      "native_evidence": [
+        "has attachment? (if, 无附件分支)"
+      ],
+      "requirement_evidence": [
+        "若筛选后没有剩余附件，则直接处理邮件正文中内联的消息内容"
+      ],
+      "rationale": "邮件正文内容取用为确定性操作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "提取 PDF 附件中的文档内容",
+      "node_type": "code",
+      "operation_family": "extract_pdf",
+      "inputs": [
+        {
+          "name": "filtered_attachments",
+          "type": "array",
+          "description": "筛选后的附件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "PDF 文档内容"
+        }
+      ],
+      "native_evidence": [
+        "PDF or WORD? (if, PDF 分支)",
+        "Extrahiere aus PDF1 (extractFromFile, pdf)"
+      ],
+      "requirement_evidence": [
+        "若为 PDF 附件，则提取其中的文档内容"
+      ],
+      "rationale": "PDF 内容提取为确定性操作，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "提取 Word 附件中的文本内容",
+      "node_type": "code",
+      "operation_family": "extract_word",
+      "inputs": [
+        {
+          "name": "filtered_attachments",
+          "type": "array",
+          "description": "筛选后的附件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "Word 文本内容"
+        }
+      ],
+      "native_evidence": [
+        "PDF or WORD? (if, Word 分支)",
+        "Google Drive (googleDrive)",
+        "HTTP Request2 (httpRequest, copy)",
+        "HTTP Request3 (httpRequest, export text/plain)"
+      ],
+      "requirement_evidence": [
+        "若为 Word 附件，则提取其中的文本内容"
+      ],
+      "rationale": "Word 文本提取为确定性操作，判 code；原生复制文件后导出文本的实现方式合并进契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型将新闻稿改写为结构完整的文章",
+      "node_type": "semantic",
+      "operation_family": "llm_rewrite",
+      "inputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "按分支提取出的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_article",
+          "type": "string",
+          "description": "结构完整的文章"
+        }
+      ],
+      "native_evidence": [
+        "AI Article Writer 1/2/3 (agent)",
+        "Anthropic Chat Model (lmChatAnthropic)"
+      ],
+      "requirement_evidence": [
+        "无论走哪条路径，提取出的内容都会被交给语言模型，按照预设要求将新闻稿改写为一篇结构完整的文章"
+      ],
+      "rationale": "需求声明由语言模型改写文章，判 semantic；三条并行 Writer 路径合并为单一契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "语言模型将生成结果与原始输入比对，生成质量与准确性自评",
+      "node_type": "semantic",
+      "operation_family": "llm_evaluation",
+      "inputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "原始输入"
+        },
+        {
+          "name": "generated_article",
+          "type": "string",
+          "description": "生成的文章"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "self_assessment",
+          "type": "string",
+          "description": "转换质量与准确性的自评"
+        }
+      ],
+      "native_evidence": [
+        "OpenAI self-assesment / self-assesment2 / self assesment (openAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型将生成结果与原始输入进行比对，对转换的质量与准确性作出自评，形成一次额外的反馈闭环"
+      ],
+      "rationale": "需求声明由语言模型生成自评，判 semantic。"
+    },
+    {
+      "node_id": "n8",
+      "label": "向原发件人发送包含原始输入、生成文章与自评的回复邮件",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "extracted_content",
+          "type": "string",
+          "description": "原始输入"
+        },
+        {
+          "name": "generated_article",
+          "type": "string",
+          "description": "生成的文章"
+        },
+        {
+          "name": "self_assessment",
+          "type": "string",
+          "description": "质量自评"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "reply to sender (no attachment) / (word) / (pdf) (gmail, reply)"
+      ],
+      "requirement_evidence": [
+        "系统向原发件人生成一封回复邮件，其中包含三部分内容：原始输入、生成的文章以及这份自评，便于编辑审阅并做最小幅度的修改"
+      ],
+      "rationale": "需求声明的回复邮件发送动作，为最终交付，判 terminal，无 CFG 出边；三条并行 reply 路径合并为单一契约。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到邮件后筛选附件"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "filtered_attachments 为空",
+      "rationale": "无剩余附件则处理邮件正文"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "附件为 PDF",
+      "rationale": "PDF 附件则提取文档内容"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": "附件为 Word",
+      "rationale": "Word 附件则提取文本内容"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "正文内容交给语言模型改写"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "PDF 内容交给语言模型改写"
+    },
+    {
+      "edge_id": "cfg_e7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Word 内容交给语言模型改写"
+    },
+    {
+      "edge_id": "cfg_e8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "改写完成后进行自评"
+    },
+    {
+      "edge_id": "cfg_e9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "自评完成后生成回复邮件"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "email",
+      "condition": null,
+      "rationale": "附件筛选基于收到的邮件"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "email",
+      "condition": null,
+      "rationale": "正文处理使用邮件正文"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "filtered_attachments",
+      "condition": null,
+      "rationale": "PDF 提取基于筛选后的附件"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "filtered_attachments",
+      "condition": null,
+      "rationale": "Word 提取基于筛选后的附件"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n3",
+      "target": "n6",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "改写基于正文提取内容"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n4",
+      "target": "n6",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "改写基于 PDF 提取内容"
+    },
+    {
+      "edge_id": "dfg_d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "改写基于 Word 提取内容"
+    },
+    {
+      "edge_id": "dfg_d8",
+      "source": "n3",
+      "target": "n7",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "自评比对使用原始输入（正文）"
+    },
+    {
+      "edge_id": "dfg_d9",
+      "source": "n4",
+      "target": "n7",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "自评比对使用原始输入（PDF 内容）"
+    },
+    {
+      "edge_id": "dfg_d10",
+      "source": "n5",
+      "target": "n7",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "自评比对使用原始输入（Word 内容）"
+    },
+    {
+      "edge_id": "dfg_d11",
+      "source": "n6",
+      "target": "n7",
+      "variable": "generated_article",
+      "condition": null,
+      "rationale": "自评比对使用生成的文章"
+    },
+    {
+      "edge_id": "dfg_d12",
+      "source": "n3",
+      "target": "n8",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "回复邮件包含原始输入（正文）"
+    },
+    {
+      "edge_id": "dfg_d13",
+      "source": "n4",
+      "target": "n8",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "回复邮件包含原始输入（PDF 内容）"
+    },
+    {
+      "edge_id": "dfg_d14",
+      "source": "n5",
+      "target": "n8",
+      "variable": "extracted_content",
+      "condition": null,
+      "rationale": "回复邮件包含原始输入（Word 内容）"
+    },
+    {
+      "edge_id": "dfg_d15",
+      "source": "n6",
+      "target": "n8",
+      "variable": "generated_article",
+      "condition": null,
+      "rationale": "回复邮件包含生成的文章"
+    },
+    {
+      "edge_id": "dfg_d16",
+      "source": "n7",
+      "target": "n8",
+      "variable": "self_assessment",
+      "condition": null,
+      "rationale": "回复邮件包含质量自评"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "三路分支建模：正文（n3）/ PDF（n4）/ Word（n5）三条提取路径汇入同一改写与自评链（n6→n8），分支条件按需求声明（无附件/PDF/Word）。原生三条并行的 AI Article Writer 与 reply 节点合并为单一契约；Word 路径的 Google Drive 复制与导出为实现细节，合并进 n5。"
+}

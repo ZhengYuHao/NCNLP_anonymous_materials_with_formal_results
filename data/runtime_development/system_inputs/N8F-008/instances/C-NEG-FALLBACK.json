@@ -1,0 +1,32 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-008",
+  "case_id": "C-NEG-FALLBACK",
+  "kind": "negative",
+  "input_data": {
+    "fixtures": {
+      "F-TRIGGER-COMMENT": {
+        "event": "note",
+        "project_id": 143,
+        "merge_request_iid": 42,
+        "discussion_id": "d_1a2b",
+        "note_id": 9000,
+        "body": "/review",
+        "confidence_threshold": 0.7
+      },
+      "F-MR-CHANGES-NO-POS": {
+        "changes": [
+          {
+            "old_path": "moved.txt",
+            "new_path": "moved.txt",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -1,1 +1,2 @@\n-old line\n+new line",
+            "position_resolvable": false
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "B0E070BD15FC3C2C1499D879D7153EC9F894EC2C645D362A77C39632A9F650A1"
+}

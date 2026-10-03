@@ -1,0 +1,477 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-056",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "3ac942fe64fa7c33357ab7ea41439ae8178e6f2497cf101396403169b859ebb7",
+  "natural_language_requirement": "系统在指定话题标签下自动为 Instagram 上的新帖点赞，并保持低频与去重。\n\n1）每 2 小时在指定分钟触发一次。\n2）按时间段从已配置的 Instagram 账号中轮换选择一个账号。\n3）由语言模型生成一个贴合 AI/BPA 领域的真实话题标签。\n4）按该话题标签抓取最近的帖子，抓取数量不超过配置的上限。\n5）从抓取结果中随机选择一条帖子，并通过查重确认该帖子此前未被点赞过。\n6）生成待点赞清单并上传至在线存储，随后启动自动点赞操作，对该帖子完成点赞。\n7）将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞。\n8）通过等待进行节流，将每个账号每天的点赞次数控制在约 12 次以内。",
+  "public_interfaces": [
+    {
+      "dependency_type": "httpRequest",
+      "operation": "like_post",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "like_id": {
+            "type": "string"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "like_id",
+          "ok"
+        ]
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_hashtag",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hashtag": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hashtag"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "append_already_liked",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "url"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "total_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ok",
+          "total_rows"
+        ]
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_liked",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "upload_file",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_name"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hashtag": {
+            "type": "string"
+          },
+          "max_posts": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hashtag",
+          "max_posts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "posts": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "caption": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "caption",
+                    "url"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "posts"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "posts": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "posts"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "account",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "username": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "username"
+          ]
+        },
+        "description": "按时间段轮换选出的 Instagram 账号",
+        "requirement_evidence": [
+          "按时间段从已配置的 Instagram 账号中轮换选择一个账号"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n2.account"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "hashtag",
+        "schema": {
+          "type": "string"
+        },
+        "description": "贴合 AI/BPA 领域的真实话题标签",
+        "requirement_evidence": [
+          "由语言模型生成一个贴合 AI/BPA 领域的真实话题标签"
+        ],
+        "source_operations": [
+          "generate_hashtag"
+        ],
+        "design_sources": [
+          "n3.hashtag"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "recent_posts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "caption": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "caption",
+              "url"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "按话题标签抓取的最近帖子，数量不超过配置上限",
+        "requirement_evidence": [
+          "按该话题标签抓取最近的帖子，抓取数量不超过配置的上限"
+        ],
+        "source_operations": [
+          "scrape_hashtag_posts"
+        ],
+        "design_sources": [
+          "n4.recent_posts"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "selected_post",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "caption",
+            "url"
+          ],
+          "additionalProperties": false
+        },
+        "description": "随机选中的一条帖子",
+        "requirement_evidence": [
+          "从抓取结果中随机选择一条帖子"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.selected_post"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "unliked_post",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "caption": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "caption",
+            "url"
+          ],
+          "additionalProperties": false
+        },
+        "description": "通过查重确认该帖子此前未被点赞过的帖子",
+        "requirement_evidence": [
+          "并通过查重确认该帖子此前未被点赞过"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n6.unliked_post"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "like_list",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "file_id": {
+              "type": "string"
+            },
+            "urls": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "file_id"
+          ]
+        },
+        "description": "已上传到在线存储的待点赞清单",
+        "requirement_evidence": [
+          "生成待点赞清单并上传至在线存储"
+        ],
+        "source_operations": [
+          "upload_file"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "like_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "like_id": {
+              "type": "string"
+            },
+            "ok": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "like_id",
+            "ok"
+          ],
+          "additionalProperties": false
+        },
+        "description": "自动点赞操作的执行结果",
+        "requirement_evidence": [
+          "随后启动自动点赞操作，对该帖子完成点赞"
+        ],
+        "source_operations": [
+          "like_post"
+        ],
+        "design_sources": [
+          "n8.like_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "append_already_liked_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "total_rows": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "ok",
+            "total_rows"
+          ],
+          "additionalProperties": false
+        },
+        "description": "将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞的操作结果",
+        "requirement_evidence": [
+          "将已点赞帖子的链接追加到已点赞记录中，以避免重复点赞"
+        ],
+        "source_operations": [
+          "append_already_liked"
+        ],
+        "design_sources": [
+          "n9"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "48CA6EC94B8E1DEB72CD8CC1BE0CB165D447BFADDEAC9F9E54085120869D8AB0",
+  "public_interface_sha256": "DB6ACDABFBB39CC077F2E32C7D8B35C8C296CC973B15F1FD3BFFB5EFFCAE1FA8",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

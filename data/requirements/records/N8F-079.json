@@ -1,0 +1,76 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-079",
+  "source_id": "n8n:18285",
+  "workflow_sha256": "bd674b8df643045d24d29ce3c0d50f33116a4198378f9bc4b99d6795f69f6e90",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cd0ef16acce8695b3ff74e922e5b70a4dca4654e7de8644113918afe00c41d21",
+  "requirement": {
+    "requirement_text": "一、预约受理\n1. 输入：收到用户发来的 Telegram 新消息，取其中的会话标识与消息文本。\n2. 处理：由语言模型把消息解析为结构化的预约信息，包括标题、开始与结束时间、地点与备注。\n3. 校验：对解析结果做校验；缺少结束时间时默认时长为 60 分钟；日期或时间缺失或含糊时，通过 Telegram 向用户追问澄清。\n4. 结果：必备信息齐备后，在 Google Calendar 中创建日程事件；把含事件标识与会话标识的预约记录追加到 Google Sheets 的“Appointments”工作表；并通过 Telegram 向用户发送确认消息。\n\n二、提醒\n1. 每 15 分钟运行一次，检索 Google Calendar 中未来 25 小时内即将开始的事件，筛选出大约距开始 24 小时或 1 小时的事件。\n2. 先查询 Google Sheets 的“ReminderLog”工作表，确认该事件在该提醒窗口是否已发送过提醒。\n3. 未发送过则通过 Telegram 发送提醒，并登记该次提醒以避免重复发送。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 285,
+        "text": "Quick Overview\nThis workflow turns Telegram messages into scheduled Google Calendar appointments using a Google Gemini AI agent, records bookings in Google Sheets, and runs every 15 minutes to send 24-hour and 1-hour Telegram reminders while logging sent reminders to avoid duplicates."
+      },
+      {
+        "start": 287,
+        "end": 1270,
+        "text": "How it works\nTriggers when a new Telegram message is received and extracts the chat ID and message text.\nUses a Google Gemini AI agent to parse the message into structured appointment details (title, start/end time, location, and notes).\nValidates the parsed data, defaults missing end times to 60 minutes, and asks the user on Telegram for clarification if the date or time is missing or ambiguous.\nCreates the appointment as an event in Google Calendar when all required details are available.\nAppends the appointment record (including event ID and chat ID) to a Google Sheets “Appointments” sheet and sends a confirmation message via Telegram.\nRuns every 15 minutes to fetch upcoming Google Calendar events in the next 25 hours and selects events that are roughly 24 hours or 1 hour away.\nChecks a Google Sheets “ReminderLog” sheet to see whether a reminder was already sent for that event/time window, then sends the Telegram reminder and logs the reminder to prevent duplicates."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户发来的 Telegram 消息，含会话标识与消息文本",
+        "Google Calendar 中未来 25 小时内的日程事件",
+        "Google Sheets“ReminderLog”工作表中已发送提醒的记录"
+      ],
+      "conditions": [
+        "解析结果缺少结束时间时，默认时长为 60 分钟",
+        "日期或时间缺失或含糊时，先向用户追问澄清",
+        "仅当必备信息齐备时才创建日程",
+        "提醒流程每 15 分钟运行一次",
+        "仅处理未来 25 小时内、大约距开始 24 小时或 1 小时的事件",
+        "该事件在该提醒窗口已发送过提醒时不再发送"
+      ],
+      "allowed_actions": [
+        "由语言模型把消息解析为结构化预约信息",
+        "校验解析结果并补全默认结束时间",
+        "通过 Telegram 向用户追问澄清",
+        "在 Google Calendar 中创建日程事件",
+        "把预约记录追加到 Google Sheets 的“Appointments”工作表",
+        "通过 Telegram 发送预约确认消息",
+        "检索即将开始的日程事件并筛选提醒窗口",
+        "查询“ReminderLog”工作表判断是否重复",
+        "通过 Telegram 发送提醒并登记"
+      ],
+      "visible_outcomes": [
+        "Google Calendar 中创建出日程事件",
+        "Google Sheets“Appointments”工作表中新增含事件标识与会话标识的预约记录",
+        "用户在 Telegram 中收到预约确认消息",
+        "用户在 Telegram 中收到 24 小时或 1 小时提醒，且同一提醒窗口不重复发送"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-079.packet.json",
+    "packet_sha256": "8e60e2686ecd28c9be606c553fe7603c6a866fb20775cdef931fe223b5a7bef8",
+    "public_description_sha256": "91ae13ab65921a5dc987f499ff6634f3159026be5ea177905074fd7288b88015"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-079.response.json",
+    "verification_response_sha256": "a8de5c8dbfe5aba4ef1d56c5381a12f42a03700842fdc661d515c3a246e1c245",
+    "decision": "accept"
+  },
+  "formal_index": 90
+}

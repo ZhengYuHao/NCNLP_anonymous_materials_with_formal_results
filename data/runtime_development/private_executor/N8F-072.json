@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-072",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-VT-SCAN",
+      "dependency_type": "httpRequest",
+      "operation": "virus_total_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "reputation": "malicious",
+        "malicious_votes": 8,
+        "clean_votes": 2,
+        "scan_metadata": {
+          "scan_date": "2026-09-02",
+          "engine_count": 20
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-URLSCAN-OK",
+      "dependency_type": "urlScanIo",
+      "operation": "urlscan_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "success": true,
+        "domains": [
+          "example.com",
+          "cdn.example.com"
+        ],
+        "requests": 12,
+        "resources": [
+          "script1.js",
+          "img1.png"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-URLSCAN-FAIL",
+      "dependency_type": "urlScanIo",
+      "operation": "urlscan_scan",
+      "request_contract": {
+        "url": "http://example.com/click?id=123"
+      },
+      "response_contract": {
+        "success": false,
+        "error": "blocked_by_robots"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM",
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "123456789"
+      },
+      "response_contract": {
+        "ok": true,
+        "message_id": 900
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-BOTH-OK",
+      "fixture_ids": [
+        "F-URL-CHECK"
+      ],
+      "mock_ids": [
+        "M-VT-SCAN",
+        "M-URLSCAN-OK",
+        "M-TELEGRAM"
+      ]
+    },
+    {
+      "case_id": "C-NEG-URLSCAN-FAIL",
+      "fixture_ids": [
+        "F-URL-CHECK"
+      ],
+      "mock_ids": [
+        "M-VT-SCAN",
+        "M-URLSCAN-FAIL",
+        "M-TELEGRAM"
+      ]
+    }
+  ]
+}

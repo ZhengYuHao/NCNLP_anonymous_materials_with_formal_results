@@ -1,0 +1,167 @@
+{
+  "_version": "1.0.0",
+  "_description": "StrategyClassifier 决策矩阵 — 从事实特征到实现策略的映射",
+  "rules": [
+    {
+      "id": "rule_01",
+      "condition": "triggers.is_explicit_list == true",
+      "trigger_strategy": "BLOCK_CONTAINS",
+      "action_strategy": null,
+      "reason": "业务文档列出了明确关键词，用 CONTAINS 直接匹配"
+    },
+    {
+      "id": "rule_02",
+      "condition": "triggers.numeric_comparisons != null",
+      "trigger_strategy": "BLOCK_COMPARE",
+      "action_strategy": null,
+      "reason": "触发条件含数值/枚举比较，用 BLOCK 做比较运算"
+    },
+    {
+      "id": "rule_03",
+      "condition": "triggers.implicit_intent != null",
+      "trigger_strategy": "SEMANTIC_BLOCK_CLASSIFICATION",
+      "action_strategy": null,
+      "reason": "需要整句语义推理，必须用 SEMANTIC_BLOCK 做分类"
+    },
+    {
+      "id": "rule_04",
+      "condition": "triggers.context_stage != null",
+      "trigger_strategy": "SEMANTIC_BLOCK_CLASSIFICATION",
+      "action_strategy": null,
+      "reason": "上下文相关的阶段判断，用 SEMANTIC_BLOCK 推理后分流"
+    },
+    {
+      "id": "rule_05",
+      "condition": "triggers.multidimensional == true",
+      "trigger_strategy": "SEMANTIC_BLOCK_EXTRACTION",
+      "action_strategy": null,
+      "reason": "多维主观判断，用 SEMANTIC_BLOCK 抽取结构化结果后代码分流"
+    },
+    {
+      "id": "rule_05a",
+      "condition": "triggers.fallback != ''",
+      "trigger_strategy": null,
+      "action_strategy": null,
+      "reason": "已废弃：fallback是执行兜底，不影响路由策略。由渲染器根据action_strategy处理"
+    },
+    {
+      "id": "rule_05b",
+      "condition": "triggers.action_sequence != []",
+      "trigger_strategy": null,
+      "action_strategy": null,
+      "reason": "已废弃：多步动作序列是执行复杂度信号，不影响路由策略。步数多少不决定执行方式（3步函数调用仍是Code，1步文本生成仍是LLM）。由后续action_type规则（rule_05d~05h, rule_06~13）决定真正的action_strategy"
+    },
+    {
+      "id": "rule_05c",
+      "condition": "triggers.nested_logic != null",
+      "trigger_strategy": null,
+      "action_strategy": null,
+      "reason": "已废弃：嵌套逻辑是执行复杂度，不影响路由策略。由渲染器根据action_strategy处理"
+    },
+    {
+      "id": "rule_05d",
+      "condition": "action.action_type == 'compute' and triggers.is_explicit_list == true",
+      "trigger_strategy": "BLOCK_CONTAINS",
+      "action_strategy": "CODE_COMPUTE",
+      "reason": "有明确枚举规则+数值计算 → 代码比较+计算，不走LLM（如折扣规则表）"
+    },
+    {
+      "id": "rule_05e",
+      "condition": "action.action_type == 'lookup'",
+      "trigger_strategy": "BLOCK_CONTAINS",
+      "action_strategy": "CODE_CALL_FUNC",
+      "reason": "查询类任务 → 代码函数调用，不走LLM（如查询会员等级）"
+    },
+    {
+      "id": "rule_05f",
+      "condition": "action.action_type == 'assign' and triggers.is_explicit_list == true",
+      "trigger_strategy": "BLOCK_CONTAINS",
+      "action_strategy": "CODE_ASSIGN",
+      "reason": "简单赋值+有关键词 → 代码赋值，不走LLM（如发放优惠券）"
+    },
+    {
+      "id": "rule_05g",
+      "condition": "action.action_type == 'text_generation'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_GENERATION",
+      "reason": "文本生成任务 → LLM执行器模式（如生成欢迎语）。路由策略由trigger规则独立决定"
+    },
+    {
+      "id": "rule_05h",
+      "condition": "action.action_type == 'scoring'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_SCORING",
+      "reason": "评估推理任务 → LLM评分模式（如退货风险评估）。路由策略由trigger规则独立决定"
+    },
+    {
+      "id": "rule_06",
+      "condition": "action.action_type == 'assign'",
+      "trigger_strategy": null,
+      "action_strategy": "CODE_ASSIGN",
+      "reason": "直接赋值操作，用代码直接赋值"
+    },
+    {
+      "id": "rule_07",
+      "condition": "action.action_type == 'template_fill'",
+      "trigger_strategy": null,
+      "action_strategy": "CODE_TEMPLATE",
+      "reason": "模板填充操作，用代码字符串拼接"
+    },
+    {
+      "id": "rule_08",
+      "condition": "action.action_type == 'lookup'",
+      "trigger_strategy": null,
+      "action_strategy": "CODE_CALL_FUNC",
+      "reason": "查表/函数调用，用代码调用 Python 函数"
+    },
+    {
+      "id": "rule_09",
+      "condition": "action.action_type == 'compute'",
+      "trigger_strategy": null,
+      "action_strategy": "CODE_COMPUTE",
+      "reason": "算术计算操作，用代码算术表达式"
+    },
+    {
+      "id": "rule_10",
+      "condition": "action.action_type == 'text_generation'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_GENERATION",
+      "reason": "文本生成操作，直接映射为 SEMANTIC_BLOCK(generation)"
+    },
+    {
+      "id": "rule_11",
+      "condition": "action.action_type == 'scoring'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_SCORING",
+      "reason": "多维度评分操作，用 SEMANTIC_BLOCK(scoring)"
+    },
+    {
+      "id": "rule_12",
+      "condition": "action.action_type == 'extraction'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_EXTRACTION",
+      "reason": "信息抽取操作，用 SEMANTIC_BLOCK(extraction)"
+    },
+    {
+      "id": "rule_13",
+      "condition": "action.action_type == 'similarity'",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_SIMILARITY",
+      "reason": "语义相似度判断，用 SEMANTIC_BLOCK(similarity)"
+    },
+    {
+      "id": "rule_default_trigger",
+      "condition": "true",
+      "trigger_strategy": "SEMANTIC_BLOCK_CLASSIFICATION",
+      "action_strategy": null,
+      "reason": "默认：无法判断触发条件时，交给 LLM 处理（安全兜底）"
+    },
+    {
+      "id": "rule_default_action",
+      "condition": "true",
+      "trigger_strategy": null,
+      "action_strategy": "SEMANTIC_BLOCK_GENERATION",
+      "reason": "默认：无法判断动作类型时，交给 LLM 处理（安全兜底）"
+    }
+  ]
+}

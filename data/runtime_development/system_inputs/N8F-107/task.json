@@ -1,0 +1,315 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-107",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "140a964cf62073f331a34c55c77f43f960ee3f146cfdb1f61fbd02fc98037fc3",
+  "natural_language_requirement": "提供一个把自然语言指令转换为结构化网络数据的服务。\n调用方通过 POST 请求提交一条自然语言指令，并可附带一个可选的 JSON Schema，用于描述期望的输出结构。\n服务在把数据交给智能体之前先校验该输出结构：若调用方未提供输出结构或该结构为空，则回退到一个宽松的默认结构；若提供了输出结构，但其不是 JSON 对象（例如是字符串、数组或基本类型），或缺少 type 属性，或 type 属性的取值不是对象、数组、字符串、数字、布尔之一，则返回一条包含说明信息与示例结构的错误响应。\n校验通过后，智能体依据自然语言指令研究并抓取网页数据：检索网页，发现相关页面与信息来源；抓取任意 URL，提取干净的结构化内容；在实时会话中与已抓取的页面交互，点击按钮、填写表单、浏览动态内容，并提取静态抓取无法获取的数据，整个过程无需人工管理会话。智能体可自主决定使用哪些能力，从而具备发现来源、读取页面并与动态内容交互的完整网页浏览能力。\n最后，服务将智能体的输出格式化为与所提供结构或默认结构一致的结果，并把结构化 JSON 返回给调用方；若调用方提供了结构，返回结果符合该结构；若未提供，则返回结构灵活的数据对象。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "interact",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "extracted_data": {
+            "additionalProperties": false,
+            "properties": {
+              "button_label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "button_label"
+            ],
+            "type": "object"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "extracted_data",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "scrape",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "content",
+          "metadata"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "search",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "results": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "operation": "format_to_schema",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "schema": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "schema"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "formatted": {
+            "type": "boolean"
+          },
+          "output": {
+            "additionalProperties": false,
+            "properties": {
+              "stories": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "title"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "stories"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "formatted",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenRouter",
+      "operation": "research_and_extract",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "prompt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "stories": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stories",
+          "summary"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "raw_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "string",
+              "description": "智能体对抓取内容的结果摘要"
+            },
+            "stories": {
+              "type": "array",
+              "description": "智能体提取的条目数组",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "条目标题"
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          },
+          "required": [
+            "summary",
+            "stories"
+          ],
+          "additionalProperties": true
+        },
+        "description": "智能体研究抓取得到的原始结果，包含结果摘要与提取条目数组，结构随智能体抓取内容动态变化",
+        "requirement_evidence": [
+          "智能体依据自然语言指令研究并抓取网页数据：检索网页，发现相关页面与信息来源；抓取任意 URL，提取干净的结构化内容；在实时会话中与已抓取的页面交互，点击按钮、填写表单、浏览动态内容，并提取静态抓取无法获取的数据，整个过程无需人工管理会话。智能体可自主决定使用哪些能力"
+        ],
+        "source_operations": [
+          "research_and_extract"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "formatted_result",
+        "schema": {
+          "type": "object"
+        },
+        "description": "与所提供结构或默认结构一致的 JSON 结果",
+        "requirement_evidence": [
+          "服务将智能体的输出格式化为与所提供结构或默认结构一致的结果",
+          "把结构化 JSON 返回给调用方；若调用方提供了结构，返回结果符合该结构；若未提供，则返回结构灵活的数据对象"
+        ],
+        "source_operations": [
+          "format_to_schema"
+        ],
+        "design_sources": [
+          "n5.formatted_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "error_message",
+        "schema": {
+          "type": "string"
+        },
+        "description": "结构不合法时的说明信息（含示例结构）",
+        "requirement_evidence": [
+          "若提供了输出结构，但其不是 JSON 对象（例如是字符串、数组或基本类型），或缺少 type 属性，或 type 属性的取值不是对象、数组、字符串、数字、布尔之一，则返回一条包含说明信息与示例结构的错误响应"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n2.error_message"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "A35471B9A0A52CE617F11A8E390AEFBA362B869D8C08B9BFEA44310B26E72C34",
+  "public_interface_sha256": "C866E385B969F9D3A934E1F6E0A3B25B6704970712D126EECEAE9D2C89D08F5C",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

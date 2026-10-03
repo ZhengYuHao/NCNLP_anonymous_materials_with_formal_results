@@ -1,0 +1,380 @@
+{
+  "task_id": "N8F-022",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "822104ae68f8d74a4d8e96600ece7130cee04b32867181b6018b02049c4cf2cd",
+  "fixtures": [
+    {
+      "fixture_id": "F-FORM-TWO-DOCS",
+      "purpose": "正常用例：表单提交交易名称、Drive 文件夹 ID 与通知邮箱；Drive 数据室含 2 个文件，验证逐个处理、写入发现并生成摘要邮件",
+      "input_data": {
+        "form": {
+          "deal_name": "Acme-Pending-Merger",
+          "drive_folder_id": "folder-dd-2026-01",
+          "notification_email": "manda-team@example.com"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FORM-EMPTY-EMAIL",
+      "purpose": "负例：表单提交缺少通知邮箱，验证系统拒绝进入处理流程",
+      "input_data": {
+        "form": {
+          "deal_name": "Incomplete-Deal",
+          "drive_folder_id": "folder-dd-2026-02"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-LLM-SUMMARY-ERROR",
+      "purpose": "正常用例（错误路径）：Drive 数据室含 1 个文件，语言模型在摘要环节返回错误对象，验证向 Slack 发送告警",
+      "input_data": {
+        "form": {
+          "deal_name": "Deal-With-Summary-Error",
+          "drive_folder_id": "folder-dd-2026-03",
+          "notification_email": "manda-team@example.com"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DRIVE-LIST",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "list_files_in_folder",
+      "request_contract": {
+        "folder_id": "folder-dd-2026-01"
+      },
+      "response_contract": {
+        "files": [
+          {
+            "file_id": "file-001",
+            "name": "Master_Service_Agreement.pdf",
+            "mime_type": "application/pdf"
+          },
+          {
+            "file_id": "file-002",
+            "name": "Financial_Statements_2025.docx",
+            "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-DOWNLOAD-1",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "download_and_extract_text",
+      "request_contract": {
+        "file_id": "file-001"
+      },
+      "response_contract": {
+        "text": "Master Service Agreement between Acme and Vendor. Governing law: New York. Renewal clause: automatic."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-DOWNLOAD-2",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "download_and_extract_text",
+      "request_contract": {
+        "file_id": "file-002"
+      },
+      "response_contract": {
+        "text": "Financial statements for fiscal year 2025. Revenue 10M, liabilities 4M."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLASSIFY-1",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "classify_document",
+      "request_contract": {
+        "doc_text": "Master Service Agreement between Acme and Vendor."
+      },
+      "response_contract": {
+        "doc_type": "contract",
+        "risk_level": "high",
+        "flags": ["auto-renewal", "missing-termination"],
+        "summary": "Agreement auto-renews with no termination clause."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLASSIFY-2",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "classify_document",
+      "request_contract": {
+        "doc_text": "Financial statements for fiscal year 2025."
+      },
+      "response_contract": {
+        "doc_type": "financial_statement",
+        "risk_level": "medium",
+        "flags": ["liability-ratio"],
+        "summary": "Liabilities to revenue ratio warrants review."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-1",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_finding",
+      "request_contract": {
+        "sheet": "Due Diligence Findings",
+        "run_id": "run-20260902-abc",
+        "finding": {
+          "doc_name": "Master_Service_Agreement.pdf",
+          "doc_type": "contract",
+          "risk_level": "high",
+          "flags": ["auto-renewal", "missing-termination"],
+          "summary": "Agreement auto-renews with no termination clause."
+        }
+      },
+      "response_contract": {
+        "row_number": 11,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-2",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_finding",
+      "request_contract": {
+        "sheet": "Due Diligence Findings",
+        "run_id": "run-20260902-abc",
+        "finding": {
+          "doc_name": "Financial_Statements_2025.docx",
+          "doc_type": "financial_statement",
+          "risk_level": "medium",
+          "flags": ["liability-ratio"],
+          "summary": "Liabilities to revenue ratio warrants review."
+        }
+      },
+      "response_contract": {
+        "row_number": 12,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ-FINDINGS",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_run_findings",
+      "request_contract": {
+        "sheet": "Due Diligence Findings",
+        "run_id": "run-20260902-abc"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "doc_name": "Master_Service_Agreement.pdf",
+            "risk_level": "high",
+            "flags": ["auto-renewal", "missing-termination"],
+            "summary": "Agreement auto-renews with no termination clause."
+          },
+          {
+            "doc_name": "Financial_Statements_2025.docx",
+            "risk_level": "medium",
+            "flags": ["liability-ratio"],
+            "summary": "Liabilities to revenue ratio warrants review."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "draft_dd_summary",
+      "request_contract": {
+        "findings": "all_findings"
+      },
+      "response_contract": {
+        "executive_summary": "Two documents reviewed. One high-risk contract and one medium-risk financial statement were identified."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_email",
+      "request_contract": {
+        "to": "manda-team@example.com",
+        "subject": "DD Executive Summary - Acme-Pending-Merger",
+        "html_body": "<html><body><h1>Executive Summary</h1></body></html>"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ALERT",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_alert",
+      "request_contract": {
+        "channel": "#dd-alerts",
+        "text": "summary_error"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1234567890.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TWO-DOCS-FULL-PIPELINE",
+      "kind": "positive",
+      "fixture_ids": ["F-FORM-TWO-DOCS"],
+      "mock_ids": [
+        "M-DRIVE-LIST",
+        "M-DRIVE-DOWNLOAD-1",
+        "M-DRIVE-DOWNLOAD-2",
+        "M-LLM-CLASSIFY-1",
+        "M-LLM-CLASSIFY-2",
+        "M-SHEETS-APPEND-1",
+        "M-SHEETS-APPEND-2",
+        "M-SHEETS-READ-FINDINGS",
+        "M-LLM-SUMMARY",
+        "M-GMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FP-1",
+          "target": "exec_log.run_id",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求为每次运行生成唯一运行标识，执行日志必须包含 run_id"
+        },
+        {
+          "assertion_id": "A-FP-2",
+          "target": "exec_log.drive.list.files",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "固定模拟的 Drive 数据室包含 2 个文件，列表环节必须取回全部文件"
+        },
+        {
+          "assertion_id": "A-FP-3",
+          "target": "exec_log.sheets.append_calls",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求要求每个文档的发现追加到工作表，2 个文件必须产生 2 次追加"
+        },
+        {
+          "assertion_id": "A-FP-4",
+          "target": "exec_log.sheets.append_calls[0].finding.risk_level",
+          "operator": "equals",
+          "expected": "high",
+          "rationale": "第一个文档的发现必须保留语言模型判定的风险等级"
+        },
+        {
+          "assertion_id": "A-FP-5",
+          "target": "exec_log.sheets.append_calls[1].finding.flags",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "第二个文档的标记项数量必须与模型输出一致"
+        },
+        {
+          "assertion_id": "A-FP-6",
+          "target": "exec_log.summary.findings_count",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "需求要求全部文档处理完毕后取回全部发现再生成摘要，摘要输入必须包含 2 条发现"
+        },
+        {
+          "assertion_id": "A-FP-7",
+          "target": "final_output.email.to",
+          "operator": "equals",
+          "expected": "manda-team@example.com",
+          "rationale": "摘要邮件必须发送到表单提交的通知邮箱"
+        },
+        {
+          "assertion_id": "A-FP-8",
+          "target": "final_output.email.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求通过邮件发送 HTML 摘要，发送结果必须为成功"
+        },
+        {
+          "assertion_id": "A-FP-9",
+          "target": "final_output.email.html_body",
+          "operator": "contains",
+          "expected": "Executive Summary",
+          "rationale": "邮件正文必须是转换为 HTML 的摘要，必须包含摘要标题标记"
+        }
+      ]
+    },
+    {
+      "case_id": "C-EMPTY-EMAIL-REJECTED",
+      "kind": "negative",
+      "fixture_ids": ["F-FORM-EMPTY-EMAIL"],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-EE-1",
+          "target": "response.status_code",
+          "operator": "not_equals",
+          "expected": 200,
+          "rationale": "表单缺少必需的通知邮箱，系统应拒绝而非继续处理"
+        },
+        {
+          "assertion_id": "A-EE-2",
+          "target": "response.body.error",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "拒绝时必须返回错误信息字段"
+        },
+        {
+          "assertion_id": "A-EE-3",
+          "target": "exec_log.mock_calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "输入不完整时不得触发 Drive 列表、文件下载或任何外部服务调用"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SUMMARY-ERROR-SLACK-ALERT",
+      "kind": "positive",
+      "fixture_ids": ["F-LLM-SUMMARY-ERROR"],
+      "mock_ids": ["M-SLACK-ALERT"],
+      "assertions": [
+        {
+          "assertion_id": "A-SA-1",
+          "target": "exec_log.slack.alert.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求语言模型摘要环节返回问题时向 Slack 发送告警，告警发送必须成功"
+        },
+        {
+          "assertion_id": "A-SA-2",
+          "target": "exec_log.error_source",
+          "operator": "contains",
+          "expected": "summary",
+          "rationale": "告警必须源自摘要环节的错误，错误来源标记须指明摘要环节"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖双文件完整流水线（唯一 run_id、逐文件下载与分类、逐条追加发现、全部完成后取回并生成摘要、HTML 邮件发送）、缺邮箱负例（拒绝且零外部调用），以及摘要环节错误触发 Slack 告警路径。Drive、语言模型、Sheets、Gmail、Slack 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数量相等、字段存在、内容包含与调用次数等可计算条件。"
+}

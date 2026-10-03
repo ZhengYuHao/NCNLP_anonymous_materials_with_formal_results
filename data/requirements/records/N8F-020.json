@@ -1,0 +1,106 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-020",
+  "source_id": "n8n:18236",
+  "workflow_sha256": "b6b75ad2ab22a8dcad67d7b443a7c48e100acd6f0d2ae1177d2c5915025fb2da",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "70c8914053352c45808e664db3347279263e40d8380563559787145176569f77",
+  "requirement": {
+    "requirement_text": "该需求用于管理 Yandex Zen 内容生产流程：按周从维基百科分类生成文章选题，按日撰写一篇俄文文章并生成最多两幅配图，成果保存到 Google Docs 与 Google Drive，并在 Google Sheets 中跟踪状态。\n\n触发方式有两种：手动触发生成当日内容，或按每周一 09:00 的计划触发以刷新选题队列。\n\n初始化：在 Google Drive 中查找指定的 Google Sheets 文件；若不存在，则创建该电子表格、所需的工作表（选题、已发布、图片、状态）以及 Google Drive 中的内容文件夹。\n\n选题生成：从 Google Sheets 读取已发布和已排队的标题；向维基百科 API 查询一个随机的女性主题分类；由语言模型生成新的俄文选题；过滤掉重复选题后追加到选题工作表。\n\n内容生成：读取选题工作表，选取一条状态为“新”的选题；由语言模型起草一篇俄文文章，并进行第二轮改写以降低文本中的机械痕迹。随后在 Google Drive 中为该文章创建专属文件夹、创建 Google 文档、写入最终文章文本，并将文档链接公开共享。\n\n配图生成：由语言模型从文章中抽取最多两个配图场景并生成英文配图描述；再由图像生成能力生成图片；把图片上传到 Google Drive 并通过链接共享。\n\n记录：把图片元数据记录到图片工作表；把文章条目追加到已发布工作表；并把该选题行的状态更新为“就绪”，同时附上 Google 文档链接。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 299,
+        "text": "This workflow manages a Yandex Zen content pipeline by generating weekly article topics from Wikipedia categories, then drafting a daily Russian article and up to two illustrations via OpenRouter, saving everything to Google Docs/Drive and tracking status in a Google Sheets database."
+      },
+      {
+        "start": 314,
+        "end": 420,
+        "text": "Runs either manually for daily generation or on a weekly Monday 09:00 schedule to refresh the topic queue."
+      },
+      {
+        "start": 421,
+        "end": 630,
+        "text": "Searches Google Drive for a Google Sheets file named Zen_Content_DB and, if missing, creates the spreadsheet, required sheets (Topics/Published/Images/State), and a Zen_Content_Articles folder in Google Drive."
+      },
+      {
+        "start": 631,
+        "end": 923,
+        "text": "For topic generation, pulls already published and queued titles from Google Sheets, queries the Wikipedia API for a random women-focused category, and uses OpenRouter (Claude Sonnet) to generate new Russian topic ideas while filtering out duplicates before appending them to the Topics sheet."
+      },
+      {
+        "start": 924,
+        "end": 1139,
+        "text": "For content generation, reads the Topics sheet, selects one topic with status = new, and uses OpenRouter (Claude Haiku) to draft a Russian article and then rewrite it in a second pass to reduce AI-sounding patterns."
+      },
+      {
+        "start": 1140,
+        "end": 1278,
+        "text": "Creates a per-article folder in Google Drive, creates a Google Doc, inserts the final article text, and shares the document link publicly."
+      },
+      {
+        "start": 1279,
+        "end": 1504,
+        "text": "Uses OpenRouter (GPT-5) to extract up to two illustrated scenes and generate English image prompts, then calls OpenRouter Images (Gemini image model) to generate images, uploads them to Google Drive, and shares them via link."
+      },
+      {
+        "start": 1505,
+        "end": 1672,
+        "text": "Logs image metadata to the Images sheet, appends the article entry to the Published sheet, and updates the topic row in Topics to status ready with the Google Doc URL."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "手动触发（生成当日内容）或每周一 09:00 的计划触发（刷新选题队列）",
+        "Google Sheets 中已发布与已排队的标题",
+        "维基百科 API 返回的随机女性主题分类",
+        "选题工作表中状态为“新”的选题"
+      ],
+      "conditions": [
+        "Google Drive 中不存在指定电子表格时，自动创建该表格、所需工作表与内容文件夹",
+        "生成的选题须过滤重复项",
+        "仅处理状态为“新”的选题",
+        "每篇文章最多抽取两个配图场景、最多生成两幅配图"
+      ],
+      "allowed_actions": [
+        "读取已发布与已排队的标题",
+        "向维基百科 API 查询随机女性主题分类",
+        "调用语言模型生成俄文选题",
+        "调用语言模型起草并二次改写俄文文章",
+        "调用语言模型抽取配图场景并生成英文配图描述",
+        "调用图像生成能力生成图片",
+        "在 Google Drive 创建文件夹与 Google 文档并写入文章文本",
+        "公开共享文档链接与图片链接",
+        "记录图片元数据、追加文章条目、更新选题状态"
+      ],
+      "visible_outcomes": [
+        "Google Drive 中生成一篇可公开访问的俄文文章文档",
+        "Google Drive 中生成最多两幅可公开访问的配图",
+        "图片工作表中记录图片元数据",
+        "已发布工作表中新增文章条目",
+        "选题工作表中该选题状态更新为“就绪”并附上 Google 文档链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-020.packet.json",
+    "packet_sha256": "3477be48d34eb38602007fda9fcc3d7db21902075f6a4db8b826740e8a24e9c3",
+    "public_description_sha256": "8df40d05f3f1170a0a0be926c22dc1dd05bb652f1069c721820c6e2eb5233ba7"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-020.response.json",
+    "verification_response_sha256": "0ec5ef77840b5c8873d4ee6d79f74b933756ff93097f7a8b6be4c8dc8f8eec1c",
+    "decision": "accept"
+  },
+  "formal_index": 31
+}

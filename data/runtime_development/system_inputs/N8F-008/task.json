@@ -1,0 +1,882 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-008",
+  "dataset_partition": "development_qualification",
+  "domain": "governance",
+  "requirement_sha256": "0d8092e139b1fcb82853a17bb96fae354b6e8640d231b9b4bf84f52b9ed049cf",
+  "natural_language_requirement": "当用户在 GitLab 合并请求（merge request）讨论区发布触发评论时，启动代码审查流程。\n输入：用户在 GitLab 合并请求讨论区发布的触发评论；系统据此加载该合并请求的变更内容。\n处理过程：\n1. 将变更差异按每个变更文件拆分为一个条目，跳过不适合行内评审的文件；\n2. 由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件；\n3. 汇总三个审查者的结论，再由语言模型进行复核：剔除力度不足或重复的结论，并统一严重程度与置信度的表示；\n4. 仅发布置信度达到配置阈值的审查结论。\n输出与分支：\n- 若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论；\n- 否则退化为在触发评论所在的讨论区中回复评论；\n- 同时发布一条总结性回复，标记本次审查已完成。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gitlab",
+      "operation": "create_discussion_reply",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "discussion_id",
+          "body"
+        ],
+        "properties": {
+          "discussion_id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "note_id"
+        ],
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "gitlab",
+      "operation": "create_inline_review_comment",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "merge_request_iid",
+          "project_id",
+          "body"
+        ],
+        "properties": {
+          "merge_request_iid": {
+            "type": "integer"
+          },
+          "project_id": {
+            "type": "integer"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "note_id"
+        ],
+        "properties": {
+          "note_id": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "gitlab",
+      "operation": "create_summary_reply",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "discussion_id",
+          "body"
+        ],
+        "properties": {
+          "discussion_id": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "body",
+          "note_id"
+        ],
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "note_id": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "gitlab",
+      "operation": "get_merge_request_changes",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "merge_request_iid": {
+            "type": "integer"
+          },
+          "project_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "merge_request_iid",
+          "project_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "changes": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "deleted_file": {
+                      "type": "boolean"
+                    },
+                    "diff": {
+                      "type": "string"
+                    },
+                    "new_file": {
+                      "type": "boolean"
+                    },
+                    "new_path": {
+                      "type": "string"
+                    },
+                    "old_path": {
+                      "type": "string"
+                    },
+                    "position_resolvable": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "deleted_file",
+                    "diff",
+                    "new_file",
+                    "new_path",
+                    "old_path",
+                    "position_resolvable"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "changes"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "changes": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "deleted_file": {
+                      "type": "boolean"
+                    },
+                    "diff": {
+                      "type": "string"
+                    },
+                    "new_file": {
+                      "type": "boolean"
+                    },
+                    "new_path": {
+                      "type": "string"
+                    },
+                    "old_path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "deleted_file",
+                    "diff",
+                    "new_file",
+                    "new_path",
+                    "old_path"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "changes"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_bugs",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "confidence": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "confidence",
+                "id",
+                "line",
+                "message",
+                "path",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "findings"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_maintainability",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "confidence": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "confidence",
+                "id",
+                "line",
+                "message",
+                "path",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "findings"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_security",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "confidence": {
+                  "type": "number"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "confidence",
+                "id",
+                "line",
+                "message",
+                "path",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "findings"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "verify_findings",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "bug_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "security_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "maintainability_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": [
+          "bug_findings",
+          "security_findings",
+          "maintainability_findings"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "findings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "confidence": {
+                  "type": "number"
+                },
+                "line": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "severity": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "confidence",
+                "line",
+                "message",
+                "path",
+                "severity"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "findings"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "bug_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "针对缺陷的审查结论",
+        "requirement_evidence": [
+          "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+        ],
+        "source_operations": [
+          "review_bugs"
+        ],
+        "design_sources": [
+          "n4.bug_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "security_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "针对安全的审查结论",
+        "requirement_evidence": [
+          "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+        ],
+        "source_operations": [
+          "review_security"
+        ],
+        "design_sources": [
+          "n5.security_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "maintainability_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "针对可维护性的审查结论",
+        "requirement_evidence": [
+          "由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"
+        ],
+        "source_operations": [
+          "review_maintainability"
+        ],
+        "design_sources": [
+          "n6.maintainability_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "verified_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "复核后的结论，已剔除力度不足或重复项并统一严重程度与置信度表示",
+        "requirement_evidence": [
+          "汇总三个审查者的结论，再由语言模型进行复核：剔除力度不足或重复的结论，并统一严重程度与置信度的表示"
+        ],
+        "source_operations": [
+          "verify_findings"
+        ],
+        "design_sources": [
+          "n7.verified_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "publishable_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "置信度达到配置阈值的审查结论",
+        "requirement_evidence": [
+          "仅发布置信度达到配置阈值的审查结论"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n8.publishable_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "positioned_findings",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "line": {
+                "type": "integer"
+              },
+              "message": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "position_resolvable": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "path",
+              "line",
+              "message",
+              "severity",
+              "confidence",
+              "position_resolvable"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "已解析差异位置或标记无法定位的结论",
+        "requirement_evidence": [
+          "若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n9.positioned_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "gitlab_comments",
+        "schema": {
+          "type": "object",
+          "required": [
+            "inline_review_comments",
+            "discussion_replies",
+            "summary_replies"
+          ],
+          "properties": {
+            "inline_review_comments": {
+              "description": "创建的行内评审评论记录",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "note_id",
+                  "merge_request_iid",
+                  "project_id",
+                  "path",
+                  "line",
+                  "message"
+                ],
+                "properties": {
+                  "note_id": {
+                    "type": "integer"
+                  },
+                  "merge_request_iid": {
+                    "type": "integer"
+                  },
+                  "project_id": {
+                    "type": "integer"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "discussion_replies": {
+              "description": "在触发评论所在讨论区回复的评论记录",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "note_id",
+                  "discussion_id",
+                  "body"
+                ],
+                "properties": {
+                  "note_id": {
+                    "type": "integer"
+                  },
+                  "discussion_id": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "summary_replies": {
+              "description": "发布的总结性回复记录",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "note_id",
+                  "discussion_id",
+                  "body"
+                ],
+                "properties": {
+                  "note_id": {
+                    "type": "integer"
+                  },
+                  "discussion_id": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "在对应位置创建行内评审评论或在触发评论所在讨论区回复评论，同时发布总结性回复，标记本次审查已完成",
+        "requirement_evidence": [
+          "若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论",
+          "否则退化为在触发评论所在的讨论区中回复评论",
+          "同时发布一条总结性回复，标记本次审查已完成"
+        ],
+        "source_operations": [
+          "create_inline_review_comment",
+          "create_discussion_reply",
+          "create_summary_reply"
+        ],
+        "design_sources": [
+          "n10",
+          "n11",
+          "n12"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "2844AAB3308C2C33173516A9D9CE9A186D865BEA68A1A3F289C95A4AC3F3EF88",
+  "public_interface_sha256": "13D62C9D786B114D89C71BF62978A66697886DDE1C244BD89778363EBFEAC64E",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

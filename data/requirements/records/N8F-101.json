@@ -1,0 +1,69 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-101",
+  "source_id": "n8n:18050",
+  "workflow_sha256": "9623b21be7dba6e9daedffa879365aec9eb3a4b5ad9441a8e3ca5e8f52440831",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "5a67c53da6298958cb9f283ff6ab8efb72121a8b2560a4835f6bc19e8b10a5c1",
+  "requirement": {
+    "requirement_text": "通过对话入口，用户用自然语言就表格提出问题（例如“哪个月最好？”、“按国家拆分收入？”、“哪些行缺少邮箱？”）。智能体读取 Google Sheets 中的实时数据行，基于真实数据计算并给出答案，而不是凭记忆猜测；对话记忆保留上下文，使“那之前一个月呢？”这类追问能够正常衔接；答案连同实际数字在对话中返回。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 281,
+        "text": "Quick overview\nAsk your spreadsheet questions in plain language — \"best month?\", \"revenue by country?\", \"rows missing an email?\" — and an AI agent reads the live sheet and answers with real numbers. Conversation memory makes follow-up questions work. Five nodes, five-minute setup."
+      },
+      {
+        "start": 283,
+        "end": 753,
+        "text": "How it works\nWhen You Ask a Question is n8n's hosted chat — open the chat URL and type a question in plain language.\nAnswer With Data, Not Guesses is an AI agent with one tool: Read the Spreadsheet. It pulls the live rows from your Google Sheet and computes the answer from real data — it never guesses from memory.\nRemember the Conversation keeps context, so follow-ups like \"and the month before that?\" just work.\nAnswers come back in the chat with the actual numbers."
+      },
+      {
+        "start": 1379,
+        "end": 1742,
+        "text": "Customization\nDescribe your columns in the agent's system prompt for noticeably better answers (\"Revenue is in USD, Date is YYYY-MM-DD\"). Add more sheet tools for multi-tab analysis. Add an append/update Sheets tool to let the agent write rows, not just read them. For big datasets, swap the Sheets tool for a Postgres/MySQL tool - the agent pattern is identical."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户在对话中用自然语言提出的表格问题",
+        "Google Sheets 中的实时数据行"
+      ],
+      "conditions": [
+        "答案必须基于表格中的真实数据计算，不得凭记忆猜测",
+        "保留对话上下文以支持追问"
+      ],
+      "allowed_actions": [
+        "读取 Google Sheets 中的实时数据行",
+        "基于真实数据计算答案",
+        "在对话中返回带实际数字的答案"
+      ],
+      "visible_outcomes": [
+        "对话中返回包含实际数字的答案",
+        "追问能够基于前文上下文得到正确回答"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-101.packet.json",
+    "packet_sha256": "ea4c3c3ba307f4afe39f94c77357e02666a119e6f5b9157d97dde37bb6d3091b",
+    "public_description_sha256": "733acc3e269523b5eb9affd36badf2f4f2bf878445bfd84cc81119b4900d7763"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-101.response.json",
+    "verification_response_sha256": "5b42cf42c89e8497e417297e0f605e16f323340cd92943c585f60d1903499990",
+    "decision": "accept"
+  },
+  "formal_index": 112
+}

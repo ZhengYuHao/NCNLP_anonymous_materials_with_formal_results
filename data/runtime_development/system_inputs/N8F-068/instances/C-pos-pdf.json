@@ -1,0 +1,22 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-068",
+  "case_id": "C-pos-pdf",
+  "kind": "positive",
+  "input_data": {
+    "from": "pr@company.com",
+    "subject": "Press release: new product",
+    "body": "Please find the press release attached.",
+    "attachments": [
+      {
+        "name": "release.pdf",
+        "mime": "application/pdf"
+      },
+      {
+        "name": "photo.jpg",
+        "mime": "image/jpeg"
+      }
+    ]
+  },
+  "input_sha256": "9D7F3D10E0A0654C9B30963A4ED0651D03DB3C0A73602294D133C0E3D87B9939"
+}

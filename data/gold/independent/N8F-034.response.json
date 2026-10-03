@@ -1,0 +1,462 @@
+{
+  "task_id": "N8F-034",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "fff929bc124d0c0495a69c576e26196036258342ec64411b851abd3aa76200b9",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "weekly_trigger",
+          "type": "trigger_event",
+          "description": "每周一次的计划触发事件"
+        }
+      ],
+      "native_evidence": ["Schedule Trigger (scheduleTrigger)"],
+      "requirement_evidence": ["系统按周定期执行", "按周定期执行"],
+      "rationale": "周期调度为确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取主题清单",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "weekly_trigger",
+          "type": "trigger_event",
+          "description": "每周一次的计划触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "topics",
+          "type": "array",
+          "description": "指定的检索主题清单（逐主题条目）"
+        }
+      ],
+      "native_evidence": ["Set Data (set)", "Split Topics into Items (code)"],
+      "requirement_evidence": ["围绕指定主题在 Reddit 检索相关帖子", "指定的主题清单"],
+      "rationale": "读取并拆分主题清单为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "检索 Reddit 帖子",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "topics",
+          "type": "array",
+          "description": "指定的检索主题清单（逐主题条目）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reddit_posts",
+          "type": "array",
+          "description": "Reddit 检索到的相关帖子"
+        }
+      ],
+      "native_evidence": ["Search Posts (reddit search)"],
+      "requirement_evidence": ["围绕指定主题在 Reddit 检索相关帖子", "在 Reddit 按主题检索帖子"],
+      "rationale": "按主题调用 Reddit 检索为确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "按互动条件筛选帖子",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "reddit_posts",
+          "type": "array",
+          "description": "Reddit 检索到的相关帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "trending_posts",
+          "type": "array",
+          "description": "按互动表现筛选出的上升趋势帖子（逐篇处理）"
+        }
+      ],
+      "native_evidence": ["Upvotes Requirement Filtering (if)", "Set Reddit Posts (set)", "Remove Duplicates (code)"],
+      "requirement_evidence": ["并按互动表现（如点赞数等条件）筛选出处于上升趋势的帖子", "帖子需按点赞数等互动条件筛选，聚焦趋势内容"],
+      "rationale": "基于点赞数等互动指标的阈值筛选为确定性规则，判 code。原生去重折叠进本节点筛选契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "获取评论并取前30条",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "trending_posts",
+          "type": "array",
+          "description": "按互动表现筛选出的上升趋势帖子（逐篇处理）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "top_comments",
+          "type": "array",
+          "description": "每篇入选帖子按评分排名前 30 条的评论"
+        }
+      ],
+      "native_evidence": ["Get Comments (reddit)", "Extract Top Comments (code)", "Format Comments (code)"],
+      "requirement_evidence": ["对每篇入选帖子，系统获取其评论，按评分取排名前 30 条评论", "获取并按评分取前 30 条评论", "评论按评分取排名前 30 条"],
+      "rationale": "评论获取与按评分截取前 30 条为确定性外部读取与排序截断，需求声明为一个动作，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "评论分析",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "top_comments",
+          "type": "array",
+          "description": "每篇入选帖子按评分排名前 30 条的评论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comment_analysis",
+          "type": "object",
+          "description": "评论分析结论（整体情绪、主要叙事、受众洞察、公关启示）"
+        }
+      ],
+      "native_evidence": ["Comments Analysis (chainLlm)", "Anthropic Chat Model (lmChatAnthropic)"],
+      "requirement_evidence": ["使用语言模型分析这些评论，得出整体情绪、主要叙事、受众洞察以及对公关工作的启示", "分析评论的整体情绪、主要叙事、受众洞察与公关启示"],
+      "rationale": "情绪/叙事/受众洞察分析需开放文本理解，判 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "获取链接文章正文",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "trending_posts",
+          "type": "array",
+          "description": "按互动表现筛选出的上升趋势帖子（逐篇处理，含文章链接）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_content",
+          "type": "string",
+          "description": "帖子所链接文章的正文内容"
+        }
+      ],
+      "native_evidence": ["Get News Content (httpRequest, Jina AI 正文抽取)"],
+      "requirement_evidence": ["同时使用网页正文抽取服务获取帖子所链接文章的内容"],
+      "rationale": "调用网页正文抽取服务为确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "文章内容要素分析",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "article_content",
+          "type": "string",
+          "description": "帖子所链接文章的正文内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_analysis",
+          "type": "object",
+          "description": "内容要素分析（核心故事要素、技术层面要素、叙事机会、可传播要素）"
+        }
+      ],
+      "native_evidence": ["News Analysis (chainLlm)", "Anthropic Chat Model1 (lmChatAnthropic)"],
+      "requirement_evidence": ["识别其中的核心故事要素、技术层面要素、叙事机会与可传播要素", "抽取链接文章正文并识别核心故事要素、技术层面要素、叙事机会与可传播要素"],
+      "rationale": "从文章内容中识别故事/技术/叙事/传播要素需开放文本理解，判 semantic；正文抽取服务调用已单列为 n7。"
+    },
+    {
+      "node_id": "n9",
+      "label": "生成 PR 策略报告",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "comment_analysis",
+          "type": "object",
+          "description": "评论分析结论（整体情绪、主要叙事、受众洞察、公关启示）"
+        },
+        {
+          "name": "content_analysis",
+          "type": "object",
+          "description": "内容要素分析（核心故事要素、技术层面要素、叙事机会、可传播要素）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pr_report",
+          "type": "array",
+          "description": "每篇入选帖子一份的 PR 策略报告（首发式报道机会、趋势放大型选题、优先级排序、执行路线图、策略建议）"
+        }
+      ],
+      "native_evidence": ["Stories Report (chainLlm)", "Anthropic Chat Model2 (lmChatAnthropic)"],
+      "requirement_evidence": ["综合评论与内容两方面的分析，系统为每篇帖子生成报告，内容包括首发式报道机会、趋势放大型选题、优先级排序、执行路线图与策略建议", "生成含报道机会、趋势放大选题、优先级、执行路线图与策略建议的报告"],
+      "rationale": "报道机会、选题与策略建议的生成属开放文本生成，确定性规则无法无损替代，判 semantic。"
+    },
+    {
+      "node_id": "n10",
+      "label": "报告打包为压缩包",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "pr_report",
+          "type": "array",
+          "description": "每篇入选帖子一份的 PR 策略报告"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_archive",
+          "type": "binary",
+          "description": "全部报告文本文件打包成的 ZIP 压缩包"
+        }
+      ],
+      "native_evidence": ["Set Final Report (set)", "Convert to File (convertToFile)", "Merge Binary Files (code)", "Compress files (compression)"],
+      "requirement_evidence": ["报告被整理为文本文件并打包为压缩包", "将报告转为文本文件并打包为压缩包"],
+      "rationale": "文本化、合并与压缩为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "上传压缩包至 Google Drive",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "report_archive",
+          "type": "binary",
+          "description": "全部报告文本文件打包成的 ZIP 压缩包"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "drive_link",
+          "type": "string",
+          "description": "Google Drive 中压缩包的链接"
+        }
+      ],
+      "native_evidence": ["Google Drive6 (googleDrive)", "Google Drive7 (googleDrive)"],
+      "requirement_evidence": ["打包为压缩包上传至 Google Drive", "上传压缩包至 Google Drive", "Google Drive 中生成报告压缩包"],
+      "rationale": "按确定性契约上传文件至 Google Drive；其后仍需分享链接，故非终止节点，判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "通过 Mattermost 分享压缩包链接",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "drive_link",
+          "type": "string",
+          "description": "Google Drive 中压缩包的链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send files to Mattermost3 (httpRequest)"],
+      "requirement_evidence": ["随后通过 Mattermost 将压缩包链接分享给团队成员", "通过 Mattermost 将压缩包链接分享给团队成员", "团队成员通过 Mattermost 收到压缩包链接"],
+      "rationale": "向团队成员分享链接是用户可见完成动作，为本链路终点，无 CFG 出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周触发后读取主题清单。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "逐主题执行 Reddit 检索。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "检索结果进入互动条件筛选。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "对每篇入选帖子获取评论。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "前 30 条评论进入语言模型分析。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "评论分析后获取链接文章正文（与原生批处理顺序一致）。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章正文进入内容要素分析。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "内容分析汇入报告生成。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "全部报告整理打包为压缩包。"
+    },
+    {
+      "edge_id": "e_cfg_10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "压缩包上传至 Google Drive。"
+    },
+    {
+      "edge_id": "e_cfg_11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得链接后经 Mattermost 分享。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "topics",
+      "condition": null,
+      "rationale": "检索消费主题清单。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "reddit_posts",
+      "condition": null,
+      "rationale": "筛选消费检索结果。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "trending_posts",
+      "condition": null,
+      "rationale": "评论获取消费入选帖子。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "top_comments",
+      "condition": null,
+      "rationale": "评论分析消费前 30 条评论。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n4",
+      "target": "n7",
+      "variable": "trending_posts",
+      "condition": null,
+      "rationale": "正文抽取消费入选帖子的文章链接。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "article_content",
+      "condition": null,
+      "rationale": "内容要素分析消费文章正文。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n6",
+      "target": "n9",
+      "variable": "comment_analysis",
+      "condition": null,
+      "rationale": "报告生成消费评论分析结论。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "content_analysis",
+      "condition": null,
+      "rationale": "报告生成消费内容要素分析。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "pr_report",
+      "condition": null,
+      "rationale": "打包消费全部报告。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n10",
+      "target": "n11",
+      "variable": "report_archive",
+      "condition": null,
+      "rationale": "上传消费压缩包。"
+    },
+    {
+      "edge_id": "e_dfg_11",
+      "source": "n11",
+      "target": "n12",
+      "variable": "drive_link",
+      "condition": null,
+      "rationale": "分享消费压缩包链接。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n12"],
+  "confidence": 0.85,
+  "notes": "关键取舍：1) 原生按帖子迭代（Loop Over Items/splitInBatches、Aggregate、Keep Last）属批处理实现细节，需求以对每篇帖子逐项处理声明，逐项迭代折叠进各节点契约，不做显式循环节点。2) 评论分析、内容要素分析与 PR 策略报告为需求声明的三项独立语言模型行为，单列三个 semantic 节点；正文抽取服务调用与其后的要素识别分开（前者 code、后者 semantic）。3) 策略报告生成虽未点名语言模型，但属开放文本生成，按节点分类规则判 semantic。4) 原生去重折叠进筛选节点契约。"
+}

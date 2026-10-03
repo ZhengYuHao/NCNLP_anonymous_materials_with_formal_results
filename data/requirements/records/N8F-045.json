@@ -1,0 +1,89 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-045",
+  "source_id": "n8n:14019",
+  "workflow_sha256": "37e53e664b07ee7a3ee2cc19631957a2695347a335f4b8f09efd6347b559a733",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "3a201d485022001f72a6e6da2e69fabb795bde325eee20dbfcd6b646433846a3",
+  "requirement": {
+    "requirement_text": "订阅者通过表单提交姓名、邮箱、最近一次经期开始日期与平均周期天数。系统据此计算全部关键周期日期：下次经期开始日；排卵日为下次经期开始日减 14 天；易孕窗口自排卵日前 5 天开启、排卵日后 1 天结束；经前综合征（PMS）窗口自下次经期开始日前 5 天开启。日期保存后系统立即向订阅者发送一封包含完整周期概览的欢迎邮件。此后系统每天早上 8 点检查全部活跃订阅者，判断每位订阅者当天所处的阶段，并在命中以下四类触发日之一时发送对应的阶段提醒邮件：经期开始前 3 天发送准备提示；经期开始当天发送舒适与自我照护提示；排卵日发送生育意识与精力提示；PMS 窗口开始日发送情绪、精力与边界提示。发送前会检查上次发送记录，确保同一周期内同一类型的邮件只发送一次；发送后更新订阅者的最近发送记录，并将每次投递按日期、阶段、周期天数与邮件类型记入发送日志；在经期开始日会重新计算周期日期以实现持续跟踪。此外，系统每周日早上 9 点为全部活跃订阅者生成本周健康摘要：先判断订阅者当前所处的阶段（经期、卵泡期、易孕期、排卵期或 PMS），再结合姓名、阶段、周期天数与距下次经期的天数，交由语言模型生成涵盖精力管理、营养、运动、心态与本周注意事项五个类别的阶段化建议以及一句每周寄语，组装为邮件发送；每次发送同样记入发送日志。",
+    "source_spans": [
+      {
+        "start": 516,
+        "end": 1650,
+        "text": "What This Workflow Does\n📝 Subscribers fill in a simple form — name, email, last period date, and cycle length\n🧮 Instantly calculates all key cycle dates — next period, ovulation day, fertile window start and end, and PMS window start\n📧 Sends a personalized welcome email with their complete cycle overview\n🕐 Runs every morning at 8AM checking all active subscribers\n🔍 Detects which phase event is happening today for each subscriber\n📬 Sends the right phase-specific reminder email on the exact right day: \n- 3 days before period — preparation tips\n- Period start day — comfort and self-care tips\n- Ovulation day — fertility awareness and energy tips\n- PMS window start — mood, energy, and boundary tips\n🔒 Duplicate send prevention ensures each email type is only sent once per cycle per subscriber\n📝 Updates each subscriber's last email sent record after every send\n📊 Logs every delivery to Send Log sheet with date, phase, cycle day, and email type\n💜 Every Sunday generates a personalized weekly wellness digest for every subscriber using GPT-4o based on their current cycle phase — with energy, nutrition, movement, and mindset tips"
+      },
+      {
+        "start": 1652,
+        "end": 2183,
+        "text": "Key Benefits\n✅ Fully automated — set up once and runs forever\n✅ Every subscriber gets emails timed to their unique cycle not a generic schedule\n✅ 4 different phase-specific reminder emails with tailored content and colors\n✅ GPT-4o generates unique wellness tips per phase every week — never repetitive\n✅ Duplicate send prevention — no subscriber ever gets the same email twice in one cycle\n✅ Auto-recalculates cycle dates on period start for continuous tracking\n✅ Full send log for tracking delivery history and engagement patterns"
+      },
+      {
+        "start": 2199,
+        "end": 2812,
+        "text": "SW1 — Subscriber Intake & Cycle Calculator Subscribers open the form and enter their name, email, last period start date, and average cycle length. The workflow immediately calculates all key dates using standard cycle science — next period is last period plus cycle length, ovulation is next period minus 14 days, fertile window opens 5 days before ovulation and closes 1 day after, and PMS window starts 5 days before the next period. All dates are saved to the Subscribers sheet and a branded welcome email is sent instantly showing the subscriber their complete cycle overview with all dates laid out clearly."
+      },
+      {
+        "start": 2814,
+        "end": 3434,
+        "text": "SW2 — Daily Cycle Monitor & Smart Reminders Every morning at 8AM the workflow reads all active subscribers and calculates where each one is in their cycle today. It checks if today matches any of the 4 key trigger dates — 3 days before period, period start, ovulation day, or PMS start. If there is a match it builds the appropriate phase-specific HTML email with tailored tips, colors, and messaging and sends it via Gmail. Before sending it checks the last email sent field to prevent duplicate sends within the same cycle. After every send it updates the subscriber record and logs the delivery to the Send Log sheet."
+      },
+      {
+        "start": 3436,
+        "end": 4105,
+        "text": "SW3 — Weekly Wellness Digest Every Sunday at 9AM the workflow reads all active subscribers and calculates each one's current cycle phase — Menstrual, Follicular, Fertile, Ovulation, or PMS. It builds a personalized prompt for each subscriber including their name, phase, cycle day, and days until next period and sends it to GPT-4o. The AI generates phase-specific tips across 5 categories — energy management, nutrition, movement, mindset, and what to expect this week — plus a weekly affirmation. The response is assembled into a branded HTML email where the header color and emoji adapt automatically to the current phase. Every send is logged to the Send Log sheet."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "订阅者表单提交的信息：姓名、邮箱、最近一次经期开始日期、平均周期天数",
+        "活跃订阅者记录与上次发送记录"
+      ],
+      "conditions": [
+        "每天早上 8 点检查全部活跃订阅者",
+        "每周日早上 9 点生成每周健康摘要",
+        "当天命中经期开始前 3 天、经期开始日、排卵日或 PMS 窗口开始日时发送对应提醒",
+        "同一周期内同一类型的提醒邮件只发送一次",
+        "在经期开始日重新计算周期日期"
+      ],
+      "allowed_actions": [
+        "计算下次经期开始日、排卵日、易孕窗口与 PMS 窗口日期",
+        "发送包含完整周期概览的欢迎邮件",
+        "判断订阅者当天所处的周期阶段",
+        "发送四类阶段提醒邮件",
+        "检查上次发送记录以避免重复发送",
+        "更新订阅者的最近发送记录",
+        "将每次投递按日期、阶段、周期天数与邮件类型记入发送日志",
+        "判断订阅者当前周期阶段并生成每周健康摘要邮件"
+      ],
+      "visible_outcomes": [
+        "订阅者收到包含完整周期概览的欢迎邮件",
+        "订阅者在四类触发日收到对应的阶段提醒邮件",
+        "订阅者每周日收到结合当前周期阶段的个性化健康摘要邮件",
+        "发送日志中记录每次投递的日期、阶段、周期天数与邮件类型"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-045.packet.json",
+    "packet_sha256": "1c05eb9b84d14a1a3d1a06fea4c09642a2a0caea37188ec7a2c8217b1953fafd",
+    "public_description_sha256": "2403b36ec1ec0b4134c7eb16fbcb2cf677bd34114e1fae8abb5862e207c9ad20"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-045.response.json",
+    "verification_response_sha256": "2c5b051836ab0398451e2bfa28a0c00231bf64c4b82815282a7fd9e3caaa0650",
+    "decision": "accept"
+  },
+  "formal_index": 56
+}

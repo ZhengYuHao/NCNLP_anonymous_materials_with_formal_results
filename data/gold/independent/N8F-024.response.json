@@ -1,0 +1,1022 @@
+{
+  "task_id": "N8F-024",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "93f5004b713fdebfd1e5cc98b3633bc9c9a3904768d35db1dd3f75a5a7cea098",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收外部预订请求",
+      "node_type": "code",
+      "operation_family": "回调触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "booking_request",
+          "type": "object",
+          "description": "外部预订来源提交的预订请求"
+        }
+      ],
+      "native_evidence": [
+        "When Booking Received (webhook)"
+      ],
+      "requirement_evidence": [
+        "接收外部预订来源提交的短租预订请求"
+      ],
+      "rationale": "回调接收为确定性事件源，属代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验必填字段与日期先后顺序",
+      "node_type": "code",
+      "operation_family": "校验",
+      "inputs": [
+        {
+          "name": "booking_request",
+          "type": "object",
+          "description": "外部预订来源提交的预订请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_booking",
+          "type": "object",
+          "description": "通过校验的预订数据"
+        }
+      ],
+      "native_evidence": [
+        "Validate Booking (if)"
+      ],
+      "requirement_evidence": [
+        "校验必填字段与日期先后顺序",
+        "无效预订被跳过",
+        "只有有效预订才写入预订工作表"
+      ],
+      "rationale": "按声明的必填字段与日期先后规则做确定性校验并分支，属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "向 Telegram 发送无效预订告警",
+      "node_type": "code",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "booking_request",
+          "type": "object",
+          "description": "外部预订来源提交的预订请求"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Invalid Booking Alert to Telegram (telegram)"
+      ],
+      "requirement_evidence": [
+        "若预订无效：向 Telegram 发送告警"
+      ],
+      "rationale": "告警发送为确定性通知动作，属代码处理（其后仍有邮件通知，故非终止）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "邮件发送被跳过的预订内容给房东",
+      "node_type": "terminal",
+      "operation_family": "邮件通知",
+      "inputs": [
+        {
+          "name": "booking_request",
+          "type": "object",
+          "description": "外部预订来源提交的预订请求"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Invalid Booking Notice by Gmail (gmail)"
+      ],
+      "requirement_evidence": [
+        "并通过邮件把被跳过的预订内容发送给房东"
+      ],
+      "rationale": "含被跳过预订内容的邮件是无效预订分支的最终用户可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "规范化预订数据并生成预订编号",
+      "node_type": "code",
+      "operation_family": "数据变换",
+      "inputs": [
+        {
+          "name": "validated_booking",
+          "type": "object",
+          "description": "通过校验的预订数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_booking",
+          "type": "object",
+          "description": "含预订编号的规范化预订记录"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Booking Record (set)"
+      ],
+      "requirement_evidence": [
+        "规范化预订数据、生成预订编号"
+      ],
+      "rationale": "字段规范化与编号生成为确定性变换，属代码处理。"
+    },
+    {
+      "node_id": "n6",
+      "label": "追加预订到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "外部写入",
+      "inputs": [
+        {
+          "name": "normalized_booking",
+          "type": "object",
+          "description": "含预订编号的规范化预订记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append Booking to Bookings Sheet (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "把该预订追加到 Google Sheets 的预订工作表"
+      ],
+      "rationale": "追加写入为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n7",
+      "label": "Telegram 通知房东预订成功",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "normalized_booking",
+          "type": "object",
+          "description": "含预订编号的规范化预订记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Confirm Booking to Host (telegram)"
+      ],
+      "requirement_evidence": [
+        "并在 Telegram 通知房东"
+      ],
+      "rationale": "房东收到 Telegram 通知是有效预订分支的最终可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "每日定时触发扫描",
+      "node_type": "code",
+      "operation_family": "定时触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "daily_tick",
+          "type": "event",
+          "description": "每日计划触发信号"
+        }
+      ],
+      "native_evidence": [
+        "Daily Guest Ops Sweep (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "每天按计划时间执行一次扫描"
+      ],
+      "rationale": "每日计划触发为确定性事件源，属代码处理。"
+    },
+    {
+      "node_id": "n9",
+      "label": "房东手动触发扫描",
+      "node_type": "code",
+      "operation_family": "手动触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "manual_tick",
+          "type": "event",
+          "description": "手动请求触发信号"
+        }
+      ],
+      "native_evidence": [
+        "When Host Runs Sweep Manually (webhook)"
+      ],
+      "requirement_evidence": [
+        "（或通过手动请求）执行一次扫描"
+      ],
+      "rationale": "手动请求入口为确定性事件源，与定时触发共用同一处理链，属代码处理。"
+    },
+    {
+      "node_id": "n10",
+      "label": "读取预订记录",
+      "node_type": "code",
+      "operation_family": "外部读取",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "booking_rows",
+          "type": "list",
+          "description": "Google Sheets 中的预订记录行"
+        }
+      ],
+      "native_evidence": [
+        "Read Bookings (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "读取 Google Sheets 中的预订记录"
+      ],
+      "rationale": "读取预订工作表为确定性外部读取，属代码处理。"
+    },
+    {
+      "node_id": "n11",
+      "label": "识别到期行程",
+      "node_type": "code",
+      "operation_family": "规则计算",
+      "inputs": [
+        {
+          "name": "booking_rows",
+          "type": "list",
+          "description": "Google Sheets 中的预订记录行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "due_trips",
+          "type": "list",
+          "description": "需发送入住/退房/评价请求消息的到期行程"
+        }
+      ],
+      "native_evidence": [
+        "Compute Due Actions (code)",
+        "Collect Due Bookings (code)"
+      ],
+      "requirement_evidence": [
+        "识别出需要发送入住（明天）、退房（今天）或评价请求（退房后两天）消息的行程"
+      ],
+      "rationale": "按日期规则识别三类到期消息为确定性计算，属代码处理。"
+    },
+    {
+      "node_id": "n12",
+      "label": "生成客人消息",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [
+        {
+          "name": "due_trips",
+          "type": "list",
+          "description": "需发送入住/退房/评价请求消息的到期行程"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "guest_message",
+          "type": "string",
+          "description": "语言模型生成的纯文本客人消息"
+        }
+      ],
+      "native_evidence": [
+        "AI Guest Message Agent (agent)",
+        "Deepseek Guest Model (lmChatOpenAi)",
+        "Property Playbook Tool (googleSheetsTool)"
+      ],
+      "requirement_evidence": [
+        "由一个语言模型驱动的助理从 Google Sheets 的手册工作表中查找房源信息，生成一条纯文本消息"
+      ],
+      "rationale": "结合房源手册信息的开放式消息生成，属语义处理；手册工作表查询折叠进本节点契约；逐到期行程迭代折叠，全部行程处理完即终止。"
+    },
+    {
+      "node_id": "n13",
+      "label": "记录消息到客人日志工作表",
+      "node_type": "code",
+      "operation_family": "外部写入",
+      "inputs": [
+        {
+          "name": "guest_message",
+          "type": "string",
+          "description": "语言模型生成的纯文本客人消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log Guest Message (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "每条生成的消息都记录到 Google Sheets 的客人日志工作表"
+      ],
+      "rationale": "日志写入为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n14",
+      "label": "邮件发送消息给客人",
+      "node_type": "code",
+      "operation_family": "邮件通知",
+      "inputs": [
+        {
+          "name": "guest_message",
+          "type": "string",
+          "description": "语言模型生成的纯文本客人消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Message to Guest (gmail)"
+      ],
+      "requirement_evidence": [
+        "通过邮件发送给客人"
+      ],
+      "rationale": "邮件发送为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n15",
+      "label": "Telegram 发布确认给房东",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "guest_message",
+          "type": "string",
+          "description": "语言模型生成的纯文本客人消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Confirm Guest Message to Host (telegram)"
+      ],
+      "requirement_evidence": [
+        "并在 Telegram 发布确认"
+      ],
+      "rationale": "房东 Telegram 确认是消息发送链路的可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n16",
+      "label": "创建清洁任务",
+      "node_type": "code",
+      "operation_family": "外部写入",
+      "inputs": [
+        {
+          "name": "due_trips",
+          "type": "list",
+          "description": "需发送入住/退房/评价请求消息的到期行程"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cleaning_task",
+          "type": "object",
+          "description": "清洁任务工作表中新增的清洁任务"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Cleaning Task (set)",
+        "Append Cleaning Task (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "对于退房当天的预订：在 Google Sheets 的清洁任务工作表中创建一条清洁任务"
+      ],
+      "rationale": "构造并追加清洁任务为确定性动作，属代码处理。"
+    },
+    {
+      "node_id": "n17",
+      "label": "判断清洁人员邮箱是否已设置",
+      "node_type": "code",
+      "operation_family": "条件分支",
+      "inputs": [
+        {
+          "name": "cleaning_task",
+          "type": "object",
+          "description": "清洁任务工作表中新增的清洁任务"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "If Cleaner Assigned (if)"
+      ],
+      "requirement_evidence": [
+        "若已设置清洁人员邮箱，则通过邮件通知清洁人员并在 Telegram 提醒房东，否则提醒房东未设置清洁人员邮箱"
+      ],
+      "rationale": "按配置字段做确定性分支，属代码处理。"
+    },
+    {
+      "node_id": "n18",
+      "label": "邮件通知清洁人员",
+      "node_type": "code",
+      "operation_family": "邮件通知",
+      "inputs": [
+        {
+          "name": "cleaning_task",
+          "type": "object",
+          "description": "清洁任务工作表中新增的清洁任务"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Cleaning Task to Cleaner (gmail)"
+      ],
+      "requirement_evidence": [
+        "则通过邮件通知清洁人员"
+      ],
+      "rationale": "邮件发送为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n19",
+      "label": "Telegram 提醒房东清洁任务",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "cleaning_task",
+          "type": "object",
+          "description": "清洁任务工作表中新增的清洁任务"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Alert Host Cleaning Assigned (telegram)"
+      ],
+      "requirement_evidence": [
+        "并在 Telegram 提醒房东"
+      ],
+      "rationale": "房东 Telegram 提醒是清洁人员已设置分支的最终可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n20",
+      "label": "Telegram 提醒房东未设置清洁人员",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "cleaning_task",
+          "type": "object",
+          "description": "清洁任务工作表中新增的清洁任务"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Alert Host No Cleaner (telegram)"
+      ],
+      "requirement_evidence": [
+        "否则提醒房东未设置清洁人员邮箱"
+      ],
+      "rationale": "未设置清洁人员的提醒是该分支的最终可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n21",
+      "label": "每周一定时触发",
+      "node_type": "code",
+      "operation_family": "定时触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "weekly_tick",
+          "type": "event",
+          "description": "每周一触发信号"
+        }
+      ],
+      "native_evidence": [
+        "Weekly Host Digest Trigger (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "每周一：读取 Google Sheets 中的预订与清洁任务"
+      ],
+      "rationale": "每周计划触发为确定性事件源，属代码处理。"
+    },
+    {
+      "node_id": "n22",
+      "label": "读取预订与清洁任务",
+      "node_type": "code",
+      "operation_family": "外部读取",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "bookings_for_digest",
+          "type": "list",
+          "description": "预订记录行"
+        },
+        {
+          "name": "cleaning_tasks_for_digest",
+          "type": "list",
+          "description": "清洁任务记录行"
+        }
+      ],
+      "native_evidence": [
+        "Read Bookings for Digest (googleSheets)",
+        "Read Cleaning Tasks for Digest (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "每周一：读取 Google Sheets 中的预订与清洁任务"
+      ],
+      "rationale": "读取两张工作表为确定性外部读取，属代码处理。"
+    },
+    {
+      "node_id": "n23",
+      "label": "计算本周统计",
+      "node_type": "code",
+      "operation_family": "聚合计算",
+      "inputs": [
+        {
+          "name": "bookings_for_digest",
+          "type": "list",
+          "description": "预订记录行"
+        },
+        {
+          "name": "cleaning_tasks_for_digest",
+          "type": "list",
+          "description": "清洁任务记录行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "本周预订与清洁活动统计"
+        }
+      ],
+      "native_evidence": [
+        "Compute Digest Stats (code)"
+      ],
+      "requirement_evidence": [
+        "计算本周统计"
+      ],
+      "rationale": "统计聚合为确定性计算，属代码处理。"
+    },
+    {
+      "node_id": "n24",
+      "label": "判断本周是否有活动",
+      "node_type": "code",
+      "operation_family": "条件分支",
+      "inputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "本周预订与清洁活动统计"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "If Any Digest Activity (if)"
+      ],
+      "requirement_evidence": [
+        "若本周没有任何活动，则改为发送一条'一切正常'的消息"
+      ],
+      "rationale": "按统计结果做确定性分支，属代码处理。"
+    },
+    {
+      "node_id": "n25",
+      "label": "撰写房东周报",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "本周预订与清洁活动统计"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "digest_text",
+          "type": "string",
+          "description": "语言模型撰写的简明周报文本"
+        }
+      ],
+      "native_evidence": [
+        "AI Weekly Host Digest Writer (agent)",
+        "Deepseek Digest Model (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型撰写一份简明的房东周报"
+      ],
+      "rationale": "开放式周报撰写，属语义处理。"
+    },
+    {
+      "node_id": "n26",
+      "label": "邮件发送周报",
+      "node_type": "code",
+      "operation_family": "邮件通知",
+      "inputs": [
+        {
+          "name": "digest_text",
+          "type": "string",
+          "description": "语言模型撰写的简明周报文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Digest to Host (gmail)"
+      ],
+      "requirement_evidence": [
+        "并通过邮件与 Telegram 发送给房东"
+      ],
+      "rationale": "邮件发送为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n27",
+      "label": "Telegram 发送周报",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "digest_text",
+          "type": "string",
+          "description": "语言模型撰写的简明周报文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Digest to Telegram (telegram)"
+      ],
+      "requirement_evidence": [
+        "并通过邮件与 Telegram 发送给房东"
+      ],
+      "rationale": "房东 Telegram 周报是该分支的最终可见产出，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n28",
+      "label": "发送'一切正常'消息",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "weekly_stats",
+          "type": "object",
+          "description": "本周预订与清洁活动统计"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send All Clear to Host (telegram)"
+      ],
+      "requirement_evidence": [
+        "若本周没有任何活动，则改为发送一条'一切正常'的消息"
+      ],
+      "rationale": "无活动时的'一切正常'消息是该分支的最终可见产出，其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到请求即校验"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "预订无效",
+      "rationale": "无效分支先发 Telegram 告警"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "告警后邮件通知房东"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": "预订有效",
+      "rationale": "有效分支进入规范化"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后写入预订工作表"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入后通知房东"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发进入扫描"
+    },
+    {
+      "edge_id": "e08",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动触发进入同一扫描链"
+    },
+    {
+      "edge_id": "e09",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取后识别到期行程"
+    },
+    {
+      "edge_id": "e10",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "识别后生成客人消息"
+    },
+    {
+      "edge_id": "e11",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成后记录日志"
+    },
+    {
+      "edge_id": "e12",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录后邮件发送"
+    },
+    {
+      "edge_id": "e13",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送后向房东发布确认"
+    },
+    {
+      "edge_id": "e14",
+      "source": "n14",
+      "target": "n16",
+      "variable": null,
+      "condition": "该行程为退房当天",
+      "rationale": "退房当天的预订额外创建清洁任务"
+    },
+    {
+      "edge_id": "e15",
+      "source": "n16",
+      "target": "n17",
+      "variable": null,
+      "condition": null,
+      "rationale": "创建后判断清洁人员配置"
+    },
+    {
+      "edge_id": "e16",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": "已设置清洁人员邮箱",
+      "rationale": "已设置则邮件通知清洁人员"
+    },
+    {
+      "edge_id": "e17",
+      "source": "n18",
+      "target": "n19",
+      "variable": null,
+      "condition": null,
+      "rationale": "通知清洁人员后提醒房东"
+    },
+    {
+      "edge_id": "e18",
+      "source": "n17",
+      "target": "n20",
+      "variable": null,
+      "condition": "未设置清洁人员邮箱",
+      "rationale": "未设置则提醒房东未配置"
+    },
+    {
+      "edge_id": "e19",
+      "source": "n21",
+      "target": "n22",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后读取数据"
+    },
+    {
+      "edge_id": "e20",
+      "source": "n22",
+      "target": "n23",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取后计算统计"
+    },
+    {
+      "edge_id": "e21",
+      "source": "n23",
+      "target": "n24",
+      "variable": null,
+      "condition": null,
+      "rationale": "统计后判断是否有活动"
+    },
+    {
+      "edge_id": "e22",
+      "source": "n24",
+      "target": "n25",
+      "variable": null,
+      "condition": "本周有活动",
+      "rationale": "有活动则撰写周报"
+    },
+    {
+      "edge_id": "e23",
+      "source": "n25",
+      "target": "n26",
+      "variable": null,
+      "condition": null,
+      "rationale": "周报完成后邮件发送"
+    },
+    {
+      "edge_id": "e24",
+      "source": "n26",
+      "target": "n27",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件后 Telegram 发送"
+    },
+    {
+      "edge_id": "e25",
+      "source": "n24",
+      "target": "n28",
+      "variable": null,
+      "condition": "本周无任何活动",
+      "rationale": "无活动则发送'一切正常'消息"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n1",
+      "target": "n2",
+      "variable": "booking_request",
+      "condition": null,
+      "rationale": "校验作用于提交的预订请求"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n1",
+      "target": "n3",
+      "variable": "booking_request",
+      "condition": null,
+      "rationale": "告警内容基于被跳过的预订请求"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n1",
+      "target": "n4",
+      "variable": "booking_request",
+      "condition": null,
+      "rationale": "邮件含被跳过的预订内容"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n2",
+      "target": "n5",
+      "variable": "validated_booking",
+      "condition": null,
+      "rationale": "规范化作用于通过校验的预订"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n5",
+      "target": "n7",
+      "variable": "normalized_booking",
+      "condition": null,
+      "rationale": "通知内容基于规范化预订记录"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n10",
+      "target": "n11",
+      "variable": "booking_rows",
+      "condition": null,
+      "rationale": "识别基于预订记录行"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n11",
+      "target": "n12",
+      "variable": "due_trips",
+      "condition": null,
+      "rationale": "消息生成针对到期行程"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n12",
+      "target": "n13",
+      "variable": "guest_message",
+      "condition": null,
+      "rationale": "记录的即生成的消息"
+    },
+    {
+      "edge_id": "d09",
+      "source": "n12",
+      "target": "n14",
+      "variable": "guest_message",
+      "condition": null,
+      "rationale": "发送的即生成的消息"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n12",
+      "target": "n15",
+      "variable": "guest_message",
+      "condition": null,
+      "rationale": "确认内容基于生成的消息"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n11",
+      "target": "n16",
+      "variable": "due_trips",
+      "condition": null,
+      "rationale": "清洁任务针对退房当天的到期行程"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n16",
+      "target": "n18",
+      "variable": "cleaning_task",
+      "condition": null,
+      "rationale": "清洁人员通知基于新建清洁任务"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n16",
+      "target": "n19",
+      "variable": "cleaning_task",
+      "condition": null,
+      "rationale": "房东提醒基于新建清洁任务"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n16",
+      "target": "n20",
+      "variable": "cleaning_task",
+      "condition": null,
+      "rationale": "未设置提醒基于新建清洁任务"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n22",
+      "target": "n23",
+      "variable": "bookings_for_digest",
+      "condition": null,
+      "rationale": "统计输入含预订记录"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n22",
+      "target": "n23",
+      "variable": "cleaning_tasks_for_digest",
+      "condition": null,
+      "rationale": "统计输入含清洁任务记录"
+    },
+    {
+      "edge_id": "d17",
+      "source": "n23",
+      "target": "n25",
+      "variable": "weekly_stats",
+      "condition": null,
+      "rationale": "周报基于本周统计"
+    },
+    {
+      "edge_id": "d18",
+      "source": "n23",
+      "target": "n28",
+      "variable": "weekly_stats",
+      "condition": null,
+      "rationale": "'一切正常'消息发送基于无活动的统计结果"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n8",
+    "n9",
+    "n21"
+  ],
+  "terminal_nodes": [
+    "n4",
+    "n7",
+    "n15",
+    "n19",
+    "n20",
+    "n27",
+    "n28"
+  ],
+  "confidence": 0.75,
+  "notes": "三条业务泳道共用一个图：预订接收（webhook）、每日客人运营扫描（定时+手动双入口）、每周房东周报。逐到期行程的消息生成迭代折叠进生成节点（全部行程处理完即终止）。'一切正常'消息的渠道需求未指明渠道，按原生证据（Send All Clear to Host，Telegram）建模。退房当天分支与通用确认（n15）并存：确认面向所有到期消息，清洁任务链仅对退房当天触发。"
+}

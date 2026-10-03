@@ -1,0 +1,289 @@
+{
+  "task_id": "N8F-070",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "35d8aee243d2daa5f7903b434182f62c135eed4481223b8e11be7613d6267a8b",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周一 08:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Trigger every Monday at 8am"
+      ],
+      "requirement_evidence": [
+        "系统每周一早上 8 点运行"
+      ],
+      "rationale": "按计划每周一 08:00 触发执行，为确定性定时触发操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取最近 14 天业务指标数据",
+      "node_type": "code",
+      "operation_family": "metrics_data_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "metrics_data",
+          "type": "object",
+          "description": "从 Google Sheets 读取的最近 14 天业务指标数据（日期、收入、销售线索、转化数、广告支出、客服工单）"
+        }
+      ],
+      "native_evidence": [
+        "Set report config variables",
+        "Fetch metrics from Google Sheets"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 中读取最近 14 天的业务指标数据"
+      ],
+      "rationale": "从 Google Sheets 读取最近 14 天业务指标数据，为确定性的外部读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "计算周环比与派生指标",
+      "node_type": "code",
+      "operation_family": "weekly_comparison_calculation",
+      "inputs": [
+        {
+          "name": "metrics_data",
+          "type": "object",
+          "description": "最近 14 天的业务指标数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "computed_metrics",
+          "type": "object",
+          "description": "收入、销售线索、转化数、广告支出、客服工单的周环比及转化率、广告支出回报率等派生指标"
+        }
+      ],
+      "native_evidence": [
+        "Calculate weekly comparisons"
+      ],
+      "requirement_evidence": [
+        "系统对这些数据计算周环比，覆盖收入、销售线索、转化数、广告支出与客服工单",
+        "并计算转化率、广告支出回报率等派生指标"
+      ],
+      "rationale": "计算五类指标的周环比及转化率、广告支出回报率等派生指标，为确定性的计算操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成业绩摘要",
+      "node_type": "semantic",
+      "operation_family": "performance_digest_generation",
+      "inputs": [
+        {
+          "name": "computed_metrics",
+          "type": "object",
+          "description": "周环比与派生指标计算结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "digest",
+          "type": "string",
+          "description": "含头条摘要、亮点、需要关注的方面、本周建议优先级与简要展望五个板块的业绩摘要"
+        }
+      ],
+      "native_evidence": [
+        "Generate AI performance digest"
+      ],
+      "requirement_evidence": [
+        "计算结果被交给语言模型，由其生成一份简洁的业绩摘要，包含五个板块：头条摘要、亮点、需要关注的方面、本周建议优先级以及简要展望"
+      ],
+      "rationale": "需求声明由语言模型生成含五个板块的业绩摘要，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "排版 Slack 与邮件两种版本",
+      "node_type": "code",
+      "operation_family": "digest_formatting",
+      "inputs": [
+        {
+          "name": "digest",
+          "type": "string",
+          "description": "生成的业绩摘要"
+        },
+        {
+          "name": "computed_metrics",
+          "type": "object",
+          "description": "指标计算结果（供 HTML 版指标表格使用）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slack_digest",
+          "type": "string",
+          "description": "适合 Slack 的纯文本版摘要（含表情符号）"
+        },
+        {
+          "name": "email_digest",
+          "type": "string",
+          "description": "适合邮件的 HTML 版摘要（含指标表格）"
+        }
+      ],
+      "native_evidence": [
+        "Format digest for Slack and email"
+      ],
+      "requirement_evidence": [
+        "该摘要被分别排版为两种形式——适合 Slack 的纯文本形式（含表情符号）与适合邮件的 HTML 形式（含指标表格）"
+      ],
+      "rationale": "将摘要排版为 Slack 纯文本与邮件 HTML 两种形式，为确定性格式化操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "投递纯文本摘要到 Slack",
+      "node_type": "terminal",
+      "operation_family": "slack_delivery",
+      "inputs": [
+        {
+          "name": "slack_digest",
+          "type": "string",
+          "description": "适合 Slack 的纯文本版摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post digest to Slack channel"
+      ],
+      "requirement_evidence": [
+        "同时投递到 Slack 与邮件两个渠道"
+      ],
+      "rationale": "将纯文本版摘要投递到 Slack 频道，为该渠道的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送 HTML 摘要邮件",
+      "node_type": "terminal",
+      "operation_family": "email_delivery",
+      "inputs": [
+        {
+          "name": "email_digest",
+          "type": "string",
+          "description": "适合邮件的 HTML 版摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email digest to team"
+      ],
+      "requirement_evidence": [
+        "同时投递到 Slack 与邮件两个渠道"
+      ],
+      "rationale": "将 HTML 版摘要通过邮件发送给团队，为该渠道的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后读取业务指标数据。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "数据读取完成后计算周环比与派生指标。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "指标计算完成后生成业绩摘要。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后排版两种渠道版本。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "排版完成后投递纯文本版到 Slack。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "排版完成后发送 HTML 版邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "metrics_data",
+      "condition": null,
+      "rationale": "业务指标数据送入周环比计算节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "computed_metrics",
+      "condition": null,
+      "rationale": "指标计算结果送入摘要生成节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "digest",
+      "condition": null,
+      "rationale": "业绩摘要送入排版节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "computed_metrics",
+      "condition": null,
+      "rationale": "指标数据送入排版节点供 HTML 指标表格使用。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "slack_digest",
+      "condition": null,
+      "rationale": "纯文本版摘要送入 Slack 投递节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "email_digest",
+      "condition": null,
+      "rationale": "HTML 版摘要送入邮件发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6",
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：定时触发（code）、读取最近 14 天指标（code）、计算周环比与派生指标（code）、生成五板块业绩摘要（semantic）、排版 Slack 纯文本与邮件 HTML 两种版本（code）、投递 Slack（terminal）与发送邮件（terminal）。需求未声明的实现细节（报告配置变量设置）未纳入。混合任务满足 semantic→code 有类型 DFG 边（digest）。"
+}

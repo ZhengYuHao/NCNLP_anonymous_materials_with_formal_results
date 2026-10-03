@@ -1,0 +1,241 @@
+{
+  "task_id": "N8F-088",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "9bbd5b9b1f3d0afbc9c008aca4c7b2ec962b42d36b65323d40d896650c0092e8",
+  "fixtures": [
+    {
+      "fixture_id": "F-FORM-TRANSLATE",
+      "purpose": "表单提交：视频链接 + 语言 + 翻译范围（含翻译）",
+      "input_data": {
+        "form": {
+          "video_url": "https://www.youtube.com/watch?v=xyz789",
+          "language": "zh-CN",
+          "translation_scope": "translate"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FORM-SUMMARY-ONLY",
+      "purpose": "表单提交：翻译范围不含翻译（仅摘要与要点）",
+      "input_data": {
+        "form": {
+          "video_url": "https://www.youtube.com/watch?v=xyz789",
+          "language": "zh-CN",
+          "translation_scope": "summary_only"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TRANSCRIPT",
+      "purpose": "视频转写文本",
+      "input_data": {
+        "transcript": "Hello and welcome to this tutorial about building workflows. We will show you the basics."
+      }
+    },
+    {
+      "fixture_id": "F-VIDEO-DETAILS",
+      "purpose": "视频元信息",
+      "input_data": {
+        "video": {
+          "title": "How to Build Workflows",
+          "channel": "N8N Official",
+          "duration_seconds": 125,
+          "language_detected": "en"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TRANSCRIPT",
+      "dependency_type": "supadata",
+      "operation": "get_transcript",
+      "request_contract": {
+        "video_url": "https://www.youtube.com/watch?v=xyz789"
+      },
+      "response_contract": {
+        "transcript": "Hello and welcome to this tutorial about building workflows. We will show you the basics.",
+        "language": "en"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DETAILS",
+      "dependency_type": "supadata",
+      "operation": "get_video_details",
+      "request_contract": {
+        "video_url": "https://www.youtube.com/watch?v=xyz789"
+      },
+      "response_contract": {
+        "title": "How to Build Workflows",
+        "channel": "N8N Official",
+        "duration_seconds": 125
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-FULL",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_summary_and_translation",
+      "request_contract": {
+        "scope": "translate",
+        "language": "zh-CN"
+      },
+      "response_contract": {
+        "summary": "This tutorial explains how to build workflows.",
+        "key_points": [
+          "Workflows basics",
+          "Step-by-step guide"
+        ],
+        "translated_transcript": "你好，欢迎来到关于构建工作流的教程。我们将向您展示基础知识。"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_summary_and_translation",
+      "request_contract": {
+        "scope": "summary_only",
+        "language": "zh-CN"
+      },
+      "response_contract": {
+        "summary": "This tutorial explains how to build workflows.",
+        "key_points": [
+          "Workflows basics",
+          "Step-by-step guide"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FULL",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-FORM-TRANSLATE",
+        "F-TRANSCRIPT",
+        "F-VIDEO-DETAILS"
+      ],
+      "mock_ids": [
+        "M-TRANSCRIPT",
+        "M-DETAILS",
+        "M-LLM-FULL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.file.downloadable",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "转换后的文本作为可下载文件返回给用户"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.file.filename",
+          "operator": "matches",
+          "expected": "^.+\\.(txt|md)$",
+          "rationale": "文件为文本格式"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "How to Build Workflows",
+          "rationale": "文档包含视频信息"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "Hello and welcome to this tutorial",
+          "rationale": "文档包含原始转写文本"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "This tutorial explains how to build workflows.",
+          "rationale": "文档包含模型生成的摘要"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "Step-by-step guide",
+          "rationale": "文档包含要点"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "你好，欢迎来到",
+          "rationale": "所选翻译范围包含翻译时产出完整转写译文"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.transcript_language",
+          "operator": "equals",
+          "expected": "en",
+          "rationale": "识别转写文本语言"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-SUMMARY-ONLY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-FORM-SUMMARY-ONLY",
+        "F-TRANSCRIPT",
+        "F-VIDEO-DETAILS"
+      ],
+      "mock_ids": [
+        "M-TRANSCRIPT",
+        "M-DETAILS",
+        "M-LLM-SUMMARY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-SUMMARY-ONLY",
+          "target": "output.file.downloadable",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "仍返回可下载文件"
+        },
+        {
+          "assertion_id": "A-2-BOUND-SUMMARY-ONLY",
+          "target": "output.parts.translated_transcript",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "翻译范围不含翻译时不产出完整译文"
+        },
+        {
+          "assertion_id": "A-3-BOUND-SUMMARY-ONLY",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "This tutorial explains how to build workflows.",
+          "rationale": "摘要仍在文档中"
+        },
+        {
+          "assertion_id": "A-4-BOUND-SUMMARY-ONLY",
+          "target": "output.file.content",
+          "operator": "contains",
+          "expected": "How to Build Workflows",
+          "rationale": "视频信息仍在文档中"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；Supadata 并行转写/详情、LLM 摘要/要点/译文均固定模拟，无真实副作用；翻译范围 translate 与 summary_only 两分支分别覆盖；输出按 output.* JSON 路径表达。"
+}

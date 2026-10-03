@@ -1,0 +1,288 @@
+{
+  "task_id": "N8F-090",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "dc325ca7610f117abb47a02042635345eef3fb8721bfb6ad88e8d7cf1027b5de",
+  "fixtures": [
+    {
+      "fixture_id": "F-CMD-JA",
+      "purpose": "日语文本无前缀，验证自动检测并翻译为英语",
+      "input_data": {
+        "command": "/trans",
+        "text": "こんにちは、世界",
+        "prefix": null,
+        "visibility": "public"
+      }
+    },
+    {
+      "fixture_id": "F-CMD-EN",
+      "purpose": "英语文本无前缀，验证自动检测并翻译为日语",
+      "input_data": {
+        "command": "/trans",
+        "text": "Hello, world",
+        "prefix": null,
+        "visibility": "private"
+      }
+    },
+    {
+      "fixture_id": "F-CMD-PREFIX-EN",
+      "purpose": "en: 前缀覆盖自动检测，显式指定目标语言为英语",
+      "input_data": {
+        "command": "/trans",
+        "text": "こんにちは",
+        "prefix": "en",
+        "visibility": "public"
+      }
+    },
+    {
+      "fixture_id": "F-CMD-PREFIX-JA",
+      "purpose": "ja: 前缀覆盖自动检测，显式指定目标语言为日语",
+      "input_data": {
+        "command": "/trans",
+        "text": "hello",
+        "prefix": "ja",
+        "visibility": "private"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-JA2EN",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "detect_and_translate",
+      "request_contract": {
+        "text_is_japanese": true
+      },
+      "response_contract": {
+        "detected_language": "ja",
+        "target_language": "en",
+        "translation": "Hello, world"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EN2JA",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "detect_and_translate",
+      "request_contract": {
+        "text_is_english": true
+      },
+      "response_contract": {
+        "detected_language": "en",
+        "target_language": "ja",
+        "translation": "こんにちは、世界"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PREFIX-EN",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "detect_and_translate",
+      "request_contract": {
+        "prefix": "en"
+      },
+      "response_contract": {
+        "detected_language": "ja",
+        "target_language": "en",
+        "translation": "Hello"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PREFIX-JA",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "detect_and_translate",
+      "request_contract": {
+        "prefix": "ja"
+      },
+      "response_contract": {
+        "detected_language": "en",
+        "target_language": "ja",
+        "translation": "こんにちは"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ACK",
+      "dependency_type": "slack",
+      "operation": "post_acknowledgement",
+      "request_contract": {
+        "message_is_immediate": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "text": "Translating..."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-REPLY",
+      "dependency_type": "slack",
+      "operation": "post_translation",
+      "request_contract": {
+        "visibility_in": [
+          "public",
+          "private"
+        ]
+      },
+      "response_contract": {
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-JA2EN",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CMD-JA"
+      ],
+      "mock_ids": [
+        "M-LLM-JA2EN",
+        "M-SLACK-ACK",
+        "M-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.messages[0].type",
+          "operator": "equals",
+          "expected": "ack",
+          "rationale": "必须先发送\"正在翻译\"的即时提示"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.messages[0].text",
+          "operator": "equals",
+          "expected": "Translating...",
+          "rationale": "即时提示内容为固定文案"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.messages[1].type",
+          "operator": "equals",
+          "expected": "translation",
+          "rationale": "提示之后才回传译文，顺序必须保持"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.messages[1].text",
+          "operator": "equals",
+          "expected": "Hello, world",
+          "rationale": "译文必须等于固定翻译结果"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.detected_language",
+          "operator": "equals",
+          "expected": "ja",
+          "rationale": "自动检测输入语言为日语"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-EN2JA",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CMD-EN"
+      ],
+      "mock_ids": [
+        "M-LLM-EN2JA",
+        "M-SLACK-ACK",
+        "M-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01-POS-EN2JA",
+          "target": "output.detected_language",
+          "operator": "equals",
+          "expected": "en",
+          "rationale": "自动检测输入语言为英语"
+        },
+        {
+          "assertion_id": "A-POS-02-POS-EN2JA",
+          "target": "output.messages[1].text",
+          "operator": "equals",
+          "expected": "こんにちは、世界",
+          "rationale": "译文必须等于固定翻译结果"
+        },
+        {
+          "assertion_id": "A-POS-03-POS-EN2JA",
+          "target": "output.messages[1].visibility",
+          "operator": "equals",
+          "expected": "private",
+          "rationale": "回复可见范围随输入配置（公开/私密）传递"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-PREFIX-EN",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CMD-PREFIX-EN"
+      ],
+      "mock_ids": [
+        "M-LLM-PREFIX-EN",
+        "M-SLACK-ACK",
+        "M-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.target_language",
+          "operator": "equals",
+          "expected": "en",
+          "rationale": "en: 前缀显式指定目标语言，覆盖自动检测"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.messages[1].text",
+          "operator": "equals",
+          "expected": "Hello",
+          "rationale": "前缀指定的翻译方向决定译文"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-PREFIX-JA",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CMD-PREFIX-JA"
+      ],
+      "mock_ids": [
+        "M-LLM-PREFIX-JA",
+        "M-SLACK-ACK",
+        "M-SLACK-REPLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01-BND-PREFIX-JA",
+          "target": "output.target_language",
+          "operator": "equals",
+          "expected": "ja",
+          "rationale": "ja: 前缀显式指定目标语言为日语"
+        },
+        {
+          "assertion_id": "A-BND-02-BND-PREFIX-JA",
+          "target": "output.messages[1].text",
+          "operator": "equals",
+          "expected": "こんにちは",
+          "rationale": "英语文本按 ja: 前缀译为日语"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "语言检测与翻译结果、Slack 提示与回传均为固定模拟。输出按消息序列组织，先 ack 后译文的顺序、目标语言前缀覆盖与可见范围均可由程序直接判定。"
+}

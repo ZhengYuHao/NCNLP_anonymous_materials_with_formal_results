@@ -1,0 +1,188 @@
+{
+  "task_id": "N8F-033",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "1dde265c853a22b92937e6962b6835d918850d0c7dbe0a00cfcbf169fb2bbdfe",
+  "fixtures": [
+    {
+      "fixture_id": "F-REEL-URL",
+      "purpose": "正常用例：用户通过 Telegram 提交的 Instagram Reel 链接",
+      "input_data": {
+        "reel_url": "https://www.instagram.com/reel/CxYzAbCdEfG/",
+        "chat_id": "chat-fixed-9"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-IG-DOWNLOAD",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_reel_video",
+      "request_contract": {
+        "url": "https://www.instagram.com/reel/CxYzAbCdEfG/"
+      },
+      "response_contract": {
+        "video_url": "https://mock-media.example/reel/CxYzAbCdEfG.mp4",
+        "description": "Quick 3-ingredient vegan pasta recipe for busy weeknights"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FREECONVERT-AUDIO",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "video_to_audio",
+      "request_contract": {
+        "video_url": "https://mock-media.example/reel/CxYzAbCdEfG.mp4"
+      },
+      "response_contract": {
+        "audio_url": "https://mock-media.example/audio/CxYzAbCdEfG.mp3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ASSEMBLYAI-TRANSCRIBE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "transcribe_audio",
+      "request_contract": {
+        "audio_url": "https://mock-media.example/audio/CxYzAbCdEfG.mp3"
+      },
+      "response_contract": {
+        "text": "Today I will show you how to make vegan pasta with just three ingredients. Boil the pasta, blend the sauce, and mix everything together in five minutes."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYZE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "analyze_reel_content",
+      "request_contract": {
+        "transcript": "Today I will show you how to make vegan pasta with just three ingredients. Boil the pasta, blend the sauce, and mix everything together in five minutes.",
+        "description": "Quick 3-ingredient vegan pasta recipe for busy weeknights"
+      },
+      "response_contract": {
+        "niche": "Plant-Based Cooking",
+        "core_message": "A delicious vegan pasta can be made in five minutes with three ingredients.",
+        "content_hooks": [
+          "Three ingredients you already have at home",
+          "Five minutes to dinner, no meat required",
+          "The blender trick that makes the sauce creamy"
+        ],
+        "video_scripts": [
+          "Script 1: Open with the pasta boiling, cut to ingredients on the counter, voiceover explaining the three ingredients.",
+          "Script 2: Show the blending step, add a caption about the creamy texture, end with a plating shot.",
+          "Script 3: Close-up of the final dish, ask viewers to save the recipe, outro with follow prompt."
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet_name": "ReelAnalysis",
+        "row": {
+          "niche": "Plant-Based Cooking",
+          "core_message": "A delicious vegan pasta can be made in five minutes with three ingredients.",
+          "hooks_count": 3,
+          "scripts_count": 3
+        }
+      },
+      "response_contract": {
+        "row_number": 7,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-REEL-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-REEL-URL"],
+      "mock_ids": [
+        "M-IG-DOWNLOAD",
+        "M-FREECONVERT-AUDIO",
+        "M-ASSEMBLYAI-TRANSCRIBE",
+        "M-LLM-ANALYZE",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-REEL-1",
+          "target": "exec_log.mock_calls.M-FREECONVERT-AUDIO.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "下载 Reel 后必须转换为音频"
+        },
+        {
+          "assertion_id": "A-REEL-2",
+          "target": "exec_log.mock_calls.M-ASSEMBLYAI-TRANSCRIBE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "音频必须转写为文本"
+        },
+        {
+          "assertion_id": "A-REEL-3",
+          "target": "exec_log.mock_calls.M-LLM-ANALYZE.request_contract.transcript",
+          "operator": "contains",
+          "expected": "vegan pasta",
+          "rationale": "语言模型输入必须包含转写文本内容，说明分析基于真实转写而非凭空生成"
+        },
+        {
+          "assertion_id": "A-REEL-4",
+          "target": "exec_log.mock_calls.M-LLM-ANALYZE.request_contract.description",
+          "operator": "equals",
+          "expected": "Quick 3-ingredient vegan pasta recipe for busy weeknights",
+          "rationale": "语言模型输入必须同时包含该 Reel 的描述文本"
+        },
+        {
+          "assertion_id": "A-REEL-5",
+          "target": "result.analysis.niche",
+          "operator": "equals",
+          "expected": "Plant-Based Cooking",
+          "rationale": "分析结果必须包含内容领域定位字段且内容忠实于模型输出"
+        },
+        {
+          "assertion_id": "A-REEL-6",
+          "target": "result.analysis.content_hooks",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "需求规定产出 3 条传播切入点"
+        },
+        {
+          "assertion_id": "A-REEL-7",
+          "target": "result.analysis.video_scripts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "需求规定产出 3 条短视频脚本"
+        },
+        {
+          "assertion_id": "A-REEL-8",
+          "target": "exec_log.mock_calls.M-SHEETS-APPEND.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "分析结果必须写入 Google Sheets"
+        },
+        {
+          "assertion_id": "A-REEL-9",
+          "target": "exec_log.mock_calls.M-SHEETS-APPEND.request_contract.row.niche",
+          "operator": "equals",
+          "expected": "Plant-Based Cooking",
+          "rationale": "写入 Sheets 的记录必须包含内容领域定位字段"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖单条正常链路：Telegram 收到 Reel 链接 → 下载 → FreeConvert 转音频 → AssemblyAI 转写 → LLM 结合转写与描述分析 → 写入 Google Sheets。下载/转码/转写/LLM/Sheets 全部固定模拟；断言检查链路每一步调用次数、模型输入是否包含转写文本与描述、产出 3 条切入点与 3 条脚本的数量、以及 Sheets 落库字段。"
+}

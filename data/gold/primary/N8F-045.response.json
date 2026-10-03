@@ -1,0 +1,463 @@
+{
+  "task_id": "N8F-045",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "3a201d485022001f72a6e6da2e69fabb795bde325eee20dbfcd6b646433846a3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收订阅表单",
+      "node_type": "code",
+      "operation_family": "receive_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "subscriber",
+          "type": "object",
+          "description": "订阅者表单提交信息：姓名、邮箱、最近一次经期开始日期、平均周期天数"
+        }
+      ],
+      "native_evidence": ["Cycle Wellness Form"],
+      "requirement_evidence": [
+        "订阅者通过表单提交姓名、邮箱、最近一次经期开始日期与平均周期天数。"
+      ],
+      "rationale": "表单接收是确定性触发动作，判为 code，作为订阅链入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "计算关键周期日期",
+      "node_type": "code",
+      "operation_family": "date_calculation",
+      "inputs": [
+        {
+          "name": "subscriber",
+          "type": "object",
+          "description": "订阅者信息，含最近一次经期开始日期与平均周期天数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cycle_dates",
+          "type": "object",
+          "description": "下次经期开始日、排卵日、易孕窗口起止日与 PMS 窗口开始日"
+        }
+      ],
+      "native_evidence": ["Calculate Cycle Dates"],
+      "requirement_evidence": [
+        "系统据此计算全部关键周期日期：下次经期开始日；排卵日为下次经期开始日减 14 天；易孕窗口自排卵日前 5 天开启、排卵日后 1 天结束；经前综合征（PMS）窗口自下次经期开始日前 5 天开启"
+      ],
+      "rationale": "按固定规则计算周期日期是确定性日期运算，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "保存订阅者与周期日期",
+      "node_type": "code",
+      "operation_family": "persist_subscriber",
+      "inputs": [
+        {
+          "name": "subscriber",
+          "type": "object",
+          "description": "订阅者信息"
+        },
+        {
+          "name": "cycle_dates",
+          "type": "object",
+          "description": "计算出的关键周期日期"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "saved_subscriber",
+          "type": "boolean",
+          "description": "订阅者与周期日期已保存标志"
+        }
+      ],
+      "native_evidence": ["Save to Subscribers"],
+      "requirement_evidence": [
+        "日期保存后系统立即向订阅者发送一封包含完整周期概览的欢迎邮件"
+      ],
+      "rationale": "保存订阅者与周期日期是确定性外部写入动作，判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "发送欢迎邮件",
+      "node_type": "terminal",
+      "operation_family": "send_welcome",
+      "inputs": [
+        {
+          "name": "cycle_dates",
+          "type": "object",
+          "description": "完整周期概览，用于欢迎邮件内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Build Welcome Email", "Send Welcome Email"],
+      "requirement_evidence": [
+        "日期保存后系统立即向订阅者发送一封包含完整周期概览的欢迎邮件"
+      ],
+      "rationale": "向订阅者发送欢迎邮件是用户可见的完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n5",
+      "label": "每日检查活跃订阅者并判断当天阶段与触发日",
+      "node_type": "code",
+      "operation_family": "daily_phase_check",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "daily_triggers",
+          "type": "array",
+          "description": "当天命中触发日的订阅者列表，含订阅者、所处阶段与触发类型"
+        }
+      ],
+      "native_evidence": ["Daily 8AM Trigger", "Read All Subscribers", "Filter Active Subscribers", "Calculate Today's Phase"],
+      "requirement_evidence": [
+        "此后系统每天早上 8 点检查全部活跃订阅者，判断每位订阅者当天所处的阶段，并在命中以下四类触发日之一时发送对应的阶段提醒邮件"
+      ],
+      "rationale": "每日定时读取活跃订阅者并计算当天阶段与触发日，是确定性规则判断，判为 code，作为每日链入口。"
+    },
+    {
+      "node_id": "n6",
+      "label": "检查上次发送记录避免重复",
+      "node_type": "code",
+      "operation_family": "dedup_check",
+      "inputs": [
+        {
+          "name": "daily_triggers",
+          "type": "array",
+          "description": "当天命中触发日的订阅者列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sendable",
+          "type": "array",
+          "description": "同一周期内同类型邮件尚未发送过的订阅者列表"
+        }
+      ],
+      "native_evidence": ["IF Email to Send"],
+      "requirement_evidence": [
+        "发送前会检查上次发送记录，确保同一周期内同一类型的邮件只发送一次"
+      ],
+      "rationale": "按上次发送记录过滤重复发送是确定性规则判断，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送阶段提醒邮件",
+      "node_type": "code",
+      "operation_family": "send_reminder",
+      "inputs": [
+        {
+          "name": "sendable",
+          "type": "array",
+          "description": "需发送提醒邮件的订阅者列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sent",
+          "type": "array",
+          "description": "已发送的提醒投递记录（含订阅者、阶段与邮件类型）"
+        }
+      ],
+      "native_evidence": ["Build Reminder Email", "Send Reminder Email"],
+      "requirement_evidence": [
+        "经期开始前 3 天发送准备提示；经期开始当天发送舒适与自我照护提示；排卵日发送生育意识与精力提示；PMS 窗口开始日发送情绪、精力与边界提示"
+      ],
+      "rationale": "按触发类型构建并发送提醒邮件是确定性外部动作，其后仍需更新记录与日志，判为 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "更新发送记录、记入发送日志并重算周期日期",
+      "node_type": "code",
+      "operation_family": "maintenance",
+      "inputs": [
+        {
+          "name": "sent",
+          "type": "array",
+          "description": "已发送的提醒投递记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "maintenance_done",
+          "type": "boolean",
+          "description": "发送记录与日志已更新、周期日期已重算标志"
+        }
+      ],
+      "native_evidence": ["Update Last Email Sent", "Log to Send Log"],
+      "requirement_evidence": [
+        "发送后更新订阅者的最近发送记录，并将每次投递按日期、阶段、周期天数与邮件类型记入发送日志；在经期开始日会重新计算周期日期以实现持续跟踪"
+      ],
+      "rationale": "更新发送记录、写发送日志并在经期开始日重算周期日期，是确定性外部写入与计算动作，判为 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "每日任务结束",
+      "node_type": "terminal",
+      "operation_family": "end_daily",
+      "inputs": [
+        {
+          "name": "maintenance_done",
+          "type": "boolean",
+          "description": "维护完成标志"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Log to Send Log"],
+      "requirement_evidence": [
+        "并将每次投递按日期、阶段、周期天数与邮件类型记入发送日志"
+      ],
+      "rationale": "每日维护完成后链路终止。"
+    },
+    {
+      "node_id": "n10",
+      "label": "每周检查活跃订阅者并判断当前阶段",
+      "node_type": "code",
+      "operation_family": "weekly_phase_check",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "weekly_items",
+          "type": "array",
+          "description": "活跃订阅者列表，含姓名、当前阶段、周期天数与距下次经期天数"
+        }
+      ],
+      "native_evidence": ["Weekly Sunday 9AM Trigger", "Read All Subscribers1", "Filter Active Subscribers1", "Calculate Phase & Build Prompt"],
+      "requirement_evidence": [
+        "此外，系统每周日早上 9 点为全部活跃订阅者生成本周健康摘要：先判断订阅者当前所处的阶段（经期、卵泡期、易孕期、排卵期或 PMS），再结合姓名、阶段、周期天数与距下次经期的天数"
+      ],
+      "rationale": "每周定时读取活跃订阅者并计算阶段与摘要输入，是确定性动作，判为 code，作为每周链入口。"
+    },
+    {
+      "node_id": "n11",
+      "label": "生成阶段化健康建议与每周寄语",
+      "node_type": "semantic",
+      "operation_family": "wellness_advice",
+      "inputs": [
+        {
+          "name": "weekly_items",
+          "type": "array",
+          "description": "订阅者当前阶段与周期信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "wellness_advice",
+          "type": "object",
+          "description": "涵盖精力管理、营养、运动、心态与本周注意事项五类别的阶段化建议及每周寄语"
+        }
+      ],
+      "native_evidence": ["Wellness Coach"],
+      "requirement_evidence": [
+        "交由语言模型生成涵盖精力管理、营养、运动、心态与本周注意事项五个类别的阶段化建议以及一句每周寄语"
+      ],
+      "rationale": "生成个性化健康建议与寄语需语言模型开放生成，判为 semantic。"
+    },
+    {
+      "node_id": "n12",
+      "label": "组装并发送每周健康摘要邮件、记入发送日志",
+      "node_type": "code",
+      "operation_family": "send_digest",
+      "inputs": [
+        {
+          "name": "wellness_advice",
+          "type": "object",
+          "description": "生成的阶段化建议与每周寄语"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "digest_sent",
+          "type": "boolean",
+          "description": "每周摘要邮件已发送并记入日志标志"
+        }
+      ],
+      "native_evidence": ["Parse & Build Wellness Email", "Send Wellness Digest", "Log to Send Log1"],
+      "requirement_evidence": [
+        "组装为邮件发送；每次发送同样记入发送日志"
+      ],
+      "rationale": "组装、发送摘要邮件并记入日志是确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n13",
+      "label": "每周任务结束",
+      "node_type": "terminal",
+      "operation_family": "end_weekly",
+      "inputs": [
+        {
+          "name": "digest_sent",
+          "type": "boolean",
+          "description": "摘要邮件发送完成标志"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Log to Send Log1"],
+      "requirement_evidence": [
+        "组装为邮件发送；每次发送同样记入发送日志"
+      ],
+      "rationale": "每周摘要发送并记录后链路终止。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收表单后计算周期日期。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "计算日期后保存订阅者。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "保存后发送欢迎邮件。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "判断触发日后检查发送记录。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "去重后发送提醒邮件。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "发送后更新记录与日志。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "维护完成后每日链结束。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "计算阶段后生成健康建议。"
+    },
+    {
+      "edge_id": "cfg9",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成建议后组装发送摘要邮件。"
+    },
+    {
+      "edge_id": "cfg10",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要发送后每周链结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "subscriber",
+      "condition": null,
+      "rationale": "订阅者信息传给日期计算节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "cycle_dates",
+      "condition": null,
+      "rationale": "计算出的周期日期传给保存节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n1",
+      "target": "n3",
+      "variable": "subscriber",
+      "condition": null,
+      "rationale": "订阅者信息传给保存节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "cycle_dates",
+      "condition": null,
+      "rationale": "完整周期概览用于欢迎邮件。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "daily_triggers",
+      "condition": null,
+      "rationale": "触发日列表传给去重检查节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "sendable",
+      "condition": null,
+      "rationale": "可发送列表传给提醒邮件发送节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "sent",
+      "condition": null,
+      "rationale": "投递记录传给维护节点更新日志。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n10",
+      "target": "n11",
+      "variable": "weekly_items",
+      "condition": null,
+      "rationale": "订阅者阶段信息传给建议生成节点。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n11",
+      "target": "n12",
+      "variable": "wellness_advice",
+      "condition": null,
+      "rationale": "生成的建议传给摘要邮件组装节点。"
+    }
+  ],
+  "entry_nodes": ["n1", "n5", "n10"],
+  "terminal_nodes": ["n4", "n9", "n13"],
+  "confidence": 0.92,
+  "notes": "按需求建模为三条车道：订阅（表单→计算日期→保存→欢迎邮件）、每日提醒（8 点→阶段/触发判断→去重→发送→更新记录/日志/重算）、每周摘要（9 点→阶段判断→LLM 建议→组装发送并记日志）。同一周期同类型只发一次的约束并入去重节点；经期开始日重算周期日期并入维护节点。"
+}

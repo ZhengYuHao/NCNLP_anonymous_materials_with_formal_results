@@ -1,0 +1,321 @@
+{
+  "task_id": "N8F-058",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "6cadc7231bcdb08ac2188070d2e9f30745aef53f7b768322f13f504ac6ed35dd",
+  "fixtures": [
+    {
+      "fixture_id": "F-KEYWORDS",
+      "purpose": "固定的目标关键词与监控参数",
+      "input_data": {
+        "keywords": [
+          "ai workflow automation",
+          "n8n alternatives"
+        ],
+        "region": "us",
+        "run_date": "2026-09-02"
+      }
+    },
+    {
+      "fixture_id": "F-SERP-RAW",
+      "purpose": "搜索结果抓取服务返回的 SERP 原始数据",
+      "input_data": {
+        "pages": [
+          {
+            "keyword": "ai workflow automation",
+            "html_snippet": "<div class='result'>...</div>"
+          },
+          {
+            "keyword": "n8n alternatives",
+            "html_snippet": "<div class='result'>...</div>"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SERP-EMPTY",
+      "purpose": "SERP 抓取服务对全部关键词返回零结果页的边界数据，验证无排名时的无动作行为",
+      "input_data": {
+        "pages": []
+      }
+    },
+    {
+      "fixture_id": "F-PREVIOUS-RANKINGS",
+      "purpose": "历史排名记录，用于计算排名变化",
+      "input_data": {
+        "rows": [
+          {
+            "keyword": "ai workflow automation",
+            "rank": 5,
+            "date": "2026-08-26"
+          },
+          {
+            "keyword": "n8n alternatives",
+            "rank": 8,
+            "date": "2026-08-26"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-BD-SERP",
+      "dependency_type": "httpRequest",
+      "operation": "scrape_serp",
+      "request_contract": {
+        "keywords": "see fixture F-KEYWORDS",
+        "use_scraping_service": true
+      },
+      "response_contract": {
+        "pages": "see fixtures F-SERP-RAW / F-SERP-EMPTY"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARSE",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "parse_ranking_data",
+      "request_contract": {
+        "input_is_serp": true
+      },
+      "response_contract": {
+        "rankings": [
+          {
+            "keyword": "ai workflow automation",
+            "rank": 3,
+            "competitor_positions": [
+              {
+                "domain": "competitor-a.com",
+                "rank": 1
+              },
+              {
+                "domain": "competitor-b.com",
+                "rank": 2
+              }
+            ],
+            "search_features": [
+              "featured_snippet"
+            ]
+          },
+          {
+            "keyword": "n8n alternatives",
+            "rank": 8,
+            "competitor_positions": [
+              {
+                "domain": "competitor-a.com",
+                "rank": 1
+              }
+            ],
+            "search_features": []
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARSE-EMPTY",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "parse_ranking_data",
+      "request_contract": {
+        "input_is_serp": true
+      },
+      "response_contract": {
+        "rankings": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-OPP",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "identify_seo_opportunities",
+      "request_contract": {
+        "input_has_rankings": true
+      },
+      "response_contract": {
+        "opportunities": [
+          {
+            "keyword": "ai workflow automation",
+            "opportunity": "improve title tag to capture featured snippet"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "read_previous_rankings": true
+      },
+      "response_contract": {
+        "rows": "see fixture F-PREVIOUS-RANKINGS"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-WRITE",
+      "dependency_type": "googleSheets",
+      "operation": "append_or_update_rows",
+      "request_contract": {
+        "write_rankings_and_changes": true
+      },
+      "response_contract": {
+        "status": "saved",
+        "rows_updated": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-TRACK",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-KEYWORDS",
+        "F-SERP-RAW",
+        "F-PREVIOUS-RANKINGS"
+      ],
+      "mock_ids": [
+        "M-BD-SERP",
+        "M-LLM-PARSE",
+        "M-LLM-OPP",
+        "M-SHEETS-READ",
+        "M-SHEETS-WRITE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.rankings",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "两个关键词各解析出一条排名记录"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.rankings[0].keyword",
+          "operator": "equals",
+          "expected": "ai workflow automation",
+          "rationale": "排名记录须与关键词对应"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.rankings[0].rank",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "排名必须等于固定解析结果"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.rankings[0].competitor_positions",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "须记录竞争对手排名"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.rankings[0].search_features",
+          "operator": "contains",
+          "expected": "featured_snippet",
+          "rationale": "须记录搜索结果中的特殊展现"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.changes",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每个关键词须记录一次排名变化"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.changes[0].delta",
+          "operator": "equals",
+          "expected": -2,
+          "rationale": "历史排名 5、本次 3，变化量为 -2"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.opportunities",
+          "operator": "exists",
+          "rationale": "AI 须识别 SEO 优化机会",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.sheets.saved",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "排名数据与变化必须保存到 Google Sheets"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-NO-CHANGE",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-KEYWORDS",
+        "F-SERP-RAW",
+        "F-PREVIOUS-RANKINGS"
+      ],
+      "mock_ids": [
+        "M-BD-SERP",
+        "M-LLM-PARSE",
+        "M-LLM-OPP",
+        "M-SHEETS-READ",
+        "M-SHEETS-WRITE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.changes[1].delta",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "边界：n8n alternatives 历史排名与本次同为 8，变化量记录为 0 且仍写入"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-EMPTY-SERP",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-KEYWORDS",
+        "F-SERP-EMPTY",
+        "F-PREVIOUS-RANKINGS"
+      ],
+      "mock_ids": [
+        "M-BD-SERP",
+        "M-LLM-PARSE-EMPTY",
+        "M-SHEETS-READ"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.rankings",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "SERP 零结果页时解析不产生任何排名记录"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.changes",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无排名即无排名变化可跟踪，收敛为无动作"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "SERP 抓取、AI 解析、机会识别、Sheets 读写均为固定模拟。排名、竞争对手、特殊展现与变化量由固定 SERP/解析结果与固定历史排名直接计算得出。空 SERP 场景（F-SERP-EMPTY + M-LLM-PARSE-EMPTY）收敛为需求支持的无动作：零排名、零变化，不引入需求未规定的错误输出，也不对空场景下的 Sheets 写入行为做额外约束。"
+}

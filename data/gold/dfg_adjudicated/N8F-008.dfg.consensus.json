@@ -1,0 +1,184 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-008",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "触发评论中的合并请求标识信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "合并请求变更差异"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "逐文件差异条目及评审上下文",
+        "单个变更文件的差异内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "逐文件差异条目及评审上下文",
+        "单个变更文件的差异内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g6",
+      "data_items": [
+        "逐文件差异条目及评审上下文",
+        "单个变更文件的差异内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g7",
+      "data_items": [
+        "缺陷维度审查结论",
+        "缺陷维度的审查结论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "安全维度审查结论",
+        "安全维度的审查结论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "可维护性维度审查结论",
+        "可维护性维度的审查结论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "复核归一后的审查结论（含严重程度与置信度）",
+        "复核归一后的审查结论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g10",
+      "data_items": [
+        "通过阈值的审查结论内容"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-008-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "行内评审评论的内容即通过置信度阈值筛选的审查结论，发布步骤真实读取达标结论。",
+      "confidence": 0.85,
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g11",
+      "data_items": [
+        "通过阈值的审查结论内容"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-008-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "退化回复承载与行内评论相同的达标审查结论内容，属真实数据消费。",
+      "confidence": 0.8,
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g12",
+      "data_items": [
+        "本次审查结果（有无结论及结论情况）",
+        "本次审查结论情况（有无结论及其数量）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "可发布结论中的文件与行位置信息",
+        "达标审查结论（含文件与行位置信息）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "解析得到的有效差异位置",
+        "有效的 GitLab 差异位置及行内评论内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g11",
+      "data_items": [
+        "差异位置解析结果与构建的退化回复内容"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-008-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "退化分支由差异位置解析失败触发，回复内容由解析定位步骤构建后交付讨论区发布，native 证据含 Build Fallback Comment。",
+      "confidence": 0.75,
+      "edge_id": "d15"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.888888888888889,
+    "shared_edge_count": 12,
+    "adjudicated_dispute_count": 3,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

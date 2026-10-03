@@ -1,0 +1,173 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-006",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-LLM-GEN-DIABETES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "generate_health_guide",
+      "request_contract": {
+        "disease": "type 2 diabetes",
+        "age": 55,
+        "gender": "female"
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Type 2 diabetes is a chronic condition affecting blood sugar regulation.",
+          "natural_remedies": "Cinnamon and berberine may support glycemic control.",
+          "prevention_strategies": "Maintain balanced meals and regular physical activity.",
+          "healing_recipes": "",
+          "personalization": {
+            "disease": "type 2 diabetes",
+            "age_group": "50-60",
+            "gender": "female"
+          }
+        },
+        "completeness": "missing_healing_recipes"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-FAIL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "first_generation"
+      },
+      "response_contract": {
+        "qa_passed": false,
+        "missing_sections": [
+          "healing_recipes"
+        ],
+        "issues": [
+          "Healing recipes section is empty"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-OPTIMIZE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "optimize_guide",
+      "request_contract": {
+        "issues": [
+          "Healing recipes section is empty"
+        ]
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Type 2 diabetes is a chronic condition affecting blood sugar regulation.",
+          "natural_remedies": "Cinnamon and berberine may support glycemic control.",
+          "prevention_strategies": "Maintain balanced meals and regular physical activity.",
+          "healing_recipes": "Oatmeal breakfast bowl with berries and cinnamon.",
+          "personalization": {
+            "disease": "type 2 diabetes",
+            "age_group": "50-60",
+            "gender": "female"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-PASS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "optimized_guide"
+      },
+      "response_contract": {
+        "qa_passed": true,
+        "missing_sections": [],
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-GEN-HYPERTENSION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "generate_health_guide",
+      "request_contract": {
+        "disease": "hypertension",
+        "age": 40,
+        "gender": "male"
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Hypertension is persistently elevated blood pressure.",
+          "natural_remedies": "Hibiscus tea and potassium-rich foods may help.",
+          "prevention_strategies": "Reduce sodium intake and exercise regularly.",
+          "healing_recipes": "Garlic lemon water morning drink.",
+          "personalization": {
+            "disease": "hypertension",
+            "age_group": "40-50",
+            "gender": "male"
+          }
+        },
+        "completeness": "complete"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-PASS-FIRST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "hypertension_guide"
+      },
+      "response_contract": {
+        "qa_passed": true,
+        "missing_sections": [],
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDOCS-CREATE",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "create_document",
+      "request_contract": {
+        "content": "formatted_guide_with_timestamps"
+      },
+      "response_contract": {
+        "document_id": "doc-health-guide-12345",
+        "url": "https://docs.google.com/document/d/doc-health-guide-12345"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-DIABETES-ITERATION",
+      "fixture_ids": [
+        "F-FORM-DIABETES"
+      ],
+      "mock_ids": [
+        "M-LLM-GEN-DIABETES",
+        "M-LLM-QA-FAIL",
+        "M-LLM-OPTIMIZE",
+        "M-LLM-QA-PASS",
+        "M-GDOCS-CREATE"
+      ]
+    },
+    {
+      "case_id": "C-HYPERTENSION-NO-ITERATION",
+      "fixture_ids": [
+        "F-FORM-HYPERTENSION-PASS"
+      ],
+      "mock_ids": [
+        "M-LLM-GEN-HYPERTENSION",
+        "M-LLM-QA-PASS-FIRST",
+        "M-GDOCS-CREATE"
+      ]
+    }
+  ]
+}

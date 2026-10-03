@@ -1,0 +1,290 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-065",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "efc2ae969276737075e2a8ea81403a1a78b85eae4dfa3f07dd3a82195586a6f7",
+  "natural_language_requirement": "当 WordPress 中的一篇文章被创建或更新时，系统被触发启动。系统从 WordPress 接口获取该文章的原始内容数据。随后由语言模型分析其中一段文本，判定原文的准确语种，据此只把内容路由并翻译到尚缺译文的目标语言，以避免重复翻译。系统从文章的标准字段和自定义字段（ACF 字段）中提取待翻译文本，批量提交给机器翻译服务完成翻译，翻译过程中保留原有的 HTML 格式。翻译完成后，系统按原文的数据结构重建内容，并将译文作为一篇与原文章建立关联的新翻译草稿写回 WordPress。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "detect_source_language",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snippet": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snippet"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_translation_draft",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "lang": {
+            "type": "string"
+          },
+          "linked_post_id": {
+            "type": "integer"
+          },
+          "post_id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content",
+          "lang",
+          "linked_post_id",
+          "post_id",
+          "title"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "link": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "link",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_post_raw",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "post_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "post_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "post": {
+            "additionalProperties": false,
+            "properties": {
+              "_links": {
+                "additionalProperties": false,
+                "properties": {
+                  "self": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "self"
+                ],
+                "type": "object"
+              },
+              "acf": {
+                "additionalProperties": false,
+                "properties": {
+                  "meta_description": {
+                    "type": "string"
+                  },
+                  "subtitle": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "meta_description",
+                  "subtitle"
+                ],
+                "type": "object"
+              },
+              "content": {
+                "type": "string"
+              },
+              "excerpt": {
+                "type": "string"
+              },
+              "id": {
+                "type": "integer"
+              },
+              "status": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "_links",
+              "acf",
+              "content",
+              "excerpt",
+              "id",
+              "status",
+              "title"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "post"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "translate_bulk",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "target_lang": {
+            "type": "string"
+          },
+          "texts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "target_lang",
+          "texts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "translations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "translations"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "detected_lang",
+        "schema": {
+          "type": "string"
+        },
+        "description": "判定出的原文语种代码（ISO 639-1）",
+        "requirement_evidence": [
+          "随后由语言模型分析其中一段文本，判定原文的准确语种"
+        ],
+        "source_operations": [
+          "detect_source_language"
+        ],
+        "design_sources": [
+          "n3.detected_lang"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "translation_drafts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "link",
+              "status",
+              "lang",
+              "source_post_id",
+              "title",
+              "content"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "link": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "lang": {
+                "type": "string"
+              },
+              "source_post_id": {
+                "type": "integer"
+              },
+              "title": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "description": "将译文作为一篇与原文章建立关联的新翻译草稿写回 WordPress 的结果列表",
+        "requirement_evidence": [
+          "并将译文作为一篇与原文章建立关联的新翻译草稿写回 WordPress",
+          "只把内容路由并翻译到尚缺译文的目标语言，以避免重复翻译",
+          "翻译过程中保留原有的 HTML 格式"
+        ],
+        "source_operations": [
+          "create_translation_draft"
+        ],
+        "design_sources": [
+          "n8"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "EEA97D7C06742A3EF8E60E64F30EC451AEC6AC42D7A5B3B7685D57E1B9A27D64",
+  "public_interface_sha256": "DBCDCD97D288CC41724787087BD05CE14597790484A3AB28EFD4D94FE3A5068D",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

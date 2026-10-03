@@ -1,0 +1,82 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-032",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "YouTube 视频链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "字幕文本",
+        "视频字幕文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "生成的博客文章与社交媒体内容",
+        "生成的博客与社交媒体内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "生成的博客与社交媒体内容"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-032-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "发布到选定平台的内容即 g3 生成的内容，发布步骤真实消费生成产出；g4 为可选审批网关，内容数据定义在 g3。",
+      "confidence": 0.75,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "批准后的待发布内容（含批准结果）",
+        "人工批准结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "发布结果与所发布内容的信息",
+        "发布的内容与发布结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.9090909090909091,
+    "shared_edge_count": 5,
+    "adjudicated_dispute_count": 1,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

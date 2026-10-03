@@ -1,0 +1,702 @@
+{
+  "task_id": "N8F-017",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "ec7ac7fd3aacef7cd59d9bdea976028d7c65575e52e726e2e74d09fe213c23c7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 消息",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "telegram_update",
+          "type": "object",
+          "description": "Telegram 机器人收到的消息更新"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "用户消息（文本、语音、图片或文档）"
+        }
+      ],
+      "native_evidence": ["Receive Message"],
+      "requirement_evidence": ["流程在 Telegram 机器人收到一条消息时启动"],
+      "rationale": "需求声明流程在 Telegram 机器人收到消息时启动，为确定性入站接收，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "按消息类型分发",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "收到的用户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "按类型分发后的消息（文本/语音/图片/文档）"
+        }
+      ],
+      "native_evidence": ["Switch"],
+      "requirement_evidence": [
+        "流程在 Telegram 机器人收到一条消息时启动，并按消息类型分别处理：文本消息经格式化后直接交给主智能助理；语音消息先从 Telegram 下载音频文件，再转写为文本；图片消息下载后由视觉理解能力分析其内容；文档消息下载后，其内容被存入临时向量库，使其可被检索。"
+      ],
+      "rationale": "需求声明按消息类型（文本/语音/图片/文档）分别处理，为确定性路由，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "格式化文本消息",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "文本消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "格式化后的文本输入"
+        }
+      ],
+      "native_evidence": ["Format-text-output"],
+      "requirement_evidence": ["文本消息经格式化后直接交给主智能助理"],
+      "rationale": "需求声明文本消息经格式化后交给助理，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "下载音频文件",
+      "node_type": "code",
+      "operation_family": "file_download",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "语音消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "从 Telegram 下载的音频文件"
+        }
+      ],
+      "native_evidence": ["Get Audio File"],
+      "requirement_evidence": ["语音消息先从 Telegram 下载音频文件"],
+      "rationale": "需求声明语音消息先从 Telegram 下载音频文件，为确定性下载动作，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "转写语音为文本",
+      "node_type": "semantic",
+      "operation_family": "speech_to_text",
+      "inputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "语音音频文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "转写出的文本内容"
+        }
+      ],
+      "native_evidence": ["Transcribe"],
+      "requirement_evidence": ["再转写为文本"],
+      "rationale": "需求声明将语音转写为文本，语音内容理解无法用确定性规则无损替代，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "格式化语音文本",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "转写出的文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "供助理使用的文本输入"
+        }
+      ],
+      "native_evidence": ["Format-voice-output"],
+      "requirement_evidence": ["处理后的输入交给核心智能助理"],
+      "rationale": "需求声明处理后的输入交给核心助理，转写文本需按统一输入契约格式化，为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "下载图片",
+      "node_type": "code",
+      "operation_family": "file_download",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "图片消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_file",
+          "type": "binary",
+          "description": "从 Telegram 下载的图片文件"
+        }
+      ],
+      "native_evidence": ["Download Image"],
+      "requirement_evidence": ["图片消息下载后由视觉理解能力分析其内容"],
+      "rationale": "需求声明图片消息先下载文件，为确定性下载动作，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "分析图片内容",
+      "node_type": "semantic",
+      "operation_family": "vision_analysis",
+      "inputs": [
+        {
+          "name": "image_file",
+          "type": "binary",
+          "description": "图片文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_description",
+          "type": "string",
+          "description": "对图片内容的分析描述"
+        }
+      ],
+      "native_evidence": ["Analyze Image"],
+      "requirement_evidence": ["由视觉理解能力分析其内容"],
+      "rationale": "需求声明由视觉理解能力分析图片内容，需开放视觉理解，判 semantic。"
+    },
+    {
+      "node_id": "n9",
+      "label": "格式化图片分析结果",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "image_description",
+          "type": "string",
+          "description": "图片分析描述"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "供助理使用的文本输入"
+        }
+      ],
+      "native_evidence": ["Format-image-output"],
+      "requirement_evidence": ["处理后的输入交给核心智能助理"],
+      "rationale": "需求声明处理后的输入交给核心助理，图片分析结果按统一输入契约格式化，为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "下载文档",
+      "node_type": "code",
+      "operation_family": "file_download",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "文档消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "document_file",
+          "type": "binary",
+          "description": "从 Telegram 下载的文档文件"
+        }
+      ],
+      "native_evidence": ["Download Document"],
+      "requirement_evidence": ["文档消息下载后，其内容被存入临时向量库"],
+      "rationale": "需求声明文档消息先下载文件，为确定性下载动作，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "存入临时向量库",
+      "node_type": "code",
+      "operation_family": "vector_indexing",
+      "inputs": [
+        {
+          "name": "document_file",
+          "type": "binary",
+          "description": "文档文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "vector_index",
+          "type": "object",
+          "description": "文档内容索引，可被检索"
+        }
+      ],
+      "native_evidence": ["Simple Vector Store", "Default Data Loader", "Token Splitter", "Embeddings OpenAI1"],
+      "requirement_evidence": ["其内容被存入临时向量库，使其可被检索"],
+      "rationale": "需求声明将文档内容存入临时向量库使其可被检索，为确定性入库动作（嵌入与存储），判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "生成文档上下文输入",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "vector_index",
+          "type": "object",
+          "description": "文档向量库索引"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "说明文档已入库、可检索的输入"
+        }
+      ],
+      "native_evidence": ["Format-doc-output"],
+      "requirement_evidence": ["处理后的输入交给核心智能助理"],
+      "rationale": "需求声明处理后的输入交给核心助理，文档分支按统一输入契约生成上下文输入，为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n13",
+      "label": "核心智能助理生成回复",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "处理后的用户输入（文本/语音转写/图片分析/文档说明）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assistant_output",
+          "type": "string",
+          "description": "结合上下文与工具形成的回复"
+        }
+      ],
+      "native_evidence": ["J.A.R.V.I.S.", "OpenAI Chat Model", "Window Buffer Memory"],
+      "requirement_evidence": ["该助理结合语言模型、会话记忆以及一组工具（网页搜索、网页抓取、图像生成、计算、文档向量库）来形成回复"],
+      "rationale": "需求声明核心助理结合语言模型、会话记忆与工具集形成回复，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n14",
+      "label": "判断初始消息是否为语音留言",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "assistant_output",
+          "type": "string",
+          "description": "助理生成的回复"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assistant_output",
+          "type": "string",
+          "description": "透传给回复形式分支的助理回复文本"
+        }
+      ],
+      "native_evidence": ["If Audio Response"],
+      "requirement_evidence": ["最后判断初始消息是否为语音留言：若是，则生成语音回复；否则以文本消息的形式把答案发回给用户"],
+      "rationale": "需求声明判断初始消息是否为语音留言以选择回复形式，为确定性路由，判 code。"
+    },
+    {
+      "node_id": "n15",
+      "label": "生成音频回复",
+      "node_type": "code",
+      "operation_family": "text_to_speech",
+      "inputs": [
+        {
+          "name": "assistant_output",
+          "type": "string",
+          "description": "助理生成的回复文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_response",
+          "type": "binary",
+          "description": "合成的语音回复音频"
+        }
+      ],
+      "native_evidence": ["Generate Audio"],
+      "requirement_evidence": ["若是，则生成语音回复"],
+      "rationale": "需求声明对已生成的回复文本做语音合成，为对既定文本的确定性外部服务调用（不含内容决策），判 code。"
+    },
+    {
+      "node_id": "n16",
+      "label": "发送文本回复",
+      "node_type": "terminal",
+      "operation_family": "message_delivery",
+      "inputs": [
+        {
+          "name": "assistant_output",
+          "type": "string",
+          "description": "助理生成的回复文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Text Response"],
+      "requirement_evidence": ["否则以文本消息的形式把答案发回给用户"],
+      "rationale": "需求声明以文本消息形式把答案发回用户，为用户可见的完成动作，判 terminal 且无出边。"
+    },
+    {
+      "node_id": "n17",
+      "label": "发送音频回复",
+      "node_type": "terminal",
+      "operation_family": "message_delivery",
+      "inputs": [
+        {
+          "name": "audio_response",
+          "type": "binary",
+          "description": "合成的语音回复"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Audio Response"],
+      "requirement_evidence": ["生成语音回复"],
+      "rationale": "需求声明将语音回复发回用户，为用户可见的完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到消息后按类型分发。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "message.type == 'text'",
+      "rationale": "文本消息进入格式化分支。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "message.type == 'voice'",
+      "rationale": "语音消息进入下载转写分支。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n2",
+      "target": "n7",
+      "variable": null,
+      "condition": "message.type == 'image'",
+      "rationale": "图片消息进入下载分析分支。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n2",
+      "target": "n10",
+      "variable": null,
+      "condition": "message.type == 'document'",
+      "rationale": "文档消息进入下载入库分支。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n3",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "文本格式化后交给核心助理。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频下载后转写。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写完成后格式化。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n6",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "语音分支处理后的输入交给核心助理。"
+    },
+    {
+      "edge_id": "cfg-10",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片下载后分析内容。"
+    },
+    {
+      "edge_id": "cfg-11",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后格式化结果。"
+    },
+    {
+      "edge_id": "cfg-12",
+      "source": "n9",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片分支处理后的输入交给核心助理。"
+    },
+    {
+      "edge_id": "cfg-13",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "文档下载后存入向量库。"
+    },
+    {
+      "edge_id": "cfg-14",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "入库完成后生成上下文输入。"
+    },
+    {
+      "edge_id": "cfg-15",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "文档分支处理后的输入交给核心助理。"
+    },
+    {
+      "edge_id": "cfg-16",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "助理生成回复后判断回复形式。"
+    },
+    {
+      "edge_id": "cfg-17",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": "is_voice_message == true",
+      "rationale": "初始消息为语音留言时生成音频回复。"
+    },
+    {
+      "edge_id": "cfg-18",
+      "source": "n14",
+      "target": "n16",
+      "variable": null,
+      "condition": "is_voice_message == false",
+      "rationale": "否则以文本消息回复。"
+    },
+    {
+      "edge_id": "cfg-19",
+      "source": "n15",
+      "target": "n17",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频生成后发送给用户。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "message",
+      "condition": null,
+      "rationale": "收到的消息传给分发节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "message",
+      "condition": null,
+      "rationale": "文本消息传给格式化节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n13",
+      "variable": "chat_input",
+      "condition": null,
+      "rationale": "格式化后的文本输入传给核心助理。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "message",
+      "condition": null,
+      "rationale": "语音消息传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "audio_file",
+      "condition": null,
+      "rationale": "音频文件传给转写节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "transcribed_text",
+      "condition": null,
+      "rationale": "转写文本传给格式化节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n13",
+      "variable": "chat_input",
+      "condition": null,
+      "rationale": "语音分支的输入传给核心助理。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n2",
+      "target": "n7",
+      "variable": "message",
+      "condition": null,
+      "rationale": "图片消息传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n7",
+      "target": "n8",
+      "variable": "image_file",
+      "condition": null,
+      "rationale": "图片文件传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n8",
+      "target": "n9",
+      "variable": "image_description",
+      "condition": null,
+      "rationale": "图片分析描述传给格式化节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n9",
+      "target": "n13",
+      "variable": "chat_input",
+      "condition": null,
+      "rationale": "图片分支的输入传给核心助理。"
+    },
+    {
+      "edge_id": "dfg-12",
+      "source": "n2",
+      "target": "n10",
+      "variable": "message",
+      "condition": null,
+      "rationale": "文档消息传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-13",
+      "source": "n10",
+      "target": "n11",
+      "variable": "document_file",
+      "condition": null,
+      "rationale": "文档文件传给向量库入库节点。"
+    },
+    {
+      "edge_id": "dfg-14",
+      "source": "n11",
+      "target": "n12",
+      "variable": "vector_index",
+      "condition": null,
+      "rationale": "向量索引传给上下文生成节点。"
+    },
+    {
+      "edge_id": "dfg-15",
+      "source": "n12",
+      "target": "n13",
+      "variable": "chat_input",
+      "condition": null,
+      "rationale": "文档分支的输入传给核心助理。"
+    },
+    {
+      "edge_id": "dfg-16",
+      "source": "n13",
+      "target": "n14",
+      "variable": "assistant_output",
+      "condition": null,
+      "rationale": "助理回复传给回复形式判断节点。"
+    },
+    {
+      "edge_id": "dfg-17",
+      "source": "n14",
+      "target": "n15",
+      "variable": "assistant_output",
+      "condition": null,
+      "rationale": "回复文本传给语音合成节点。"
+    },
+    {
+      "edge_id": "dfg-18",
+      "source": "n14",
+      "target": "n16",
+      "variable": "assistant_output",
+      "condition": null,
+      "rationale": "回复文本传给文本发送节点。"
+    },
+    {
+      "edge_id": "dfg-19",
+      "source": "n15",
+      "target": "n17",
+      "variable": "audio_response",
+      "condition": null,
+      "rationale": "合成的音频传给发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n16", "n17"],
+  "confidence": 0.93,
+  "notes": "需求为 Telegram 消息按类型（文本/语音/图片/文档）分支预处理后汇入核心智能助理，再按初始消息类型决定文本或音频回复。四类预处理均按需求建模：文本格式化、语音下载+转写（semantic）、图片下载+视觉分析（semantic）、文档下载+向量库入库（code）。核心助理判 semantic，工具集（搜索/抓取/图像生成/计算/向量库）为助理内部工具，不单独成节点；原生的长文本切分、文件扩展名修复、API 配置等未声明细节未纳入。TTS 判 code（对既定文本的确定性合成），STT 判 semantic（需理解语音内容）。"
+}

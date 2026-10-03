@@ -1,0 +1,173 @@
+{
+  "task_id": "N8F-063",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "2228d29a984540c895927123effc3e3c200f9a47e42fea46930d7e569055fa21",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-NEXT-MEETUP",
+      "purpose": "正常用例：用户询问下一次活动的时间",
+      "input_data": {
+        "chat_id": "chat-events-001",
+        "message_text": "When is the next meetup?"
+      }
+    },
+    {
+      "fixture_id": "F-TG-COUNT-EVENTS",
+      "purpose": "正常用例：用户询问下个月有多少场活动",
+      "input_data": {
+        "chat_id": "chat-events-001",
+        "message_text": "How many events are there next month?"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-SCHEDULE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_event_schedule",
+      "request_contract": {
+        "sheet": "events"
+      },
+      "response_contract": {
+        "rows": [
+          {"id": 1, "date": "2026-09-05", "title": "Design Systems Talk", "presenter": "Elena Ruiz", "location": "Online"},
+          {"id": 2, "date": "2026-09-19", "title": "AI Workshop", "presenter": "Mark Chen", "location": "HQ Room 2"},
+          {"id": 3, "date": "2026-10-03", "title": "Community Meetup", "presenter": "", "location": "Downtown Hall"},
+          {"id": 4, "date": "2026-10-17", "title": "Hack Night", "presenter": "Sara Kim", "location": "HQ Lab"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANSWER-NEXT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "answer_schedule_question",
+      "request_contract": {
+        "question": "When is the next meetup?",
+        "schedule_table": "| id | date | title | presenter | location |\n| 1 | 2026-09-05 | Design Systems Talk | Elena Ruiz | Online |\n| 2 | 2026-09-19 | AI Workshop | Mark Chen | HQ Room 2 |\n| 3 | 2026-10-03 | Community Meetup |  | Downtown Hall |\n| 4 | 2026-10-17 | Hack Night | Sara Kim | HQ Lab |"
+      },
+      "response_contract": {
+        "answer": "The next meetup is on 2026-09-05: Design Systems Talk with Elena Ruiz, held Online."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANSWER-COUNT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "answer_schedule_question",
+      "request_contract": {
+        "question": "How many events are there next month?",
+        "schedule_table": "| id | date | title | presenter | location |\n| 1 | 2026-09-05 | Design Systems Talk | Elena Ruiz | Online |\n| 2 | 2026-09-19 | AI Workshop | Mark Chen | HQ Room 2 |\n| 3 | 2026-10-03 | Community Meetup |  | Downtown Hall |\n| 4 | 2026-10-17 | Hack Night | Sara Kim | HQ Lab |"
+      },
+      "response_contract": {
+        "answer": "There are 2 events next month (October): Community Meetup on 2026-10-03 and Hack Night on 2026-10-17."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-REPLY",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "chat-events-001"
+      },
+      "response_contract": {
+        "message_id": 301,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-SCHEDULE-NEXT-MEETUP",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-NEXT-MEETUP"],
+      "mock_ids": ["M-SHEETS-SCHEDULE", "M-LLM-ANSWER-NEXT", "M-TG-REPLY"],
+      "assertions": [
+        {
+          "assertion_id": "A-063-1",
+          "target": "exec_log.trigger.chat_id",
+          "operator": "equals",
+          "expected": "chat-events-001",
+          "rationale": "系统必须收到发往该 Telegram 机器人的聊天消息并提取会话标识"
+        },
+        {
+          "assertion_id": "A-063-2",
+          "target": "exec_log.googleSheets.read.row_count",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "必须从 Google Sheets 读取已排期的活动日程，读取到的活动数必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-063-3",
+          "target": "exec_log.llm.prompt",
+          "operator": "contains",
+          "expected": "|",
+          "rationale": "日程必须转换为表格化的文本形式后交给语言模型处理，提示词中必须包含表格分隔符"
+        },
+        {
+          "assertion_id": "A-063-4",
+          "target": "exec_log.llm.prompt",
+          "operator": "contains",
+          "expected": "2026-09-05",
+          "rationale": "表格化文本必须包含全部日程数据，包括 9 月 5 日的活动日期"
+        },
+        {
+          "assertion_id": "A-063-5",
+          "target": "exec_log.llm.answer",
+          "operator": "contains",
+          "expected": "2026-09-05",
+          "rationale": "语言模型给出的回答必须包含下一次活动的日期"
+        },
+        {
+          "assertion_id": "A-063-6",
+          "target": "exec_log.telegram.send.chat_id",
+          "operator": "equals",
+          "expected": "chat-events-001",
+          "rationale": "回答必须回传到发起提问的同一个 Telegram 会话"
+        },
+        {
+          "assertion_id": "A-063-7",
+          "target": "exec_log.telegram.send.message",
+          "operator": "contains",
+          "expected": "Design Systems Talk",
+          "rationale": "回传的回答必须包含日程中的活动标题，验证回答基于日程数据"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SCHEDULE-COUNT-MONTH",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-COUNT-EVENTS"],
+      "mock_ids": ["M-SHEETS-SCHEDULE", "M-LLM-ANSWER-COUNT", "M-TG-REPLY"],
+      "assertions": [
+        {
+          "assertion_id": "A-063-8",
+          "target": "exec_log.llm.answer",
+          "operator": "contains",
+          "expected": "2",
+          "rationale": "针对“下个月有多少场活动”的固定模拟回答为 2 场，回答中必须包含数量 2"
+        },
+        {
+          "assertion_id": "A-063-9",
+          "target": "exec_log.telegram.send.chat_id",
+          "operator": "equals",
+          "expected": "chat-events-001",
+          "rationale": "回答必须回传到同一个 Telegram 会话"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两个正常用例：询问下一次活动时间与询问下个月活动数量，均验证 Telegram 触发→Sheets 读取→表格化文本→LLM 回答→回传同一会话的完整链路。所有外部依赖（Google Sheets、OpenRouter、Telegram）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、相等、内容包含与会话标识检查。"
+}

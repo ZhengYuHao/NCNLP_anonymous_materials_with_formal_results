@@ -1,0 +1,62 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-049",
+  "source_id": "n8n:14357",
+  "workflow_sha256": "5dd03b176ba5a6feb689a8476748af71195567dba3dae334225f5a6b80de68f4",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4ccd8f5d02570388a81d1e4791c5eb3759fc4b68c3ed66aa8508375f09e5c74d",
+  "requirement": {
+    "requirement_text": "系统自动处理新增的 GitHub issue，对其进行分类并转化为任务。\n\n1）提取 issue 的关键数据。\n2）将 issue 数据交由 AI 模型进行结构化分析，按类型与优先级对 issue 进行分类。\n3）将分类结果整理为可直接用于创建任务的形式。\n4）在 Linear 中创建对应的任务。\n5）在原 GitHub issue 下添加评论，回写分类结果。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 240,
+        "text": "This workflow automatically processes new GitHub issues and uses AI to classify them by type and priority. It extracts key issue data, sends it to an AI model for structured analysis, and formats the output for task creation."
+      },
+      {
+        "start": 241,
+        "end": 328,
+        "text": "The workflow then creates a task in Linear and adds a comment back to the GitHub issue."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "新增的 GitHub issue 及其关键数据"
+      ],
+      "conditions": [
+        "仅处理新增的 GitHub issue",
+        "分类维度为类型与优先级"
+      ],
+      "allowed_actions": [
+        "提取 issue 关键数据",
+        "使用 AI 模型对 issue 做结构化分析并分类",
+        "整理分类结果以便创建任务",
+        "在 Linear 中创建任务",
+        "在 GitHub issue 下添加评论"
+      ],
+      "visible_outcomes": [
+        "Linear 中生成与 issue 对应的任务",
+        "GitHub issue 下新增一条分类结果评论"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-049.packet.json",
+    "packet_sha256": "c12983816984bc1bb7df9c7b0290177e3ff9601bcf003013ca3ddb0ba8557c63",
+    "public_description_sha256": "f01e9e11a8abc6b73cff141096ae0b8a90c44c3f23567c037eb18d8b06fec420"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-049.response.json",
+    "verification_response_sha256": "dacd2da3d924020409fbc0979ca3d9c9657ce612470fdb5c984494ff7c729671",
+    "decision": "accept"
+  },
+  "formal_index": 60
+}

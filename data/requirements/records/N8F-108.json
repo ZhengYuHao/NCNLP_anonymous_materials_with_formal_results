@@ -1,0 +1,93 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-108",
+  "source_id": "n8n:4966",
+  "workflow_sha256": "66cae9fd46516117222ab12c4d34d852756dd1a8829d978a891c312f02bdc7e5",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "52346e18fb2fe308d9a3f58cbbed18996d5e29152ebe3cd2efa53f34c90f8b22",
+  "requirement": {
+    "requirement_text": "为企业提供一个基于 WhatsApp 的自动客户问答服务。\n用户以自由文本形式向企业的 WhatsApp Business 号码提出问题，例如咨询规则或当日是否营业。\n服务实时读取企业内部的 Google Docs 文档（政策、排期、常见问题或服务说明等），将文档内容与当日日期以及用户的问题合并，形成供语言模型使用的定制请求；随后由语言模型用自然、有帮助的语言生成回答，并通过 WhatsApp 回复给用户。\n语言模型还需理解文档中出现的日期，并将其与当日日期比较后再作答：例如文档中写明某日起停业三十天时，回答应说明当前停业至哪一个具体日期。\n所有对话内容都会被记录到 Google Sheets，用于报表或审计。",
+    "source_spans": [
+      {
+        "start": 232,
+        "end": 502,
+        "text": "Help customers instantly on WhatsApp using a smart AI assistant that reads your company’s internal knowledge from a Google Doc in real time. Built for clubs, restaurants, agencies, or any business where clients ask questions based on a policy, FAQ, or services document."
+      },
+      {
+        "start": 521,
+        "end": 642,
+        "text": "Users send free-form questions to your WhatsApp Business number (e.g. “What are the gym rules?” or “Are you open today?”)"
+      },
+      {
+        "start": 644,
+        "end": 731,
+        "text": "The bot automatically reads your company’s internal Google Doc (policy, schedule, etc.)"
+      },
+      {
+        "start": 733,
+        "end": 833,
+        "text": "It merges the document content with today’s date and the user’s question to craft a custom AI prompt"
+      },
+      {
+        "start": 835,
+        "end": 923,
+        "text": "The AI (Gemini or ChatGPT) then replies back on WhatsApp using natural, helpful language"
+      },
+      {
+        "start": 925,
+        "end": 993,
+        "text": "All conversations are logged to Google Sheets for reporting or audit"
+      },
+      {
+        "start": 995,
+        "end": 1200,
+        "text": "&gt; 💡Bonus: The AI even understands dates inside the document and compares them to today’s date — e.g. if your document says “Closed May 25 for 30 days,” it will say “We're currently closed until June 24."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户通过 WhatsApp Business 号码发送的自由文本问题",
+        "企业内部的 Google Docs 文档（政策、排期、常见问题或服务说明）",
+        "当日日期"
+      ],
+      "conditions": [
+        "每次问答均实时读取企业内部的 Google Docs 文档"
+      ],
+      "allowed_actions": [
+        "实时读取企业内部的 Google Docs 文档",
+        "将文档内容与当日日期及用户问题合并，形成供语言模型使用的定制请求",
+        "由语言模型生成回答",
+        "理解文档中的日期并与当日日期比较后再作答",
+        "通过 WhatsApp 把回答回复给用户",
+        "将所有对话记录到 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "用户在 WhatsApp 上收到自然、有帮助的语言回答",
+        "涉及文档日期的问题得到与当日日期比较后的结论（如停业至某一具体日期）",
+        "Google Sheets 中留存全部对话记录，供报表或审计使用"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/packets/N8F-108.packet.json",
+    "packet_sha256": "0d4553f46fed6b1aa996be397f8211f0bf617203af58cf945c9e9871bb158ea6",
+    "public_description_sha256": "d7b0e77ed98155f606ee661f967c9eb6165fb2847d9b2b8c731074cb26ec0137"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/responses/N8F-108.response.json",
+    "verification_response_sha256": "60ed0c545f6f31a18e1bdf7b0e9eb3963dc1283a5c870e61753f0dfb4c3a59da",
+    "decision": "accept"
+  },
+  "formal_index": 119
+}

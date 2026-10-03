@@ -1,0 +1,111 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-061",
+  "source_id": "n8n:6772",
+  "workflow_sha256": "11c85ef184024524ce1ca2fc92743b6b9013cd4005524242758fda6d379dcaea",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "f585622a5997b539bbdf227a5ec3642dd27d32df96ef0d774e3e3c23ab047e2b",
+  "requirement": {
+    "requirement_text": "业务用户通过网页表单提交一个主题。系统接收该主题后，交给语言模型生成 LinkedIn 帖子正文，并由语言模型同时生成一段用于生成配图的图像描述。随后系统对语言模型的输出进行清洗与规范化处理。系统再调用图像生成服务，依据上述图像描述生成一张配图。帖子正文被转换为适合 LinkedIn 展示的文本格式（由 Markdown 格式转换而来）。最后，系统将正文与配图一并发布到 LinkedIn 信息流，形成一条完整的帖子。",
+    "source_spans": [
+      {
+        "start": 80,
+        "end": 334,
+        "text": "Transform any topic into professional LinkedIn posts with AI-generated content and custom images! This workflow automates the entire process from topic input to published LinkedIn post, including professional image generation using Google's Imagen 4 API."
+      },
+      {
+        "start": 352,
+        "end": 429,
+        "text": "🤖 AI Content Generation: Uses Google Gemini to create engaging LinkedIn posts"
+      },
+      {
+        "start": 430,
+        "end": 513,
+        "text": "🎨 Professional Image Creation: Automatically generates images using Google Imagen 4"
+      },
+      {
+        "start": 514,
+        "end": 599,
+        "text": "📱 Direct LinkedIn Publishing: Posts content and images directly to your LinkedIn feed"
+      },
+      {
+        "start": 600,
+        "end": 652,
+        "text": "🔄 Form-Based Input: Simple web form to submit topics"
+      },
+      {
+        "start": 653,
+        "end": 720,
+        "text": "📝 Content Formatting: Converts markdown to LinkedIn-friendly format"
+      },
+      {
+        "start": 749,
+        "end": 807,
+        "text": "📝 Form Submission: User submits a topic through a web form"
+      },
+      {
+        "start": 858,
+        "end": 934,
+        "text": "🧠 AI Content Generation: Google Gemini creates post content and image prompt"
+      },
+      {
+        "start": 935,
+        "end": 992,
+        "text": "🎯 Content Normalization: Cleans and formats the AI output"
+      },
+      {
+        "start": 993,
+        "end": 1063,
+        "text": "🖼️ Image Generation: Creates professional images using Google Imagen 4"
+      },
+      {
+        "start": 1233,
+        "end": 1289,
+        "text": "📋 Content Curation: Converts markdown to LinkedIn format"
+      },
+      {
+        "start": 1342,
+        "end": 1400,
+        "text": "🚀 Post Publishing: Publishes the complete post to LinkedIn"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "业务用户通过网页表单提交的主题"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "调用语言模型生成 LinkedIn 帖子正文与配图用的图像描述",
+        "清洗并规范化语言模型的输出",
+        "调用图像生成服务依据图像描述生成一张配图",
+        "将帖子正文由 Markdown 转换为适合 LinkedIn 展示的文本格式",
+        "将正文与配图一并发布到 LinkedIn 信息流"
+      ],
+      "visible_outcomes": [
+        "LinkedIn 信息流中出现一条包含正文与配图的帖子"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-061.packet.json",
+    "packet_sha256": "6746860d81fecfffa821eae1ebc133e44b20f08c2c9d969cf769af48436e4550",
+    "public_description_sha256": "69f5de6b5487689cd5c51619d40d271ac743e3f0a840eb95f01c7f1a0dad77b3"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-061.response.json",
+    "verification_response_sha256": "61cb14a50352cc7d42a844f07a5600572b5e19b62ebd8e5c1a04c6c4a0cbbd7d",
+    "decision": "accept"
+  },
+  "formal_index": 72
+}

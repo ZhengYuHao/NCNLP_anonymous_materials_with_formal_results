@@ -1,0 +1,282 @@
+{
+  "task_id": "N8F-023",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "808e718e48678b6f68703580e1d25498e2a6728aff033e47fa725b51b2a37c57",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-AD-INPUT",
+      "purpose": "正常用例：Telegram 触发，包含广告主题文字与商品图片",
+      "input_data": {
+        "chat_id": "tg-ad-001",
+        "message_text": "Create an ad for our new ergonomic office chair",
+        "product_image_url": "https://mock-images/product-chair.png"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-AD-IDEA",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_ad_ideas",
+      "request_contract": {
+        "text": "Create an ad for our new ergonomic office chair",
+        "image_url": "https://mock-images/product-chair.png"
+      },
+      "response_contract": {
+        "ad_ideas": [
+          {"headline": "Sit better, work better", "angle": "comfort", "copy": "All-day comfort for back health."},
+          {"headline": "Designed for focus", "angle": "productivity", "copy": "The chair that keeps you in the zone."}
+        ],
+        "primary_idea": "Sit better, work better"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IMG-VISUALS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "generate_product_visuals",
+      "request_contract": {
+        "product_image_url": "https://mock-images/product-chair.png",
+        "engines": ["nano-banana", "seedream"]
+      },
+      "response_contract": {
+        "visuals": [
+          {"engine": "nano-banana", "url": "https://mock-visuals/chair-v1.png"},
+          {"engine": "seedream", "url": "https://mock-visuals/chair-v2.png"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-AD-SCRIPT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_ad_video_script",
+      "request_contract": {
+        "headline": "Sit better, work better",
+        "copy": "All-day comfort for back health.",
+        "visuals": ["https://mock-visuals/chair-v1.png", "https://mock-visuals/chair-v2.png"]
+      },
+      "response_contract": {
+        "script": "Open on the chair. Zoom to the lumbar support. Show comfort at work. End with the brand logo.",
+        "scenes": 4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VIDEO-GEN",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "generate_cinematic_video",
+      "request_contract": {
+        "provider": "veo-3",
+        "script": "Open on the chair. Zoom to the lumbar support. Show comfort at work. End with the brand logo.",
+        "visuals": ["https://mock-visuals/chair-v1.png", "https://mock-visuals/chair-v2.png"]
+      },
+      "response_contract": {
+        "clips": [
+          {"id": "clip-1", "url": "https://mock-clips/ad-clip-1.mp4"},
+          {"id": "clip-2", "url": "https://mock-clips/ad-clip-2.mp4"},
+          {"id": "clip-3", "url": "https://mock-clips/ad-clip-3.mp4"},
+          {"id": "clip-4", "url": "https://mock-clips/ad-clip-4.mp4"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VIDEO-MERGE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "merge_clips_into_final_ad",
+      "request_contract": {
+        "clips": ["https://mock-clips/ad-clip-1.mp4", "https://mock-clips/ad-clip-2.mp4", "https://mock-clips/ad-clip-3.mp4", "https://mock-clips/ad-clip-4.mp4"]
+      },
+      "response_contract": {
+        "final_ad_url": "https://mock-videos/final-ad-chair.mp4",
+        "duration_seconds": 15
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BLOTATO-PUBLISH",
+      "dependency_type": "@blotato/n8n-nodes-blotato.blotato",
+      "operation": "publish_video_multi_platform",
+      "request_contract": {
+        "video_url": "https://mock-videos/final-ad-chair.mp4",
+        "platforms": ["tiktok", "instagram", "linkedin", "x", "threads", "facebook", "pinterest", "bluesky", "youtube"]
+      },
+      "response_contract": {
+        "publish_results": [
+          {"platform": "tiktok", "post_id": "tk-1", "status": "published"},
+          {"platform": "instagram", "post_id": "ig-1", "status": "published"},
+          {"platform": "linkedin", "post_id": "li-1", "status": "published"},
+          {"platform": "x", "post_id": "x-1", "status": "published"},
+          {"platform": "threads", "post_id": "th-1", "status": "published"},
+          {"platform": "facebook", "post_id": "fb-1", "status": "published"},
+          {"platform": "pinterest", "post_id": "pin-1", "status": "published"},
+          {"platform": "bluesky", "post_id": "bs-1", "status": "published"},
+          {"platform": "youtube", "post_id": "yt-1", "status": "published"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDRIVE-SHEETS-STORE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "ad_campaigns",
+        "row": {
+          "final_ad_url": "https://mock-videos/final-ad-chair.mp4",
+          "headline": "Sit better, work better",
+          "platforms": "tiktok,instagram,linkedin,x,threads,facebook,pinterest,bluesky,youtube"
+        }
+      },
+      "response_contract": {
+        "appended_rows": 1,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDRIVE-UPLOAD",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "upload_file",
+      "request_contract": {
+        "file_url": "https://mock-videos/final-ad-chair.mp4"
+      },
+      "response_contract": {
+        "file_id": "drive-ad-001",
+        "drive_url": "https://drive.google.com/file/d/drive-ad-001/view"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-NOTIFY",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "chat_id": "tg-ad-001"
+      },
+      "response_contract": {
+        "message_id": 202,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-AD-FULL-CHAIN",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-AD-INPUT"],
+      "mock_ids": ["M-LLM-AD-IDEA", "M-IMG-VISUALS", "M-LLM-AD-SCRIPT", "M-VIDEO-GEN", "M-VIDEO-MERGE", "M-BLOTATO-PUBLISH", "M-GDRIVE-SHEETS-STORE", "M-GDRIVE-UPLOAD", "M-TG-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-023-1",
+          "target": "exec_log.llm.ad_ideas",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "必须基于 Telegram 输入生成广告创意，执行日志中应存在创意字段"
+        },
+        {
+          "assertion_id": "A-023-2",
+          "target": "exec_log.image_engine_visuals",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求要求使用多种图像生成能力制作商品视觉，固定模拟返回 2 个引擎各 1 张视觉图"
+        },
+        {
+          "assertion_id": "A-023-3",
+          "target": "exec_log.llm.script.scenes",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "广告视频脚本必须由语言模型生成，脚本场景数必须与固定模拟输出一致"
+        },
+        {
+          "assertion_id": "A-023-4",
+          "target": "exec_log.video_gen.clips",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "视频生成能力必须产出短片段，片段数量必须与固定模拟返回一致"
+        },
+        {
+          "assertion_id": "A-023-5",
+          "target": "exec_log.final_ad_url",
+          "operator": "equals",
+          "expected": "https://mock-videos/final-ad-chair.mp4",
+          "rationale": "多个短片段必须合成为一支成片，最终成片地址必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-023-6",
+          "target": "exec_log.blotato.publish_results",
+          "operator": "length_equals",
+          "expected": 9,
+          "rationale": "需求列出 9 个发布平台（TikTok、Instagram、LinkedIn、X、Threads、Facebook、Pinterest、Bluesky、YouTube），必须全部发布"
+        },
+        {
+          "assertion_id": "A-023-7",
+          "target": "exec_log.blotato.publish_results",
+          "operator": "contains",
+          "expected": "youtube",
+          "rationale": "发布平台集合必须包含 YouTube，验证多平台发布完整"
+        },
+        {
+          "assertion_id": "A-023-8",
+          "target": "exec_log.blotato.publish_results[0].status",
+          "operator": "equals",
+          "expected": "published",
+          "rationale": "每个平台的发布结果状态必须为 published，固定模拟中 9 个平台均发布成功"
+        },
+        {
+          "assertion_id": "A-023-9",
+          "target": "exec_log.googleSheets.append.row.final_ad_url",
+          "operator": "equals",
+          "expected": "https://mock-videos/final-ad-chair.mp4",
+          "rationale": "元数据与结果必须存入 Google Sheets，记录中的成片链接必须与合成结果一致"
+        },
+        {
+          "assertion_id": "A-023-10",
+          "target": "exec_log.googleDrive.upload.drive_url",
+          "operator": "contains",
+          "expected": "https://drive.google.com",
+          "rationale": "结果必须同时存入 Google Drive，上传链接必须存在"
+        },
+        {
+          "assertion_id": "A-023-11",
+          "target": "exec_log.telegram.send.message_id",
+          "operator": "equals",
+          "expected": 202,
+          "rationale": "必须通过 Telegram 发送含视频链接与文案的通知，消息标识必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-023-12",
+          "target": "exec_log.telegram.send.message",
+          "operator": "contains",
+          "expected": "https://mock-videos/final-ad-chair.mp4",
+          "rationale": "Telegram 通知必须包含视频链接"
+        },
+        {
+          "assertion_id": "A-023-13",
+          "target": "exec_log.telegram.send.message",
+          "operator": "contains",
+          "expected": "Sit better, work better",
+          "rationale": "Telegram 通知必须包含广告文案（标题），验证文案随通知发送"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常全链路：Telegram 输入→广告创意→双引擎商品视觉→LLM 脚本→Veo 3 视频生成（4 片段）→合成成片→Blotato 发布 9 平台→Sheets 与 Drive 存档→Telegram 通知（链接+文案）。所有外部依赖（OpenAI、图像/视频生成、Blotato、Google Sheets、Google Drive、Telegram）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、内容包含检查。"
+}

@@ -1,0 +1,89 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-073",
+  "source_id": "n8n:16037",
+  "workflow_sha256": "30f9412dc52e8a871c7ac56d03e45c5c3cfcdd97c6298822489ee58e57fad55e",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "a683e5e67c6adf6af3678717cb1c94cfdb91183935cd42c8ede8e8a9ec9351db",
+  "requirement": {
+    "requirement_text": "系统每周一 08:00 运行。系统按配置的 RSS 订阅源清单逐条读取，收集每个订阅源中的文章条目。随后，系统合并所有文章、去除重复项、只保留最近 7 天内发布的条目、按时间由新到旧排序，并将清单限制为 15 篇。入选的文章被交给语言模型，由其将这些文章归入 2 至 4 个主题，并生成一份包含摘要与链接的 HTML 格式精选摘要。系统把这段生成的 HTML 片段嵌入带样式的邮件模板中，并设定收件人与摘要日期。最后，系统通过 Gmail 发出这封 HTML 邮件，邮件主题带有日期。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 249,
+        "text": "This workflow runs every week, reads articles from a configurable list of RSS feeds, deduplicates and ranks recent items, uses OpenAI to curate them into a themed HTML digest, and sends the finished newsletter to your inbox via Gmail."
+      },
+      {
+        "start": 264,
+        "end": 295,
+        "text": "Runs weekly on Monday at 08:00."
+      },
+      {
+        "start": 296,
+        "end": 390,
+        "text": "Generates one item per configured RSS feed URL and reads each feed to collect article entries."
+      },
+      {
+        "start": 391,
+        "end": 526,
+        "text": "Merges all articles, removes duplicates, keeps items from the last 7 days, ranks them newest-first, and limits the list to 15 articles."
+      },
+      {
+        "start": 527,
+        "end": 665,
+        "text": "Sends the shortlisted articles to OpenAI (gpt-4o-mini) to group them into 2–4 themes and generate an HTML digest with summaries and links."
+      },
+      {
+        "start": 666,
+        "end": 769,
+        "text": "Wraps the AI-generated HTML fragment in a styled email template and sets the recipient and digest date."
+      },
+      {
+        "start": 770,
+        "end": 831,
+        "text": "Sends the HTML email through Gmail with a dated subject line."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "配置好的 RSS 订阅源清单及其文章条目"
+      ],
+      "conditions": [
+        "每周一 08:00 触发",
+        "合并后去重、仅保留最近 7 天内的条目、按时间由新到旧排序、最多保留 15 篇",
+        "入选文章被归入 2–4 个主题"
+      ],
+      "allowed_actions": [
+        "按 RSS 订阅源清单逐条读取并收集文章条目",
+        "合并、去重、按 7 天时间窗过滤、按时间排序并截断到 15 篇",
+        "调用语言模型将文章归入 2–4 个主题并生成含摘要与链接的 HTML 精选摘要",
+        "将 HTML 片段嵌入带样式的邮件模板并设定收件人与摘要日期",
+        "通过 Gmail 发送带日期主题的 HTML 邮件"
+      ],
+      "visible_outcomes": [
+        "收件人通过 Gmail 收到一封带日期主题的 HTML 精选摘要邮件，内含按主题分组的文章摘要与链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-073.packet.json",
+    "packet_sha256": "90205bdeb702facee4ebbabb6909702682503b7fe71e6ee9cb8505dab06c3a21",
+    "public_description_sha256": "a61078390eed29f019de762a9e635dd9110226618ab865d7e4588552cfb51fcf"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-073.response.json",
+    "verification_response_sha256": "5340e59a9f18998ecddd1701f342eb8138af5d85d0fe0c1aeebfbf0ccc9040d0",
+    "decision": "accept"
+  },
+  "formal_index": 84
+}

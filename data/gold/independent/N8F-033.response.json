@@ -1,0 +1,357 @@
+{
+  "task_id": "N8F-033",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "1dde265c853a22b92937e6962b6835d918850d0c7dbe0a00cfcbf169fb2bbdfe",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 消息",
+      "node_type": "code",
+      "operation_family": "消息触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户通过 Telegram 发送的消息"
+        }
+      ],
+      "native_evidence": [
+        "Telegram Trigger (telegramTrigger)"
+      ],
+      "requirement_evidence": [
+        "用户通过 Telegram 发送一条 Instagram Reel 链接即可启动处理"
+      ],
+      "rationale": "消息入口为确定性接收事件源，属代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "提取 Instagram Reel 链接",
+      "node_type": "code",
+      "operation_family": "文本抽取",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户通过 Telegram 发送的消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reel_url",
+          "type": "string",
+          "description": "从消息中提取的 Reel 链接"
+        }
+      ],
+      "native_evidence": [
+        "Extract::Instagram Reel URL (code)"
+      ],
+      "requirement_evidence": [
+        "用户通过 Telegram 发送一条 Instagram Reel 链接即可启动处理"
+      ],
+      "rationale": "从消息文本中按确定性规则提取链接，属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "抓取 Reel 元数据",
+      "node_type": "code",
+      "operation_family": "外部数据采集",
+      "inputs": [
+        {
+          "name": "reel_url",
+          "type": "string",
+          "description": "从消息中提取的 Reel 链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reel_description",
+          "type": "string",
+          "description": "该 Reel 的描述文本"
+        }
+      ],
+      "native_evidence": [
+        "Apify::Scrape Reel Metadata (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "结合转写文本与该 Reel 的描述"
+      ],
+      "rationale": "元数据抓取为确定性外部调用；描述文本是后续分析声明的输入之一。属代码处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "下载 Reel 视频",
+      "node_type": "code",
+      "operation_family": "外部数据获取",
+      "inputs": [
+        {
+          "name": "reel_url",
+          "type": "string",
+          "description": "从消息中提取的 Reel 链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_file",
+          "type": "binary",
+          "description": "下载的 Reel 视频文件"
+        }
+      ],
+      "native_evidence": [
+        "Download::Reel File (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "系统自动下载该 Reel"
+      ],
+      "rationale": "文件下载为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "将视频转换为音频",
+      "node_type": "code",
+      "operation_family": "媒体转换",
+      "inputs": [
+        {
+          "name": "video_file",
+          "type": "binary",
+          "description": "下载的 Reel 视频文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "转换得到的音频文件"
+        }
+      ],
+      "native_evidence": [
+        "FreeConvert::Import Reel (httpRequest)",
+        "Check::Import Status (httpRequest)",
+        "FreeConvert::Submit MP3 Conversion (httpRequest)",
+        "Check::Conversion Status (httpRequest)",
+        "Download::MP3 File (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "将视频转换为音频"
+      ],
+      "rationale": "媒体格式转换为确定性外部服务调用；导入/转换的状态轮询折叠进本节点契约（提交后轮询直至完成，迭代上限≤20 次）。属代码处理。"
+    },
+    {
+      "node_id": "n6",
+      "label": "将语音转写为文本",
+      "node_type": "code",
+      "operation_family": "语音转写",
+      "inputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "转换得到的音频文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript_text",
+          "type": "string",
+          "description": "语音转写得到的文本"
+        }
+      ],
+      "native_evidence": [
+        "AssemblyAI::Submit Transcription (httpRequest)",
+        "Check::Transcript Status (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "再把语音转写为文本"
+      ],
+      "rationale": "调用转写服务为确定性外部动作；转写状态轮询折叠进本节点契约（提交后轮询直至完成，迭代上限≤20 次）。属代码处理。"
+    },
+    {
+      "node_id": "n7",
+      "label": "语言模型分析内容",
+      "node_type": "semantic",
+      "operation_family": "语言模型分析",
+      "inputs": [
+        {
+          "name": "transcript_text",
+          "type": "string",
+          "description": "语音转写得到的文本"
+        },
+        {
+          "name": "reel_description",
+          "type": "string",
+          "description": "该 Reel 的描述文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_result",
+          "type": "object",
+          "description": "内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本"
+        }
+      ],
+      "native_evidence": [
+        "AI::Generate Hook Ideas & Scripts (agent)",
+        "Mistral Cloud Chat Model (lmChatMistralCloud)"
+      ],
+      "requirement_evidence": [
+        "结合转写文本与该 Reel 的描述，使用语言模型进行分析",
+        "产出：内容领域定位、核心信息、3 条具有传播潜力的内容切入点，以及 3 条可直接使用的短视频脚本"
+      ],
+      "rationale": "结合转写文本与描述的开放内容分析、切入点和脚本创作为开放式生成，属语义处理。"
+    },
+    {
+      "node_id": "n8",
+      "label": "写入 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "记录写入",
+      "inputs": [
+        {
+          "name": "analysis_result",
+          "type": "object",
+          "description": "内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Storage::Log to Google Sheet (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "上述全部结果保存到 Google Sheets，便于创作者或团队后续复用"
+      ],
+      "rationale": "分析结果写入 Google Sheets 是需求声明的最终可见产出，其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到消息后提取链接"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "链接提取后抓取元数据"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "元数据就绪后下载视频"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "下载完成后转换音频"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频就绪后转写"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写完成后进行内容分析"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后写入 Sheets"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "链接从用户消息中提取"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n2",
+      "target": "n3",
+      "variable": "reel_url",
+      "condition": null,
+      "rationale": "元数据抓取针对该链接"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n2",
+      "target": "n4",
+      "variable": "reel_url",
+      "condition": null,
+      "rationale": "视频下载针对该链接"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n4",
+      "target": "n5",
+      "variable": "video_file",
+      "condition": null,
+      "rationale": "转换输入为下载的视频"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n5",
+      "target": "n6",
+      "variable": "audio_file",
+      "condition": null,
+      "rationale": "转写输入为转换得到的音频"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n6",
+      "target": "n7",
+      "variable": "transcript_text",
+      "condition": null,
+      "rationale": "分析结合转写文本"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n3",
+      "target": "n7",
+      "variable": "reel_description",
+      "condition": null,
+      "rationale": "分析结合 Reel 描述"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n7",
+      "target": "n8",
+      "variable": "analysis_result",
+      "condition": null,
+      "rationale": "写入 Sheets 的即分析产出"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.8,
+  "notes": "需求未声明失败分支（无效链接、下载失败、转写无语音等），原生图中相应的错误响应 Telegram 节点未纳入 Gold；转换与转写服务的状态轮询折叠进对应节点契约。元数据抓取为获得需求声明用于分析的描述文本所必需，予以保留。"
+}

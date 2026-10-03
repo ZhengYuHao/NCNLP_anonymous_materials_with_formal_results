@@ -1,0 +1,295 @@
+{
+  "task_id": "N8F-040",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "290fb97f66b43eb4ecb2be1ae9d02050075c7ce48490ad38fb4bbda1fd842741",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动启动流程",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "start_signal",
+          "type": "object",
+          "description": "人工触发的启动信号"
+        }
+      ],
+      "native_evidence": [
+        "▶ Run Enrichment"
+      ],
+      "requirement_evidence": [
+        "该流程由人工手动启动"
+      ],
+      "rationale": "需求声明流程由人工手动启动，为确定性入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取源工作表并提取字段",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "start_signal",
+          "type": "object",
+          "description": "启动信号"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "company_records",
+          "type": "array",
+          "description": "源工作表中全部公司记录，仅含公司名称、网站与是否已充实三项"
+        }
+      ],
+      "native_evidence": [
+        "Read Source Sheet",
+        "Extract Relevant Fields"
+      ],
+      "requirement_evidence": [
+        "系统从源 Google Sheets 工作表读取全部公司记录，仅保留公司名称、网站与“是否已充实”三项"
+      ],
+      "rationale": "需求声明读取源工作表并仅保留三项字段，为确定性读取与字段筛选，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "筛选未充实的公司记录",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "company_records",
+          "type": "array",
+          "description": "全部公司记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unenriched_record",
+          "type": "object",
+          "description": "尚未标记为已充实的公司记录"
+        }
+      ],
+      "native_evidence": [
+        "Skip Already Enriched"
+      ],
+      "requirement_evidence": [
+        "已标记为已充实的记录直接跳过"
+      ],
+      "rationale": "需求声明跳过已标记为已充实的记录，为确定性过滤，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "调研公司并生成结构化信息",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "unenriched_record",
+          "type": "object",
+          "description": "未充实的公司记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enrichment_data",
+          "type": "object",
+          "description": "含行业、简介、目标客户、总部所在地与规模估计的结构化信息"
+        }
+      ],
+      "native_evidence": [
+        "AI Enrichment Agent"
+      ],
+      "requirement_evidence": [
+        "对其余每家公司，系统使用网络搜索服务与语言模型调研该公司，返回行业、简介、目标客户、总部所在地与规模估计等结构化信息"
+      ],
+      "rationale": "需求声明使用网络搜索与语言模型调研公司并生成结构化信息，需开放信息检索理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "规范化充实数据",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "enrichment_data",
+          "type": "object",
+          "description": "调研生成的结构化信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_record",
+          "type": "object",
+          "description": "规范化后的记录，目标客户列表已整理为逗号分隔文本"
+        }
+      ],
+      "native_evidence": [
+        "Normalize Output Data"
+      ],
+      "requirement_evidence": [
+        "其中目标客户列表会被整理为逗号分隔的文本"
+      ],
+      "rationale": "需求声明将目标客户列表整理为逗号分隔文本，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "追加写入输出工作表",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "normalized_record",
+          "type": "object",
+          "description": "规范化后的充实记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enriched_record",
+          "type": "object",
+          "description": "写入输出工作表的充实记录"
+        }
+      ],
+      "native_evidence": [
+        "Append Enriched Row"
+      ],
+      "requirement_evidence": [
+        "充实后的公司记录追加写入另一个 Google Sheets 工作表"
+      ],
+      "rationale": "需求声明把充实后的记录追加写入输出工作表，为确定性外部写入，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "更新源表为已充实",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "enriched_record",
+          "type": "object",
+          "description": "充实后的记录，含公司名称"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Mark as Enriched"
+      ],
+      "requirement_evidence": [
+        "同时按公司名称定位源工作表中的原始记录，将其“是否已充实”更新为是，避免重复处理"
+      ],
+      "rationale": "需求声明按公司名称定位源表记录并更新为已充实，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动启动后读取源表。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取后筛选未充实记录。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "记录尚未被标记为已充实",
+      "rationale": "未充实的记录进入调研；已充实记录直接跳过。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "调研完成后规范化数据。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后追加写入输出表。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入后更新源表标记。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "start_signal",
+      "condition": null,
+      "rationale": "启动信号传给读取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "company_records",
+      "condition": null,
+      "rationale": "公司记录传给筛选节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "unenriched_record",
+      "condition": null,
+      "rationale": "未充实的记录传给调研节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "enrichment_data",
+      "condition": null,
+      "rationale": "调研结果传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "normalized_record",
+      "condition": null,
+      "rationale": "规范化记录传给写入节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "enriched_record",
+      "condition": null,
+      "rationale": "充实记录（含公司名称）传给源表更新节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.93,
+  "notes": "已充实记录跳过通过筛选节点与条件边表达；网络搜索工具、结构化输出解析器、Gemini 模型等均为语言模型实现细节，不单列节点。"
+}

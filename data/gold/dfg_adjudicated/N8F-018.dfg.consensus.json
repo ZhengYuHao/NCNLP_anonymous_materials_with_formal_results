@@ -1,0 +1,103 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-018",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g4",
+      "data_items": [
+        "已发布标题记录"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "新闻数据源返回的近期新闻条目"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "筛选后的候选文章（链接、标题）",
+        "筛选后的候选文章（含链接、图片、标题）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "通过校验的文章（标题、摘要、图片链接）",
+        "通过校验的文章（标题、摘要、链接、图片）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "文章图片链接",
+        "帖文文案与保留的图片链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "清理后的帖文文案",
+        "生成的帖文文案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "图片文件与可用性结果",
+        "图片可用性验证结果（及图片文件）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g1",
+      "data_items": [
+        "已发布标题记录（新增标题）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-018-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "发布成功后写入的标题在后续运行中被读取用于去重（需求：使其在其他时段不会被再次发布），属写入-读取的数据维护关系而非仅执行顺序。",
+      "confidence": 0.75,
+      "edge_id": "d8"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.9333333333333333,
+    "shared_edge_count": 7,
+    "adjudicated_dispute_count": 1,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

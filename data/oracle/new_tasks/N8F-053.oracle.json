@@ -1,0 +1,452 @@
+{
+  "task_id": "N8F-053",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "5b168f54febaf6bb7458152bdd0b6ed7d7a86fc4e683009e4a2e7ba21d3ad69f",
+  "fixtures": [
+    {
+      "fixture_id": "F-XTEXT-DRAFT",
+      "purpose": "正常用例：用户发送文本想法，系统应起草长帖草稿并发回 Telegram 审阅，此时尚未批准不得发布",
+      "input_data": {
+        "chat_id": 2001,
+        "message": {
+          "type": "text",
+          "text": "Write a thread about the future of local AI agents"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-XVOICE-DRAFT",
+      "purpose": "正常用例：用户发送语音消息（无文本内容），应先下载语音并转写为文本，再进入起草流程",
+      "input_data": {
+        "chat_id": 2002,
+        "message": {
+          "type": "voice",
+          "voice_file_id": "voice_x0002",
+          "text": ""
+        }
+      }
+    },
+    {
+      "fixture_id": "F-XREVISION",
+      "purpose": "正常用例：用户对草稿提出修改意见（指代性要求），应结合最近若干轮对话上下文修订草稿并再次发回审阅",
+      "input_data": {
+        "chat_id": 2001,
+        "message": {
+          "type": "text",
+          "text": "Make it shorter"
+        },
+        "conversation_history": [
+          {
+            "role": "user",
+            "content": "Write a thread about the future of local AI agents"
+          },
+          {
+            "role": "assistant",
+            "content": "Draft: [long draft v1]"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-XAPPROVE-PUBLISH",
+      "purpose": "正常用例：用户回复批准关键词 ok，应视为批准，从结果中提取干净正文并发布到 X 账号，发布状态为已发布时发送确认消息与直链",
+      "input_data": {
+        "chat_id": 2001,
+        "message": {
+          "type": "text",
+          "text": "ok"
+        },
+        "conversation_history": [
+          {
+            "role": "assistant",
+            "content": "{\"approved\": true, \"post_text\": \"Local AI agents are changing everything. 1/5 ...\"}"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-XSTATUS-INPROGRESS",
+      "purpose": "正常用例：发布后首次查询状态为处理中，应短暂等待后再次查询，直到有明确结果",
+      "input_data": {
+        "chat_id": 2003,
+        "publish_response": {
+          "post_id": "post_x9003"
+        },
+        "first_status_check": "in_progress"
+      }
+    },
+    {
+      "fixture_id": "F-XSTATUS-FAILED",
+      "purpose": "安全拒绝用例：上传或处理过程中出错，应停止重试循环并向 Telegram 发送错误通知",
+      "input_data": {
+        "chat_id": 2004,
+        "publish_response": {
+          "post_id": "post_x9004",
+          "error": "upload_timeout"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-X-WHISPER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "transcribe_voice",
+      "request_contract": {
+        "voice_file_id": "voice_x0002"
+      },
+      "response_contract": {
+        "transcript": "Write a thread about the future of local AI agents"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-LLM-DRAFT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "draft_post",
+      "request_contract": {
+        "idea": "Write a thread about the future of local AI agents"
+      },
+      "response_contract": {
+        "draft": "Draft: Local AI agents are changing everything. 1/5 ...",
+        "approved": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-LLM-REVISE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "revise_post",
+      "request_contract": {
+        "feedback": "Make it shorter",
+        "history_length": 2
+      },
+      "response_contract": {
+        "draft": "Draft: Local AI agents: 5 ways they change work. 1/5 ...",
+        "approved": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-TG-SEND-DRAFT",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_draft",
+      "request_contract": {
+        "chat_id": 2001
+      },
+      "response_contract": {
+        "message_id": 99101,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-BLOTATO-CREATE",
+      "dependency_type": "@blotato/n8n-nodes-blotato.blotato",
+      "operation": "create_post",
+      "request_contract": {
+        "clean_text_present": true,
+        "clean_text": "Local AI agents are changing everything. 1/5 ..."
+      },
+      "response_contract": {
+        "post_id": "post_x9001",
+        "status": "in_progress"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-BLOTATO-STATUS-PUBLISHED",
+      "dependency_type": "@blotato/n8n-nodes-blotato.blotato",
+      "operation": "check_post_status",
+      "request_contract": {
+        "post_id": "post_x9001"
+      },
+      "response_contract": {
+        "status": "published",
+        "post_url": "https://x.com/user/status/123456789"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-BLOTATO-STATUS-INPROGRESS",
+      "dependency_type": "@blotato/n8n-nodes-blotato.blotato",
+      "operation": "check_post_status",
+      "request_contract": {
+        "post_id": "post_x9003"
+      },
+      "response_contract": {
+        "status": "in_progress"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-BLOTATO-STATUS-FAILED",
+      "dependency_type": "@blotato/n8n-nodes-blotato.blotato",
+      "operation": "check_post_status",
+      "request_contract": {
+        "post_id": "post_x9004"
+      },
+      "response_contract": {
+        "status": "failed",
+        "error": "upload_timeout"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-TG-SEND-CONFIRM",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_confirmation",
+      "request_contract": {
+        "chat_id": 2001,
+        "post_url_required": true,
+        "post_url": "https://x.com/user/status/123456789"
+      },
+      "response_contract": {
+        "message_id": 99102,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-X-TG-SEND-ERROR",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_error_notification",
+      "request_contract": {
+        "chat_id": 2004
+      },
+      "response_contract": {
+        "message_id": 99103,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TEXT-DRAFTED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-XTEXT-DRAFT"
+      ],
+      "mock_ids": [
+        "M-X-LLM-DRAFT",
+        "M-X-TG-SEND-DRAFT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-DR-1",
+          "target": "exec_log.lmChatOpenAi.draft_post.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "文本想法必须交给语言模型起草长帖内容"
+        },
+        {
+          "assertion_id": "A-DR-2",
+          "target": "exec_log.lmChatOpenAi.draft_post.request.idea",
+          "operator": "equals",
+          "expected": "Write a thread about the future of local AI agents",
+          "rationale": "起草输入必须使用用户发送的完整想法文本"
+        },
+        {
+          "assertion_id": "A-DR-3",
+          "target": "exec_log.telegram.send_draft.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "草稿必须发回用户 Telegram 聊天供审阅"
+        },
+        {
+          "assertion_id": "A-DR-4",
+          "target": "exec_log.blotato.create_post.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未获批准时不得发布到 X 账号"
+        }
+      ]
+    },
+    {
+      "case_id": "C-VOICE-TRANSCRIBED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-XVOICE-DRAFT"
+      ],
+      "mock_ids": [
+        "M-X-WHISPER",
+        "M-X-LLM-DRAFT",
+        "M-X-TG-SEND-DRAFT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-VO-1",
+          "target": "exec_log.lmChatOpenAi.transcribe_voice.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "消息无文本内容时必须按语音处理并调用语音转写服务"
+        },
+        {
+          "assertion_id": "A-VO-2",
+          "target": "exec_log.lmChatOpenAi.draft_post.request.idea",
+          "operator": "equals",
+          "expected": "Write a thread about the future of local AI agents",
+          "rationale": "起草输入必须使用语音转写得到的文本"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REVISION-CONTEXT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-XREVISION"
+      ],
+      "mock_ids": [
+        "M-X-LLM-REVISE",
+        "M-X-TG-SEND-DRAFT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-RE-1",
+          "target": "exec_log.lmChatOpenAi.revise_post.request.feedback",
+          "operator": "equals",
+          "expected": "Make it shorter",
+          "rationale": "修订请求必须携带用户的最新修改意见"
+        },
+        {
+          "assertion_id": "A-RE-2",
+          "target": "exec_log.lmChatOpenAi.revise_post.request.history_length",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "修订时必须保留最近若干轮对话上下文以理解指代性要求"
+        },
+        {
+          "assertion_id": "A-RE-3",
+          "target": "exec_log.telegram.send_draft.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "修订后的草稿必须再次发回 Telegram 供审阅，形成多轮协作编辑"
+        },
+        {
+          "assertion_id": "A-RE-4",
+          "target": "exec_log.blotato.create_post.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未出现批准关键词前不得发布"
+        }
+      ]
+    },
+    {
+      "case_id": "C-APPROVED-PUBLISHED",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-XAPPROVE-PUBLISH"
+      ],
+      "mock_ids": [
+        "M-X-BLOTATO-CREATE",
+        "M-X-BLOTATO-STATUS-PUBLISHED",
+        "M-X-TG-SEND-CONFIRM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-AP-1",
+          "target": "exec_log.blotato.create_post.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "批准关键词出现时视为批准发布，必须将定稿内容发布到 X 账号"
+        },
+        {
+          "assertion_id": "A-AP-2",
+          "target": "exec_log.blotato.create_post.request.clean_text",
+          "operator": "matches",
+          "expected": "^Local AI agents are changing everything",
+          "rationale": "发布内容必须是从批准结果中提取出的可直接发布的干净正文"
+        },
+        {
+          "assertion_id": "A-AP-3",
+          "target": "exec_log.blotato.check_post_status.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "发布后必须查询帖子状态"
+        },
+        {
+          "assertion_id": "A-AP-4",
+          "target": "exec_log.telegram.send_confirmation.request.post_url",
+          "operator": "equals",
+          "expected": "https://x.com/user/status/123456789",
+          "rationale": "状态为已发布时必须发送确认消息与已发布帖子的直链"
+        }
+      ]
+    },
+    {
+      "case_id": "C-STATUS-RETRY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-XSTATUS-INPROGRESS"
+      ],
+      "mock_ids": [
+        "M-X-BLOTATO-CREATE",
+        "M-X-BLOTATO-STATUS-INPROGRESS",
+        "M-X-BLOTATO-STATUS-PUBLISHED",
+        "M-X-TG-SEND-CONFIRM"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-IP-1",
+          "target": "exec_log.blotato.check_post_status.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "首次查询为处理中时，短暂等待后必须再次查询状态，直到有结果"
+        },
+        {
+          "assertion_id": "A-IP-2",
+          "target": "exec_log.telegram.send_error_notification.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "最终状态为已发布时不得发送错误通知"
+        }
+      ]
+    },
+    {
+      "case_id": "C-STATUS-FAILED-NOTIFY",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-XSTATUS-FAILED"
+      ],
+      "mock_ids": [
+        "M-X-BLOTATO-CREATE",
+        "M-X-BLOTATO-STATUS-FAILED",
+        "M-X-TG-SEND-ERROR"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FA-1",
+          "target": "exec_log.telegram.send_error_notification.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "上传或处理出错时必须向 Telegram 发送错误通知"
+        },
+        {
+          "assertion_id": "A-FA-2",
+          "target": "exec_log.telegram.send_confirmation.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "发布失败时不得发送成功确认消息"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖文本起草、语音转写后起草、基于上下文的修订、批准关键词发布、发布状态查询（已发布/处理中重试/失败）与对应通知。外部依赖（Whisper 转写、LLM 起草/修订、Blotato 发布与状态查询、Telegram 消息）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、请求字段相等、正则匹配、存在性检查。"
+}

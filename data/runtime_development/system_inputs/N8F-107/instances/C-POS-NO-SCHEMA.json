@@ -1,0 +1,10 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-107",
+  "case_id": "C-POS-NO-SCHEMA",
+  "kind": "positive",
+  "input_data": {
+    "prompt": "Summarize the current state of electric vehicle sales"
+  },
+  "input_sha256": "594E9611BB87C6393388BD4E58C0839C14F129FB9A76BFF7D9305C63E46332BC"
+}

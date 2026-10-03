@@ -1,0 +1,57 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-012",
+  "case_id": "C-sft-gate",
+  "kind": "safe_rejection",
+  "input_data": {
+    "fixtures": {
+      "F-rss-articles": {
+        "feeds": [
+          {
+            "name": "TechCrunch AI",
+            "items": [
+              {
+                "id": "tc1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://techcrunch.example/ai-chip"
+              },
+              {
+                "id": "tc2",
+                "title": "New open source model released",
+                "url": "https://techcrunch.example/oss-model"
+              }
+            ]
+          },
+          {
+            "name": "The Verge AI",
+            "items": [
+              {
+                "id": "vg1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://verge.example/ai-chip"
+              },
+              {
+                "id": "vg2",
+                "title": "Robotics roundup this week",
+                "url": "https://verge.example/robotics"
+              }
+            ]
+          }
+        ]
+      },
+      "F-airtable-history": {
+        "records": [
+          {
+            "id": "rec1",
+            "title": "Robotics roundup this week",
+            "published_at": "2026-09-01"
+          }
+        ]
+      },
+      "F-test-config": {
+        "mode": "test"
+      }
+    }
+  },
+  "input_sha256": "0080971601503FC9AD0B7D05A73982DFD6562F988BEFCA12AC52A0B60425828B"
+}

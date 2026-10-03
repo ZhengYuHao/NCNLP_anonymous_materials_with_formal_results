@@ -1,0 +1,189 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-026",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-BD-DISCOVER",
+      "dependency_type": "httpRequest",
+      "operation": "bright_data_maps_discovery",
+      "request_contract": {
+        "city": "Austin",
+        "one_call_per_category": true
+      },
+      "response_contract": {
+        "snapshot_id": "SNAP-001",
+        "status": "accepted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-POLL",
+      "dependency_type": "httpRequest",
+      "operation": "poll_snapshot_progress",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "snapshot_id": "SNAP-001",
+        "status": "ready"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DOWNLOAD",
+      "dependency_type": "httpRequest",
+      "operation": "download_business_profiles",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "profiles": "see fixture F-PROFILES"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BD-DOWNLOAD-EMPTY",
+      "dependency_type": "httpRequest",
+      "operation": "download_business_profiles",
+      "request_contract": {
+        "snapshot_id": "SNAP-001"
+      },
+      "response_contract": {
+        "profiles": "see fixture F-PROFILES-EMPTY"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-THEMES",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "extract_complaint_themes",
+      "request_contract": {
+        "reviews_stars_lte": 3
+      },
+      "response_contract": {
+        "per_business": {
+          "B-002": {
+            "themes": [
+              "price concerns"
+            ]
+          },
+          "B-003": {
+            "themes": [
+              "customer service issues"
+            ]
+          },
+          "B-004": {
+            "themes": [
+              "timeliness"
+            ]
+          },
+          "B-005": {
+            "themes": [
+              "service quality"
+            ]
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "googleSheets",
+      "operation": "read_rows",
+      "request_contract": {
+        "sheet_id": "SHEET-PROSPECTS"
+      },
+      "response_contract": {
+        "rows": "see fixture F-PREVIOUS-PROSPECTS"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet_id": "SHEET-PROSPECTS",
+        "one_row_per_candidate": true
+      },
+      "response_contract": {
+        "status": "appended",
+        "row_number": 10
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-DIGEST",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#prospects",
+        "message_is_ranked_digest": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000002"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-WEEKLY",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD",
+        "M-LLM-THEMES",
+        "M-SHEETS-READ",
+        "M-SHEETS-APPEND",
+        "M-SLACK-DIGEST"
+      ]
+    },
+    {
+      "case_id": "C-BND-90D",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD",
+        "M-LLM-THEMES",
+        "M-SHEETS-READ",
+        "M-SHEETS-APPEND",
+        "M-SLACK-DIGEST"
+      ]
+    },
+    {
+      "case_id": "C-NEG-EMPTY-RESULTS",
+      "fixture_ids": [
+        "F-CONFIG",
+        "F-PROFILES-EMPTY",
+        "F-PREVIOUS-PROSPECTS"
+      ],
+      "mock_ids": [
+        "M-BD-DISCOVER",
+        "M-BD-POLL",
+        "M-BD-DOWNLOAD-EMPTY",
+        "M-SHEETS-READ"
+      ]
+    }
+  ]
+}

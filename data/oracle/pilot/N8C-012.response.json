@@ -1,0 +1,260 @@
+{
+  "pilot_id": "N8C-012",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "381eb652a2c31696156e915e47f7aa9e2a1a235b77708b24b9b9053645539f61",
+  "fixtures": [
+    {
+      "fixture_id": "F-EVENTS",
+      "purpose": "Supabase 事件记录：应提醒（3 天/当天）、超窗（8 天）、低优先级（5 天）",
+      "input_data": {
+        "events": [
+          {"event_id": "ev-1", "title": "Project review", "event_date": "2026-08-29", "days_remaining": 3, "priority": "normal"},
+          {"event_id": "ev-2", "title": "Conference", "event_date": "2026-09-03", "days_remaining": 8, "priority": "normal"},
+          {"event_id": "ev-3", "title": "Team lunch", "event_date": "2026-08-31", "days_remaining": 5, "priority": "low"},
+          {"event_id": "ev-4", "title": "Deadline today", "event_date": "2026-08-26", "days_remaining": 0, "priority": "normal"}
+        ],
+        "window_days": [0, 7]
+      }
+    },
+    {
+      "fixture_id": "F-EVENTS-WINDOW-BOUNDARY",
+      "purpose": "窗口边界：7 天应提醒、8 天不应提醒",
+      "input_data": {
+        "events": [
+          {"event_id": "ev-7d", "title": "Seven-day event", "event_date": "2026-09-02", "days_remaining": 7, "priority": "normal"},
+          {"event_id": "ev-8d", "title": "Eight-day event", "event_date": "2026-09-03", "days_remaining": 8, "priority": "normal"}
+        ],
+        "window_days": [0, 7]
+      }
+    },
+    {
+      "fixture_id": "F-IMPORTANT-DAYS",
+      "purpose": "重要日子：一个匹配 notify_days_before=5，一个不匹配",
+      "input_data": {
+        "important_days": [
+          {"day_id": "day-1", "name": "Company anniversary", "next_occurrence": "2026-08-31", "days_before": 5},
+          {"day_id": "day-2", "name": "Product launch", "next_occurrence": "2026-08-29", "days_before": 3}
+        ],
+        "notify_days_before": 5
+      }
+    },
+    {
+      "fixture_id": "F-IMPORTANT-DAYS-NOTIFIED",
+      "purpose": "重要日子已通知过（重复防护），不应再次发送",
+      "input_data": {
+        "important_days": [
+          {"day_id": "day-1", "name": "Company anniversary", "next_occurrence": "2026-08-31", "days_before": 5}
+        ],
+        "notify_days_before": 5,
+        "existing_notification": {"day_id": "day-1", "notified_at": "2026-08-25T00:00:00Z"}
+      }
+    },
+    {
+      "fixture_id": "F-CONTENT-REQUEST",
+      "purpose": "内容生成 webhook 请求",
+      "input_data": {
+        "platform": "LinkedIn",
+        "topic": "AI in logistics",
+        "audience": "ops leaders",
+        "tone": "professional",
+        "length": "medium"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SUPABASE-EVENTS",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_upcoming_events",
+      "request_contract": {"table": "events", "filter": "upcoming"},
+      "response_contract": {
+        "rows": [
+          {"event_id": "ev-1", "title": "Project review", "event_date": "2026-08-29", "days_remaining": 3, "priority": "normal"},
+          {"event_id": "ev-2", "title": "Conference", "event_date": "2026-09-03", "days_remaining": 8, "priority": "normal"},
+          {"event_id": "ev-3", "title": "Team lunch", "event_date": "2026-08-31", "days_remaining": 5, "priority": "low"},
+          {"event_id": "ev-4", "title": "Deadline today", "event_date": "2026-08-26", "days_remaining": 0, "priority": "normal"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-EVENTS-WINDOW",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_upcoming_events",
+      "request_contract": {"table": "events", "filter": "upcoming"},
+      "response_contract": {
+        "rows": [
+          {"event_id": "ev-7d", "title": "Seven-day event", "event_date": "2026-09-02", "days_remaining": 7, "priority": "normal"},
+          {"event_id": "ev-8d", "title": "Eight-day event", "event_date": "2026-09-03", "days_remaining": 8, "priority": "normal"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EMAIL",
+      "dependency_type": "language_model",
+      "operation": "generate_reminder_email",
+      "request_contract": {"event": "event or important day"},
+      "response_contract": {"subject": "Reminder: Project review in 3 days", "body": "Don't forget the upcoming project review."},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_reminder_email",
+      "request_contract": {"to": "recipient", "subject": "reminder subject", "body": "reminder body"},
+      "response_contract": {"message_id": "gm-rem-1", "sent": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-NOTIF-LOG",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "log_sent_notification",
+      "request_contract": {"table": "notifications", "event_id": "ev-1|ev-4|ev-7d", "row": "sent notification record"},
+      "response_contract": {"inserted": true, "id": "ntf-1"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-IMPORTANT-DAYS",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_important_days",
+      "request_contract": {"table": "important_days"},
+      "response_contract": {
+        "rows": [
+          {"day_id": "day-1", "name": "Company anniversary", "next_occurrence": "2026-08-31", "days_before": 5},
+          {"day_id": "day-2", "name": "Product launch", "next_occurrence": "2026-08-29", "days_before": 3}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-DUP-CHECK-EMPTY",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "check_existing_important_day_notification",
+      "request_contract": {"table": "notifications", "day_id": "day-1"},
+      "response_contract": {"records": [], "checked": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-DUP-CHECK-EXISTS",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "check_existing_important_day_notification",
+      "request_contract": {"table": "notifications", "day_id": "day-1"},
+      "response_contract": {"records": [{"day_id": "day-1", "notified_at": "2026-08-25T00:00:00Z"}], "checked": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CONTENT",
+      "dependency_type": "language_model",
+      "operation": "generate_structured_content_json",
+      "request_contract": {"platform": "LinkedIn", "topic": "AI in logistics", "audience": "ops leaders", "tone": "professional", "length": "medium"},
+      "response_contract": {
+        "content": {
+          "platform": "LinkedIn",
+          "topic": "AI in logistics",
+          "audience": "ops leaders",
+          "tone": "professional",
+          "length": "medium",
+          "title": "Why AI is transforming logistics operations",
+          "outline": ["Intro", "Pain points", "AI use cases", "Outlook"],
+          "draft": "AI in logistics is moving from pilots to production..."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-CONTENT-STORE",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "insert_content_idea",
+      "request_contract": {"table": "content_ideas", "row": "structured content JSON"},
+      "response_contract": {"inserted": true, "id": "ci-1"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RESPOND",
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "return_content_json",
+      "request_contract": {"body": "structured content JSON"},
+      "response_contract": {"status_code": 200, "responded": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-EVENTS",
+      "kind": "positive",
+      "fixture_ids": ["F-EVENTS"],
+      "mock_ids": ["M-SUPABASE-EVENTS", "M-LLM-EMAIL", "M-GMAIL-SEND", "M-SUPABASE-NOTIF-LOG"],
+      "assertions": [
+        {"assertion_id": "A-EMAILS-SENT", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 2, "rationale": "需求条件：仅保留未来 0-7 天且非低优先级事件；fixture 中 ev-1（3 天）与 ev-4（0 天）应提醒，ev-2 超窗、ev-3 低优先级被过滤"},
+        {"assertion_id": "A-NOTIF-LOGGED", "target": "mock.M-SUPABASE-NOTIF-LOG.call_count", "operator": "equals", "expected": 2, "rationale": "需求声明将已发送通知记录到 Supabase notifications 表（每条提醒一条）"},
+        {"assertion_id": "A-EV1-LOGGED", "target": "mock.M-SUPABASE-NOTIF-LOG.requests[0].event_id", "operator": "equals", "expected": "ev-1", "rationale": "ev-1 的通知被记录；索引顺序按 fixture 过滤后顺序（ev-1 在 ev-4 前）"},
+        {"assertion_id": "A-EV4-LOGGED", "target": "mock.M-SUPABASE-NOTIF-LOG.requests[1].event_id", "operator": "equals", "expected": "ev-4", "rationale": "ev-4 的通知被记录"},
+        {"assertion_id": "A-LLM-SUBJECT", "target": "mock.M-GMAIL-SEND.requests[0].subject", "operator": "exists", "expected": true, "rationale": "需求声明用语言模型生成简洁提醒邮件的主题与正文"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-EVENT-WINDOW-0-7",
+      "kind": "boundary",
+      "fixture_ids": ["F-EVENTS-WINDOW-BOUNDARY"],
+      "mock_ids": ["M-SUPABASE-EVENTS-WINDOW", "M-LLM-EMAIL", "M-GMAIL-SEND", "M-SUPABASE-NOTIF-LOG"],
+      "assertions": [
+        {"assertion_id": "A-WINDOW-EDGE", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明保留 0-7 天窗口内事件；7 天边界应提醒，8 天事件被排除"},
+        {"assertion_id": "A-WINDOW-OUT", "target": "mock.M-SUPABASE-NOTIF-LOG.requests[0].event_id", "operator": "equals", "expected": "ev-7d", "rationale": "仅 7 天事件被记录（8 天事件不产生通知）"}
+      ]
+    },
+    {
+      "case_id": "C-POS-IMPORTANT-DAY-MATCH",
+      "kind": "positive",
+      "fixture_ids": ["F-IMPORTANT-DAYS"],
+      "mock_ids": ["M-SUPABASE-IMPORTANT-DAYS", "M-SUPABASE-DUP-CHECK-EMPTY", "M-LLM-EMAIL", "M-GMAIL-SEND"],
+      "assertions": [
+        {"assertion_id": "A-DUP-CHECKED", "target": "mock.M-SUPABASE-DUP-CHECK-EMPTY.call_count", "operator": "equals", "expected": 1, "rationale": "需求条件：发送前检查 Supabase 防止重要日子重复通知"},
+        {"assertion_id": "A-DAY-EMAIL", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 1, "rationale": "需求条件：仅当下一发生日匹配 notify days before 配置时发送；fixture 中 day-1 匹配（5 天）、day-2 不匹配（3 天）"},
+        {"assertion_id": "A-DAY-SUBJECT", "target": "mock.M-GMAIL-SEND.requests[0].subject", "operator": "exists", "expected": true, "rationale": "重要日子提醒邮件由语言模型生成并发送"}
+      ]
+    },
+    {
+      "case_id": "C-NEG-DUPLICATE-IMPORTANT-DAY",
+      "kind": "negative",
+      "fixture_ids": ["F-IMPORTANT-DAYS-NOTIFIED"],
+      "mock_ids": ["M-SUPABASE-IMPORTANT-DAYS", "M-SUPABASE-DUP-CHECK-EXISTS", "M-LLM-EMAIL", "M-GMAIL-SEND"],
+      "assertions": [
+        {"assertion_id": "A-DUP-PREVENTED", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 0, "rationale": "需求条件'通过检查 Supabase 防止重复通知'；已通知过的重要日子不重复发送"}
+      ]
+    },
+    {
+      "case_id": "C-POS-CONTENT-WEBHOOK",
+      "kind": "positive",
+      "fixture_ids": ["F-CONTENT-REQUEST"],
+      "mock_ids": ["M-LLM-CONTENT", "M-SUPABASE-CONTENT-STORE", "M-RESPOND"],
+      "assertions": [
+        {"assertion_id": "A-CONTENT-GENERATED", "target": "mock.M-LLM-CONTENT.requests[0].topic", "operator": "equals", "expected": "AI in logistics", "rationale": "需求声明按平台/主题/受众（及语气/长度）生成结构化内容 JSON；主题来自 fixture"},
+        {"assertion_id": "A-CONTENT-STORED", "target": "mock.M-SUPABASE-CONTENT-STORE.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明将内容存入 Supabase"},
+        {"assertion_id": "A-CONTENT-RETURNED", "target": "mock.M-RESPOND.requests[0].body.topic", "operator": "equals", "expected": "AI in logistics", "rationale": "需求声明 webhook 响应返回生成的内容 JSON（platform/topic/audience/tone/length 为需求点名输入字段）"},
+        {"assertion_id": "A-CONTENT-PLATFORM", "target": "mock.M-RESPOND.requests[0].body.platform", "operator": "equals", "expected": "LinkedIn", "rationale": "返回 JSON 包含需求声明输入字段 platform"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-EMAILS-SENT/A-NOTIF-LOGGED/A-LLM-SUBJECT（需求(A)事件提醒+记录通知）、A-WINDOW-EDGE/A-WINDOW-OUT（需求 0-7 天窗口）、A-DUP-CHECKED/A-DAY-EMAIL/A-DAY-SUBJECT（需求(B)重要日子+匹配通知）、A-DUP-PREVENTED（需求(B)重复防护）、A-CONTENT-GENERATED/A-CONTENT-STORED/A-CONTENT-RETURNED（需求(C)内容生成+存储+返回）。\n- 修改：A-EV1-LOGGED/A-EV4-LOGGED 由对 requests 集合的 contains 改为索引化 requests[0]/requests[1].event_id（保证可判定；顺序假设来自 fixture 过滤后顺序），M-SUPABASE-NOTIF-LOG request_contract 补充 event_id 字段声明；A-CONTENT-OUTLINE 删除（outline 为本 Oracle 自创的内容结构字段），改为 A-CONTENT-PLATFORM（platform 为需求点名输入字段）。\n- 删除：A-CONTENT-OUTLINE。"
+}

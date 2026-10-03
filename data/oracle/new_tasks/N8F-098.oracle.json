@@ -1,0 +1,301 @@
+{
+  "task_id": "N8F-098",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "62aad480b7dcb753296ee07f9d5fdb33ab4f3558d62bc708275c4c7929514c6e",
+  "fixtures": [
+    {
+      "fixture_id": "F-URLS",
+      "purpose": "待监控的目标 URL 列表",
+      "input_data": {
+        "target_urls": [
+          "https://example.com/pricing",
+          "https://example.com/about"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-CRITERIA",
+      "purpose": "用户定义的变更关注条件：聚焦价格/功能变化，忽略细微差异",
+      "input_data": {
+        "criteria": {
+          "focus": [
+            "price",
+            "features"
+          ],
+          "ignore_minor": true
+        }
+      }
+    },
+    {
+      "fixture_id": "F-SNAPSHOT-PRICING-NEW",
+      "purpose": "pricing 页本次快照（较历史发生价格变化）",
+      "input_data": {
+        "url": "https://example.com/pricing",
+        "content": "Pricing: Pro plan $12/mo",
+        "screenshot_url": "https://shots.example.com/pricing-20260902.png",
+        "fetched_at": "2026-09-02T09:00:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-SNAPSHOT-PRICING-OLD",
+      "purpose": "pricing 页历史快照",
+      "input_data": {
+        "url": "https://example.com/pricing",
+        "content": "Pricing: Pro plan $10/mo",
+        "screenshot_url": "https://shots.example.com/pricing-20260901.png",
+        "fetched_at": "2026-09-01T09:00:00Z"
+      }
+    },
+    {
+      "fixture_id": "F-SNAPSHOT-ABOUT",
+      "purpose": "about 页快照（新旧相同，无变化）",
+      "input_data": {
+        "url": "https://example.com/about",
+        "content": "About us page content",
+        "screenshot_url": "https://shots.example.com/about.png",
+        "fetched_at": "2026-09-02T09:00:00Z"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-FIRECRAWL",
+      "dependency_type": "firecrawl",
+      "operation": "scrape_page",
+      "request_contract": {
+        "one_call_per_url": true
+      },
+      "response_contract": {
+        "pages": "see fixtures F-SNAPSHOT-*"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMPARE-CHANGED",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "compare_snapshots",
+      "request_contract": {
+        "pricing_url": "https://example.com/pricing"
+      },
+      "response_contract": {
+        "url": "https://example.com/pricing",
+        "changed": true,
+        "meaningful_changes": [
+          "Pro plan price increased from $10 to $12"
+        ],
+        "summary": "Pro plan price increased"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMPARE-MINOR",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "compare_snapshots",
+      "request_contract": {
+        "pricing_url": "https://example.com/pricing"
+      },
+      "response_contract": {
+        "url": "https://example.com/pricing",
+        "changed": true,
+        "meaningful_changes": [
+          "whitespace reformatted"
+        ],
+        "summary": "Minor formatting change"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMPARE-UNCHANGED",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "compare_snapshots",
+      "request_contract": {
+        "about_url": "https://example.com/about"
+      },
+      "response_contract": {
+        "url": "https://example.com/about",
+        "changed": false,
+        "meaningful_changes": [],
+        "summary": "No meaningful change"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NOTION-CREATE",
+      "dependency_type": "notion",
+      "operation": "create_page",
+      "request_contract": {
+        "page_must_contain_snapshot_comparison_summary": true
+      },
+      "response_contract": {
+        "page_id": "N-PAGE-1",
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-ALERT",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "subject_is_update_alert": true
+      },
+      "response_contract": {
+        "status": "sent",
+        "message_id": "G-ALERT-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-MEANINGFUL-CHANGE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-URLS",
+        "F-CRITERIA",
+        "F-SNAPSHOT-PRICING-NEW",
+        "F-SNAPSHOT-PRICING-OLD",
+        "F-SNAPSHOT-ABOUT"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL",
+        "M-LLM-COMPARE-CHANGED",
+        "M-LLM-COMPARE-UNCHANGED",
+        "M-NOTION-CREATE",
+        "M-GMAIL-ALERT"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.logged_updates",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅满足关注条件的更新被记录：pricing 价格变化被记录，about 无变化不记录"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.logged_updates[0].url",
+          "operator": "equals",
+          "expected": "https://example.com/pricing",
+          "rationale": "记录的更新必须对应发生变化的 URL"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.logged_updates[0].meaningful_changes",
+          "operator": "contains",
+          "expected": "Pro plan price increased from $10 to $12",
+          "rationale": "比对结果须高亮有意义的变化，内容来自固定 LLM 响应"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.logged_updates[0].summary",
+          "operator": "contains",
+          "expected": "Pro plan price increased",
+          "rationale": "每次变化须生成简洁文字摘要"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.logged_updates[0].snapshot",
+          "operator": "exists",
+          "rationale": "页面快照须与比对结果、摘要一并保存",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.notion_pages",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅被记录的更新写入 Notion"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.email_alert",
+          "operator": "exists",
+          "rationale": "发生更新且启用提醒时发送 Gmail 邮件",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-NO-CHANGE",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-URLS",
+        "F-CRITERIA",
+        "F-SNAPSHOT-ABOUT"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL",
+        "M-LLM-COMPARE-UNCHANGED"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.logged_updates",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无有意义变化时不记录任何更新"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.notion_pages",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无更新时不写入 Notion"
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.email_alert",
+          "operator": "not_exists",
+          "rationale": "无更新时不发送提醒邮件",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-MINOR-CHANGE",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-URLS",
+        "F-CRITERIA",
+        "F-SNAPSHOT-PRICING-NEW",
+        "F-SNAPSHOT-PRICING-OLD",
+        "F-SNAPSHOT-ABOUT"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL",
+        "M-LLM-COMPARE-MINOR",
+        "M-LLM-COMPARE-UNCHANGED"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.logged_updates",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "边界：页面虽有变化但仅为细微差异（格式化调整），按关注条件忽略，不记录"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.email_alert",
+          "operator": "not_exists",
+          "rationale": "未记录的细微变化不发送提醒邮件",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Firecrawl 抓取、LLM 快照比对、Notion 写入、Gmail 提醒均为固定模拟。快照新旧固定，是否记录取决于固定比对结论与固定关注条件（忽略细微差异），记录数与邮件触发可程序判定。"
+}

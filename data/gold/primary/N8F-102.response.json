@@ -1,0 +1,383 @@
+{
+  "task_id": "N8F-102",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "b65f08b8d383ead29fe1930b7658208e56a8c5385c8feaa216bf7bacd6f16766",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日或手动触发",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Schedule Trigger",
+        "When clicking 'Execute workflow'"
+      ],
+      "requirement_evidence": [
+        "每日或手动触发"
+      ],
+      "rationale": "按每日计划或手动方式触发执行，为确定性触发操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取一条未发布语录",
+      "node_type": "code",
+      "operation_family": "unpublished_quote_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "quote_data",
+          "type": "object",
+          "description": "从 Google Sheets 读取的一条未发布语录行（语录、语气、情绪、风格、音色标识及行标识）"
+        }
+      ],
+      "native_evidence": [
+        "Get row(s) in sheet",
+        "Limit"
+      ],
+      "requirement_evidence": [
+        "所有输入（语录、语气、情绪、风格、音色标识）存放在 Google Sheets 中",
+        "每次运行只处理一条尚未发布的语录行，以避免重复发布或遗漏"
+      ],
+      "rationale": "从 Google Sheets 读取一条尚未发布的语录行，为确定性的外部读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "撰写分镜脚本与平台文案",
+      "node_type": "semantic",
+      "operation_family": "storyboard_and_caption_writing",
+      "inputs": [
+        {
+          "name": "quote_data",
+          "type": "object",
+          "description": "未发布语录行（含语录、语气、情绪、风格）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "script_and_captions",
+          "type": "object",
+          "description": "分镜脚本及适用于 TikTok、Instagram Reels 与 YouTube Shorts 的文案"
+        }
+      ],
+      "native_evidence": [
+        "Prompt Agent",
+        "Content writer"
+      ],
+      "requirement_evidence": [
+        "由语言模型撰写分镜脚本，并生成适用于 TikTok、Instagram Reels 与 YouTube Shorts 的文案"
+      ],
+      "rationale": "需求声明由语言模型撰写分镜脚本与三平台文案，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成配音",
+      "node_type": "code",
+      "operation_family": "voiceover_generation",
+      "inputs": [
+        {
+          "name": "quote_data",
+          "type": "object",
+          "description": "语录文本与音色标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "voiceover_audio",
+          "type": "object",
+          "description": "为语录生成的配音音频"
+        }
+      ],
+      "native_evidence": [
+        "Convert text to speech"
+      ],
+      "requirement_evidence": [
+        "为语录生成配音"
+      ],
+      "rationale": "按语录与音色标识生成配音音频，为确定性的外部媒体生成操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成配乐与视觉画面",
+      "node_type": "code",
+      "operation_family": "visual_and_music_generation",
+      "inputs": [
+        {
+          "name": "quote_data",
+          "type": "object",
+          "description": "语录内容与风格参数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_footage",
+          "type": "object",
+          "description": "8 秒竖版（1080x1920）电影感视觉画面与配乐素材"
+        }
+      ],
+      "native_evidence": [
+        "Generate Video1",
+        "Convert to File",
+        "Upload to GCS Video"
+      ],
+      "requirement_evidence": [
+        "将这条语录转换为一段 8 秒的竖版（1080x1920）电影感短视频",
+        "并生成配乐与视觉画面"
+      ],
+      "rationale": "生成 8 秒竖版电影感视觉画面与配乐素材，为确定性的外部媒体生成操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "渲染合成与画质提升",
+      "node_type": "code",
+      "operation_family": "video_composition_and_enhancement",
+      "inputs": [
+        {
+          "name": "voiceover_audio",
+          "type": "object",
+          "description": "配音音频"
+        },
+        {
+          "name": "visual_footage",
+          "type": "object",
+          "description": "视觉画面与配乐素材"
+        },
+        {
+          "name": "script_and_captions",
+          "type": "object",
+          "description": "分镜脚本与平台文案（作为文字层）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "渲染合成并画质提升后的成片"
+        }
+      ],
+      "native_evidence": [
+        "Creatomate HTTP Body",
+        "Merge - Creatomate",
+        "Wait for Rendering",
+        "Check status of render",
+        "If3",
+        "Send to Cloudianry",
+        "Make upscaled URL",
+        "Download file Cloudinary"
+      ],
+      "requirement_evidence": [
+        "渲染出视频后，将配音、视频与文字合成在一起，并对成片做画质提升"
+      ],
+      "rationale": "渲染后将配音、视频与文字合成为成片并做画质提升，为确定性的外部渲染与合成操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发布到三个平台",
+      "node_type": "code",
+      "operation_family": "multi_platform_publishing",
+      "inputs": [
+        {
+          "name": "final_video",
+          "type": "object",
+          "description": "渲染合成后的成片"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布到 TikTok、Instagram Reels 与 YouTube Shorts 的结果"
+        }
+      ],
+      "native_evidence": [
+        "Upload video to Postiz",
+        "Get Postiz integrations",
+        "Switch1",
+        "Schedule TikTok",
+        "Schedule Instagram",
+        "Schedule YouTube"
+      ],
+      "requirement_evidence": [
+        "随后通过发布服务将视频直接发布到 TikTok、Instagram Reels 与 YouTube Shorts"
+      ],
+      "rationale": "通过发布服务将成片发布到 TikTok、Instagram Reels 与 YouTube Shorts 三个平台，为确定性的外部发布操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "标记语录为已发布",
+      "node_type": "terminal",
+      "operation_family": "quote_published_marking",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "三平台发布结果"
+        },
+        {
+          "name": "quote_data",
+          "type": "object",
+          "description": "本条语录行（含行标识）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Mark Quota as Done"
+      ],
+      "requirement_evidence": [
+        "最后在 Google Sheets 中将该条语录标记为已发布"
+      ],
+      "rationale": "将本条语录在 Google Sheets 中标记为已发布，为流程最终的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后读取一条未发布语录。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "语录就绪后撰写分镜脚本与平台文案。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "文案与脚本就绪后生成配音。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "文案与脚本就绪后并行生成配乐与视觉画面。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "配音就绪后进入渲染合成环节。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "视觉画面就绪后进入渲染合成环节。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "渲染合成与画质提升完成后发布到三平台。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后在 Google Sheets 中标记语录为已发布。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "quote_data",
+      "condition": null,
+      "rationale": "语录行数据送入脚本与文案撰写节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n4",
+      "variable": "quote_data",
+      "condition": null,
+      "rationale": "语录文本与音色标识送入配音生成节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n5",
+      "variable": "quote_data",
+      "condition": null,
+      "rationale": "语录内容与风格送入画面与配乐生成节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n6",
+      "variable": "script_and_captions",
+      "condition": null,
+      "rationale": "分镜脚本与文案作为文字层送入合成节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "voiceover_audio",
+      "condition": null,
+      "rationale": "配音音频送入渲染合成节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "visual_footage",
+      "condition": null,
+      "rationale": "视觉画面与配乐素材送入渲染合成节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_video",
+      "condition": null,
+      "rationale": "成片送入三平台发布节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布结果送入标记节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n2",
+      "target": "n8",
+      "variable": "quote_data",
+      "condition": null,
+      "rationale": "语录行标识送入标记节点以定位待标记行。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.88,
+  "notes": "按需求建模：每日或手动触发（code）、读取一条未发布语录（code，Limit 单条避免重复/遗漏）、撰写分镜脚本与三平台文案（semantic）、生成配音（code）与生成配乐和视觉画面（code，并行）、渲染合成与画质提升（code）、发布到 TikTok/Instagram Reels/YouTube Shorts（code）、标记语录为已发布（terminal）。需求未声明的实现细节（JWT 令牌、GCS 上传、Cloudinary 具体提升服务、Postiz 集成发现、等待/状态轮询循环）未纳入。混合任务满足 semantic→code 有类型 DFG 边（script_and_captions）。"
+}

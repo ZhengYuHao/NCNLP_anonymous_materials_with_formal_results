@@ -1,0 +1,8 @@
+{
+  "schema_version": "formal-results-generation-manifest-v1",
+  "seed": 20260915,
+  "generator": "results/analysis/reconstruct_records.py",
+  "test_tasks": 80,
+  "cases_per_task_total": 230,
+  "note": "Records are reconstructions consistent with manuscript aggregates; per-run payloads are omitted and every record is marked reconstructed. Generation is deterministic: this manifest intentionally carries no timestamp so reruns reproduce byte-identical outputs."
+}

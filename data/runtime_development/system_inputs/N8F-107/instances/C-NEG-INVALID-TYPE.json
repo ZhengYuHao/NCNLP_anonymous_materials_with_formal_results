@@ -1,0 +1,13 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-107",
+  "case_id": "C-NEG-INVALID-TYPE",
+  "kind": "negative",
+  "input_data": {
+    "prompt": "Scrape product prices",
+    "output_schema": {
+      "type": "invalid"
+    }
+  },
+  "input_sha256": "B20FE4FC32E545172C5A88A80E624F890DFAD2F61D46053E8ECBAFB55160AA15"
+}

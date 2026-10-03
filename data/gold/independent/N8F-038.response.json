@@ -1,0 +1,236 @@
+{
+  "task_id": "N8F-038",
+  "annotator_id": "GM-B-03",
+  "status": "submitted",
+  "requirement_sha256": "4e606245eb5a44d718d6a5d0ef334214bc3c1a84013cafe1b58b33f28e2a3454",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表名设置与自然语言问题",
+      "node_type": "code",
+      "operation_family": "chat_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "table_name",
+          "type": "string",
+          "description": "使用者提供的目标数据表名"
+        },
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "使用者以自然语言提出的问题"
+        }
+      ],
+      "native_evidence": [
+        "Chat Trigger",
+        "Manage Table Name"
+      ],
+      "requirement_evidence": [
+        "使用者先提供一次目标数据表名，之后即可用自然语言提出问题"
+      ],
+      "rationale": "会话输入接收与表名管理为确定性 IO 行为，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "结合表结构将自然语言问题转换为 SQL",
+      "node_type": "semantic",
+      "operation_family": "llm_text_to_sql",
+      "inputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "使用者以自然语言提出的问题"
+        },
+        {
+          "name": "table_name",
+          "type": "string",
+          "description": "使用者提供的目标数据表名"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "由问题转换出的 SQL 查询"
+        }
+      ],
+      "native_evidence": [
+        "Unified Analytics Agent",
+        "OpenAI GPT-4o-mini",
+        "Chat Memory",
+        "Need Schema?",
+        "Fetch Schema",
+        "Format Schema",
+        "Empty Schema"
+      ],
+      "requirement_evidence": [
+        "系统由语言模型将问题转换为 SQL",
+        "也无需使用者编写 SQL"
+      ],
+      "rationale": "自然语言到 SQL 的转换需要开放文本理解与代码生成，判 semantic；原生的表结构获取（Need Schema?/Fetch Schema/Format Schema/Empty Schema）为转换的前置上下文，需求未单独声明，折叠进本节点契约；多轮会话记忆（Chat Memory）并入。"
+    },
+    {
+      "node_id": "n3",
+      "label": "在 PostgreSQL 上执行查询",
+      "node_type": "code",
+      "operation_family": "db_query_execution",
+      "inputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "由问题转换出的 SQL 查询"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "query_results",
+          "type": "array",
+          "description": "SQL 查询返回的结果行"
+        }
+      ],
+      "native_evidence": [
+        "Execute SQL Query"
+      ],
+      "requirement_evidence": [
+        "并直接对数据库执行查询"
+      ],
+      "rationale": "数据库执行为确定性外部动作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "将查询结果整理为分析结论",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "query_results",
+          "type": "array",
+          "description": "SQL 查询返回的结果行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_conclusion",
+          "type": "string",
+          "description": "面向所提问题的整理后分析结论"
+        }
+      ],
+      "native_evidence": [
+        "Unified Analytics Agent",
+        "OpenAI GPT-4o-mini"
+      ],
+      "requirement_evidence": [
+        "将查询结果整理为分析结论"
+      ],
+      "rationale": "结果的解读与结论归纳需要开放文本生成，判 semantic；原生以单个 Agent 节点同时承担转换与整理两个契约，本标注按需求声明的两个行为拆分。"
+    },
+    {
+      "node_id": "n5",
+      "label": "返回分析结论给使用者",
+      "node_type": "terminal",
+      "operation_family": "response_delivery",
+      "inputs": [
+        {
+          "name": "analysis_conclusion",
+          "type": "string",
+          "description": "面向所提问题的整理后分析结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Unified Analytics Agent",
+        "Chat Trigger"
+      ],
+      "requirement_evidence": [
+        "查询结果以整理后的分析结论返回给使用者"
+      ],
+      "rationale": "向使用者交付结论为用户可见完成动作且无后继环节，判 terminal（经原生会话通道返回）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到问题后进行 NL 到 SQL 转换。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "转换出 SQL 后对数据库执行。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "查询结果返回后整理为分析结论。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "结论整理完成后返回使用者。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "转换消费自然语言问题。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n2",
+      "variable": "table_name",
+      "condition": null,
+      "rationale": "转换需结合目标表名（及其表结构上下文）。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "sql_query",
+      "condition": null,
+      "rationale": "执行消费转换出的 SQL。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "query_results",
+      "condition": null,
+      "rationale": "结论整理消费查询结果。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "analysis_conclusion",
+      "condition": null,
+      "rationale": "返回消费整理后的结论。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.85,
+  "notes": "原生的数据同步支线（Manual Trigger → Config (Sync) → Truncate Table → Fetch Google Sheet → Insert Rows to Postgres）为导入数据的实现，需求明确声明『无需使用者导出数据或上传数据文件』，未纳入 Gold；QuickChart 图表工具未在需求中声明，未纳入。原生 Agent 以工具循环方式生成并执行 SQL（含根据结果再查询的概念循环），需求声明为『转换 → 执行 → 整理』三步，建模为线性链，Agent 内部工具循环折叠进 n2/n4 组合契约，终止条件为产出最终分析结论，max_iterations<=20。"
+}

@@ -1,0 +1,304 @@
+{
+  "pilot_id": "N8C-010",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "1d75b04bb616b212279fd6a830f528a004c3db597b65d331533d44aa8796f34d",
+  "fixtures": [
+    {
+      "fixture_id": "F-WEBHOOK-VALID",
+      "purpose": "字段完整的目标定位请求（含排除公司清单）",
+      "input_data": {
+        "target_market": "North America",
+        "target_industries": ["SaaS", "Logistics"],
+        "target_roles": ["CTO", "Head of Engineering"],
+        "excluded_companies": ["Excluded Corp"]
+      }
+    },
+    {
+      "fixture_id": "F-WEBHOOK-MISSING-INDUSTRIES",
+      "purpose": "缺少 target_industries 的不完整请求，应返回 400",
+      "input_data": {"target_market": "EU", "target_roles": ["CEO"]}
+    },
+    {
+      "fixture_id": "F-COMPANY-DATA",
+      "purpose": "公司发现 API 返回：1 个合格、1 个被排除、1 个低分",
+      "input_data": {
+        "companies": [
+          {"id": "c1", "name": "Acme Corp", "industry": "SaaS", "market": "North America"},
+          {"id": "c2", "name": "Excluded Corp", "industry": "SaaS", "market": "North America"},
+          {"id": "c3", "name": "LowScore Inc", "industry": "Logistics", "market": "North America"}
+        ],
+        "excluded_companies": ["Excluded Corp"],
+        "score_threshold": 50
+      }
+    },
+    {
+      "fixture_id": "F-COMPANY-ALL-EXCLUDED",
+      "purpose": "全部公司均被排除的边界",
+      "input_data": {
+        "companies": [
+          {"id": "c2", "name": "Excluded Corp", "industry": "SaaS", "market": "North America"}
+        ],
+        "excluded_companies": ["Excluded Corp"],
+        "score_threshold": 50
+      }
+    },
+    {
+      "fixture_id": "F-CONTACT-DATA",
+      "purpose": "联系发现 API 返回：1 个高相关、1 个重复、1 个低相关",
+      "input_data": {
+        "contacts": [
+          {"id": "p1", "name": "Alice Chen", "role": "CTO", "relevance_score": 90},
+          {"id": "p2", "name": "Bob Li", "role": "CTO", "relevance_score": 85},
+          {"id": "p3", "name": "Carol Wu", "role": "Intern", "relevance_score": 30}
+        ],
+        "duplicate_contact_ids": ["p2"],
+        "contact_score_threshold": 50
+      }
+    },
+    {
+      "fixture_id": "F-DAILY-QUEUE",
+      "purpose": "每日调度读取的 Needs Human Review 队列（含过期未审项）",
+      "input_data": {
+        "queue_items": [
+          {"queue_id": "q1", "account_id": "c1", "status": "Needs Human Review", "review_at": "2026-08-01T00:00:00Z"},
+          {"queue_id": "q2", "account_id": "c4", "status": "Needs Human Review", "review_at": "2026-08-24T00:00:00Z"}
+        ],
+        "stale_threshold_days": 7,
+        "email_summary_enabled": false
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-COMPANY-API",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "company_discovery",
+      "request_contract": {"criteria": "target_market, target_industries"},
+      "response_contract": {
+        "companies": [
+          {"id": "c1", "name": "Acme Corp", "industry": "SaaS", "market": "North America"},
+          {"id": "c2", "name": "Excluded Corp", "industry": "SaaS", "market": "North America"},
+          {"id": "c3", "name": "LowScore Inc", "industry": "Logistics", "market": "North America"}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-COMPANY-API-ALL-EXCLUDED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "company_discovery",
+      "request_contract": {"criteria": "target_market, target_industries"},
+      "response_contract": {
+        "companies": [
+          {"id": "c2", "name": "Excluded Corp", "industry": "SaaS", "market": "North America"}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ACCOUNT-SCORE",
+      "dependency_type": "language_model",
+      "operation": "evaluate_fit_and_score_account",
+      "request_contract": {"company_id": "c1|c3", "company": "company profile"},
+      "response_contract": {
+        "scores": {
+          "c1": {"score": 85, "evidence": "Strong AI tooling adoption and CTO presence."},
+          "c3": {"score": 40, "evidence": "Small team, limited AI budget."}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-FIND-ACCOUNT",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "find_existing_account",
+      "request_contract": {"table": "Accounts", "company_id": "c1"},
+      "response_contract": {"records": [], "dedupe_checked": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-FIND-ACCOUNT-EXISTS",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "find_existing_account",
+      "request_contract": {"table": "Accounts", "company_id": "c1"},
+      "response_contract": {"records": [{"record_id": "rec-acme-1", "company_id": "c1", "status": "Qualified"}], "dedupe_checked": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-CREATE-ACCOUNT",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "create_qualified_account",
+      "request_contract": {"table": "Accounts", "fields": {"company_id": "c1", "status": "Qualified", "score": 85}},
+      "response_contract": {"record_id": "rec-acme-1", "created": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CONTACT-API",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "contact_discovery",
+      "request_contract": {"account_id": "c1"},
+      "response_contract": {
+        "contacts": [
+          {"id": "p1", "name": "Alice Chen", "role": "CTO"},
+          {"id": "p2", "name": "Bob Li", "role": "CTO"},
+          {"id": "p3", "name": "Carol Wu", "role": "Intern"}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CONTACT-SCORE",
+      "dependency_type": "language_model",
+      "operation": "score_contact_relevance",
+      "request_contract": {"contact": "contact profile", "target_roles": ["CTO", "Head of Engineering"]},
+      "response_contract": {
+        "scores": {
+          "p1": {"relevance": 90, "evidence": "CTO of Acme Corp, matches target role."},
+          "p2": {"relevance": 85, "evidence": "CTO, but duplicate record."},
+          "p3": {"relevance": 30, "evidence": "Intern role, not a target."}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-BRIEF",
+      "dependency_type": "language_model",
+      "operation": "generate_outreach_brief",
+      "request_contract": {"account": "qualified account + evidence"},
+      "response_contract": {"brief": "Outreach brief: Acme Corp AI transformation, key contact Alice Chen (CTO)."},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-CREATE-QUEUE",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "create_queue_item",
+      "request_contract": {"table": "OutreachQueue", "fields": {"account_id": "c1", "status": "Needs Human Review", "brief": "outreach brief"}},
+      "response_contract": {"record_id": "rec-queue-1", "created": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RESPOND",
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "return_webhook_response",
+      "request_contract": {"body": "compact JSON result"},
+      "response_contract": {"status_code": 200, "responded": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-LOAD-QUEUE",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "list_needs_human_review_items",
+      "request_contract": {"table": "OutreachQueue", "status": "Needs Human Review"},
+      "response_contract": {
+        "records": [
+          {"queue_id": "q1", "account_id": "c1", "status": "Needs Human Review", "review_at": "2026-08-01T00:00:00Z"},
+          {"queue_id": "q2", "account_id": "c4", "status": "Needs Human Review", "review_at": "2026-08-24T00:00:00Z"}
+        ],
+        "retrieved": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STALE",
+      "dependency_type": "language_model",
+      "operation": "identify_stale_reviews",
+      "request_contract": {"queue_items": "review queue", "stale_threshold_days": 7},
+      "response_contract": {"stale_ids": ["q1"], "stale_count": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SUMMARY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_daily_review_summary",
+      "request_contract": {"to": "reviewer", "subject": "daily review summary", "body": "stale reviews"},
+      "response_contract": {"message_id": "gm-summary-1", "sent": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-QUALIFY",
+      "kind": "positive",
+      "fixture_ids": ["F-WEBHOOK-VALID", "F-COMPANY-DATA", "F-CONTACT-DATA"],
+      "mock_ids": ["M-COMPANY-API", "M-LLM-ACCOUNT-SCORE", "M-AIRTABLE-FIND-ACCOUNT", "M-AIRTABLE-CREATE-ACCOUNT", "M-CONTACT-API", "M-LLM-CONTACT-SCORE", "M-LLM-BRIEF", "M-AIRTABLE-CREATE-QUEUE", "M-RESPOND"],
+      "assertions": [
+        {"assertion_id": "A-COMPANY-API", "target": "mock.M-COMPANY-API.call_count", "operator": "equals", "expected": 1, "rationale": "需求(1)声明调用可配置公司发现 HTTP API"},
+        {"assertion_id": "A-EXCLUDED-REMOVED-1", "target": "mock.M-LLM-ACCOUNT-SCORE.requests[0].company_id", "operator": "equals", "expected": "c1", "rationale": "需求(1)声明移除被排除公司；被排除公司 c2 不进入评分（公司 id 来自 fixture）"},
+        {"assertion_id": "A-EXCLUDED-REMOVED-2", "target": "mock.M-LLM-ACCOUNT-SCORE.requests[1].company_id", "operator": "equals", "expected": "c3", "rationale": "仅非排除公司被评分（c2 被移除）"},
+        {"assertion_id": "A-LOW-SCORE-FILTERED", "target": "mock.M-AIRTABLE-CREATE-ACCOUNT.call_count", "operator": "equals", "expected": 1, "rationale": "需求(2)声明过滤低分账户；仅 c1 创建 Qualified 记录"},
+        {"assertion_id": "A-QUALIFIED-STATUS", "target": "mock.M-AIRTABLE-CREATE-ACCOUNT.requests[0].fields.status", "operator": "equals", "expected": "Qualified", "rationale": "需求(2)声明的记录状态 'Qualified'"},
+        {"assertion_id": "A-CONTACT-API", "target": "mock.M-CONTACT-API.call_count", "operator": "equals", "expected": 1, "rationale": "需求(3)声明每个合格账户调用联系发现 API"},
+        {"assertion_id": "A-QUEUE-STATUS", "target": "mock.M-AIRTABLE-CREATE-QUEUE.requests[0].fields.status", "operator": "equals", "expected": "Needs Human Review", "rationale": "需求(4)声明的队列项状态 'Needs Human Review'"},
+        {"assertion_id": "A-BRIEF-GENERATED", "target": "mock.M-LLM-BRIEF.call_count", "operator": "equals", "expected": 1, "rationale": "需求(4)声明生成基于证据的外联简报"},
+        {"assertion_id": "A-WEBHOOK-RESPONDED", "target": "mock.M-RESPOND.call_count", "operator": "equals", "expected": 1, "rationale": "需求(5)声明 webhook 请求返回紧凑 JSON 结果"},
+        {"assertion_id": "A-WEBHOOK-BODY", "target": "mock.M-RESPOND.requests[0].body", "operator": "exists", "expected": true, "rationale": "返回体为 JSON 结果；结果内部字段需求未规定，不做强制"}
+      ]
+    },
+    {
+      "case_id": "C-SAFE-REJECT-MISSING-FIELDS",
+      "kind": "safe_rejection",
+      "fixture_ids": ["F-WEBHOOK-MISSING-INDUSTRIES"],
+      "mock_ids": ["M-COMPANY-API", "M-AIRTABLE-CREATE-ACCOUNT", "M-RESPOND"],
+      "assertions": [
+        {"assertion_id": "A-400-RETURNED", "target": "mock.M-RESPOND.requests[0].status_code", "operator": "equals", "expected": 400, "rationale": "需求条件与失败行为声明：必填字段不完整时返回 400 webhook 响应（target_market/target_industries/target_roles 为需求点名必填字段）"},
+        {"assertion_id": "A-NO-COMPANY-API", "target": "mock.M-COMPANY-API.call_count", "operator": "equals", "expected": 0, "rationale": "校验失败时不调用公司发现 API"},
+        {"assertion_id": "A-NO-AIRTABLE-WRITE", "target": "mock.M-AIRTABLE-CREATE-ACCOUNT.call_count", "operator": "equals", "expected": 0, "rationale": "校验失败时不写 Airtable"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-ALL-EXCLUDED",
+      "kind": "boundary",
+      "fixture_ids": ["F-WEBHOOK-VALID", "F-COMPANY-ALL-EXCLUDED"],
+      "mock_ids": ["M-COMPANY-API-ALL-EXCLUDED", "M-LLM-ACCOUNT-SCORE", "M-CONTACT-API", "M-RESPOND"],
+      "assertions": [
+        {"assertion_id": "A-NO-SCORING", "target": "mock.M-LLM-ACCOUNT-SCORE.call_count", "operator": "equals", "expected": 0, "rationale": "全部公司被排除后无账户可评分（需求(1)移除排除公司）"},
+        {"assertion_id": "A-NO-CONTACT-API", "target": "mock.M-CONTACT-API.call_count", "operator": "equals", "expected": 0, "rationale": "无合格账户时不调用联系发现 API（需求(3)按合格账户调用）"},
+        {"assertion_id": "A-STILL-RESPONDS", "target": "mock.M-RESPOND.call_count", "operator": "equals", "expected": 1, "rationale": "webhook 仍返回 JSON 结果；结果内容由数据决定，不规定字段"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-DUPLICATE-ACCOUNT",
+      "kind": "boundary",
+      "fixture_ids": ["F-WEBHOOK-VALID", "F-COMPANY-DATA"],
+      "mock_ids": ["M-COMPANY-API", "M-LLM-ACCOUNT-SCORE", "M-AIRTABLE-FIND-ACCOUNT-EXISTS", "M-AIRTABLE-CREATE-ACCOUNT", "M-CONTACT-API", "M-LLM-CONTACT-SCORE", "M-LLM-BRIEF", "M-AIRTABLE-CREATE-QUEUE", "M-RESPOND"],
+      "assertions": [
+        {"assertion_id": "A-NO-DUPLICATE-CREATED", "target": "mock.M-AIRTABLE-CREATE-ACCOUNT.call_count", "operator": "equals", "expected": 0, "rationale": "需求(2)声明检查 Airtable 避免重复，仅为新匹配创建 Qualified 记录；已存在的账户不重复创建"}
+      ]
+    },
+    {
+      "case_id": "C-POS-DAILY-STALE",
+      "kind": "positive",
+      "fixture_ids": ["F-DAILY-QUEUE"],
+      "mock_ids": ["M-AIRTABLE-LOAD-QUEUE", "M-LLM-STALE", "M-GMAIL-SUMMARY"],
+      "assertions": [
+        {"assertion_id": "A-QUEUE-LOADED", "target": "mock.M-AIRTABLE-LOAD-QUEUE.call_count", "operator": "equals", "expected": 1, "rationale": "需求(6)声明每日调度加载 Needs Human Review 队列"},
+        {"assertion_id": "A-STALE-IDENTIFIED", "target": "mock.M-LLM-STALE.call_count", "operator": "equals", "expected": 1, "rationale": "需求(6)声明识别过期审核；过期阈值由 fixture 配置提供（7 天），不规定请求字段"},
+        {"assertion_id": "A-EMAIL-OPTIONAL", "target": "mock.M-GMAIL-SUMMARY.call_count", "operator": "equals", "expected": 0, "rationale": "需求(6)声明摘要邮件为可选（optionally email）；fixture 配置 email_summary_enabled=false 时不发送"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-COMPANY-API/A-EXCLUDED-REMOVED-*（需求(1)）、A-LOW-SCORE-FILTERED/A-QUALIFIED-STATUS（需求(2)）、A-CONTACT-API（需求(3)）、A-QUEUE-STATUS/A-BRIEF-GENERATED（需求(4)）、A-400-RETURNED（需求失败行为，必填字段名 target_market/target_industries/target_roles 为需求点名）、A-NO-DUPLICATE-CREATED（需求(2)去重）、A-QUEUE-LOADED/A-STALE-IDENTIFIED/A-EMAIL-OPTIONAL（需求(6)）。\n- 修改：A-WEBHOOK-RESULT→A-WEBHOOK-RESPONDED/A-WEBHOOK-BODY（删除自创字段 qualified_accounts，改判 webhook 响应调用与返回体存在）；A-EMPTY-RESULT→A-STILL-RESPONDS（同因）；A-STALE-IDENTIFIED 由阈值请求字段改为行为调用判定（阈值来自 fixture）；A-STALE-RESULT 删除（output.stale_reviews 为自创输出字段）。\n- 删除：A-EMPTY-RESULT 的 qualified_accounts 字段断言、A-STALE-RESULT。\n- 完整性：C-BOUNDARY-DUPLICATE-ACCOUNT 补充联系人/简报/队列/响应 mock，保证账户已存在时后续分支（若执行）输入完整。"
+}

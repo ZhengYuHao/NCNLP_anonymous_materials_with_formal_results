@@ -1,0 +1,308 @@
+{
+  "task_id": "N8F-031",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "e6720e1c2f31b01deb4d4148325db73e9cbd1176cf8a2af925b1b7f0068aec53",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "监听 Gmail 新未读邮件",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "new_email_event",
+          "type": "event",
+          "description": "Gmail 收件箱中新未读邮件的触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_metadata",
+          "type": "object",
+          "description": "邮件的主题、发件人、正文与元数据"
+        }
+      ],
+      "native_evidence": [
+        "Gmail New Email Trigger"
+      ],
+      "requirement_evidence": [
+        "系统需要持续监听 Gmail 收件箱中的新未读邮件，并获取邮件的主题、发件人、正文与元数据"
+      ],
+      "rationale": "需求声明持续监听 Gmail 新未读邮件并获取邮件字段，为流程入口的确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "规范化邮件为纯文本",
+      "node_type": "code",
+      "operation_family": "text_normalization",
+      "inputs": [
+        {
+          "name": "email_metadata",
+          "type": "object",
+          "description": "原始邮件数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_text",
+          "type": "string",
+          "description": "去除 HTML 并规范化为纯文本的邮件正文"
+        }
+      ],
+      "native_evidence": [
+        "Normalize Email Data"
+      ],
+      "requirement_evidence": [
+        "对每封邮件，先提取原始内容、去除 HTML 并规范化为纯文本"
+      ],
+      "rationale": "需求声明提取原始内容、去除 HTML 并规范化为纯文本，为确定性文本规范化变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "判断邮件正文语言",
+      "node_type": "semantic",
+      "operation_family": "llm_classification",
+      "inputs": [
+        {
+          "name": "normalized_text",
+          "type": "string",
+          "description": "纯文本邮件正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "language_judgement",
+          "type": "string",
+          "description": "语言模型判定的邮件正文语言"
+        }
+      ],
+      "native_evidence": [
+        "Detect Language (OpenAI)"
+      ],
+      "requirement_evidence": [
+        "然后由语言模型判断邮件正文所用语言"
+      ],
+      "rationale": "需求声明由语言模型判断邮件正文语言，需开放文本理解与分类，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "翻译正文为英文",
+      "node_type": "semantic",
+      "operation_family": "llm_translation",
+      "inputs": [
+        {
+          "name": "normalized_text",
+          "type": "string",
+          "description": "待翻译的非英文邮件正文（规范化后的纯文本）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "translated_text",
+          "type": "string",
+          "description": "翻译为英文的邮件正文"
+        }
+      ],
+      "native_evidence": [
+        "Translate to English"
+      ],
+      "requirement_evidence": [
+        "若判定为非英文，则由语言模型将正文翻译为英文"
+      ],
+      "rationale": "需求声明仅当语言判定为非英文时由语言模型翻译正文，需开放语义理解与翻译生成，判 semantic；英文判定分支不再继续处理，无后续边。"
+    },
+    {
+      "node_id": "n5",
+      "label": "组织转发邮件",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "translated_text",
+          "type": "string",
+          "description": "译文内容"
+        },
+        {
+          "name": "email_metadata",
+          "type": "object",
+          "description": "原发件人、原主题、接收日期与邮件标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "translated_email",
+          "type": "object",
+          "description": "按原发件人、原主题、接收日期、邮件标识与译文组织的转发邮件"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Translated Email"
+      ],
+      "requirement_evidence": [
+        "按原发件人、原主题、接收日期、邮件标识与译文内容组织一封转发邮件"
+      ],
+      "rationale": "需求声明将译文与原邮件字段组织为转发邮件，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "发送 [TRANSLATED] 转发邮件",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "translated_email",
+          "type": "object",
+          "description": "组织好的译文转发邮件"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Translated Email"
+      ],
+      "requirement_evidence": [
+        "该转发邮件发送至同一收件箱，其主题前缀为 [TRANSLATED]"
+      ],
+      "rationale": "需求声明将主题前缀为 [TRANSLATED] 的转发邮件发送至同一收件箱，为确定性外部发送动作且无后续依赖，判 terminal。"
+    },
+    {
+      "node_id": "n7",
+      "label": "为原始邮件添加标签",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "email_metadata",
+          "type": "object",
+          "description": "原始邮件的标识信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Add 'Translated' Label"
+      ],
+      "requirement_evidence": [
+        "同时为 Gmail 中的原始邮件添加“Translated Emails”标签，便于后续筛选"
+      ],
+      "rationale": "需求声明为 Gmail 中的原始邮件添加“Translated Emails”标签，为确定性外部写入动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "捕获新未读邮件后规范化正文。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "纯文本就绪后判定语言。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "语言判定为非英文",
+      "rationale": "仅非英文判定进入翻译；英文判定不再继续处理，无出边。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "翻译完成后组织转发邮件。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "转发邮件组织好后发送至同一收件箱。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "与发送并行的另一条输出链：为原始邮件添加标签。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "email_metadata",
+      "condition": null,
+      "rationale": "邮件数据传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "normalized_text",
+      "condition": null,
+      "rationale": "纯文本正文传给语言判定节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "normalized_text",
+      "condition": null,
+      "rationale": "待翻译的正文（规范化后的纯文本）传给翻译节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "translated_text",
+      "condition": null,
+      "rationale": "译文传给转发邮件组织节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n1",
+      "target": "n5",
+      "variable": "email_metadata",
+      "condition": null,
+      "rationale": "原始邮件元数据（发件人、主题、接收日期、标识）传给转发邮件组织节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "translated_email",
+      "condition": null,
+      "rationale": "组织好的转发邮件传给发送节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n1",
+      "target": "n7",
+      "variable": "email_metadata",
+      "condition": null,
+      "rationale": "原始邮件标识传给加标签节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6",
+    "n7"
+  ],
+  "confidence": 0.95,
+  "notes": "按冻结需求建模：Gmail 监听为入口；语言判定与翻译均为语言模型任务判 semantic，其余为确定性 code。英文判定分支'不再继续处理'通过 CFG 无出边表达，不单独建终止节点。发送转发邮件与添加标签为需求'同时'语义下的两条并行输出链，均无出边判 terminal。原生中的 Gmail 发送与加标签实现细节合并到对应动作节点。"
+}

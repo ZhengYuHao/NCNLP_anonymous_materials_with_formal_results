@@ -1,0 +1,291 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-068",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "adf87990f265948866cfe06cdb46d65753798883bb6a8dd24108cb0d03f28f81",
+  "natural_language_requirement": "系统用于处理来自政府、企业、非政府组织或个人的新闻稿，帮助编辑与记者管理这些收到的新闻稿。当收到新邮件时系统被触发，首先对邮件附件进行筛选，只保留 Word 和 PDF 格式的文档，其他格式（如 JPG）被剔除。随后按附件情况分为三条处理路径：若筛选后没有剩余附件，则直接处理邮件正文中内联的消息内容；若为 PDF 附件，则提取其中的文档内容；若为 Word 附件，则提取其中的文本内容。无论走哪条路径，提取出的内容都会被交给语言模型，按照预设要求将新闻稿改写为一篇结构完整的文章。另有一个独立的评估环节，由语言模型将生成结果与原始输入进行比对，对转换的质量与准确性作出自评，形成一次额外的反馈闭环。最后，系统向原发件人生成一封回复邮件，其中包含三部分内容：原始输入、生成的文章以及这份自评，便于编辑审阅并做最小幅度的修改。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gmail",
+      "operation": "send_reply",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "source_content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_content"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "article": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "article"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "self_assess",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "source_content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source_content"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "source_content_not_pdf": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "source_content_not_pdf"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "feedback": {
+            "type": "string"
+          },
+          "issues": {
+            "items": {},
+            "type": "array"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "feedback",
+          "issues",
+          "score"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "pdf_extractor",
+      "operation": "extract_document",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "word_extractor",
+      "operation": "extract_text",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "extracted_content",
+        "schema": {
+          "type": "string"
+        },
+        "description": "邮件正文内容或附件中提取的文档内容",
+        "requirement_evidence": [
+          "若筛选后没有剩余附件，则直接处理邮件正文中内联的消息内容",
+          "若为 PDF 附件，则提取其中的文档内容",
+          "若为 Word 附件，则提取其中的文本内容"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n3.extracted_content",
+          "n4.extracted_content",
+          "n5.extracted_content"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "generated_article",
+        "schema": {
+          "type": "string"
+        },
+        "description": "结构完整的文章",
+        "requirement_evidence": [
+          "无论走哪条路径，提取出的内容都会被交给语言模型，按照预设要求将新闻稿改写为一篇结构完整的文章"
+        ],
+        "source_operations": [
+          "rewrite_article"
+        ],
+        "design_sources": [
+          "n6.generated_article"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "self_assessment",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "feedback": {
+              "type": "string"
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "score": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "feedback",
+            "issues",
+            "score"
+          ],
+          "additionalProperties": false
+        },
+        "description": "转换质量与准确性的自评",
+        "requirement_evidence": [
+          "由语言模型将生成结果与原始输入进行比对，对转换的质量与准确性作出自评，形成一次额外的反馈闭环"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n7.self_assessment"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "reply_email_sent",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string"
+            },
+            "sent": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "message_id",
+            "sent"
+          ],
+          "additionalProperties": false
+        },
+        "description": "系统向原发件人生成一封回复邮件，其中包含三部分内容：原始输入、生成的文章以及这份自评",
+        "requirement_evidence": [
+          "系统向原发件人生成一封回复邮件，其中包含三部分内容：原始输入、生成的文章以及这份自评，便于编辑审阅并做最小幅度的修改"
+        ],
+        "source_operations": [
+          "send_reply"
+        ],
+        "design_sources": [
+          "n8"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "63C23EDA26C6459ECEA5C70FA09D65029607FCEA3EFE5BCCF0281DA3F40D12A4",
+  "public_interface_sha256": "B4170A4CF7990062EF37C87105A521726CE88F598F544A51049C8F92B007853F",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

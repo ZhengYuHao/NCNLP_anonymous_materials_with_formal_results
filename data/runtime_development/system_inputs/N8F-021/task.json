@@ -1,0 +1,638 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-021",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "e459c0e51c5d26da6982e0555552c8e415e03211db74b30ba721cedb5abbcdb1",
+  "natural_language_requirement": "通过表单收集一个自家商品的亚马逊商品链接，以及最多三个竞品商品的亚马逊链接。\n\n对提交的全部商品，触发评论数据抓取任务，并每 30 秒轮询一次任务状态，直到结果就绪（最长等待 10 分钟）。随后下载评论数据，清洗重复字段，并按商品保留一组经过加权的评论集合，重点纳入差评与最有帮助的评论。\n\n把每个商品的评论集合交给语言模型，抽取结构化的抱怨主题、好评主题与功能诉求。再将自家商品的抱怨主题与竞品的好评主题进行比对，识别两者重叠的部分作为“竞争缺口”，并由语言模型撰写一份简短的竞争简报。\n\n最后，把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets，并向指定的 Slack 频道发送一份格式化的摘要，摘要中包含上述竞争简报。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "extract_themes",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "complaint_themes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "feature_requests": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "praise_themes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "complaint_themes",
+          "feature_requests",
+          "praise_themes"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "write_competitive_brief",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "competitor_praises": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "own_complaints": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "competitor_praises",
+          "own_complaints"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "brief": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "brief"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "row"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object",
+            "description": "追加到 Google Sheets 的行数据，包含内容及类别等字段"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "row_number",
+          "updated"
+        ],
+        "properties": {
+          "row_number": {
+            "type": "integer"
+          },
+          "updated": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_review_data",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "products": {
+            "items": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "product_id": {
+                      "type": "string"
+                    },
+                    "reviews": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "duplicate_of": {
+                            "type": "null"
+                          },
+                          "helpful_votes": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "rating": {
+                            "type": "integer"
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "duplicate_of",
+                          "helpful_votes",
+                          "id",
+                          "rating",
+                          "text"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "product_id",
+                    "reviews"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "product_id": {
+                      "type": "string"
+                    },
+                    "reviews": {
+                      "items": {
+                        "anyOf": [
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "duplicate_of": {
+                                "type": "null"
+                              },
+                              "helpful_votes": {
+                                "type": "integer"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "rating": {
+                                "type": "integer"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "duplicate_of",
+                              "helpful_votes",
+                              "id",
+                              "rating",
+                              "text"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "additionalProperties": false,
+                            "properties": {
+                              "duplicate_of": {
+                                "type": "string"
+                              },
+                              "helpful_votes": {
+                                "type": "integer"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "rating": {
+                                "type": "integer"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "duplicate_of",
+                              "helpful_votes",
+                              "id",
+                              "rating",
+                              "text"
+                            ],
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "product_id",
+                    "reviews"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "products"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_snapshot_status",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "download_url": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "download_url",
+              "status"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "start_snapshot",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "urls"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_digest",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel",
+          "text"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "ranking_report",
+        "schema": {
+          "type": "string"
+        },
+        "description": "语言模型撰写的简短竞争简报",
+        "requirement_evidence": [
+          "并由语言模型撰写一份简短的竞争简报"
+        ],
+        "source_operations": [
+          "write_competitive_brief"
+        ],
+        "design_sources": [
+          "n8.brief"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "product_review_sets",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "product_id": {
+                "type": "string"
+              },
+              "weighted_reviews": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "rating": {
+                      "type": "integer"
+                    },
+                    "helpful_votes": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "text",
+                    "rating",
+                    "helpful_votes"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "product_id",
+              "weighted_reviews"
+            ]
+          }
+        },
+        "description": "每个商品保留的一组加权评论集合，重点纳入差评与最有帮助的评论",
+        "requirement_evidence": [
+          "并按商品保留一组经过加权的评论集合，重点纳入差评与最有帮助的评论"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.product_review_sets"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "review_themes",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "products": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "product_id": {
+                    "type": "string"
+                  },
+                  "complaint_themes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "praise_themes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "feature_requests": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "product_id",
+                  "complaint_themes",
+                  "praise_themes",
+                  "feature_requests"
+                ]
+              }
+            }
+          },
+          "required": [
+            "products"
+          ]
+        },
+        "description": "抽取结果，含各商品的抱怨主题、好评主题与功能诉求",
+        "requirement_evidence": [
+          "把每个商品的评论集合交给语言模型，抽取结构化的抱怨主题、好评主题与功能诉求"
+        ],
+        "source_operations": [
+          "extract_themes"
+        ],
+        "design_sources": [
+          "n6.review_themes"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "competitive_gaps",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": "自家抱怨主题与竞品好评主题重叠形成的竞争缺口列表",
+        "requirement_evidence": [
+          "再将自家商品的抱怨主题与竞品的好评主题进行比对，识别两者重叠的部分作为“竞争缺口”"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n7.competitive_gaps"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "top_complaints",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": "排名靠前的抱怨主题列表",
+        "requirement_evidence": [
+          "把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n7.top_complaints"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sheet_writes",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "row_number",
+              "updated",
+              "content",
+              "category"
+            ],
+            "properties": {
+              "row_number": {
+                "type": "integer"
+              },
+              "updated": {
+                "type": "boolean"
+              },
+              "content": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string",
+                "description": "条目类别，如抱怨或竞争缺口"
+              }
+            }
+          }
+        },
+        "description": "把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets 的写入记录，包含写入行号、更新状态及写入内容字段",
+        "requirement_evidence": [
+          "把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets"
+        ],
+        "source_operations": [
+          "append_row"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "slack_digest",
+        "schema": {
+          "type": "object",
+          "required": [
+            "ok",
+            "ts",
+            "text"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "ts": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string",
+              "description": "发送的摘要正文内容"
+            }
+          }
+        },
+        "description": "向指定的 Slack 频道发送的格式化摘要消息，包含竞争简报及摘要正文文本",
+        "requirement_evidence": [
+          "并向指定的 Slack 频道发送一份格式化的摘要，摘要中包含上述竞争简报"
+        ],
+        "source_operations": [
+          "post_digest"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "9AA1769F54FFA40C6CF3CC73A9EE5C599ACCC673F27F4A402F0DBDF157A81DEC",
+  "public_interface_sha256": "2DA5DD19998E0110096611E55D623B3B0454766E3CD619F35CEB67CAC5FC5384",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

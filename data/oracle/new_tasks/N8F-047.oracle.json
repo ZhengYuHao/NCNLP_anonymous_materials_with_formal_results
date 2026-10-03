@@ -1,0 +1,533 @@
+{
+  "task_id": "N8F-047",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "e52821d6ef7c9f777a3cc2d3d59172bb2fa30916f79e9332937658ee5f5a8ea1",
+  "fixtures": [
+    {
+      "fixture_id": "F-REGISTER-OK",
+      "purpose": "正常用例：注册动作，携带完整的姓名、邮箱、学号与密码",
+      "input_data": {
+        "action": "register",
+        "name": "Alice Chen",
+        "email": "alice@student.edu",
+        "register_number": "REG-2026-001",
+        "password": "pass1234"
+      }
+    },
+    {
+      "fixture_id": "F-REGISTER-MISSING",
+      "purpose": "负例：注册动作缺少必填的密码字段，验证返回失败响应",
+      "input_data": {
+        "action": "register",
+        "name": "Bob Li",
+        "email": "bob@student.edu",
+        "register_number": "REG-2026-002"
+      }
+    },
+    {
+      "fixture_id": "F-LOGIN-OK",
+      "purpose": "正常用例：登录动作，邮箱与密码在表中匹配",
+      "input_data": {
+        "action": "login",
+        "email": "alice@student.edu",
+        "password": "pass1234"
+      }
+    },
+    {
+      "fixture_id": "F-LOGIN-BAD",
+      "purpose": "负例：登录动作，密码不匹配，验证返回凭据无效响应",
+      "input_data": {
+        "action": "login",
+        "email": "alice@student.edu",
+        "password": "wrongpass"
+      }
+    },
+    {
+      "fixture_id": "F-FEEDBACK-OK",
+      "purpose": "正常用例：意见反馈提交，携带学生字段与反馈字段",
+      "input_data": {
+        "action": "feedback",
+        "student_name": "Alice Chen",
+        "student_email": "alice@student.edu",
+        "course": "CS101",
+        "feedback": "The course material was very helpful."
+      }
+    },
+    {
+      "fixture_id": "F-CGPA-OK",
+      "purpose": "正常用例：CGPA 计算，提交两个学期的绩点与学分",
+      "input_data": {
+        "action": "cgpa",
+        "semesters": [
+          {"semester": 1, "gpa": 8.0, "credits": 20},
+          {"semester": 2, "gpa": 8.5, "credits": 20}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-PROFILE-UPDATE-OK",
+      "purpose": "正常用例：资料更新，按学号确认学生存在后更新资料表",
+      "input_data": {
+        "action": "update_profile",
+        "register_number": "REG-2026-001",
+        "name": "Alice Chen",
+        "email": "alice.chen@student.edu",
+        "phone": "555-0100"
+      }
+    },
+    {
+      "fixture_id": "F-PROFILE-UPDATE-NOTFOUND",
+      "purpose": "负例：资料更新，学号对应的学生不存在，验证返回错误信息",
+      "input_data": {
+        "action": "update_profile",
+        "register_number": "REG-9999-999",
+        "name": "Ghost Student",
+        "email": "ghost@student.edu"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SUPABASE-INSERT-STUDENT",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "insert_student",
+      "request_contract": {
+        "table": "students",
+        "record": {"name": "Alice Chen", "email": "alice@student.edu", "register_number": "REG-2026-001", "password": "pass1234"}
+      },
+      "response_contract": {
+        "inserted": 1,
+        "student_id": 1001,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-CONFIRM-REG",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_registration_confirmation",
+      "request_contract": {
+        "to": "alice@student.edu",
+        "subject": "Registration Confirmation",
+        "body": "Welcome, Alice Chen!"
+      },
+      "response_contract": {
+        "message_id": "mail-047-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-LOGIN-MATCH",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_student_by_credentials",
+      "request_contract": {
+        "table": "students",
+        "email": "alice@student.edu",
+        "password": "pass1234"
+      },
+      "response_contract": {
+        "found": true,
+        "student": {"id": 1001, "name": "Alice Chen", "email": "alice@student.edu"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-LOGIN-MISMATCH",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_student_by_credentials",
+      "request_contract": {
+        "table": "students",
+        "email": "alice@student.edu",
+        "password": "wrongpass"
+      },
+      "response_contract": {
+        "found": false,
+        "student": null
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-INSERT-FEEDBACK",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "insert_feedback",
+      "request_contract": {
+        "table": "feedback",
+        "record": {"student_name": "Alice Chen", "student_email": "alice@student.edu", "course": "CS101", "feedback": "The course material was very helpful."}
+      },
+      "response_contract": {
+        "inserted": 1,
+        "feedback_id": 5001,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GROQ-THANKYOU",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "operation": "generate_thank_you_email",
+      "request_contract": {
+        "student_name": "Alice Chen",
+        "course": "CS101",
+        "feedback": "The course material was very helpful."
+      },
+      "response_contract": {
+        "subject": "Thank you for your feedback!",
+        "body": "Dear Alice, thank you for your kind words about CS101. We appreciate your feedback!"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND-FEEDBACK-REPLY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_feedback_reply",
+      "request_contract": {
+        "to": "alice@student.edu",
+        "subject": "Thank you for your feedback!",
+        "body": "Dear Alice, thank you for your kind words about CS101. We appreciate your feedback!"
+      },
+      "response_contract": {
+        "message_id": "mail-047-2",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MISTRAL-CGPA",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "operation": "calculate_cgpa",
+      "request_contract": {
+        "semesters": [{"semester": 1, "gpa": 8.0, "credits": 20}, {"semester": 2, "gpa": 8.5, "credits": 20}]
+      },
+      "response_contract": {
+        "cgpa": 8.25,
+        "total_credits": 40,
+        "semesters_used": [1, 2]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-STUDENT-EXISTS",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_student_by_register_number",
+      "request_contract": {
+        "table": "students",
+        "register_number": "REG-2026-001"
+      },
+      "response_contract": {
+        "found": true,
+        "student": {"id": 1001, "name": "Alice Chen"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-STUDENT-NOTFOUND",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "select_student_by_register_number",
+      "request_contract": {
+        "table": "students",
+        "register_number": "REG-9999-999"
+      },
+      "response_contract": {
+        "found": false,
+        "student": null
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SUPABASE-UPDATE-PROFILE",
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "update_student_profile",
+      "request_contract": {
+        "table": "students",
+        "register_number": "REG-2026-001",
+        "updates": {"name": "Alice Chen", "email": "alice.chen@student.edu", "phone": "555-0100"}
+      },
+      "response_contract": {
+        "updated": 1,
+        "student": {"id": 1001, "name": "Alice Chen", "email": "alice.chen@student.edu", "phone": "555-0100"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-ROUTE-REGISTER-OK",
+      "kind": "positive",
+      "fixture_ids": ["F-REGISTER-OK"],
+      "mock_ids": ["M-SUPABASE-INSERT-STUDENT", "M-GMAIL-CONFIRM-REG"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-1",
+          "target": "exec_log.routed_action",
+          "operator": "equals",
+          "expected": "register",
+          "rationale": "必须依据请求中的动作字段将请求路由到注册处理"
+        },
+        {
+          "assertion_id": "A-047-2",
+          "target": "exec_log.supabase.insert.table",
+          "operator": "equals",
+          "expected": "students",
+          "rationale": "注册必须将记录写入学生数据表"
+        },
+        {
+          "assertion_id": "A-047-3",
+          "target": "exec_log.gmail.confirmation.to",
+          "operator": "equals",
+          "expected": "alice@student.edu",
+          "rationale": "注册成功必须通过 Gmail 向学生邮箱发送确认邮件"
+        },
+        {
+          "assertion_id": "A-047-4",
+          "target": "response.body.status",
+          "operator": "equals",
+          "expected": "success",
+          "rationale": "注册成功必须返回 JSON 成功响应"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-REGISTER-MISSING",
+      "kind": "negative",
+      "fixture_ids": ["F-REGISTER-MISSING"],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-047-5",
+          "target": "response.body.status",
+          "operator": "equals",
+          "expected": "failure",
+          "rationale": "注册缺少必填字段（密码）时必须返回 JSON 失败响应"
+        },
+        {
+          "assertion_id": "A-047-6",
+          "target": "exec_log.supabase.insert.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "字段校验失败时不得向学生数据表写入记录"
+        },
+        {
+          "assertion_id": "A-047-7",
+          "target": "exec_log.gmail.confirmation.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "注册失败时不得发送确认邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-LOGIN-OK",
+      "kind": "positive",
+      "fixture_ids": ["F-LOGIN-OK"],
+      "mock_ids": ["M-SUPABASE-LOGIN-MATCH"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-8",
+          "target": "exec_log.routed_action",
+          "operator": "equals",
+          "expected": "login",
+          "rationale": "必须依据动作字段路由到登录处理"
+        },
+        {
+          "assertion_id": "A-047-9",
+          "target": "exec_log.supabase.login.found",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "登录必须使用提交的邮箱与密码在学生数据表中查询并校验凭据"
+        },
+        {
+          "assertion_id": "A-047-10",
+          "target": "response.body.status",
+          "operator": "equals",
+          "expected": "success",
+          "rationale": "凭据匹配时登录必须返回 JSON 成功响应"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-LOGIN-BAD",
+      "kind": "negative",
+      "fixture_ids": ["F-LOGIN-BAD"],
+      "mock_ids": ["M-SUPABASE-LOGIN-MISMATCH"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-11",
+          "target": "exec_log.supabase.login.found",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "固定模拟中该邮箱与错误密码在表中不匹配"
+        },
+        {
+          "assertion_id": "A-047-12",
+          "target": "response.body.status",
+          "operator": "equals",
+          "expected": "invalid_credentials",
+          "rationale": "凭据不匹配时必须返回 JSON 凭据无效响应"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-FEEDBACK-OK",
+      "kind": "positive",
+      "fixture_ids": ["F-FEEDBACK-OK"],
+      "mock_ids": ["M-SUPABASE-INSERT-FEEDBACK", "M-GROQ-THANKYOU", "M-GMAIL-SEND-FEEDBACK-REPLY"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-13",
+          "target": "exec_log.routed_action",
+          "operator": "equals",
+          "expected": "feedback",
+          "rationale": "必须依据动作字段路由到意见反馈提交处理"
+        },
+        {
+          "assertion_id": "A-047-14",
+          "target": "exec_log.supabase.insert_feedback.table",
+          "operator": "equals",
+          "expected": "feedback",
+          "rationale": "反馈必须存入反馈数据表"
+        },
+        {
+          "assertion_id": "A-047-15",
+          "target": "exec_log.llm.thankyou.subject",
+          "operator": "contains",
+          "expected": "Thank you",
+          "rationale": "必须使用语言模型生成个性化的感谢回复邮件，邮件主题必须包含感谢措辞"
+        },
+        {
+          "assertion_id": "A-047-16",
+          "target": "exec_log.gmail.feedback_reply.to",
+          "operator": "equals",
+          "expected": "alice@student.edu",
+          "rationale": "感谢回复邮件必须通过 Gmail 发送给提交反馈的学生"
+        },
+        {
+          "assertion_id": "A-047-17",
+          "target": "response.body.preview",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "响应必须包含邮件预览字段"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-CGPA-OK",
+      "kind": "positive",
+      "fixture_ids": ["F-CGPA-OK"],
+      "mock_ids": ["M-MISTRAL-CGPA"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-18",
+          "target": "exec_log.routed_action",
+          "operator": "equals",
+          "expected": "cgpa",
+          "rationale": "必须依据动作字段路由到 CGPA 计算处理"
+        },
+        {
+          "assertion_id": "A-047-19",
+          "target": "exec_log.llm.cgpa",
+          "operator": "equals",
+          "expected": 8.25,
+          "rationale": "CGPA 必须交由语言模型计算并解析返回结果，数值必须与固定模拟一致（(8.0*20+8.5*20)/40=8.25）"
+        },
+        {
+          "assertion_id": "A-047-20",
+          "target": "response.body.total_credits",
+          "operator": "equals",
+          "expected": 40,
+          "rationale": "响应必须返回总学分，必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-047-21",
+          "target": "response.body.semesters_used",
+          "operator": "equals",
+          "expected": [1, 2],
+          "rationale": "响应必须返回所计入的学期，必须与固定模拟一致"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-PROFILE-UPDATE-OK",
+      "kind": "positive",
+      "fixture_ids": ["F-PROFILE-UPDATE-OK"],
+      "mock_ids": ["M-SUPABASE-STUDENT-EXISTS", "M-SUPABASE-UPDATE-PROFILE"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-22",
+          "target": "exec_log.routed_action",
+          "operator": "equals",
+          "expected": "update_profile",
+          "rationale": "必须依据动作字段路由到资料更新处理"
+        },
+        {
+          "assertion_id": "A-047-23",
+          "target": "exec_log.supabase.exists_check.register_number",
+          "operator": "equals",
+          "expected": "REG-2026-001",
+          "rationale": "资料更新必须先按学号确认该学生在学生数据表中存在"
+        },
+        {
+          "assertion_id": "A-047-24",
+          "target": "exec_log.supabase.update.table",
+          "operator": "equals",
+          "expected": "students",
+          "rationale": "学生存在时必须更新学生资料表"
+        },
+        {
+          "assertion_id": "A-047-25",
+          "target": "response.body.student.phone",
+          "operator": "equals",
+          "expected": "555-0100",
+          "rationale": "响应必须返回更新后的数据，电话字段必须与更新内容一致"
+        }
+      ]
+    },
+    {
+      "case_id": "C-ROUTE-PROFILE-UPDATE-NOTFOUND",
+      "kind": "negative",
+      "fixture_ids": ["F-PROFILE-UPDATE-NOTFOUND"],
+      "mock_ids": ["M-SUPABASE-STUDENT-NOTFOUND"],
+      "assertions": [
+        {
+          "assertion_id": "A-047-26",
+          "target": "exec_log.supabase.exists_check.found",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "固定模拟中学号 REG-9999-999 对应的学生不存在"
+        },
+        {
+          "assertion_id": "A-047-27",
+          "target": "response.body.error",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "学生不存在时必须返回错误信息"
+        },
+        {
+          "assertion_id": "A-047-28",
+          "target": "exec_log.supabase.update.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "学生不存在时不得执行资料表更新"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖统一 Webhook 的五类动作路由：注册（成功+缺字段失败）、登录（成功+凭据无效）、意见反馈（存储+LLM 感谢邮件+Gmail 发送+预览返回）、CGPA 计算（LLM 计算+解析校验+三字段返回）、资料更新（存在时更新+不存在时报错）。所有外部依赖（Supabase 增删查改、Gmail、Groq、Mistral）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、相等、数量与调用次数检查。"
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-012",
+  "source_id": "n8n:18304",
+  "workflow_sha256": "d7351ddec2bf3e941d9829fbf3653840e140120905c9c2e6157369b37d16e5b9",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "381eb652a2c31696156e915e47f7aa9e2a1a235b77708b24b9b9053645539f61",
+  "requirement": {
+    "pilot_id": "N8C-012",
+    "requirement_text": "The system runs on schedules and via a webhook. (A) Event reminders: it runs daily on a schedule, retrieves event records from Supabase, and filters to upcoming, non-low-priority events; it calculates the days remaining for each event and keeps only events occurring within the next 0–7 days; for each due event it uses a language model to generate a concise reminder email subject and body, sends the reminder email through Gmail, and logs the sent notification to a Supabase notifications table. (B) Important days: on a second daily schedule it retrieves 'important days' from Supabase, calculates the next occurrence date, and checks whether the day matches the configured 'notify days before' value; it prevents duplicate 'important day' notifications by checking Supabase, generates a reminder email with a language model, and sends it via Gmail. (C) Content ideas: it receives a POST webhook request with platform/topic/audience inputs, generates structured content JSON using a language model, stores it in Supabase, and returns the JSON in the webhook response. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 273,
+        "text": "This workflow runs on schedules and via a webhook to send AI-generated email reminders for upcoming events and “important days” stored in Supabase, and to generate and store long-form content ideas using Mistral Cloud, delivering notifications through Gmail."
+      },
+      {
+        "start": 288,
+        "end": 402,
+        "text": "Runs daily on a schedule, retrieves event records from Supabase, and filters to upcoming, non-low-priority events."
+      },
+      {
+        "start": 403,
+        "end": 501,
+        "text": "Calculates days remaining for each event and keeps only events occurring within the next 0–7 days."
+      },
+      {
+        "start": 502,
+        "end": 612,
+        "text": "Uses Mistral Cloud (via an AI Agent) to generate a concise reminder email subject and body for each due event."
+      },
+      {
+        "start": 613,
+        "end": 717,
+        "text": "Sends the reminder email through Gmail and logs the sent notification to a Supabase notifications table."
+      },
+      {
+        "start": 718,
+        "end": 907,
+        "text": "Runs daily on a second schedule, retrieves “important days” from Supabase, calculates the next occurrence date, and checks whether the day matches the configured “notify days before” value."
+      },
+      {
+        "start": 908,
+        "end": 1049,
+        "text": "Prevents duplicate “important day” notifications by checking Supabase, generates a reminder email with Mistral Cloud, and sends it via Gmail."
+      },
+      {
+        "start": 1050,
+        "end": 1242,
+        "text": "Receives a POST webhook request with platform/topic/audience inputs, generates structured content JSON using Mistral Cloud, stores it in Supabase, and returns the JSON in the webhook response."
+      },
+      {
+        "start": 1850,
+        "end": 1891,
+        "text": "(platform, topic, audience, tone, length)"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Event records and 'important days' stored in Supabase",
+        "POST webhook request with platform/topic/audience inputs for content generation"
+      ],
+      "conditions": [
+        "Runs daily on two schedules, plus a webhook trigger for content generation",
+        "Only upcoming, non-low-priority events are considered",
+        "Only events occurring within the next 0–7 days are kept",
+        "An 'important day' reminder is sent when the next occurrence date matches the configured 'notify days before' value",
+        "Duplicate 'important day' notifications are prevented by checking Supabase"
+      ],
+      "allowed_actions": [
+        "Retrieve event records from Supabase and filter to upcoming, non-low-priority events",
+        "Calculate days remaining for each event and keep only events occurring within the next 0–7 days",
+        "Use a language model to generate a concise reminder email subject and body for each due event",
+        "Send the reminder email through Gmail and log the sent notification to a Supabase notifications table",
+        "Retrieve 'important days' from Supabase, calculate the next occurrence date, and check whether the day matches the configured 'notify days before' value",
+        "Prevent duplicate 'important day' notifications by checking Supabase",
+        "Generate 'important day' reminder emails with a language model and send them via Gmail",
+        "Receive a POST webhook request with platform/topic/audience inputs, generate structured content JSON using a language model, store it in Supabase, and return the JSON in the webhook response"
+      ],
+      "visible_outcomes": [
+        "AI-generated reminder emails for due events delivered via Gmail",
+        "Sent notifications logged to a Supabase notifications table",
+        "Reminder emails for matching 'important days' delivered via Gmail",
+        "Structured content JSON stored in Supabase and returned in the webhook response"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 11
+}

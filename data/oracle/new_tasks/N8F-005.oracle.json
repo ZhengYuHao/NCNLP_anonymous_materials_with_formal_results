@@ -1,0 +1,305 @@
+{
+  "task_id": "N8F-005",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "4c4474220641eb053aa44e37e2e028a8fc69af414e843f2f51660cbcdeedba59",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-TEXT-T2I",
+      "purpose": "正常用例：已授权用户通过 Telegram 发送纯文本消息，应触发文生图（text-to-image）路径",
+      "input_data": {
+        "telegram_user_id": 1001,
+        "message": {
+          "type": "text",
+          "text": "A red sports car on a mountain road"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-VOICE",
+      "purpose": "正常用例：已授权用户发送语音留言，应先转写为文本再进入生成流程",
+      "input_data": {
+        "telegram_user_id": 1002,
+        "message": {
+          "type": "voice",
+          "voice_file_id": "voice_abc123"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-IMAGE-I2I",
+      "purpose": "正常用例：已授权用户发送图片与提示词，应先下载图片、上传托管生成公开 URL，再进入图生图（image-to-image）路径",
+      "input_data": {
+        "telegram_user_id": 1003,
+        "message": {
+          "type": "photo",
+          "photo_file_id": "photo_def456",
+          "caption": "Make it look like a night scene"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-UNAUTH",
+      "purpose": "安全拒绝用例：未通过鉴权的用户发送文本，应拒绝服务且不触发任何生成或外部服务调用",
+      "input_data": {
+        "telegram_user_id": 9999,
+        "message": {
+          "type": "text",
+          "text": "Generate a cat picture"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TG-AUTH",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "authorize_user",
+      "request_contract": {
+        "telegram_user_id": 1001
+      },
+      "response_contract": {
+        "authorized": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-AUTH-DENY",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "authorize_user",
+      "request_contract": {
+        "telegram_user_id": 9999
+      },
+      "response_contract": {
+        "authorized": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WHISPER-TRANSCRIBE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "operation": "transcribe_voice",
+      "request_contract": {
+        "voice_file_id": "voice_abc123"
+      },
+      "response_contract": {
+        "transcript": "A red sports car on a mountain road"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FTP-UPLOAD",
+      "dependency_type": "n8n-nodes-base.ftp",
+      "operation": "upload_image",
+      "request_contract": {
+        "photo_file_id": "photo_def456"
+      },
+      "response_contract": {
+        "public_url": "https://mock-cdn.example.com/images/photo_def456.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIE-T2I",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "submit_text_to_image",
+      "request_contract": {
+        "model": "grok-imagine/text-to-image",
+        "prompt": "A red sports car on a mountain road"
+      },
+      "response_contract": {
+        "task_id": "task-t2i-0001",
+        "status": "queued"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIE-I2I",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "submit_image_to_image",
+      "request_contract": {
+        "model": "grok-imagine/image-to-image",
+        "prompt": "Make it look like a night scene",
+        "source_image_url": "https://mock-cdn.example.com/images/photo_def456.png"
+      },
+      "response_contract": {
+        "task_id": "task-i2i-0001",
+        "status": "queued"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-KIE-POLL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_generation_result",
+      "request_contract": {
+        "task_id": "task-t2i-0001"
+      },
+      "response_contract": {
+        "status": "completed",
+        "image_url": "https://mock-cdn.example.com/generated/task-t2i-0001.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TG-SEND-PHOTO",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_photo",
+      "request_contract": {
+        "chat_id": 1001,
+        "photo": "https://mock-cdn.example.com/generated/task-t2i-0001.png"
+      },
+      "response_contract": {
+        "message_id": 88001,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TEXT-T2I-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-TEXT-T2I"],
+      "mock_ids": ["M-TG-AUTH", "M-KIE-T2I", "M-KIE-POLL", "M-TG-SEND-PHOTO"],
+      "assertions": [
+        {
+          "assertion_id": "A-T2I-1",
+          "target": "exec_log.httpRequest.submit_text_to_image.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "纯文本消息必须走文生图路径，调用文生图任务提交接口恰好一次"
+        },
+        {
+          "assertion_id": "A-T2I-2",
+          "target": "exec_log.httpRequest.submit_text_to_image.request.prompt",
+          "operator": "equals",
+          "expected": "A red sports car on a mountain road",
+          "rationale": "生成任务使用的提示词必须与用户文本消息内容完全一致"
+        },
+        {
+          "assertion_id": "A-T2I-3",
+          "target": "exec_log.httpRequest.poll_generation_result.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求要求按任务标识轮询生成结果，必须使用提交任务返回的 task_id 进行轮询"
+        },
+        {
+          "assertion_id": "A-T2I-4",
+          "target": "exec_log.telegram.send_photo.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "生成完成后必须通过 Telegram 将图片发回给用户，发送调用应发生一次"
+        },
+        {
+          "assertion_id": "A-T2I-5",
+          "target": "exec_log.telegram.send_photo.request.photo",
+          "operator": "contains",
+          "expected": "task-t2i-0001",
+          "rationale": "发送给用户的图片必须是轮询结果返回的生成图片 URL，而非占位或其它来源"
+        }
+      ]
+    },
+    {
+      "case_id": "C-VOICE-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-VOICE"],
+      "mock_ids": ["M-TG-AUTH", "M-WHISPER-TRANSCRIBE", "M-KIE-T2I", "M-KIE-POLL", "M-TG-SEND-PHOTO"],
+      "assertions": [
+        {
+          "assertion_id": "A-VOICE-1",
+          "target": "exec_log.transcribe_voice.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "语音消息必须先经语音转写能力转换为文本，转写调用必须发生一次"
+        },
+        {
+          "assertion_id": "A-VOICE-2",
+          "target": "exec_log.httpRequest.submit_text_to_image.request.prompt",
+          "operator": "equals",
+          "expected": "A red sports car on a mountain road",
+          "rationale": "语音转写得到的文本必须作为生成任务的提示词被实际使用，转写结果不能丢失"
+        }
+      ]
+    },
+    {
+      "case_id": "C-IMAGE-I2I-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-IMAGE-I2I"],
+      "mock_ids": ["M-TG-AUTH", "M-FTP-UPLOAD", "M-KIE-I2I", "M-KIE-POLL", "M-TG-SEND-PHOTO"],
+      "assertions": [
+        {
+          "assertion_id": "A-I2I-1",
+          "target": "exec_log.ftp.upload_image.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图片输入必须先下载并上传至文件托管服务，上传调用必须发生一次"
+        },
+        {
+          "assertion_id": "A-I2I-2",
+          "target": "exec_log.httpRequest.submit_image_to_image.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "带图片与提示词的输入必须走图生图路径，调用图生图任务提交接口恰好一次"
+        },
+        {
+          "assertion_id": "A-I2I-3",
+          "target": "exec_log.httpRequest.submit_image_to_image.request.source_image_url",
+          "operator": "equals",
+          "expected": "https://mock-cdn.example.com/images/photo_def456.png",
+          "rationale": "图生图请求中的源图片地址必须来自文件托管服务返回的公开 URL"
+        },
+        {
+          "assertion_id": "A-I2I-4",
+          "target": "exec_log.httpRequest.submit_image_to_image.request.prompt",
+          "operator": "equals",
+          "expected": "Make it look like a night scene",
+          "rationale": "图生图请求中的提示词必须与用户随图片发送的说明文字一致"
+        }
+      ]
+    },
+    {
+      "case_id": "C-UNAUTH-REJECTED",
+      "kind": "safe_rejection",
+      "fixture_ids": ["F-TG-UNAUTH"],
+      "mock_ids": ["M-TG-AUTH-DENY"],
+      "assertions": [
+        {
+          "assertion_id": "A-UNAUTH-1",
+          "target": "exec_log.mock_calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "未授权用户仅允许发生鉴权检查，任何生成、上传、轮询、发送调用都不应发生"
+        },
+        {
+          "assertion_id": "A-UNAUTH-2",
+          "target": "exec_log.httpRequest.submit_text_to_image.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未授权用户不得触发文生图任务提交"
+        },
+        {
+          "assertion_id": "A-UNAUTH-3",
+          "target": "exec_log.telegram.send_photo.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未授权用户不得触发图片发送"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖四条路径：文本→文生图、语音→转写→文生图、图片→上传托管→图生图，以及未授权用户安全拒绝。外部依赖（Telegram 鉴权/发送、语音转写、FTP 托管、图像生成任务提交与轮询）全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为可计算的调用次数、请求参数相等与 URL 包含关系检查。"
+}

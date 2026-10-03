@@ -1,0 +1,88 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-043",
+  "source_id": "n8n:10877",
+  "workflow_sha256": "e1d990130784b06e5d995cba6681634b1820fe0f949826f024fc42563db0bfa6",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "37c9ffb87dc52edaa6cb694aa6a42f2d5b4ed34ccbfdd72d2463f8d7faa025b4",
+  "requirement": {
+    "requirement_text": "系统每天执行一次 Reddit 监测：按用户设定的关键词，在指定的 subreddit 或整个 Reddit 范围内检索新帖子。对每篇帖子，系统使用语言模型依据用户设定的判定标准给出相关性评分，并生成一条贴合目标受众或互动策略的建议评论；用于评分和生成评论的提示语可由用户自定义。所有帖子及其相关性评分与建议评论写入 Notion 数据库，便于跟踪与协作；此外可选择每天发送一封汇总新讨论与洞察的邮件。",
+    "source_spans": [
+      {
+        "start": 58,
+        "end": 455,
+        "text": "Manually monitoring Reddit for relevant discussions can be overwhelming. This automation does all the heavy lifting by automatically searching for keywords across selected subreddits or the entire Reddit, analyzing each post with GPT-5-Mini, and saving structured insights in your Notion database. Optionally, receive daily email notifications summarizing new discussions without lifting a finger."
+      },
+      {
+        "start": 471,
+        "end": 620,
+        "text": "Daily Automated Reddit Monitoring**  \n  Checks Reddit once a day for new posts matching your keywords in selected subreddits or across all of Reddit."
+      },
+      {
+        "start": 622,
+        "end": 963,
+        "text": "AI-Powered Analysis with Custom Prompts**  \n  Uses GPT-5-Mini to:  \n  Assign a relevance score to each post based on your defined priorities.  \n  Generate a suggested comment tailored to your audience or engagement strategy.  \n  Allow custom prompts so you can tweak AI behavior for lead generation, competitor monitoring, or brand mentions."
+      },
+      {
+        "start": 965,
+        "end": 1122,
+        "text": "Notion Integration**  \n  Saves all posts, relevance scores, and AI-generated comments directly into your Notion database for easy tracking and collaboration."
+      },
+      {
+        "start": 1129,
+        "end": 1234,
+        "text": "Optional Email Alerts**  \n  Sends a clean, HTML-formatted email summarizing new discussions and insights."
+      },
+      {
+        "start": 2948,
+        "end": 3258,
+        "text": "Daily Trigger: Starts the workflow once per day.  \nReddit Search: Queries new posts based on user-defined keywords.  \nAI Analysis: GPT-5-Mini evaluates relevance score and generates suggested comments based on your custom prompts.  \nSave & Notify: Posts are saved to Notion and optionally summarized via email."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户设定的关键词与 subreddit 范围（或整个 Reddit）",
+        "用户设定的相关性判定标准与自定义提示语",
+        "检索到的 Reddit 新帖子"
+      ],
+      "conditions": [
+        "每天执行一次",
+        "可在指定 subreddit 范围内或整个 Reddit 范围内检索",
+        "邮件汇总通知为可选项"
+      ],
+      "allowed_actions": [
+        "按关键词检索 Reddit 新帖子",
+        "对每篇帖子给出相关性评分",
+        "生成贴合目标受众或互动策略的建议评论",
+        "将帖子、相关性评分与建议评论写入 Notion 数据库",
+        "发送每日汇总邮件（可选）"
+      ],
+      "visible_outcomes": [
+        "Notion 数据库中新增帖子、相关性评分与建议评论记录",
+        "可选地收到汇总新讨论与洞察的邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-043.packet.json",
+    "packet_sha256": "1201cf9a3871e8a7172cf21a5bc1ebeef3336f545641afad8823fbe5946ca37c",
+    "public_description_sha256": "3db013719eb53bb476df2200b1330a68f36beda642b7782585f377712e8f0227"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-043.response.json",
+    "verification_response_sha256": "d103012639c8d6f4d3e881bc658f5e019c1d5d98432771b6a5fa3d0372e5ac9e",
+    "decision": "accept"
+  },
+  "formal_index": 54
+}

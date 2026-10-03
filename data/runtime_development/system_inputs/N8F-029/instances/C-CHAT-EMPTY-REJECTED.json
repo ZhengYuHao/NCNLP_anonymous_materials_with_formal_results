@@ -1,0 +1,18 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-029",
+  "case_id": "C-CHAT-EMPTY-REJECTED",
+  "kind": "safe_rejection",
+  "input_data": {
+    "channel": "live_chat",
+    "normalized_message": {
+      "user_id": "chat-2004",
+      "body": ""
+    },
+    "config": {
+      "confidence_threshold": 0.7,
+      "max_message_length": 4000
+    }
+  },
+  "input_sha256": "81C5F0C9943864E063062D5DE43C9ADED40B3175DAEF2FBAF25FFCFF8029B8EC"
+}

@@ -1,0 +1,544 @@
+{
+  "task_id": "N8F-007",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "2342bd3405f63d6a15eaaafbcd0b03931b09cb117aa583147693614e307e8b9b",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周定时触发",
+      "node_type": "code",
+      "operation_family": "定时触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_tick",
+          "type": "event",
+          "description": "每周计划触发信号"
+        }
+      ],
+      "native_evidence": [
+        "Weekly Topic Scan (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "系统每周定时运行一次"
+      ],
+      "rationale": "按周计划启动流程的确定性事件源，属于代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "加载统一配置",
+      "node_type": "code",
+      "operation_family": "配置读取",
+      "inputs": [
+        {
+          "name": "schedule_tick",
+          "type": "event",
+          "description": "每周计划触发信号"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "topic_list",
+          "type": "list",
+          "description": "待分析的话题列表"
+        },
+        {
+          "name": "threshold_params",
+          "type": "object",
+          "description": "阈值参数：取样帖数、最低播放量、提升幅度、冷却期"
+        }
+      ],
+      "native_evidence": [
+        "Set Topic Config (set)",
+        "Build Search Input (code)"
+      ],
+      "requirement_evidence": [
+        "从统一配置中加载待分析的话题列表及阈值参数，包括每个话题的取样帖数、最低播放量、提升幅度（lift）和冷却期（cooldown）"
+      ],
+      "rationale": "从统一配置读取结构化参数，确定性规则可完成，属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "发起 TikTok 发现式抓取",
+      "node_type": "code",
+      "operation_family": "外部数据采集",
+      "inputs": [
+        {
+          "name": "topic_list",
+          "type": "list",
+          "description": "待分析的话题列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scrape_request_id",
+          "type": "string",
+          "description": "抓取任务快照标识"
+        }
+      ],
+      "native_evidence": [
+        "Scrape TikTok Posts With Bright Data (httpRequest)",
+        "Check Scrape Accepted (code)"
+      ],
+      "requirement_evidence": [
+        "对每个话题通过数据采集服务发起 TikTok 发现式抓取"
+      ],
+      "rationale": "对外部采集服务的确定性调用（逐话题触发，迭代折叠进本节点契约），属代码处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "轮询抓取进度直至快照就绪",
+      "node_type": "code",
+      "operation_family": "状态轮询",
+      "inputs": [
+        {
+          "name": "scrape_request_id",
+          "type": "string",
+          "description": "抓取任务快照标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "snapshot_posts",
+          "type": "list",
+          "description": "快照就绪的抓取帖子数据"
+        }
+      ],
+      "native_evidence": [
+        "Wait For Snapshot (wait)",
+        "Check Snapshot Progress (httpRequest)",
+        "Evaluate Scrape Progress (code)",
+        "Posts Ready? (if)"
+      ],
+      "requirement_evidence": [
+        "轮询抓取进度直至快照就绪（超时则不再等待）",
+        "轮询 TikTok 抓取进度时若超时，则不再等待该快照"
+      ],
+      "rationale": "轮询折叠进本节点契约：内部循环查询快照状态，终止条件为快照就绪（status==ready）或超时后不再等待，迭代次数受轮询上限约束（≤20 次）。属代码处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "下载帖子并计算互动率",
+      "node_type": "code",
+      "operation_family": "数据变换",
+      "inputs": [
+        {
+          "name": "snapshot_posts",
+          "type": "list",
+          "description": "快照就绪的抓取帖子数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_posts",
+          "type": "list",
+          "description": "含互动率的帖子列表"
+        }
+      ],
+      "native_evidence": [
+        "Download Posts (httpRequest)",
+        "Score Hashtag Lift (code)"
+      ],
+      "requirement_evidence": [
+        "下载抓取到的帖子，计算每篇帖子的互动率"
+      ],
+      "rationale": "下载与按声明公式计算互动率均为确定性变换，属代码处理。"
+    },
+    {
+      "node_id": "n6",
+      "label": "按话题标签与配乐聚合并筛选分组",
+      "node_type": "code",
+      "operation_family": "聚合与过滤",
+      "inputs": [
+        {
+          "name": "scored_posts",
+          "type": "list",
+          "description": "含互动率的帖子列表"
+        },
+        {
+          "name": "threshold_params",
+          "type": "object",
+          "description": "阈值参数：取样帖数、最低播放量、提升幅度、冷却期"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_groups",
+          "type": "list",
+          "description": "达标的标签/配乐分组"
+        }
+      ],
+      "native_evidence": [
+        "Score Hashtag Lift (code)"
+      ],
+      "requirement_evidence": [
+        "分别按话题标签和按配乐聚合，仅保留互动率超过该话题中位数且达到配置提升幅度、并且帖子数量足够的分组"
+      ],
+      "rationale": "聚合、中位数比较与阈值过滤均为确定性规则，属代码处理。"
+    },
+    {
+      "node_id": "n7",
+      "label": "读取已记录标签并按冷却期过滤",
+      "node_type": "code",
+      "operation_family": "外部读取与过滤",
+      "inputs": [
+        {
+          "name": "selected_groups",
+          "type": "list",
+          "description": "达标的标签/配乐分组"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "candidate_groups",
+          "type": "list",
+          "description": "未处于冷却窗口的候选分组"
+        }
+      ],
+      "native_evidence": [
+        "Read Logged Tags (googleSheets)",
+        "Select New Tags (code)"
+      ],
+      "requirement_evidence": [
+        "读取 Google Sheets 中已记录的标签",
+        "剔除在冷却窗口内已经报送过的标签或配乐"
+      ],
+      "rationale": "读取已记录标签（折叠进本节点契约）并按冷却窗口做确定性剔除，属代码处理。"
+    },
+    {
+      "node_id": "n8",
+      "label": "提取内容形式、切入角度与主题",
+      "node_type": "semantic",
+      "operation_family": "语言模型抽取",
+      "inputs": [
+        {
+          "name": "candidate_groups",
+          "type": "list",
+          "description": "未处于冷却窗口的候选分组"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "enriched_groups",
+          "type": "list",
+          "description": "附有内容形式、切入角度与主题的分组"
+        }
+      ],
+      "native_evidence": [
+        "Read Content Formats (informationExtractor)",
+        "OpenAI Caption Reader (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "使用语言模型从每个标签下表现最好帖子的文案中提取内容形式、切入角度和主题"
+      ],
+      "rationale": "从开放文案中抽取形式/角度/主题需开放文本理解，确定性规则无法无损替代，属语义处理。"
+    },
+    {
+      "node_id": "n9",
+      "label": "对最终列表排序",
+      "node_type": "code",
+      "operation_family": "排序",
+      "inputs": [
+        {
+          "name": "enriched_groups",
+          "type": "list",
+          "description": "附有内容形式、切入角度与主题的分组"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ranked_groups",
+          "type": "list",
+          "description": "按排名排序的最终分组列表"
+        }
+      ],
+      "native_evidence": [
+        "Rank Hashtags (code)"
+      ],
+      "requirement_evidence": [
+        "对最终列表排序"
+      ],
+      "rationale": "对结构化分组按确定性规则排序，属代码处理。"
+    },
+    {
+      "node_id": "n10",
+      "label": "生成策略简报",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [
+        {
+          "name": "ranked_groups",
+          "type": "list",
+          "description": "按排名排序的最终分组列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "strategy_brief",
+          "type": "string",
+          "description": "简短策略简报文本"
+        }
+      ],
+      "native_evidence": [
+        "Write Content Brief (chainLlm)",
+        "OpenAI Brief Writer (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "生成一份简短的策略简报"
+      ],
+      "rationale": "简报为开放式文本生成，属语义处理。"
+    },
+    {
+      "node_id": "n11",
+      "label": "追加记录到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "外部写入",
+      "inputs": [
+        {
+          "name": "ranked_groups",
+          "type": "list",
+          "description": "按排名排序的最终分组列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "logged_rows",
+          "type": "integer",
+          "description": "追加的记录行数"
+        }
+      ],
+      "native_evidence": [
+        "Split Out Tag Rows (splitOut)",
+        "Log Tags To Sheet (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "每个入选的标签或配乐在 Google Sheets 中追加一行记录"
+      ],
+      "rationale": "逐入选项追加一行（拆行折叠进本节点契约），确定性外部写入，属代码处理。"
+    },
+    {
+      "node_id": "n12",
+      "label": "向 Slack 发送格式化排名摘要",
+      "node_type": "terminal",
+      "operation_family": "通知投递",
+      "inputs": [
+        {
+          "name": "ranked_groups",
+          "type": "list",
+          "description": "按排名排序的最终分组列表"
+        },
+        {
+          "name": "strategy_brief",
+          "type": "string",
+          "description": "简短策略简报文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Digest To Slack (slack)"
+      ],
+      "requirement_evidence": [
+        "向配置的 Slack 频道发送一份格式化的排名摘要，摘要中包含指标数据和表现最好帖子的链接"
+      ],
+      "rationale": "格式化摘要投递到 Slack 是需求声明的最终用户可见产出，其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后加载配置"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置就绪后逐话题发起抓取"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取任务提交后进入进度轮询"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "快照就绪（或超时不再等待）后下载帖子"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "评分完成后聚合筛选"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选后读取已记录标签并过滤冷却期"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "len(candidate_groups) > 0",
+      "rationale": "仅当存在未冷却的入选分组时执行内容提取与后续报送；无入选分组时需求未声明后续行为，不建模额外节点"
+    },
+    {
+      "edge_id": "e08",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取完成后排序"
+    },
+    {
+      "edge_id": "e09",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "排序后生成策略简报"
+    },
+    {
+      "edge_id": "e10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "简报完成后写入 Sheets"
+    },
+    {
+      "edge_id": "e11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录写入后发送 Slack 摘要"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n2",
+      "target": "n3",
+      "variable": "topic_list",
+      "condition": null,
+      "rationale": "抓取按配置话题列表逐话题发起"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n2",
+      "target": "n6",
+      "variable": "threshold_params",
+      "condition": null,
+      "rationale": "聚合筛选使用提升幅度与帖子数量阈值"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n3",
+      "target": "n4",
+      "variable": "scrape_request_id",
+      "condition": null,
+      "rationale": "轮询按快照标识查询进度"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n4",
+      "target": "n5",
+      "variable": "snapshot_posts",
+      "condition": null,
+      "rationale": "下载与评分基于快照帖子数据"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n5",
+      "target": "n6",
+      "variable": "scored_posts",
+      "condition": null,
+      "rationale": "聚合筛选基于逐帖互动率"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n6",
+      "target": "n7",
+      "variable": "selected_groups",
+      "condition": null,
+      "rationale": "冷却过滤作用于达标分组"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n7",
+      "target": "n8",
+      "variable": "candidate_groups",
+      "condition": null,
+      "rationale": "内容提取作用于候选分组及其最好帖子文案"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n8",
+      "target": "n9",
+      "variable": "enriched_groups",
+      "condition": null,
+      "rationale": "排序基于已富化的分组"
+    },
+    {
+      "edge_id": "d09",
+      "source": "n9",
+      "target": "n10",
+      "variable": "ranked_groups",
+      "condition": null,
+      "rationale": "简报基于排序后的列表"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n9",
+      "target": "n11",
+      "variable": "ranked_groups",
+      "condition": null,
+      "rationale": "逐行追加基于排序后的分组"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n9",
+      "target": "n12",
+      "variable": "ranked_groups",
+      "condition": null,
+      "rationale": "摘要含排名与指标数据、最佳帖子链接"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n10",
+      "target": "n12",
+      "variable": "strategy_brief",
+      "condition": null,
+      "rationale": "策略简报随摘要一并可见"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n12"
+  ],
+  "confidence": 0.85,
+  "notes": "轮询折叠进抓取进度节点（终止条件：快照就绪或超时不再等待，迭代上限≤20）。无入选分组时是否仍发送摘要需求未声明，故仅在存在候选分组时执行提取与报送链路。原生图中的 reach 标签剔除、最少 3 帖等实现细节未在冻结需求中逐项声明，仅保留需求声明的中位数/提升幅度/帖子数量条件。"
+}

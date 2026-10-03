@@ -1,0 +1,273 @@
+{
+  "task_id": "N8F-032",
+  "annotator_id": "GM-B-03",
+  "status": "submitted",
+  "requirement_sha256": "85191ba356727d2658b551e02a9fd529b874feb565977a2c9fef2b96e52713a3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 YouTube 视频链接输入",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "待处理的 YouTube 视频链接"
+        }
+      ],
+      "native_evidence": [
+        "▶️ Start"
+      ],
+      "requirement_evidence": [
+        "系统以一条 YouTube 视频链接为输入"
+      ],
+      "rationale": "输入接收为确定性触发行为，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取视频字幕文本",
+      "node_type": "code",
+      "operation_family": "external_io",
+      "inputs": [
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "待处理的 YouTube 视频链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript_text",
+          "type": "string",
+          "description": "该视频的字幕文本"
+        }
+      ],
+      "native_evidence": [
+        "📝 Fetch Transcript"
+      ],
+      "requirement_evidence": [
+        "获取该视频的字幕文本"
+      ],
+      "rationale": "外部字幕服务获取为确定性 IO 动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成博客文章与社交媒体内容",
+      "node_type": "semantic",
+      "operation_family": "llm_content_generation",
+      "inputs": [
+        {
+          "name": "transcript_text",
+          "type": "string",
+          "description": "该视频的字幕文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "生成的博客文章与各平台社交媒体内容"
+        }
+      ],
+      "native_evidence": [
+        "🔧 Prepare Data",
+        "🧙 AI Content",
+        "🔍 Parse JSON"
+      ],
+      "requirement_evidence": [
+        "并由语言模型基于字幕生成博客文章与社交媒体内容"
+      ],
+      "rationale": "基于字幕的内容创作需要开放文本生成，判 semantic；原生的输入准备（Prepare Data）与输出解析（Parse JSON）作为该契约的输入输出规整部分并入。"
+    },
+    {
+      "node_id": "n4",
+      "label": "发布前人工批准网关（可选）",
+      "node_type": "code",
+      "operation_family": "human_approval_gate",
+      "inputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "生成的博客文章与各平台社交媒体内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_decision",
+          "type": "string",
+          "description": "人工审批结果（approved）或未启用审批标记"
+        }
+      ],
+      "native_evidence": [
+        "💬 Slack Approval",
+        "🔔 Wait Approval",
+        "🔄 Process Action",
+        "📤 Publish?"
+      ],
+      "requirement_evidence": [
+        "内容在发布前可选择等待人工批准",
+        "未启用人工批准时直接发布",
+        "可配置为发布前等待人工批准"
+      ],
+      "rationale": "审批为可选配置行为：未启用批准时直接进入发布，启用时经 Slack 请求并等待 webhook 回调后路由。网关对外契约为确定性路由加外部 IO，判 code；人工判断由外部审批者完成，不进入节点类型判定。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发布内容到选定平台",
+      "node_type": "code",
+      "operation_family": "publishing",
+      "inputs": [
+        {
+          "name": "generated_content",
+          "type": "object",
+          "description": "生成的博客文章与各平台社交媒体内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_results",
+          "type": "object",
+          "description": "各平台的发布结果"
+        }
+      ],
+      "native_evidence": [
+        "✔️ Blog?",
+        "📝 WordPress",
+        "✔️ LinkedIn?",
+        "💼 LinkedIn",
+        "✔️ Twitter?",
+        "🐦 Tweet 1/5",
+        "🐦 Tweet 2/5",
+        "🐦 Tweet 3/5",
+        "🐦 Tweet 4/5",
+        "🐦 Tweet 5/5",
+        "✔️ Instagram?",
+        "🎥 Gen Reels",
+        "⏱️ Wait",
+        "📸 Instagram1"
+      ],
+      "requirement_evidence": [
+        "将内容发布到选定的发布平台",
+        "生成的内容发布到选定的发布平台"
+      ],
+      "rationale": "平台级条件分支（博客/LinkedIn/Twitter 线程/Instagram）为同一发布行为在不同目标上的具体化，按需求合并为一个节点；Twitter 五连推为平台形式细节并入；原生为 Instagram 生成 Reels 视频（Gemini）未在需求中单独声明，不单独建模，仅作为发布到该平台的形式。发布后仍接结果记录环节，故本节点判 code（确定性外部发布动作）。"
+    },
+    {
+      "node_id": "n6",
+      "label": "记录处理结果以便追踪",
+      "node_type": "terminal",
+      "operation_family": "record_keeping",
+      "inputs": [
+        {
+          "name": "publish_results",
+          "type": "object",
+          "description": "各平台的发布结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "📊 Notion",
+        "🎉 Success"
+      ],
+      "requirement_evidence": [
+        "并对每次处理结果进行记录以便追踪"
+      ],
+      "rationale": "需求声明的追踪记录为流程末端的用户可见完成动作，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "输入链接后获取字幕。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "字幕就绪后生成内容。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "内容生成后进入发布前批准网关。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "approval_enabled == false || approval_decision == approved",
+      "rationale": "未启用人工批准时直接发布；启用且获批后发布。两条进入发布的路径合并为一条带条件的 CFG 边表达。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后记录处理结果（原生各平台发布后汇合至 Notion）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video_url",
+      "condition": null,
+      "rationale": "字幕获取消费视频链接。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "transcript_text",
+      "condition": null,
+      "rationale": "内容生成消费字幕文本。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "generated_content",
+      "condition": null,
+      "rationale": "审批网关消费待批内容。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "generated_content",
+      "condition": null,
+      "rationale": "发布消费生成的博客与社交媒体内容（内容本体由 n3 产生，网关仅路由不转换）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "publish_results",
+      "condition": null,
+      "rationale": "结果记录消费发布结果。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.82,
+  "notes": "需求仅声明『批准后发布/未启用批准直接发布』，原生的修改循环（Revise?/Ask Feedback/Get Feedback/Prep Revision 回到 AI Content）、取消分支（Cancel?/Cancel Notify/Stop）、字幕缺失报错分支（Check Transcript/Error Stop）与博客配图生成（Blog Image）均未在需求中声明，未纳入 Gold。审批网关为可选行为，条件表达式合并『未启用批准』与『已批准』两条进入发布的路径；内容本体 DFG 自 n3 直达 n5（网关仅路由不转换）。人工审批由外部人员在 Slack 完成，网关节点判 code（确定性路由 + 外部 IO）。"
+}

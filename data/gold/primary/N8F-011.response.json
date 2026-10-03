@@ -1,0 +1,533 @@
+{
+  "task_id": "N8F-011",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "4db09e5b16b441dbcdb8b105b8f903ba8d9793aba214e8169045d7b69aadb6c4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收用户消息",
+      "node_type": "code",
+      "operation_family": "chat_entry",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户提交的消息内容（链接或问题）"
+        }
+      ],
+      "native_evidence": [
+        "Chat"
+      ],
+      "requirement_evidence": [
+        "用户提供一个 YouTube 播放列表或单个视频的链接",
+        "Provide a Link: Start by giving the workflow a URL for a YouTube playlist or a single video."
+      ],
+      "rationale": "需求声明用户提供链接并就内容提问，原生图中 Chat 为对话入口触发节点，映射为接收用户消息的代码节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "理解用户消息并提取处理目标",
+      "node_type": "semantic",
+      "operation_family": "intent_understanding",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户提交的消息内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "识别出的处理目标（链接类型、URL、ID、播放列表处理数量等）"
+        }
+      ],
+      "native_evidence": [
+        "Message Intent",
+        "Structured Output Parser1",
+        "Get Previous Context Intent -> Message Intent"
+      ],
+      "requirement_evidence": [
+        "输入：用户提供一个 YouTube 播放列表或单个视频的链接。",
+        "若为播放列表，可一次处理其中的多个视频（可能会询问需要处理的数量）；"
+      ],
+      "rationale": "需求声明输入可为播放列表或单视频链接，为区分链接与提问、识别目标与数量需理解用户消息，判为语义节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "路由：处理新链接或回答提问",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "识别出的处理目标"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Route Message Intent",
+        "Default Intent",
+        "Process Status"
+      ],
+      "requirement_evidence": [
+        "用户可就播放列表或视频内容向 AI 助手提问",
+        "Chat & Ask: Now, you can ask the AI agent questions about the playlist or video content!"
+      ],
+      "rationale": "需求声明提供链接时抓取处理、提问时直接回答两类交互，需按消息类型路由执行，判为确定性路由代码节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "校验播放列表处理数量",
+      "node_type": "code",
+      "operation_family": "parameter_validation",
+      "inputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "识别出的处理目标"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Playlist Limit",
+        "Process Status"
+      ],
+      "requirement_evidence": [
+        "若为播放列表，可一次处理其中的多个视频（可能会询问需要处理的数量）",
+        "For playlists, it can process multiple videos at once (you might be asked how many)."
+      ],
+      "rationale": "需求声明播放列表可一次处理多个视频且可能询问数量，需先校验是否已指定数量，判为确定性校验代码节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "询问用户要处理的视频数量",
+      "node_type": "semantic",
+      "operation_family": "clarification_request",
+      "inputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "识别出的播放列表目标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clarification_message",
+          "type": "string",
+          "description": "向用户询问需要处理视频数量的话术"
+        }
+      ],
+      "native_evidence": [
+        "Numb of Videos"
+      ],
+      "requirement_evidence": [
+        "可能会询问需要处理的数量",
+        "you might be asked how many"
+      ],
+      "rationale": "需求声明播放列表未指定数量时系统会询问用户；原生图 Numb of Videos 为语言模型智能体，生成向用户提问的话术需开放语言生成，判为语义节点。该节点仅负责生成询问内容，将询问返回给用户的可见完成动作由终止节点 n11 表示；用户补充数量后以新消息从入口重新进入。"
+    },
+    {
+      "node_id": "n6",
+      "label": "抓取视频详情与字幕文本",
+      "node_type": "code",
+      "operation_family": "content_fetching",
+      "inputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "识别出的处理目标（含数量）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_transcripts",
+          "type": "array",
+          "description": "抓取到的视频详情与字幕文本（播放列表可含多个视频）"
+        }
+      ],
+      "native_evidence": [
+        "Playlist HTTP Request",
+        "Video HTTP Request",
+        "YouTube Transcript",
+        "YouTube Transcript1",
+        "Get Title and Desc",
+        "Get Playlist Videos Data",
+        "Limit",
+        "Split Out1"
+      ],
+      "requirement_evidence": [
+        "自动抓取该链接对应的视频详情与字幕文本",
+        "若为播放列表，可一次处理其中的多个视频",
+        "Content Retrieval: The workflow automatically fetches the video details and transcripts for the provided link.",
+        "For playlists, it can process multiple videos at once (you might be asked how many)."
+      ],
+      "rationale": "需求声明自动抓取视频详情与字幕文本、播放列表可一次处理多个视频，为外部抓取动作（HTTP/转写服务），判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "语言模型理解字幕并生成摘要",
+      "node_type": "semantic",
+      "operation_family": "summarization",
+      "inputs": [
+        {
+          "name": "video_transcripts",
+          "type": "array",
+          "description": "视频详情与字幕文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summaries",
+          "type": "array",
+          "description": "各视频内容的结构化摘要"
+        }
+      ],
+      "native_evidence": [
+        "Summarize & Analyze Transcript",
+        "Merge",
+        "Edit Fields"
+      ],
+      "requirement_evidence": [
+        "由语言模型阅读字幕文本、理解内容并生成摘要",
+        "AI Processing: Google's Gemini AI reads through the transcripts, understands the content, and creates summaries."
+      ],
+      "rationale": "需求明确声明由语言模型阅读字幕、理解内容并生成摘要，判为语义节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "将信息与摘要写入向量数据库",
+      "node_type": "code",
+      "operation_family": "vector_storage",
+      "inputs": [
+        {
+          "name": "summaries",
+          "type": "array",
+          "description": "各视频内容的结构化摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Qdrant Vector Store",
+        "Default Data Loader",
+        "Embeddings Google Gemini",
+        "Recursive Character Text Splitter"
+      ],
+      "requirement_evidence": [
+        "将处理后的信息与摘要存入向量数据库，以便进行对话检索",
+        "Storage & Context: The processed information and summaries are stored in a vector database (Qdrant), making them ready for conversation."
+      ],
+      "rationale": "需求声明将处理后的信息与摘要存入向量数据库以支持对话检索，为确定性写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "更新上下文存储记录当前讨论内容",
+      "node_type": "code",
+      "operation_family": "context_update",
+      "inputs": [
+        {
+          "name": "content_target",
+          "type": "object",
+          "description": "当前处理的视频或播放列表目标"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Update Context Intent",
+        "Update Context Process Done1",
+        "Update Context Intent1",
+        "Get Previous Context Intent"
+      ],
+      "requirement_evidence": [
+        "使用上下文存储记住当前正在讨论的视频或播放列表",
+        "Context is managed using Redis, remembering the current video/playlist you're discussing."
+      ],
+      "rationale": "需求声明使用上下文存储记住当前讨论的视频或播放列表，为确定性状态写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n10",
+      "label": "基于检索回答用户问题",
+      "node_type": "semantic",
+      "operation_family": "question_answering",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户提出的问题（含连续追问）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "针对播放列表或视频内容的回答"
+        }
+      ],
+      "native_evidence": [
+        "Handle Queries",
+        "AI Agent",
+        "Answer questions with a vector store",
+        "Answer questions with a vector store1",
+        "Chat Buffer Memory"
+      ],
+      "requirement_evidence": [
+        "用户可就播放列表或视频内容向 AI 助手提问",
+        "由于上下文被保持，用户可以就同一视频或播放列表连续追问，而无需再次提供链接",
+        "Get a quick summary of a single video or an entire playlist.",
+        "Ask for key takeaways or main topics discussed.",
+        "Query for specific information mentioned in the videos.",
+        "Ask the agent to elaborate on a specific point previously mentioned."
+      ],
+      "rationale": "需求声明 AI 助手基于已处理内容回答用户问题并保持上下文连续追问，原生图 Handle Queries/AI Agent 为 RAG 智能体，需开放语言理解与生成，判为语义节点。该节点仅负责生成回答，将回答返回给用户的可见完成动作由终止节点 n12 表示。"
+    },
+    {
+      "node_id": "n11",
+      "label": "向用户返回数量询问",
+      "node_type": "terminal",
+      "operation_family": "clarification_delivery",
+      "inputs": [
+        {
+          "name": "clarification_message",
+          "type": "string",
+          "description": "询问用户处理数量的提示话术"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Numb of Videos",
+        "Chat"
+      ],
+      "requirement_evidence": [
+        "若为播放列表，可一次处理其中的多个视频（可能会询问需要处理的数量）",
+        "you might be asked how many"
+      ],
+      "rationale": "需求声明系统会向用户询问需要处理的数量，该询问须呈现给用户；原生图中 Numb of Videos 智能体生成的询问经 Chat 对话通道返回给用户，此节点建模\"将数量询问返回给用户\"这一用户可见的完成动作，无后续环节，判为终止节点。"
+    },
+    {
+      "node_id": "n12",
+      "label": "向用户返回问题答案",
+      "node_type": "terminal",
+      "operation_family": "response_delivery",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "基于检索生成的回答内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Handle Queries",
+        "AI Agent",
+        "Chat"
+      ],
+      "requirement_evidence": [
+        "用户可就播放列表或视频内容向 AI 助手提问",
+        "Chat & Ask: Now, you can ask the AI agent questions about the playlist or video content!"
+      ],
+      "rationale": "需求声明 AI 助手回答用户问题，回答须呈现给用户；原生图中 Handle Queries/AI Agent 生成的回答经 Chat 对话通道返回给用户，此节点建模\"将答案返回给用户\"这一用户可见的完成动作，无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到用户消息后进行意图理解。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取处理目标后按消息类型路由。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "content_target.intent in (PLAYLIST,VIDEO) 且内容尚未处理",
+      "rationale": "消息为新的播放列表或视频链接时进入处理流程。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n10",
+      "variable": null,
+      "condition": "content_target.intent 为提问（非新链接）",
+      "rationale": "用户就已有内容提问时直接进入问答。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "intent==PLAYLIST 且未指定处理数量",
+      "rationale": "播放列表未指定数量时询问用户。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "已指定数量或为单个视频",
+      "rationale": "处理目标完备后抓取视频内容。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取到字幕文本后由语言模型生成摘要。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后写入向量数据库。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "向量库写入完成后更新上下文存储。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "处理完成并记录上下文后回答用户当前问题。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n5",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "数量询问话术生成后返回给用户。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n10",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "回答生成后返回给用户。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "用户消息由入口产出，供意图理解使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "content_target",
+      "condition": null,
+      "rationale": "处理目标由意图理解产出，供路由判断。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "content_target",
+      "condition": null,
+      "rationale": "处理目标供数量校验使用。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "content_target",
+      "condition": null,
+      "rationale": "播放列表目标供询问数量节点使用。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n2",
+      "target": "n6",
+      "variable": "content_target",
+      "condition": null,
+      "rationale": "处理目标（含数量）供内容抓取使用。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "video_transcripts",
+      "condition": null,
+      "rationale": "字幕文本由抓取节点产出，供摘要生成使用。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "summaries",
+      "condition": null,
+      "rationale": "摘要由语义节点产出，供向量库写入（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n2",
+      "target": "n9",
+      "variable": "content_target",
+      "condition": null,
+      "rationale": "当前讨论目标供上下文存储记录使用。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n1",
+      "target": "n10",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "用户提问供问答节点回答使用。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n5",
+      "target": "n11",
+      "variable": "clarification_message",
+      "condition": null,
+      "rationale": "数量询问话术由语义节点产出，供返回节点呈现给用户（semantic→terminal 有类型数据边）。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n10",
+      "target": "n12",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "回答由语义节点产出，供返回节点呈现给用户（semantic→terminal 有类型数据边）。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n11",
+    "n12"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：对话入口→意图理解→路由（处理新链接/回答提问）→抓取视频详情与字幕→LLM 摘要→向量库存储→上下文记录→RAG 问答。播放列表未指定数量时由语义节点生成询问话术（n5），经终止节点 n11 返回给用户，用户补充数量后以新消息从入口重新进入；问答回答由语义节点生成（n10），经终止节点 n12 返回给用户。原生图中已处理检测（Qdrant 检查+If）、双向量库工具等需求未声明的实现细节未纳入。"
+}

@@ -1,0 +1,209 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-063",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "2228d29a984540c895927123effc3e3c200f9a47e42fea46930d7e569055fa21",
+  "natural_language_requirement": "业务用户在 Telegram 中向机器人发送一条聊天消息提出问题，例如询问下一次活动的时间、下个月有多少场活动、谁演讲的次数最多，或哪些未来活动还没有安排演讲者。系统收到发往该 Telegram 机器人的聊天消息后被触发，从 Google Sheets 中读取已排期的活动日程，将日程转换为表格化的文本形式，并据此交由语言模型处理用户在 Telegram 中提出的问题。语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "answer_schedule_question",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "schedule_table": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "schedule_table"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "answer"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_event_schedule",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "sheet": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "integer"
+                },
+                "location": {
+                  "type": "string"
+                },
+                "presenter": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "date",
+                "id",
+                "location",
+                "presenter",
+                "title"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_message",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "chat_id",
+          "text"
+        ],
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "message_id",
+          "ok"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "table_text",
+        "schema": {
+          "type": "string"
+        },
+        "description": "日程转换后的表格化文本形式",
+        "requirement_evidence": [
+          "将日程转换为表格化的文本形式"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n3.table_text"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "answer_text",
+        "schema": {
+          "type": "string"
+        },
+        "description": "语言模型基于日程数据给出的回答",
+        "requirement_evidence": [
+          "据此交由语言模型处理用户在 Telegram 中提出的问题",
+          "语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复"
+        ],
+        "source_operations": [
+          "answer_schedule_question"
+        ],
+        "design_sources": [
+          "n4.answer_text"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "telegram_send_results",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "message_id": {
+                "type": "integer",
+                "description": "Telegram 返回的消息 ID"
+              },
+              "ok": {
+                "type": "boolean",
+                "description": "Telegram 发送消息是否成功"
+              }
+            },
+            "required": [
+              "message_id",
+              "ok"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复的发送结果",
+        "requirement_evidence": [
+          "语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [
+          "n5"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "B948B8CF962F0E5ED3F60FDC75ED2E9834B69F617421AC1D79D36FDF37409656",
+  "public_interface_sha256": "6E3DD9EC23DE8DF1FB908911F7161F565C9E8E389E8F999C2AF95EF7C8EDD789",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

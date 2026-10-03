@@ -1,0 +1,40 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-026",
+  "case_id": "C-NEG-EMPTY-RESULTS",
+  "kind": "negative",
+  "input_data": {
+    "fixtures": {
+      "F-CONFIG": {
+        "city": "Austin",
+        "categories": [
+          "Plumber",
+          "Electrician"
+        ],
+        "score_threshold": 60,
+        "contact_window_days": 90,
+        "sheet_id": "SHEET-PROSPECTS",
+        "slack_channel": "#prospects",
+        "run_date": "2026-09-02"
+      },
+      "F-PROFILES-EMPTY": {
+        "profiles": []
+      },
+      "F-PREVIOUS-PROSPECTS": {
+        "rows": [
+          {
+            "business_id": "B-001",
+            "name": "Alpha Plumbing",
+            "last_contacted": "2026-08-03"
+          },
+          {
+            "business_id": "B-005",
+            "name": "Epsilon Drains",
+            "last_contacted": "2026-06-04"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "BE818967BFEA01023F9C50907E31209F56F4D7AE3F181C8D4A271C57D9EB1239"
+}

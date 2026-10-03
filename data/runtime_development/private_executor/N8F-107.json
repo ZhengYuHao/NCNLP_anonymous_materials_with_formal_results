@@ -1,0 +1,183 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-107",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-FIRECRAWL-SEARCH",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "search",
+      "request_contract": {
+        "query": "string"
+      },
+      "response_contract": {
+        "results": [
+          {
+            "url": "https://news.example.com/a",
+            "title": "AI story one"
+          },
+          {
+            "url": "https://news.example.com/b",
+            "title": "AI story two"
+          },
+          {
+            "url": "https://news.example.com/c",
+            "title": "AI story three"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FIRECRAWL-SCRAPE",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "scrape",
+      "request_contract": {
+        "url": "string"
+      },
+      "response_contract": {
+        "content": "Clean structured page content",
+        "metadata": {
+          "title": "AI story"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FIRECRAWL-INTERACT",
+      "dependency_type": "@mendable/n8n-nodes-firecrawl.firecrawlTool",
+      "operation": "interact",
+      "request_contract": {
+        "action": "string"
+      },
+      "response_contract": {
+        "status": "completed",
+        "extracted_data": {
+          "button_label": "Load more"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-AGENT",
+      "dependency_type": "lmChatOpenRouter",
+      "operation": "research_and_extract",
+      "request_contract": {
+        "prompt": "string"
+      },
+      "response_contract": {
+        "stories": [
+          {
+            "title": "AI story one"
+          },
+          {
+            "title": "AI story two"
+          },
+          {
+            "title": "AI story three"
+          }
+        ],
+        "summary": "EV sales are growing in all major markets."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-STRUCTURED-PARSER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "operation": "format_to_schema",
+      "request_contract": {
+        "schema": "object"
+      },
+      "response_contract": {
+        "formatted": true,
+        "output": {
+          "stories": [
+            {
+              "title": "AI story one"
+            },
+            {
+              "title": "AI story two"
+            },
+            {
+              "title": "AI story three"
+            }
+          ]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-WITH-SCHEMA",
+      "fixture_ids": [
+        "F-PROMPT-WITH-SCHEMA"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-FIRECRAWL-SCRAPE",
+        "M-FIRECRAWL-INTERACT",
+        "M-LLM-AGENT",
+        "M-STRUCTURED-PARSER"
+      ]
+    },
+    {
+      "case_id": "C-POS-NO-SCHEMA",
+      "fixture_ids": [
+        "F-PROMPT-NO-SCHEMA"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-FIRECRAWL-SCRAPE",
+        "M-LLM-AGENT",
+        "M-STRUCTURED-PARSER"
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-EMPTY-SCHEMA",
+      "fixture_ids": [
+        "F-SCHEMA-EMPTY"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-LLM-AGENT",
+        "M-STRUCTURED-PARSER"
+      ]
+    },
+    {
+      "case_id": "C-NEG-STRING-SCHEMA",
+      "fixture_ids": [
+        "F-BAD-SCHEMA-STRING"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-LLM-AGENT"
+      ]
+    },
+    {
+      "case_id": "C-NEG-MISSING-TYPE",
+      "fixture_ids": [
+        "F-BAD-SCHEMA-NO-TYPE"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-LLM-AGENT"
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID-TYPE",
+      "fixture_ids": [
+        "F-BAD-SCHEMA-TYPE"
+      ],
+      "mock_ids": [
+        "M-FIRECRAWL-SEARCH",
+        "M-LLM-AGENT"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-056",
+  "case_id": "C-BOUND-EMPTY-POOL",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-ACCOUNTS": {
+        "accounts": [
+          {
+            "id": "acc-1",
+            "time_slot": "00-08"
+          },
+          {
+            "id": "acc-2",
+            "time_slot": "08-16"
+          },
+          {
+            "id": "acc-3",
+            "time_slot": "16-24"
+          }
+        ],
+        "trigger_time": "10:00",
+        "interval_hours": 2,
+        "at_minute": 15,
+        "max_posts_per_hashtag": 5,
+        "daily_like_cap_per_account": 12
+      },
+      "F-POOL-EMPTY": {
+        "posts": []
+      }
+    }
+  },
+  "input_sha256": "7F2062E9B40E55070BDCB5BD75677D9A0C95F615939C64993BAD07ACFEB84118"
+}

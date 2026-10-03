@@ -1,0 +1,73 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-038",
+  "source_id": "n8n:14057",
+  "workflow_sha256": "292cd1e22873065d18e7903ad7c8858b16b295aa9e5eb34a129e41b35d1efaac",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4e606245eb5a44d718d6a5d0ef334214bc3c1a84013cafe1b58b33f28e2a3454",
+  "requirement": {
+    "requirement_text": "系统需要让使用者以自然语言直接查询 PostgreSQL 数据库：使用者先提供一次目标数据表名，之后即可用自然语言提出问题。系统由语言模型将问题转换为 SQL 并直接对数据库执行查询，无需使用者导出数据或上传数据文件，也无需使用者编写 SQL；查询结果以整理后的分析结论返回给使用者。",
+    "source_spans": [
+      {
+        "start": 24,
+        "end": 80,
+        "text": "Chat With Any PostgreSQL Database Using Natural Language"
+      },
+      {
+        "start": 84,
+        "end": 168,
+        "text": "This template turns your PostgreSQL database into an AI-powered analytics assistant."
+      },
+      {
+        "start": 170,
+        "end": 332,
+        "text": "Instead of exporting data or uploading huge CSV files to an LLM, this workflow lets AI query your database directly using SQL, returning clean insights instantly."
+      },
+      {
+        "start": 334,
+        "end": 409,
+        "text": "Just type your table name once and start asking questions in plain English."
+      },
+      {
+        "start": 411,
+        "end": 427,
+        "text": "No SQL required."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "目标数据表名",
+        "使用者以自然语言提出的问题",
+        "PostgreSQL 数据库中的数据"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "将自然语言问题转换为 SQL 查询",
+        "在 PostgreSQL 数据库上执行查询",
+        "将查询结果整理为分析结论"
+      ],
+      "visible_outcomes": [
+        "使用者收到针对所提问题的查询分析结论"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-038.packet.json",
+    "packet_sha256": "bf3e1d2a1b8ea517d7c21fe5d35f45e813214dc46f88958a45f16da16ec9a84e",
+    "public_description_sha256": "42fd16d33993ea8266c13201a3418421bd51b4f61dc7e215d099293668938562"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-038.response.json",
+    "verification_response_sha256": "b09657afbfb73d26f9c783cb8773fe5331b78a8a499d2cafbd0a9b30da61427b",
+    "decision": "accept"
+  },
+  "formal_index": 49
+}

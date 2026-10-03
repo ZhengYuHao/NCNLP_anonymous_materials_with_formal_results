@@ -1,0 +1,67 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-093",
+  "source_id": "n8n:16435",
+  "workflow_sha256": "6dc61a2a74d104979f8be72f1a4ba3ef80fda18a2d45667afa4fac92627d6e0a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "731c09cfb7871925b1187b84f09c1bfd427085b56351894ead46d50e5e3314f6",
+  "requirement": {
+    "requirement_text": "手动执行时，从 YouTube 频道的 RSS 订阅源获取最新视频，解析出该视频的标题、描述、缩略图地址与链接；下载该视频的缩略图并上传至 Posta，生成可复用的媒体素材；从 Posta 取出社交账号列表，只保留处于启用状态的账号，并按平台去重，使每个平台只保留一个账号；将最新视频信息与每个目标平台组合，交由语言模型为每个平台撰写一条定制化的推广文案；为每条文案标注其所属平台，并与对应的 Posta 社交账号合并；最后为每个选中的账号在 Posta 中创建一篇草稿帖，附上已上传的缩略图、该平台专属的文案以及视频链接。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 328,
+        "text": "Quick overview\nThis workflow fetches the latest video from a YouTube channel feed, generates platform-specific promo captions with DeepSeek, and creates draft promotion posts in Posta for active social media accounts. You can automatically promote your videos to all your social media.  Add a \"publish\" at the end for auto-post."
+      },
+      {
+        "start": 330,
+        "end": 1283,
+        "text": "How it works\nRuns manually when you click “Execute workflow”.\nFetches your YouTube channel RSS feed over HTTP, parses the XML, and extracts the latest video’s title, description, thumbnail URL, and link.\nDownloads the video thumbnail and uploads it to Posta to create a reusable media asset.\nRetrieves your social accounts from Posta, keeps only active accounts, and de-duplicates them to one account per platform.\nCombines the latest video data with each target platform and asks DeepSeek (via an n8n LangChain LLM chain) to write a tailored promotional caption per platform.\nTags each generated caption with its platform and merges it back to the matching Posta social account.\nCreates a draft Posta post per selected account, attaching the uploaded thumbnail and the platform-specific caption and video link.\n(Optional) Add a \"publish a post\" at the end to automatically post to the social media channels (If you are feeling brave and trust the LLM),"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "手动执行触发",
+        "YouTube 频道 RSS 订阅源（频道 ID）",
+        "Posta 中的社交账号列表及其启用状态与平台归属"
+      ],
+      "conditions": [
+        "只保留处于启用状态的社交账号",
+        "按平台去重，每个平台只保留一个账号"
+      ],
+      "allowed_actions": [
+        "获取并解析 YouTube 频道 RSS 订阅源，提取最新视频的标题、描述、缩略图地址与链接",
+        "下载视频缩略图并上传至 Posta，生成可复用的媒体素材",
+        "调用语言模型为每个目标平台生成定制化推广文案",
+        "为每条文案标注所属平台并与对应的 Posta 社交账号合并",
+        "为每个选中的账号在 Posta 中创建草稿帖，附带缩略图、平台专属文案与视频链接"
+      ],
+      "visible_outcomes": [
+        "Posta 中为每个启用且去重后的平台账号生成一篇推广草稿帖",
+        "草稿帖包含已上传的缩略图、该平台专属的推广文案与视频链接"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-093.packet.json",
+    "packet_sha256": "df4990eb050f29ee01fd31cfaa6e9dcf070472d60c000e9d7719fb6a97bd2a86",
+    "public_description_sha256": "6531a0a09ae8616910ce4869111cefcdfe9332d073c237911bc5c731c874bbdc"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-093.response.json",
+    "verification_response_sha256": "5256317f3228b56d23295cc32b5bec86813592f22e9a7ddb9c85d197a7e55a0b",
+    "decision": "accept"
+  },
+  "formal_index": 104
+}

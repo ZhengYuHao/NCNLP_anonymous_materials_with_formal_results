@@ -1,0 +1,311 @@
+{
+  "task_id": "N8F-050",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "4956eb4fe683081f500b56ae29951edcb96ba8bf9d03f17a7dd1c5d0c804f2b4",
+  "fixtures": [
+    {
+      "fixture_id": "F-LEAD-EMAIL",
+      "purpose": "来自邮箱的完整入站线索（含文本），走正常处理链",
+      "input_data": {
+        "source": "email",
+        "email": "lead@acme.com",
+        "body": "Hi, we are Acme Corp, a manufacturing company with 500 employees based in Berlin. Our VP of Operations is evaluating automation software and has budget for a pilot."
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-FORM",
+      "purpose": "来自网页表单的线索，仅含文本（无邮箱），验证邮箱或文本任一项即有效",
+      "input_data": {
+        "source": "webhook",
+        "email": null,
+        "body": "I would like to learn more about your product for our startup."
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-EMAIL-ONLY",
+      "purpose": "仅含邮箱（无文本）的线索，验证邮箱字段可独立满足必填校验",
+      "input_data": {
+        "source": "webhook",
+        "email": "someone@example.com",
+        "body": ""
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-INVALID",
+      "purpose": "邮箱与文本均为空的无效线索，验证转入死信队列",
+      "input_data": {
+        "source": "webhook",
+        "email": null,
+        "body": ""
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GMAIL-POLL",
+      "dependency_type": "gmailTrigger",
+      "operation": "poll_new_emails",
+      "request_contract": {
+        "poll_inbox": true
+      },
+      "response_contract": {
+        "messages": [
+          {
+            "from": "lead@acme.com",
+            "body": "Hi, we are Acme Corp, a manufacturing company with 500 employees based in Berlin. Our VP of Operations is evaluating automation software and has budget for a pilot."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "extract_lead_fields",
+      "request_contract": {
+        "input_is_free_text": true
+      },
+      "response_contract": {
+        "company": "Acme Corp",
+        "company_size": "500",
+        "industry": "Manufacturing",
+        "role": "VP Operations",
+        "region": "Berlin",
+        "problem_statement": "evaluating automation software",
+        "budget_signal": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CRM-CREATE",
+      "dependency_type": "salesforce",
+      "operation": "create_lead",
+      "request_contract": {
+        "lead_has_scored_fields": true
+      },
+      "response_contract": {
+        "lead_id": "SF-LEAD-1001",
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-POST",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "message_is_rich_lead_notification": true,
+        "must_include_button": "Create intro email"
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000003"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "tab": "leads"
+      },
+      "response_contract": {
+        "tab": "leads",
+        "status": "appended"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-DLQ",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "tab": "DLQ"
+      },
+      "response_contract": {
+        "tab": "DLQ",
+        "status": "appended"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-EMAIL-LEAD",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-LEAD-EMAIL"
+      ],
+      "mock_ids": [
+        "M-GMAIL-POLL",
+        "M-LLM-EXTRACT",
+        "M-CRM-CREATE",
+        "M-SLACK-POST",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.extracted.company",
+          "operator": "equals",
+          "expected": "Acme Corp",
+          "rationale": "抽取字段必须来自固定语言模型响应"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.lead.score",
+          "operator": "exists",
+          "rationale": "必须基于抽取字段计算 0-100 的线索评分",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.lead.tier",
+          "operator": "matches",
+          "expected": "^(Hot|Warm|Cold|Unqualified)$",
+          "rationale": "线索等级必须落在四个等级之一"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.crm.lead_id",
+          "operator": "exists",
+          "rationale": "必须按配置在 CRM 中创建线索",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.slack_message.text",
+          "operator": "contains",
+          "expected": "Acme Corp",
+          "rationale": "Slack 消息须概述线索评分与依据"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.slack_message.attachments[*].button_label",
+          "operator": "contains",
+          "expected": "Create intro email",
+          "rationale": "Slack 消息必须附带\"Create intro email\"按钮"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.sheets.leads_logged",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "成功线索记入 Google Sheets 报表页"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.dlq",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "有效线索不得进入死信队列"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-FORM-LEAD",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-LEAD-FORM"
+      ],
+      "mock_ids": [
+        "M-LLM-EXTRACT",
+        "M-CRM-CREATE",
+        "M-SLACK-POST",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01-POS-FORM-LEAD",
+          "target": "output.crm.lead_id",
+          "operator": "exists",
+          "rationale": "表单提交含文本即视为有效，汇入同一处理流程并创建线索",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-02-POS-FORM-LEAD",
+          "target": "output.sheets.leads_logged",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "有效表单线索同样记入报表"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-EMAIL-ONLY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-LEAD-EMAIL-ONLY"
+      ],
+      "mock_ids": [
+        "M-LLM-EXTRACT",
+        "M-CRM-CREATE",
+        "M-SLACK-POST",
+        "M-SHEETS-APPEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.crm.lead_id",
+          "operator": "exists",
+          "rationale": "边界校验：仅有邮箱字段、无文本时，\"邮箱或文本\"校验仍通过",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID-DLQ",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-LEAD-INVALID"
+      ],
+      "mock_ids": [
+        "M-SHEETS-APPEND-DLQ"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.dlq",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "邮箱与文本均缺失的条目必须转入死信队列以待复核"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.crm.lead_id",
+          "operator": "not_exists",
+          "rationale": "无效线索不得在 CRM 中创建",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.sheets.leads_logged",
+          "operator": "not_exists",
+          "rationale": "无效线索不得写入成功报表页",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.slack_message",
+          "operator": "not_exists",
+          "rationale": "无效线索不发送 Slack 通知",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "邮箱轮询、LLM 抽取、CRM、Slack、Sheets（报表与 DLQ 页）均为固定模拟。\"邮箱或文本\"校验完全由输入决定，DLQ 去向、CRM 创建、日志去向均可程序判定；评分与等级断言限定为存在性与枚举约束，避免依赖未知评分公式。"
+}

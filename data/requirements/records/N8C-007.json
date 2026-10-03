@@ -1,0 +1,84 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-007",
+  "source_id": "n8n:2972",
+  "workflow_sha256": "95a781bab1d7c5f2c8fd3e1bb3c4ce5186a5fcf78ee20eeeef04b422c20ff051",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "b519d0c7bc38f4a9731185e263e002f17ae33c5df6f1ef6a9575807faa02d92b",
+  "requirement": {
+    "pilot_id": "N8C-007",
+    "requirement_text": "The system fetches news articles from the BBC website. It filters articles based on their suitability for a podcast, categorizing them with an LLM. For each selected article, the system shall: (1) extract the full content of the article; (2) use a language model to create a podcast script; (3) convert the script to speech using a text-to-speech service. Visible outcome: the final podcast audio is ready for use. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 1911,
+        "end": 1967,
+        "text": "The workflow fetches news articles from the BBC website."
+      },
+      {
+        "start": 1968,
+        "end": 2029,
+        "text": "It filters articles based on their suitability for a podcast."
+      },
+      {
+        "start": 2030,
+        "end": 2084,
+        "text": "It extracts the full content of the selected articles."
+      },
+      {
+        "start": 2085,
+        "end": 2131,
+        "text": "It uses Gemini LLM to create a podcast script."
+      },
+      {
+        "start": 2132,
+        "end": 2207,
+        "text": "It converts the script to speech using Hugging Face's text-to-speech model."
+      },
+      {
+        "start": 2208,
+        "end": 2249,
+        "text": "The final podcast audio is ready for use."
+      },
+      {
+        "start": 2346,
+        "end": 2389,
+        "text": "Categorizes news articles using Gemini LLM."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "News articles from the BBC website"
+      ],
+      "conditions": [
+        "Articles are filtered based on their suitability for a podcast"
+      ],
+      "allowed_actions": [
+        "Fetch news articles from the BBC website",
+        "Filter articles by podcast suitability, categorizing them with an LLM",
+        "Extract the full content of the selected articles",
+        "Use a language model to create a podcast script",
+        "Convert the script to speech using a text-to-speech service"
+      ],
+      "visible_outcomes": [
+        "The final podcast audio is ready for use"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 6
+}

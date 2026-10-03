@@ -1,0 +1,64 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-077",
+  "source_id": "n8n:14254",
+  "workflow_sha256": "372266a05032fb8feb73029f410a4eb3f3d9c937e3a01f8cbe841a27bb7a5be5",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "7890da3a90dd5b4f0d791afcbfa88c3752f3b7b3fb71714e986a4814cadaf86d",
+  "requirement": {
+    "requirement_text": "一、输入\n用户在 Slack 频道中 @提及机器人并提出问题；系统同时保留该会话线程标识，使同一会话保持连贯。\n\n二、主要处理\n1. 向数据仓库发送描述命令，获取目标表有哪些字段（如价格、日期、门店标识），使后续处理知道可以查询哪些内容。\n2. 由语言模型结合用户问题与表结构决定要执行的 SQL 查询。\n3. 在数据仓库上执行该 SQL 查询并取回真实数据，再由语言模型解读结果并生成会话式回复文本。\n4. 保留同一会话线程中的历史消息，用户可就同一话题继续追问（例如“现在只显示前 5 条”）而无需重复完整上下文。\n\n三、最终结果\n把最终答案（例如“第三季度总营收为 420 万美元”）回复到用户所在的 Slack 会话中。\n若处理未能产出可发送的回复，则向用户发送一条错误提示消息，避免用户空等。",
+    "source_spans": [
+      {
+        "start": 219,
+        "end": 2193,
+        "text": "| Node Name | Category | What it does |\n| :--- | :--- | :--- |\n| When Slack Message Received | Trigger | Monitors a Slack channel for @mentions. It captures the user's question and the thread ID to keep the conversation organized. |\n| Set Databricks Config | Configuration | A \"helper\" node where you hardcode your Databricks warehouse_id and target_table. This makes it easy to update settings in one place. |\n| Fetch Databricks Schema | Data Retrieval | Sends a DESCRIBE command to the Databricks API. It learns what columns exist (e.g., \"price\", \"date\", \"store_id\") so the AI knows what it can query. |\n| Parse Table Schema | Data Transformation | Uses JavaScript to clean up the raw Databricks response. it converts complex technical data into a simple list that the AI can easily read. |\n| SQL Data Analyst Agent | AI Brain | The \"manager\" of the workflow. It takes the user's question and the table schema, decides which SQL query to write, and interprets the results. |\n| Gemini Model | LLM Engine | Provides the actual intelligence (using Google Gemini 3.1 Flash). This is what \"thinks\" and generates the SQL and conversational text. |\n| Redis Chat Memory | Memory | Stores previous messages in the thread. This allows you to ask follow-up questions (e.g., \"Now show me only the top 5\") without repeating the whole context. |\n| Run Primary SQL Query | AI Tool | An HTTP tool given to the Agent. The Agent \"calls\" this node to actually run the generated SQL on Databricks and get the real data back. |\n| If Output Valid | Logic Gate | A safety check. It verifies if the Agent successfully produced a message for Slack or if something went wrong during the process. |\n| Post to Slack Channel | Output (Success) | Sends the final answer (e.g., \"The total revenue for Q3 was $4.2M\") back to the user in Slack. |\n| Post Error to Slack | Output (Failure) | If the SQL fails or the AI hits a wall, this node sends an error message to the user so they aren't left waiting. |"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Slack 频道中的 @提及消息，含用户的问题",
+        "该消息所在的会话线程标识",
+        "目标数据仓库中目标表的结构信息（可查询的字段）"
+      ],
+      "conditions": [
+        "同一会话线程保留历史消息，以支持追问而无需重复上下文",
+        "处理成功产出可发送消息时回复答案，否则回复错误提示"
+      ],
+      "allowed_actions": [
+        "获取目标表的字段结构信息",
+        "由语言模型编写 SQL 查询",
+        "在数据仓库上执行生成的 SQL 并取回数据",
+        "由语言模型解读查询结果并生成回复文本",
+        "将回复发送到 Slack 会话",
+        "处理受阻时发送错误提示消息"
+      ],
+      "visible_outcomes": [
+        "用户在 Slack 中收到问题答案",
+        "处理未产出有效回复时，用户在 Slack 中收到错误提示消息"
+      ],
+      "failure_behavior": [
+        "若 SQL 执行失败或处理受阻，向用户发送错误消息，使其不会一直等待"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-077.packet.json",
+    "packet_sha256": "9c7d09f0316deda0dfa63644b9ace9ce0a49aefa849f5bc8f440d0b037687b7b",
+    "public_description_sha256": "fd26a2831b7b0dcd1851a39221b9b4b37123ec2770e476bfeb0755d0fb4ef5ef"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-077.response.json",
+    "verification_response_sha256": "0f1556d7b8ace31c230ed4707200f16b36f3b112d1abe241f096fa2d7127b711",
+    "decision": "accept"
+  },
+  "formal_index": 88
+}

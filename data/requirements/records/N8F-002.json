@@ -1,0 +1,64 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-002",
+  "source_id": "n8n:12195",
+  "workflow_sha256": "775e2aea98c5e6d6cf6161e724dbb149fb6ba93ff9569642b7f5dd9261d05ef8",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "e17fac7db51704c8bd8e7a3933e941196fcc1e06167e5e95d1844616ab81ae48",
+  "requirement": {
+    "requirement_text": "系统持续监测来自权威来源的天气、地震和洪水三类预警信息，并对多类预警来源下的房产防护工作进行协同调度。\n当监测到威胁时，系统执行以下处理：\n1. 将预警信息与房产数据库进行交叉比对，识别受影响的房产位置；\n2. 计算保险风险敞口；\n3. 使用语言模型生成受损评估报告。\n处理完成后，系统向维护团队自动下发维护排期；同时向房产所有人和保险公司即时发送电子邮件通知，通知中附带完整的报告。",
+    "source_spans": [
+      {
+        "start": 376,
+        "end": 796,
+        "text": "The system continuously monitors weather, seismic, and flood alerts from authoritative sources. When threats are detected, it cross-references property databases to identify affected locations, calculates insurance exposure, and generates damage assessments using OpenAI's GPT-4. Teams receive automated maintenance schedules while property owners and insurers get instant email notifications with comprehensive reports."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "来自权威来源的天气预警信息",
+        "来自权威来源的地震预警信息",
+        "来自权威来源的洪水预警信息",
+        "房产数据库记录"
+      ],
+      "conditions": [
+        "对上述三类预警来源进行持续监测",
+        "监测到威胁时才触发后续的比对、计算与评估处理"
+      ],
+      "allowed_actions": [
+        "将预警信息与房产数据库交叉比对，识别受影响的房产位置",
+        "计算保险风险敞口",
+        "使用语言模型生成受损评估报告",
+        "为维护团队生成并自动下发维护排期",
+        "向房产所有人和保险公司发送即时电子邮件通知"
+      ],
+      "visible_outcomes": [
+        "受影响房产位置",
+        "受损评估报告",
+        "维护团队收到的自动维护排期",
+        "房产所有人和保险公司收到的、附带完整报告的即时电子邮件通知"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-002.packet.json",
+    "packet_sha256": "e043a21dc86a79ba90cdd97cd4a0282a4f7c31e235dcf7e9358f9bcbc5ac32c7",
+    "public_description_sha256": "2ee3c29a3fb8d1a0ec26fb5979c0c93598b1810c363153745645bc18f6f3f71e"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-002.response.json",
+    "verification_response_sha256": "6e63e035ff99fae0e885cc8557cee4462364278822cd53f2993d45c9141d0a66",
+    "decision": "accept"
+  },
+  "formal_index": 13
+}

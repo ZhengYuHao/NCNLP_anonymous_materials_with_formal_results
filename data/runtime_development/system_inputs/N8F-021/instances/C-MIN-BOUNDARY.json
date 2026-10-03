@@ -1,0 +1,13 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-021",
+  "case_id": "C-MIN-BOUNDARY",
+  "kind": "boundary",
+  "input_data": {
+    "form": {
+      "own_product_url": "https://www.amazon.com/dp/B0OWN002",
+      "competitor_urls": []
+    }
+  },
+  "input_sha256": "5CFD778E89C5EF0A9F402C6986582ADCC7CC51003013F06BFAC7F8A2DEE55FCD"
+}

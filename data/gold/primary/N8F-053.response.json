@@ -1,0 +1,511 @@
+{
+  "task_id": "N8F-053",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "5b168f54febaf6bb7458152bdd0b6ed7d7a86fc4e683009e4a2e7ba21d3ad69f",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 消息并判断是否有文本",
+      "node_type": "code",
+      "operation_family": "receive_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "用户消息，含文本内容（若有）、语音内容（若有）与 has_text 标志"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "消息中的文本内容（文本输入路径直接提取）"
+        }
+      ],
+      "native_evidence": ["Start: Telegram Message", "Prepare Input", "Check: ist it a Voice?"],
+      "requirement_evidence": [
+        "用户在聊天中发送一条想法，可以是文本消息，也可以是语音消息",
+        "若消息中没有文本内容，则按语音处理"
+      ],
+      "rationale": "接收消息并判断是否含文本是确定性触发与判断，判为 code，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语音转写为文本",
+      "node_type": "semantic",
+      "operation_family": "speech_to_text",
+      "inputs": [
+        {
+          "name": "message",
+          "type": "object",
+          "description": "含语音内容的用户消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "语音转写得到的文本"
+        }
+      ],
+      "native_evidence": ["Get Voice File", "Speech to Text"],
+      "requirement_evidence": [
+        "若消息中没有文本内容，则按语音处理：先取得该语音内容，再通过语音转写服务转换为文本"
+      ],
+      "rationale": "语音转写需语言模型能力，判为 semantic；仅在无文本分支可达。"
+    },
+    {
+      "node_id": "n3",
+      "label": "起草并修订 X 长帖",
+      "node_type": "semantic",
+      "operation_family": "post_drafting",
+      "inputs": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "想法文本（直接文本或语音转写结果）"
+        },
+        {
+          "name": "feedback",
+          "type": "string",
+          "description": "用户提出的修改意见（多轮修订时传入，初始为空）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "起草或修订后的 X 长帖草稿"
+        }
+      ],
+      "native_evidence": ["AI: Draft & Revise Post", "OpenAI Chat Model", "Window Buffer Memory"],
+      "requirement_evidence": [
+        "由语言模型分析该想法、起草 X 长帖内容，并依据用户在聊天中提出的修改意见进行修订；修订时保留最近若干轮对话上下文，以便理解“改短一些”这类指代性要求"
+      ],
+      "rationale": "起草与修订长帖需语言模型开放生成并保留对话上下文，判为 semantic；多轮修订通过环回实现。"
+    },
+    {
+      "node_id": "n4",
+      "label": "发送草稿到 Telegram 供审阅",
+      "node_type": "code",
+      "operation_family": "draft_review",
+      "inputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "X 长帖草稿"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "发送审阅的草稿（透传）"
+        }
+      ],
+      "native_evidence": ["Post Suggestion Or Ask For Approval"],
+      "requirement_evidence": [
+        "将模型生成的帖子草稿发回用户的 Telegram 聊天，供其审阅与反馈，形成多轮协作编辑"
+      ],
+      "rationale": "向 Telegram 发送草稿并等待反馈是确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "检查用户是否批准发布",
+      "node_type": "code",
+      "operation_family": "approval_check",
+      "inputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "已发送审阅的草稿"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval",
+          "type": "object",
+          "description": "批准判定结果，含 approved 布尔标志"
+        },
+        {
+          "name": "feedback",
+          "type": "string",
+          "description": "用户回复的修改意见（未批准时）"
+        }
+      ],
+      "native_evidence": ["Check if Approved"],
+      "requirement_evidence": [
+        "当用户在聊天中给出批准关键词（例如“ok”或“approved”）时，视为批准发布"
+      ],
+      "rationale": "按批准关键词（ok/approved）判定是否批准是确定性规则判断，判为 code；未批准时输出修改意见形成修订环。"
+    },
+    {
+      "node_id": "n6",
+      "label": "提取可发布的干净正文",
+      "node_type": "code",
+      "operation_family": "final_text_extraction",
+      "inputs": [
+        {
+          "name": "post_draft",
+          "type": "string",
+          "description": "批准后的帖子草稿"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_text",
+          "type": "string",
+          "description": "从结果中提取的可直接发布的干净正文"
+        }
+      ],
+      "native_evidence": ["Approval: Extract Final Post Text"],
+      "requirement_evidence": [
+        "此时从结果中提取出可直接发布的干净正文"
+      ],
+      "rationale": "从批准结果中提取干净正文是确定性文本提取，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发布定稿到 X 账号",
+      "node_type": "code",
+      "operation_family": "publish",
+      "inputs": [
+        {
+          "name": "final_text",
+          "type": "string",
+          "description": "可直接发布的定稿正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果，含状态与可能的错误信息"
+        }
+      ],
+      "native_evidence": ["Create post with Blotato"],
+      "requirement_evidence": [
+        "将定稿内容发布到用户已关联的 X 账号"
+      ],
+      "rationale": "调用 X 发布服务发布定稿是确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "查询发布状态",
+      "node_type": "code",
+      "operation_family": "status_query",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果，用于查询状态"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_status",
+          "type": "object",
+          "description": "发布状态：已发布/处理中/失败"
+        }
+      ],
+      "native_evidence": ["Check post status"],
+      "requirement_evidence": [
+        "发布后向发布服务查询帖子状态，判断其处于已发布、处理中还是失败"
+      ],
+      "rationale": "查询发布服务状态是确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送确认消息与已发布帖子直链",
+      "node_type": "terminal",
+      "operation_family": "send_success",
+      "inputs": [
+        {
+          "name": "publish_status",
+          "type": "object",
+          "description": "已发布状态，含帖子直链"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send a confirmation message"],
+      "requirement_evidence": [
+        "状态为已发布时，向 Telegram 发送确认消息与已发布帖子的直链"
+      ],
+      "rationale": "向用户发送成功确认与直链是用户可见的完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n10",
+      "label": "发送错误通知",
+      "node_type": "terminal",
+      "operation_family": "send_error",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "发布结果中的错误信息"
+        },
+        {
+          "name": "publish_status",
+          "type": "object",
+          "description": "失败状态信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send an error message"],
+      "requirement_evidence": [
+        "若上传或处理过程中出错，则向 Telegram 发送错误通知"
+      ],
+      "rationale": "上传/处理出错或状态失败时向用户发送错误通知，是用户可见的完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n11",
+      "label": "短暂等待后再次查询状态",
+      "node_type": "code",
+      "operation_family": "retry_wait",
+      "inputs": [
+        {
+          "name": "publish_status",
+          "type": "object",
+          "description": "处理中的状态信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_status",
+          "type": "object",
+          "description": "等待后继续查询的状态（透传）"
+        }
+      ],
+      "native_evidence": ["Give Blotat 5s :)", "In Progress?", "Give Blotat other 5s :)"],
+      "requirement_evidence": [
+        "状态为处理中时，短暂等待后再次查询状态，直至有结果"
+      ],
+      "rationale": "处理中时短暂等待后再次查询，属确定性控制逻辑，判为 code；轮询环终止条件为状态变为已发布或失败，max_iterations<=20。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": "message.has_text == false",
+      "rationale": "无文本内容时按语音处理并转写。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": "message.has_text == true",
+      "rationale": "消息含文本时直接起草长帖。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "语音转写为文本后起草长帖。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "起草后发送草稿供审阅。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "审阅后检查是否批准。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n5",
+      "target": "n3",
+      "variable": null,
+      "condition": "approval.approved == false",
+      "rationale": "未批准时按修改意见修订，形成多轮协作编辑环；环终止条件为用户回复批准关键词，max_iterations<=20。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "approval.approved == true",
+      "rationale": "批准后提取可发布正文。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取正文后发布到 X 账号。"
+    },
+    {
+      "edge_id": "cfg9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "publish_result.error == null",
+      "rationale": "发布成功后查询状态。"
+    },
+    {
+      "edge_id": "cfg10",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": "publish_result.error != null",
+      "rationale": "上传出错时发送错误通知。"
+    },
+    {
+      "edge_id": "cfg11",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": "publish_status.status == 'published'",
+      "rationale": "状态为已发布时发送确认与直链。"
+    },
+    {
+      "edge_id": "cfg12",
+      "source": "n8",
+      "target": "n11",
+      "variable": null,
+      "condition": "publish_status.status == 'processing'",
+      "rationale": "状态为处理中时短暂等待。"
+    },
+    {
+      "edge_id": "cfg13",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": "publish_status.status == 'failed'",
+      "rationale": "状态失败时发送错误通知。"
+    },
+    {
+      "edge_id": "cfg14",
+      "source": "n11",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "等待后再次查询状态，形成轮询环；环终止条件为状态变为已发布或失败，max_iterations<=20。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "message",
+      "condition": null,
+      "rationale": "含语音内容的消息传给转写节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "text",
+      "condition": null,
+      "rationale": "转写文本传给起草节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n1",
+      "target": "n3",
+      "variable": "text",
+      "condition": null,
+      "rationale": "消息自带文本直接传给起草节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "post_draft",
+      "condition": null,
+      "rationale": "草稿传给审阅发送节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "post_draft",
+      "condition": null,
+      "rationale": "已审阅草稿传给批准检查节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n3",
+      "variable": "feedback",
+      "condition": null,
+      "rationale": "修改意见传给起草节点用于修订（环）。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n4",
+      "target": "n6",
+      "variable": "post_draft",
+      "condition": null,
+      "rationale": "批准后的草稿传给正文提取节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_text",
+      "condition": null,
+      "rationale": "定稿正文传给发布节点。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n7",
+      "target": "n8",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布结果传给状态查询节点。"
+    },
+    {
+      "edge_id": "dfg10",
+      "source": "n8",
+      "target": "n9",
+      "variable": "publish_status",
+      "condition": null,
+      "rationale": "已发布状态（含直链）传给确认消息节点。"
+    },
+    {
+      "edge_id": "dfg11",
+      "source": "n8",
+      "target": "n11",
+      "variable": "publish_status",
+      "condition": null,
+      "rationale": "处理中状态传给等待节点。"
+    },
+    {
+      "edge_id": "dfg12",
+      "source": "n7",
+      "target": "n10",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "发布错误信息传给错误通知节点。"
+    },
+    {
+      "edge_id": "dfg13",
+      "source": "n8",
+      "target": "n10",
+      "variable": "publish_status",
+      "condition": null,
+      "rationale": "失败状态传给错误通知节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n9", "n10"],
+  "confidence": 0.92,
+  "notes": "按需求建模：无文本→语音转写；起草与修订合并为一个 semantic 节点并通过环回实现多轮协作编辑（未批准→反馈→修订，终止于批准关键词，max_iterations<=20）；发布后状态查询含轮询环（处理中→等待→再查，终止于已发布/失败，max_iterations<=20）；已发布/失败/出错各对应发送节点。原生图中 Window Buffer Memory 等模型依赖并入起草节点契约。"
+}

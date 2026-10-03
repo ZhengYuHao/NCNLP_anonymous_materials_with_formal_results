@@ -1,0 +1,64 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-032",
+  "source_id": "n8n:12264",
+  "workflow_sha256": "67145659865e9b1e6b8a9ce1a16768f527f5e459a0375d5ba360e02fc7ab9421",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "85191ba356727d2658b551e02a9fd529b874feb565977a2c9fef2b96e52713a3",
+  "requirement": {
+    "requirement_text": "系统以一条 YouTube 视频链接为输入，获取该视频的字幕文本，并由语言模型基于字幕生成博客文章与社交媒体内容。内容在发布前可选择等待人工批准；未启用人工批准时直接发布。生成的内容发布到选定的发布平台，并对每次处理结果进行记录以便追踪。",
+    "source_spans": [
+      {
+        "start": 10,
+        "end": 166,
+        "text": "This workflow turns a single YouTube video into multiple content formats and publishes them across different platforms with an optional human approval step."
+      },
+      {
+        "start": 324,
+        "end": 531,
+        "text": "Fetches the transcript from a YouTube video  \nUses AI to generate blog and social media content  \nOptionally waits for manual approval  \nPublishes content to selected platforms  \nLogs the result for tracking"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "一条 YouTube 视频的链接"
+      ],
+      "conditions": [
+        "可配置为发布前等待人工批准",
+        "未配置人工批准时自动发布"
+      ],
+      "allowed_actions": [
+        "获取视频字幕文本",
+        "基于字幕生成博客文章与社交媒体内容",
+        "在发布前等待人工批准（可选）",
+        "将内容发布到选定的发布平台",
+        "记录处理结果以便追踪"
+      ],
+      "visible_outcomes": [
+        "博客文章与社交媒体内容发布到选定平台",
+        "处理结果被记录以便追踪"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-032.packet.json",
+    "packet_sha256": "e2b8498a0de4b9fc2be457a168caa5791417ed66d68320a0a139bbeb3be7ca12",
+    "public_description_sha256": "bc5ee08cc0612a77054349c39b3bccbc22cb5e765d466ce2116cb1fbff039d1c"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-032.response.json",
+    "verification_response_sha256": "c4323c8dbbec5f13ad164e0279ec47c3e5a6d8c4b3efb46bf81fc773cb3e2b3e",
+    "decision": "accept"
+  },
+  "formal_index": 43
+}

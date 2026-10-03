@@ -1,0 +1,396 @@
+{
+  "task_id": "N8F-096",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "c3cf5840c8f7960c99c2559c43f2636eaf7adeb65d1e1d45e645a053c43807e6",
+  "fixtures": [
+    {
+      "fixture_id": "F-GSC",
+      "purpose": "GSC 上月与前一月表现（含下滑、持平、无变化页面）",
+      "input_data": {
+        "months": [
+          "2026-07",
+          "2026-08"
+        ],
+        "pages": [
+          {
+            "url": "https://site.example.com/pricing",
+            "clicks": [
+              100,
+              150
+            ],
+            "impressions": [
+              900,
+              1200
+            ]
+          },
+          {
+            "url": "https://site.example.com/blog",
+            "clicks": [
+              200,
+              250
+            ],
+            "impressions": [
+              1800,
+              2100
+            ]
+          },
+          {
+            "url": "https://site.example.com/home",
+            "clicks": [
+              300,
+              290
+            ],
+            "impressions": [
+              3000,
+              3100
+            ]
+          },
+          {
+            "url": "https://site.example.com/equal",
+            "clicks": [
+              100,
+              100
+            ],
+            "impressions": [
+              800,
+              800
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-QUERIES",
+      "purpose": "下滑页面的热门搜索查询词",
+      "input_data": {
+        "pages": [
+          {
+            "url": "https://site.example.com/pricing",
+            "queries": [
+              "n8n pricing",
+              "workflow automation cost"
+            ]
+          },
+          {
+            "url": "https://site.example.com/blog",
+            "queries": [
+              "n8n tutorial"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-PAGE-HTML",
+      "purpose": "下滑页面线上实际的 Title 与 H2 标签",
+      "input_data": {
+        "pages": [
+          {
+            "url": "https://site.example.com/pricing",
+            "title": "Our Product",
+            "h2": [
+              "Features",
+              "Contact Us"
+            ]
+          },
+          {
+            "url": "https://site.example.com/blog",
+            "title": "Blog",
+            "h2": [
+              "News"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SCHEDULE-MON",
+      "purpose": "每周一早上执行的调度与 Slack 通道",
+      "input_data": {
+        "schedule": "weekly Monday 08:00",
+        "slack_channel": "#seo-audit"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GSC-CUR",
+      "dependency_type": "googleSearchConsole",
+      "operation": "query_performance",
+      "request_contract": {
+        "start_date": "2026-08-01",
+        "end_date": "2026-08-31"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "url": "https://site.example.com/pricing",
+            "clicks": 100,
+            "impressions": 900
+          },
+          {
+            "url": "https://site.example.com/blog",
+            "clicks": 200,
+            "impressions": 1800
+          },
+          {
+            "url": "https://site.example.com/home",
+            "clicks": 300,
+            "impressions": 3000
+          },
+          {
+            "url": "https://site.example.com/equal",
+            "clicks": 100,
+            "impressions": 800
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSC-PREV",
+      "dependency_type": "googleSearchConsole",
+      "operation": "query_performance",
+      "request_contract": {
+        "start_date": "2026-07-01",
+        "end_date": "2026-07-31"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "url": "https://site.example.com/pricing",
+            "clicks": 150,
+            "impressions": 1200
+          },
+          {
+            "url": "https://site.example.com/blog",
+            "clicks": 250,
+            "impressions": 2100
+          },
+          {
+            "url": "https://site.example.com/home",
+            "clicks": 290,
+            "impressions": 3100
+          },
+          {
+            "url": "https://site.example.com/equal",
+            "clicks": 100,
+            "impressions": 800
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSC-QUERIES-PRICING",
+      "dependency_type": "googleSearchConsole",
+      "operation": "query_top_queries",
+      "request_contract": {
+        "url": "https://site.example.com/pricing"
+      },
+      "response_contract": {
+        "queries": [
+          "n8n pricing",
+          "workflow automation cost"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSC-QUERIES-BLOG",
+      "dependency_type": "googleSearchConsole",
+      "operation": "query_top_queries",
+      "request_contract": {
+        "url": "https://site.example.com/blog"
+      },
+      "response_contract": {
+        "queries": [
+          "n8n tutorial"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-PRICING",
+      "dependency_type": "httpRequest",
+      "operation": "scrape_page",
+      "request_contract": {
+        "url": "https://site.example.com/pricing"
+      },
+      "response_contract": {
+        "title": "Our Product",
+        "h2": [
+          "Features",
+          "Contact Us"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-BLOG",
+      "dependency_type": "httpRequest",
+      "operation": "scrape_page",
+      "request_contract": {
+        "url": "https://site.example.com/blog"
+      },
+      "response_contract": {
+        "title": "Blog",
+        "h2": [
+          "News"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_intent_gap",
+      "request_contract": {},
+      "response_contract": {
+        "cause": "Page content does not match pricing intent",
+        "tasks": [
+          {
+            "type": "rewrite_title",
+            "current": "Our Product",
+            "suggestion": "n8n Pricing – Plans & Cost"
+          },
+          {
+            "type": "add_h2",
+            "current": "",
+            "suggestion": "Compare Plans"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK",
+      "dependency_type": "slack",
+      "operation": "send_message",
+      "request_contract": {
+        "channel": "#seo-audit"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "777"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-AUDIT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-GSC",
+        "F-QUERIES",
+        "F-PAGE-HTML",
+        "F-SCHEDULE-MON"
+      ],
+      "mock_ids": [
+        "M-GSC-CUR",
+        "M-GSC-PREV",
+        "M-GSC-QUERIES-PRICING",
+        "M-GSC-QUERIES-BLOG",
+        "M-SCRAPE-PRICING",
+        "M-SCRAPE-BLOG",
+        "M-LLM-ANALYSIS",
+        "M-SLACK"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.declining_pages",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "仅排名与点击量下滑的页面(pricing/blog)进入深入分析；home 上涨、equal 持平均不入选"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.declining_pages",
+          "operator": "contains",
+          "expected": "https://site.example.com/pricing",
+          "rationale": "pricing 页面识别为下滑"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.declining_pages",
+          "operator": "contains",
+          "expected": "https://site.example.com/blog",
+          "rationale": "blog 页面识别为下滑"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.report.text",
+          "operator": "contains",
+          "expected": "https://site.example.com/pricing",
+          "rationale": "报告包含下滑页面"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.report.text",
+          "operator": "contains",
+          "expected": "100",
+          "rationale": "报告含量化数据（当月点击100）"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.report.text",
+          "operator": "contains",
+          "expected": "150",
+          "rationale": "报告含量化数据（前一月点击150）"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.report.text",
+          "operator": "contains",
+          "expected": "n8n Pricing – Plans & Cost",
+          "rationale": "报告含具体 Title 改写任务"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.report.text",
+          "operator": "contains",
+          "expected": "Compare Plans",
+          "rationale": "报告含需要补充的 H2 标题任务"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.report.pages",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "报告仅覆盖下滑页面"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.slack.channel",
+          "operator": "equals",
+          "expected": "#seo-audit",
+          "rationale": "顾问式报告发送到指定 Slack 通道"
+        },
+        {
+          "assertion_id": "A-11",
+          "target": "output.slack.message_id",
+          "operator": "equals",
+          "expected": "777",
+          "rationale": "报告已通过 Slack 发送"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；GSC 双月数据、查询词、页面抓取与 LLM 分析均固定模拟，无真实副作用；下滑判定（本月<前一月且曝光下降）由固定数据可精确计算；每周一由 fixture 调度说明。"
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-094",
+  "source_id": "n8n:9789",
+  "workflow_sha256": "56ffee586a99f37a39a42b0edd5ccaeec185ca17be91843eae0451a0068e2bbc",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "ceb7b933bbf5013a05008a2c2ef7f5c31083a5b0113cd16b68a187163e716c54",
+  "requirement": {
+    "requirement_text": "流程由用户手动执行并传入一个有效 URL 启动。系统接受任意有效 URL 作为输入，通过网页抓取服务获取该网页的内容；随后由语言模型从抓取到的内容中提取结构化数据，并生成一份简洁、事实性的摘要；对模型输出的结构化数据进行清洗与解析，再将其与摘要合并；最终结果写入 Google Sheets，供报表或后续自动化使用。最终产出为统一的机器可读结构化数据记录，以及一份适合数据分析或后续自动化使用的概要级摘要。",
+    "source_spans": [
+      {
+        "start": 1203,
+        "end": 1307,
+        "text": "The workflow begins when the user executes it manually or passes a valid URL.\n   The input includes url."
+      },
+      {
+        "start": 1341,
+        "end": 1371,
+        "text": "Accepts any valid URL as input"
+      },
+      {
+        "start": 1373,
+        "end": 1410,
+        "text": "Scrapes the page content using Decodo"
+      },
+      {
+        "start": 1436,
+        "end": 1474,
+        "text": "Extract structured data in JSON format"
+      },
+      {
+        "start": 1476,
+        "end": 1511,
+        "text": "Generate a concise, factual summary"
+      },
+      {
+        "start": 1513,
+        "end": 1555,
+        "text": "Cleans and parses AI-generated JSON safely"
+      },
+      {
+        "start": 1557,
+        "end": 1598,
+        "text": "Merges structured data and summary output"
+      },
+      {
+        "start": 1600,
+        "end": 1679,
+        "text": "Stores the final result in Google Sheets for reporting or downstream automation"
+      },
+      {
+        "start": 1910,
+        "end": 2033,
+        "text": "The Google Sheets Node appends or updates the record, storing the structured JSON and summary into a connected spreadsheet."
+      },
+      {
+        "start": 2050,
+        "end": 2168,
+        "text": "A unified, machine-readable data in JSON + an executive-level summary suitable data analysis or downstream automation."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户手动执行时提供的一个有效 URL"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "抓取该 URL 对应网页的内容",
+        "使用语言模型从网页内容中提取结构化数据",
+        "使用语言模型生成简洁、事实性的摘要",
+        "清洗并解析模型输出的结构化数据",
+        "将结构化数据与摘要合并",
+        "将最终结果写入 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中新增或更新的记录，包含结构化数据与摘要",
+        "统一的机器可读结构化数据记录与一份概要级摘要"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-094.packet.json",
+    "packet_sha256": "57385cde23839588c4e53e0e328a1e2faead07ec33843342175ef56b3c87ef49",
+    "public_description_sha256": "5252a6150c427fc5e90176a9841cde9d33043063a82e39071fcc25028d6b4684"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-094.response.json",
+    "verification_response_sha256": "41416f46787a725c3b7fc215c227759efdf67e113bc1f1e91b82aae00e8093d0",
+    "decision": "accept"
+  },
+  "formal_index": 105
+}

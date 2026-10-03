@@ -1,0 +1,217 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-024",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "预订请求数据",
+        "预订请求内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g14",
+      "data_items": [
+        "清洁任务信息（含清洁人员邮箱设置）",
+        "清洁任务信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g15",
+      "data_items": [
+        "清洁任务信息（未设置清洁人员邮箱）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-024-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "提醒房东未设置清洁人员邮箱基于该清洁任务的指派状态，提醒内容针对 g13 创建的具体清洁任务。",
+      "confidence": 0.65,
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g17",
+      "data_items": [
+        "清洁任务记录"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g17",
+      "target_group": "g18",
+      "data_items": [
+        "本周统计",
+        "本周统计结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g17",
+      "target_group": "g20",
+      "data_items": [
+        "本周无活动的统计结果",
+        "本周活动统计（无活动情形）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g18",
+      "target_group": "g19",
+      "data_items": [
+        "周报内容",
+        "房东周报文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "被跳过的预订内容与校验结果",
+        "被判定无效的预订数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "有效预订数据",
+        "有效的预订数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "规范化后的预订记录（含预订编号）",
+        "规范化预订记录（含预订编号）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g6",
+      "data_items": [
+        "规范化后的预订记录（含预订编号）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-024-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "Telegram 通知房东预订已确认，通知内容针对规范化后的该条预订，真实消费 g4 产出。",
+      "confidence": 0.65,
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g17",
+      "data_items": [
+        "预订记录",
+        "预订工作表记录"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g8",
+      "data_items": [
+        "预订记录",
+        "预订工作表记录"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g13",
+      "data_items": [
+        "退房当天的行程",
+        "退房当天的到期预订"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "到期行程（入住/退房/评价请求）",
+        "到期行程（预订信息与消息类型）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "生成的客人消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d16"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g11",
+      "data_items": [
+        "客人消息文本",
+        "生成的客人消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d17"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g12",
+      "data_items": [
+        "生成的客人消息"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-024-D04",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "Telegram 发布的确认针对已生成并发送的客人消息，真实消费 g9 产出。",
+      "confidence": 0.7,
+      "edge_id": "d18"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.8823529411764706,
+    "shared_edge_count": 15,
+    "adjudicated_dispute_count": 4,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,444 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-054",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "49660e8eb2926b788de6369d213136397bb07777176b29e8dfd1c87ba7ab1352",
+  "natural_language_requirement": "系统每周自动汇总指定 Google Docs 的更新情况，并通过邮件发送给团队。\n\n1）每周一 09:00 触发执行。\n2）确定受监控的 Google Docs 清单，包含文档 ID、名称与分类（例如项目、会议、更新），并设定 7 天的更新统计区间。\n3）获取这些文档的内容与元数据（最后修改时间、修改人、版本），仅保留过去一周内更新过的文档。\n4）提取文档的纯文本内容，进行清洗与规范化，并收集字数、修改人、最后更新日期等关键信息。\n5）将所有更新过的文档汇总为一份合并内容，作为生成周报的素材。\n6）使用语言模型生成商务风格的周报摘要，内容包含：执行摘要、按文档划分的关键更新、重要变更、行动事项以及下周重点。\n7）将生成结果整理为纯文本与 HTML 两种格式的邮件正文，并附上更新文档清单及其最后修改信息。\n8）通过 Gmail 将周报发送给已配置的团队邮箱，邮件主题中包含本次统计的日期区间。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "combined_content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "combined_content"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "action_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "executive_summary": {
+            "type": "string"
+          },
+          "important_changes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "key_updates": {
+            "additionalProperties": false,
+            "properties": {
+              "doc-a1": {
+                "type": "string"
+              },
+              "doc-b2": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "doc-a1",
+              "doc-b2"
+            ],
+            "type": "object"
+          },
+          "next_week_focus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_items",
+          "executive_summary",
+          "important_changes",
+          "key_updates",
+          "next_week_focus"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_weekly_email",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "html": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "text",
+              "html"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "subject",
+          "to",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "get_document_content",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "doc_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "plain_text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "plain_text"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "get_document_metadata",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "doc_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "doc_ids"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "documents": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "doc_id": {
+                  "type": "string"
+                },
+                "last_modified": {
+                  "type": "string"
+                },
+                "modified_by": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "doc_id",
+                "last_modified",
+                "modified_by",
+                "version"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "updated_docs",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "doc_id": {
+                "type": "string",
+                "description": "文档唯一标识"
+              },
+              "name": {
+                "type": "string",
+                "description": "文档名称"
+              },
+              "category": {
+                "type": "string",
+                "description": "文档分类，如项目、会议、更新"
+              },
+              "cleaned_text": {
+                "type": "string",
+                "description": "清洗规范化后的纯文本内容"
+              },
+              "word_count": {
+                "type": "integer",
+                "description": "文档字数"
+              },
+              "modified_by": {
+                "type": "string",
+                "description": "最后修改人"
+              },
+              "last_modified": {
+                "type": "string",
+                "description": "最后修改日期，ISO 8601 格式"
+              }
+            },
+            "required": [
+              "doc_id",
+              "name",
+              "category",
+              "cleaned_text",
+              "word_count",
+              "modified_by",
+              "last_modified"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "过去一周内更新过的文档数组，每条含文档标识、名称、分类、清洗规范化后的纯文本、字数、修改人、最后更新日期等关键信息",
+        "requirement_evidence": [
+          "仅保留过去一周内更新过的文档",
+          "提取文档的纯文本内容，进行清洗与规范化，并收集字数、修改人、最后更新日期等关键信息"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n4.updated_docs"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "merged_content",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "combined_text": {
+              "type": "string",
+              "description": "所有更新文档合并后的纯文本内容"
+            },
+            "documents": {
+              "type": "array",
+              "description": "各文档内容结构",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "doc_id": {
+                    "type": "string",
+                    "description": "文档唯一标识"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "该文档的纯文本内容"
+                  }
+                },
+                "required": [
+                  "doc_id",
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "combined_text",
+            "documents"
+          ],
+          "additionalProperties": false
+        },
+        "description": "所有更新文档汇总后的合并内容，包含合并后的纯文本内容及各文档内容结构，作为周报生成素材",
+        "requirement_evidence": [
+          "将所有更新过的文档汇总为一份合并内容，作为生成周报的素材"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.merged_content"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "weekly_summary",
+        "schema": {
+          "type": "string"
+        },
+        "description": "含执行摘要、按文档的关键更新、重要变更、行动事项与下周重点的周报摘要",
+        "requirement_evidence": [
+          "使用语言模型生成商务风格的周报摘要，内容包含：执行摘要、按文档划分的关键更新、重要变更、行动事项以及下周重点"
+        ],
+        "source_operations": [
+          "generate_weekly_digest"
+        ],
+        "design_sources": [
+          "n6.weekly_summary"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "email_bodies",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "邮件纯文本正文"
+            },
+            "html": {
+              "type": "string",
+              "description": "邮件 HTML 格式正文"
+            },
+            "updated_docs_list": {
+              "type": "array",
+              "description": "更新文档清单，含文档 ID、名称及最后修改日期",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "doc_id": {
+                    "type": "string",
+                    "description": "文档唯一标识"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "文档名称"
+                  },
+                  "last_modified": {
+                    "type": "string",
+                    "description": "最后修改日期，ISO 8601 格式"
+                  }
+                },
+                "required": [
+                  "doc_id",
+                  "name",
+                  "last_modified"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "text",
+            "html",
+            "updated_docs_list"
+          ],
+          "additionalProperties": false
+        },
+        "description": "纯文本与 HTML 两种格式的邮件正文及更新文档清单信息，包含纯文本正文、HTML 正文及更新文档清单（文档 ID、名称、最后修改日期）",
+        "requirement_evidence": [
+          "将生成结果整理为纯文本与 HTML 两种格式的邮件正文，并附上更新文档清单及其最后修改信息"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n7.email_bodies"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "email_delivery_report",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string",
+              "description": "邮件发送后返回的消息 ID"
+            },
+            "sent": {
+              "type": "boolean",
+              "description": "邮件是否成功发送"
+            },
+            "subject": {
+              "type": "string",
+              "description": "邮件主题，包含本次统计的日期区间"
+            },
+            "to": {
+              "type": "array",
+              "description": "邮件接收团队邮箱列表",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "message_id",
+            "sent",
+            "subject",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        "description": "通过 Gmail 将周报发送给已配置的团队邮箱，邮件主题中包含本次统计的日期区间，发送结果信息",
+        "requirement_evidence": [
+          "通过 Gmail 将周报发送给已配置的团队邮箱，邮件主题中包含本次统计的日期区间"
+        ],
+        "source_operations": [
+          "send_weekly_email"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "FF9D3B9438F0A731EE7A1E2306122EA2A5F102C389B5FEB4FDC707F8CAD1E5DB",
+  "public_interface_sha256": "4DC3483ECFAF8A549DC010E2E590FF19CF3D37E781BF1035EA2B33EECD537066",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

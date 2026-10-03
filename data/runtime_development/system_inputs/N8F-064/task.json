@@ -1,0 +1,587 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-064",
+  "dataset_partition": "development_qualification",
+  "domain": "governance",
+  "requirement_sha256": "dbf8cbf4f49420b715320234649c0b529f5efcbde15ee490757dd65f290cf254",
+  "natural_language_requirement": "系统生成一份多资产市场日报。系统依据用户设定的关注清单，覆盖三类标的：指数（如 SPY、QQQ）、外汇（如 EUR/USD）和大宗商品（如黄金、原油），并逐一从 TwelveData 获取清单中各标的的当日行情数据。在取数过程中，若某次数据请求失败或触及接口的硬性限制，系统立即把失败详情记录到 Google Sheets 的“Error logs”标签页，并通过 Gmail 发送一条紧急失败告警。成功获取的数据被规范化处理，计算出当日百分比变化以及看涨/看跌的基本趋势判断。规范化后的数据集被交给语言模型，由其扮演宏观策略分析师的角色，基于这些数据生成一份结构化快照，内容包括市场综述、主要波动标的、风险情绪以及可执行的操作展望。系统按这些固定板块提取内容，将完整报告写入主 Google Sheets 标签页用于历史留存，并将最终排版好的报告文本通过 Gmail 发送出去。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "to",
+          "body"
+        ],
+        "properties": {
+          "to": {
+            "type": "string",
+            "description": "收件人邮箱地址"
+          },
+          "body": {
+            "type": "string",
+            "description": "邮件正文内容"
+          },
+          "subject": {
+            "type": "string",
+            "description": "邮件主题",
+            "nullable": true
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_error_log",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "object",
+            "properties": {
+              "symbol": {
+                "type": "string"
+              },
+              "error_message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "symbol",
+              "error_message"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "row"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row"
+        ],
+        "properties": {
+          "row": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_main_report",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "row": {
+            "type": "object",
+            "properties": {
+              "report_sections": {
+                "type": "object",
+                "required": [
+                  "market_summary",
+                  "key_movers",
+                  "risk_sentiment",
+                  "actionable_outlook"
+                ],
+                "properties": {
+                  "market_summary": {
+                    "type": "string"
+                  },
+                  "key_movers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "risk_sentiment": {
+                    "type": "string"
+                  },
+                  "actionable_outlook": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "report_sections"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "row"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row"
+        ],
+        "properties": {
+          "row": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "symbol": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "close": {
+                "type": "number"
+              },
+              "high": {
+                "type": "number"
+              },
+              "low": {
+                "type": "number"
+              },
+              "open": {
+                "type": "number"
+              },
+              "prev_close": {
+                "type": "number"
+              },
+              "symbol": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "close",
+              "high",
+              "low",
+              "open",
+              "prev_close",
+              "symbol"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "status": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "error",
+              "status"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "lmChatGroq",
+      "operation": "generate_market_snapshot",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "normalized_data"
+        ],
+        "properties": {
+          "normalized_data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "symbol",
+                "percent_change",
+                "trend",
+                "raw_data"
+              ],
+              "properties": {
+                "symbol": {
+                  "type": "string"
+                },
+                "percent_change": {
+                  "type": "number"
+                },
+                "trend": {
+                  "type": "string"
+                },
+                "raw_data": {
+                  "type": "object",
+                  "required": [
+                    "open",
+                    "close",
+                    "high",
+                    "low",
+                    "prev_close"
+                  ],
+                  "properties": {
+                    "open": {
+                      "type": "number"
+                    },
+                    "close": {
+                      "type": "number"
+                    },
+                    "high": {
+                      "type": "number"
+                    },
+                    "low": {
+                      "type": "number"
+                    },
+                    "prev_close": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "sections"
+        ],
+        "properties": {
+          "sections": {
+            "type": "object",
+            "required": [
+              "market_summary",
+              "key_movers",
+              "risk_sentiment",
+              "actionable_outlook"
+            ],
+            "properties": {
+              "market_summary": {
+                "type": "string"
+              },
+              "key_movers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "risk_sentiment": {
+                "type": "string"
+              },
+              "actionable_outlook": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "normalized_data",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "单个标的的规范化行情数据及趋势判断",
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "description": "标的代码"
+              },
+              "percent_change": {
+                "type": "number",
+                "description": "当日百分比变化"
+              },
+              "trend": {
+                "type": "string",
+                "description": "看涨或看跌的基本趋势判断"
+              },
+              "raw_data": {
+                "type": "object",
+                "description": "原始行情数据字段",
+                "properties": {
+                  "open": {
+                    "type": "number"
+                  },
+                  "close": {
+                    "type": "number"
+                  },
+                  "high": {
+                    "type": "number"
+                  },
+                  "low": {
+                    "type": "number"
+                  },
+                  "prev_close": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "open",
+                  "close",
+                  "high",
+                  "low",
+                  "prev_close"
+                ]
+              }
+            },
+            "required": [
+              "symbol",
+              "percent_change",
+              "trend",
+              "raw_data"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "规范化后的数据，含当日百分比变化与看涨/看跌基本趋势判断",
+        "requirement_evidence": [
+          "成功获取的数据被规范化处理，计算出当日百分比变化以及看涨/看跌的基本趋势判断"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n4.normalized_data"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "report_content",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "market_summary": {
+              "type": "string",
+              "description": "市场综述"
+            },
+            "key_movers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "主要波动标的"
+            },
+            "risk_sentiment": {
+              "type": "string",
+              "description": "风险情绪"
+            },
+            "actionable_outlook": {
+              "type": "string",
+              "description": "可执行的操作展望"
+            }
+          },
+          "required": [
+            "market_summary",
+            "key_movers",
+            "risk_sentiment",
+            "actionable_outlook"
+          ],
+          "additionalProperties": false
+        },
+        "description": "含市场综述、主要波动标的、风险情绪与可执行操作展望的结构化快照",
+        "requirement_evidence": [
+          "规范化后的数据集被交给语言模型，由其扮演宏观策略分析师的角色，基于这些数据生成一份结构化快照，内容包括市场综述、主要波动标的、风险情绪以及可执行的操作展望"
+        ],
+        "source_operations": [
+          "generate_market_snapshot"
+        ],
+        "design_sources": [
+          "n5.report_content"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "error_log_records",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "单条失败详情记录",
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "description": "请求标的代码"
+              },
+              "error_message": {
+                "type": "string",
+                "description": "失败详情描述"
+              },
+              "sheet_row": {
+                "type": "integer",
+                "description": "写入 Google Sheets ‘Error logs’标签页的行号"
+              }
+            },
+            "required": [
+              "symbol",
+              "error_message",
+              "sheet_row"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "请求失败或触及硬性限制时，记录的失败详情",
+        "requirement_evidence": [
+          "若某次数据请求失败或触及接口的硬性限制，系统立即把失败详情记录到 Google Sheets 的“Error logs”标签页"
+        ],
+        "source_operations": [
+          "append_error_log"
+        ],
+        "design_sources": [
+          "n3"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "main_report_archive",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sheet_row": {
+              "type": "integer",
+              "description": "写入主标签页的行号"
+            },
+            "report_sections": {
+              "type": "object",
+              "description": "报告各板块内容",
+              "properties": {
+                "market_summary": {
+                  "type": "string"
+                },
+                "key_movers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "risk_sentiment": {
+                  "type": "string"
+                },
+                "actionable_outlook": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "market_summary",
+                "key_movers",
+                "risk_sentiment",
+                "actionable_outlook"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "sheet_row",
+            "report_sections"
+          ],
+          "additionalProperties": false
+        },
+        "description": "写入主 Google Sheets 标签页的完整报告，用于历史留存",
+        "requirement_evidence": [
+          "系统按这些固定板块提取内容，将完整报告写入主 Google Sheets 标签页用于历史留存"
+        ],
+        "source_operations": [
+          "append_main_report"
+        ],
+        "design_sources": [
+          "n6.archived_report"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "sent_emails",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "单封发送邮件记录",
+            "required": [
+              "email_type",
+              "message_id",
+              "to",
+              "body"
+            ],
+            "properties": {
+              "email_type": {
+                "type": "string",
+                "description": "邮件类型，‘error_alert’或‘final_report’"
+              },
+              "message_id": {
+                "type": "string",
+                "description": "Gmail 返回的消息ID"
+              },
+              "to": {
+                "type": "string",
+                "description": "收件人邮箱地址"
+              },
+              "body": {
+                "type": "string",
+                "description": "邮件正文内容"
+              },
+              "subject": {
+                "type": "string",
+                "description": "邮件主题",
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "通过 Gmail 发送的紧急失败告警和最终排版好的报告文本",
+        "requirement_evidence": [
+          "通过 Gmail 发送一条紧急失败告警",
+          "将最终排版好的报告文本通过 Gmail 发送出去"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "652DC0B316134925A29575E1D6EE7DDC1BE26EB71FED31A76A366DA811E27556",
+  "public_interface_sha256": "3B571B383456A0F2500BBADB8D69B6837296177E119ABE77981B2F69A98AD40B",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-029",
+  "case_id": "C-SLACK-ESCALATED",
+  "kind": "negative",
+  "input_data": {
+    "channel": "slack",
+    "normalized_message": {
+      "user_id": "slack-3003",
+      "body": "This is terrible, I want my money back!",
+      "thread_ts": "1680000000.000300",
+      "sentiment": "negative"
+    },
+    "config": {
+      "confidence_threshold": 0.7,
+      "max_message_length": 4000
+    }
+  },
+  "input_sha256": "CCFE118D2ED8F7C699D3B9B43AC845D285BA4EAC76FCA73D21F3445AC209426C"
+}

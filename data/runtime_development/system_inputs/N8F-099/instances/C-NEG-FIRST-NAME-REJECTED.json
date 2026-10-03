@@ -1,0 +1,12 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-099",
+  "case_id": "C-NEG-FIRST-NAME-REJECTED",
+  "kind": "negative",
+  "input_data": {
+    "slack_command": "/check-linkedin John",
+    "full_name": "John",
+    "recipient_email": "cs@example.com"
+  },
+  "input_sha256": "0D07A785CB774ED84B2D824996FD66C2A18AF7E863960B92E9E07FF631E0CD6B"
+}

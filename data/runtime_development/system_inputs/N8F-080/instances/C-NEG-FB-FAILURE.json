@@ -1,0 +1,14 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-080",
+  "case_id": "C-NEG-FB-FAILURE",
+  "kind": "negative",
+  "input_data": {
+    "schedule": "daily 10:00",
+    "page_id": "page-1",
+    "sheet_tab": "SentimentMetrics",
+    "outlook_recipient": "team@example.com",
+    "slack_channel": "#pr-alerts"
+  },
+  "input_sha256": "64D1109B1E60D467739DB34C6DFCBD9EFC541B58792ECD5455E6A97BFE9579CA"
+}

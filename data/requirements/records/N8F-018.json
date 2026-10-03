@@ -1,0 +1,165 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-018",
+  "source_id": "n8n:9886",
+  "workflow_sha256": "4e6864e80d3527d5a06a8e503d186aa4b7b3e3c5c68b250af647f41a2b3a40e4",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "55dde59b84d452dbb29c4831be7016f4283ea5931f5082d900a146a89a33bc07",
+  "requirement": {
+    "requirement_text": "按每日计划定时运行，运行时间为服务器时区的 10:00、12:00、19:00、21:00。每次运行时：\n\n先读取已发布标题记录，用于去重。随后向新闻数据源请求近期新闻，检索范围为最近 24–48 小时、按标题检索、并按发布时间排序。\n\n对返回的新闻条目进行筛选：排除聚合站点与公关稿源（包括 Biztoc、Techmeme、TheFly、PRNewswire、GlobeNewswire、MarketWatch 新闻稿、Medium、Substack、Yahoo 同意页等）；要求条目同时具备有效的链接与图片；按主题（规范化标题加域名）分组并只取其中最具代表性的一篇；再按时间新旧排序，最多返回 10 条不重复的文章。\n\n对每篇文章，先检查链接存在且标题未发布过；再按是否存在摘要分为两种文案变体：有摘要时生成内容更丰富的帖子，无摘要时生成仍然口语化、简短的帖子。文案由语言模型生成，风格为自然口语化的英文，不使用表情符号、链接与 Markdown 标记，并附 2–3 个话题标签；随后清理文案文本并保留图片链接。\n\n接着下载文章图片以确认图片链接可用：图片可用时以带图形式发布到 LinkedIn；图片不可用或下载失败时改为纯文本发布。\n\n发布成功后，把该文章标题写入已发布标题记录，使其在其他时段不会被再次发布。缺少链接或图片的条目按设计直接跳过，Yahoo 同意页同样跳过。",
+    "source_spans": [
+      {
+        "start": 25,
+        "end": 321,
+        "text": "Automatically:\n\tfetches fresh news,\n\tfilters out aggregators/PR wires and duplicates,\n\twrites a human-sounding LinkedIn post with GPT,\n\tdownloads the article image to verify it’s usable,\n\tpublishes to LinkedIn (with or without media),\n\tand logs the posted titles in Firestore to avoid re-posting."
+      },
+      {
+        "start": 323,
+        "end": 495,
+        "text": "Runs on a daily schedule (cron) and supports two post variants:\n\t•\tCase 1: article has a description → richer post\n\t•\tCase 2: no description → short, still human and casual"
+      },
+      {
+        "start": 534,
+        "end": 627,
+        "text": "Schedule Trigger (0 10,12,19,21 * * *): runs at 10:00, 12:00, 19:00, 21:00 (server timezone)."
+      },
+      {
+        "start": 631,
+        "end": 731,
+        "text": "Firestore (Get Previous News Titles): loads previously posted titles (document asma/x20) to de-dupe."
+      },
+      {
+        "start": 735,
+        "end": 873,
+        "text": "HTTP Request (API NEWS): calls newsapi.org with query “AI Startup” for example, last 24–48h window, searchIn=title, sorted by publishedAt."
+      },
+      {
+        "start": 903,
+        "end": 1063,
+        "text": "excludes Biztoc and common aggregators/PR wires (Techmeme, TheFly, PRNewswire, GlobeNewswire, MarketWatch press-releases, Medium, Substack, Yahoo consent, etc.)"
+      },
+      {
+        "start": 1068,
+        "end": 1094,
+        "text": "requires valid URL + image"
+      },
+      {
+        "start": 1099,
+        "end": 1176,
+        "text": "groups by topic (normalized title + domain) and picks the best representative"
+      },
+      {
+        "start": 1181,
+        "end": 1235,
+        "text": "sorts by recency and returns up to 10 unique articles."
+      },
+      {
+        "start": 1239,
+        "end": 1346,
+        "text": "IF (URL & De-dupe checks): ensures link present and not already posted (compares against Firestore titles)."
+      },
+      {
+        "start": 1350,
+        "end": 1412,
+        "text": "IF (Description Checker): branches on presence of description."
+      },
+      {
+        "start": 1416,
+        "end": 1531,
+        "text": "LLM Agents (2 prompts): generate a casual, human LinkedIn post in English (no emojis/links/markdown, 2–3 hashtags)."
+      },
+      {
+        "start": 1535,
+        "end": 1593,
+        "text": "Post setup: cleans the text, passes the image URL forward."
+      },
+      {
+        "start": 1630,
+        "end": 1686,
+        "text": "retrieves the image as a file to confirm the link works."
+      },
+      {
+        "start": 1713,
+        "end": 1776,
+        "text": "If image OK → posts with media.\n\t•\tOtherwise → posts text-only."
+      },
+      {
+        "start": 1815,
+        "end": 1882,
+        "text": "after a successful publish, writes the article’s title to Firestore"
+      },
+      {
+        "start": 3788,
+        "end": 3886,
+        "text": "Filtering: items missing URL or image are skipped by design. Yahoo consent pages are also skipped."
+      },
+      {
+        "start": 4218,
+        "end": 4321,
+        "text": "Image errors: some sites block hotlinking; the image download step will fall back to text-only posting."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "每日定时触发（服务器时区 10:00、12:00、19:00、21:00）",
+        "新闻数据源返回的近期新闻条目（最近 24–48 小时、按标题检索、按发布时间排序）",
+        "已发布标题记录（用于去重）",
+        "每篇文章的链接、图片、标题与摘要"
+      ],
+      "conditions": [
+        "排除聚合站点与公关稿源（Biztoc、Techmeme、TheFly、PRNewswire、GlobeNewswire、MarketWatch 新闻稿、Medium、Substack、Yahoo 同意页等）",
+        "条目必须同时具备有效链接与有效图片",
+        "按主题（规范化标题加域名）分组后只取最具代表性的一篇",
+        "按时间新旧排序，最多取 10 条不重复文章",
+        "链接不存在或标题已发布过则不予发布",
+        "有摘要时生成更丰富文案，无摘要时生成简短文案",
+        "图片下载成功则带图发布，否则纯文本发布",
+        "文案为英文，不使用表情符号、链接与 Markdown 标记，含 2–3 个话题标签"
+      ],
+      "allowed_actions": [
+        "读取已发布标题记录",
+        "向新闻数据源请求近期新闻",
+        "筛选、分组、排序并限制文章数量",
+        "调用语言模型生成 LinkedIn 帖文",
+        "清理文案文本并保留图片链接",
+        "下载文章图片以验证链接可用",
+        "发布到 LinkedIn（带图或纯文本）",
+        "将已发布标题写入记录"
+      ],
+      "visible_outcomes": [
+        "LinkedIn 上出现一条带图或纯文本的英文帖文，含 2–3 个话题标签",
+        "已发布标题记录中新增该文章标题",
+        "每次运行最多处理 10 条不重复文章"
+      ],
+      "failure_behavior": [
+        "缺少链接或图片的文章被跳过",
+        "Yahoo 同意页被跳过",
+        "图片下载失败或图片链接不可用时，改为纯文本发布"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-018.packet.json",
+    "packet_sha256": "07a809b2ce35d879b11884dfd251dd86c2e3236ae90c254c6381776ef7d3647c",
+    "public_description_sha256": "eae3bccabd59d81a5a094f7b4ae36fdc3cd74082f311424b8967e46a07c52b13"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-018.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-018.revision.json",
+    "revision_record_sha256": "f7fd9907262edbed570feecc151e7094ad4f2f01b32006b52287de4bab050b40",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-03/responses/N8F-018.response.json",
+    "final_confirmation_sha256": "8d785bb0517deffe4a397451fa075e0495b23959a8410f963841a324ba210236",
+    "decision": "accept"
+  },
+  "formal_index": 29
+}

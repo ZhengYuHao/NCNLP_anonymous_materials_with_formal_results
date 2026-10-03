@@ -1,0 +1,633 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-080",
+  "dataset_partition": "development_qualification",
+  "domain": "governance",
+  "requirement_sha256": "77f818bf1ec8145636ff44019ff0ac818389f898256042df22b1aa44ede782a0",
+  "natural_language_requirement": "一、触发与输入\n每天上午 10 点运行一次，通过 Facebook 的 Graph API 抓取最新的帖子，并提取帖子正文、互动量以及每条帖子最多 100 条评论。\n\n二、主要处理\n1. 对抓取到的 Facebook 数据结构化与清洗，供情感判定使用。\n2. 由语言模型对帖子语气与评论情感进行判定，输出情感倾向、置信度与说明。\n3. 把全部情感指标（含正面比例与互动数据）记录到 Google Sheets。\n4. 生成带颜色标记的 HTML 情感汇总报告，并通过 Outlook 以邮件发送。\n\n三、分支与最终结果\n1. 判定为负面的结果会发送到 Slack，以便及时响应。\n2. 若处理过程中任一环节失败，同样向 Slack 发送告警。",
+  "public_interfaces": [
+    {
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_page_posts",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "page_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "error": {
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "integer"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "posts": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "reactions": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "message",
+                    "reactions"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "posts"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "facebookGraphApi",
+      "operation": "get_post_comments",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "post_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "limit",
+          "post_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "comments": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "text"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "comments"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_metrics",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "tab": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "tab",
+          "metrics"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "appended_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appended_rows"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_sentiment",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "post_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "post_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "comments": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "comment_id": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "type": "number"
+                },
+                "sentiment": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "comment_id",
+                "confidence",
+                "sentiment"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "explanation": {
+            "type": "string"
+          },
+          "post_id": {
+            "type": "string"
+          },
+          "sentiment": {
+            "type": "string"
+          },
+          "tone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "comments",
+          "confidence",
+          "explanation",
+          "post_id",
+          "sentiment",
+          "tone"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "microsoftOutlook",
+      "operation": "send_email",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "send_message",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "sentiment_metrics",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "posts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "post_id": {
+                    "type": "string"
+                  },
+                  "tone": {
+                    "type": "string"
+                  },
+                  "sentiment": {
+                    "type": "string"
+                  },
+                  "confidence": {
+                    "type": "number"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "comments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "comment_id": {
+                          "type": "string"
+                        },
+                        "sentiment": {
+                          "type": "string"
+                        },
+                        "confidence": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "comment_id",
+                        "sentiment",
+                        "confidence"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "post_id",
+                  "tone",
+                  "sentiment",
+                  "confidence",
+                  "explanation",
+                  "comments"
+                ]
+              }
+            },
+            "positive_ratio": {
+              "type": "number"
+            },
+            "total_reactions": {
+              "type": "integer"
+            },
+            "total_comments": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "posts",
+            "positive_ratio",
+            "total_reactions",
+            "total_comments"
+          ],
+          "additionalProperties": false
+        },
+        "description": "情感倾向、置信度与说明，含正面比例与互动数据",
+        "requirement_evidence": [
+          "由语言模型对帖子语气与评论情感进行判定，输出情感倾向、置信度与说明"
+        ],
+        "source_operations": [
+          "analyze_sentiment"
+        ],
+        "design_sources": [
+          "n4.sentiment_metrics"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "negative_sentiment",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "post_id": {
+                "type": "string"
+              },
+              "sentiment": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number"
+              },
+              "explanation": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "post_id",
+              "sentiment",
+              "confidence",
+              "explanation"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "判定为负面的情感结果",
+        "requirement_evidence": [
+          "判定为负面的结果会发送到 Slack，以便及时响应"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n4.negative_sentiment"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "html_report",
+        "schema": {
+          "type": "string"
+        },
+        "description": "带颜色标记的 HTML 情感汇总报告",
+        "requirement_evidence": [
+          "生成带颜色标记的 HTML 情感汇总报告"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n6.html_report"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "logged_metrics",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "metrics": {
+              "type": "object"
+            },
+            "appended_rows": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "metrics",
+            "appended_rows"
+          ],
+          "additionalProperties": false
+        },
+        "description": "写入 Google Sheets 的情感指标记录",
+        "requirement_evidence": [
+          "把全部情感指标（含正面比例与互动数据）记录到 Google Sheets"
+        ],
+        "source_operations": [
+          "append_metrics"
+        ],
+        "design_sources": [
+          "n5.logged_metrics"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "facebook_posts_and_comments",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "posts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "reactions": {
+                    "type": "integer"
+                  },
+                  "comments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "text"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "message",
+                  "reactions",
+                  "comments"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "posts"
+          ],
+          "additionalProperties": false
+        },
+        "description": "抓取的最新帖子及其正文、互动量与每条最多 100 条评论",
+        "requirement_evidence": [
+          "通过 Facebook 的 Graph API 抓取最新的帖子，并提取帖子正文、互动量以及每条帖子最多 100 条评论"
+        ],
+        "source_operations": [
+          "get_page_posts",
+          "get_post_comments"
+        ],
+        "design_sources": [
+          "n2.raw_facebook_data"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_notifications",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "negative_sentiment_alert": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "ts": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "text",
+                "ok",
+                "ts"
+              ],
+              "additionalProperties": false
+            },
+            "failure_alert": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "ok": {
+                  "type": "boolean"
+                },
+                "ts": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "text",
+                "ok",
+                "ts"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "negative_sentiment_alert",
+            "failure_alert"
+          ],
+          "additionalProperties": false
+        },
+        "description": "发送到 Slack 的负面情感提醒和处理失败告警",
+        "requirement_evidence": [
+          "判定为负面的结果会发送到 Slack，以便及时响应",
+          "若处理过程中任一环节失败，同样向 Slack 发送告警"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [
+          "n8",
+          "n9"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "email_report",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message_id"
+          ],
+          "additionalProperties": false
+        },
+        "description": "通过 Outlook 发送的带颜色标记的 HTML 情感汇总报告邮件",
+        "requirement_evidence": [
+          "生成带颜色标记的 HTML 情感汇总报告，并通过 Outlook 以邮件发送"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [
+          "n7"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "862E14351353D7EBDC7DF09C9EAFB6C18A5833921789387BC55A1B7E5066B59A",
+  "public_interface_sha256": "E98D416873EF65930DE3BB0A1A4C5475059C309F8E1D041C135841117B4406FD",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

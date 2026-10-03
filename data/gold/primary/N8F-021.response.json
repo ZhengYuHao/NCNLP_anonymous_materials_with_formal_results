@@ -1,0 +1,412 @@
+{
+  "task_id": "N8F-021",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "e459c0e51c5d26da6982e0555552c8e415e03211db74b30ba721cedb5abbcdb1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收表单提交的商品链接",
+      "node_type": "code",
+      "operation_family": "receive_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "product_links",
+          "type": "object",
+          "description": "表单提交的商品链接，含自家商品链接与最多三个竞品链接"
+        }
+      ],
+      "native_evidence": ["Start Review Analysis", "Set Analysis Config"],
+      "requirement_evidence": [
+        "通过表单收集一个自家商品的亚马逊商品链接，以及最多三个竞品商品的亚马逊链接。"
+      ],
+      "rationale": "表单接收并整理链接是确定性触发与配置动作，判为 code，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "触发评论数据抓取任务",
+      "node_type": "code",
+      "operation_family": "scrape_trigger",
+      "inputs": [
+        {
+          "name": "product_links",
+          "type": "object",
+          "description": "待抓取评论的商品链接集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scrape_task_id",
+          "type": "string",
+          "description": "评论抓取服务的任务标识"
+        }
+      ],
+      "native_evidence": ["Build Scrape Input", "Fetch Reviews From Bright Data", "Check Scrape Accepted"],
+      "requirement_evidence": [
+        "对提交的全部商品，触发评论数据抓取任务"
+      ],
+      "rationale": "调用外部抓取服务提交任务，属确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "轮询抓取任务状态直至就绪",
+      "node_type": "code",
+      "operation_family": "async_poll",
+      "inputs": [
+        {
+          "name": "scrape_task_id",
+          "type": "string",
+          "description": "评论抓取任务标识"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scrape_ready",
+          "type": "object",
+          "description": "就绪的抓取结果引用，含数据下载位置"
+        }
+      ],
+      "native_evidence": ["Wait For Snapshot", "Check Snapshot Progress", "Evaluate Scrape Progress", "Reviews Ready?"],
+      "requirement_evidence": [
+        "并每 30 秒轮询一次任务状态，直到结果就绪（最长等待 10 分钟）"
+      ],
+      "rationale": "每 30 秒轮询任务状态直至就绪，为确定性控制逻辑，折叠进本节点契约；终止条件为任务状态就绪/完成，max_iterations<=20（10 分钟/30 秒），判为 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "下载评论数据并清洗重复字段",
+      "node_type": "code",
+      "operation_family": "data_cleansing",
+      "inputs": [
+        {
+          "name": "scrape_ready",
+          "type": "object",
+          "description": "就绪的抓取结果引用"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_reviews",
+          "type": "array",
+          "description": "下载并清洗重复字段后的评论数据"
+        }
+      ],
+      "native_evidence": ["Download Reviews", "Normalise Reviews"],
+      "requirement_evidence": [
+        "随后下载评论数据，清洗重复字段"
+      ],
+      "rationale": "下载评论并清洗重复字段是确定性数据处理，判为 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "按商品分组并保留加权评论集合",
+      "node_type": "code",
+      "operation_family": "weighted_selection",
+      "inputs": [
+        {
+          "name": "raw_reviews",
+          "type": "array",
+          "description": "清洗后的评论数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "product_review_sets",
+          "type": "array",
+          "description": "每个商品保留的一组加权评论集合，重点纳入差评与最有帮助的评论"
+        }
+      ],
+      "native_evidence": ["Group Reviews By Product"],
+      "requirement_evidence": [
+        "并按商品保留一组经过加权的评论集合，重点纳入差评与最有帮助的评论"
+      ],
+      "rationale": "按商品分组并加权筛选评论是确定性聚合规则，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "抽取评论主题",
+      "node_type": "semantic",
+      "operation_family": "theme_extraction",
+      "inputs": [
+        {
+          "name": "product_review_sets",
+          "type": "array",
+          "description": "每个商品的加权评论集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "review_themes",
+          "type": "object",
+          "description": "抽取结果，含各商品的抱怨主题、好评主题与功能诉求"
+        }
+      ],
+      "native_evidence": ["Extract Review Themes", "OpenAI Theme Extractor"],
+      "requirement_evidence": [
+        "把每个商品的评论集合交给语言模型，抽取结构化的抱怨主题、好评主题与功能诉求"
+      ],
+      "rationale": "从评论中抽取结构化主题需开放语义理解，判为 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "比对识别竞争缺口并确定排名靠前的抱怨",
+      "node_type": "code",
+      "operation_family": "gap_analysis",
+      "inputs": [
+        {
+          "name": "review_themes",
+          "type": "object",
+          "description": "各商品的抱怨主题、好评主题与功能诉求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "competitive_gaps",
+          "type": "array",
+          "description": "自家抱怨主题与竞品好评主题重叠形成的竞争缺口列表"
+        },
+        {
+          "name": "top_complaints",
+          "type": "array",
+          "description": "排名靠前的抱怨主题列表"
+        }
+      ],
+      "native_evidence": ["Rank Themes And Gaps"],
+      "requirement_evidence": [
+        "再将自家商品的抱怨主题与竞品的好评主题进行比对，识别两者重叠的部分作为“竞争缺口”",
+        "把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets"
+      ],
+      "rationale": "比对主题重叠并按排名筛选是确定性集合运算与排序规则，判为 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "撰写竞争简报",
+      "node_type": "semantic",
+      "operation_family": "brief_writing",
+      "inputs": [
+        {
+          "name": "competitive_gaps",
+          "type": "array",
+          "description": "识别出的竞争缺口列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "brief",
+          "type": "object",
+          "description": "语言模型撰写的简短竞争简报"
+        }
+      ],
+      "native_evidence": ["Write Competitive Brief", "OpenAI Brief Writer"],
+      "requirement_evidence": [
+        "并由语言模型撰写一份简短的竞争简报"
+      ],
+      "rationale": "撰写竞争简报需语言模型文本生成，判为 semantic。"
+    },
+    {
+      "node_id": "n9",
+      "label": "逐条追加抱怨与竞争缺口到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "log_to_sheet",
+      "inputs": [
+        {
+          "name": "top_complaints",
+          "type": "array",
+          "description": "排名靠前的抱怨主题"
+        },
+        {
+          "name": "competitive_gaps",
+          "type": "array",
+          "description": "识别出的竞争缺口"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Build Report", "Split Out Theme Rows", "Log Themes To Sheet"],
+      "requirement_evidence": [
+        "把排名靠前的抱怨与竞争缺口逐条追加到 Google Sheets"
+      ],
+      "rationale": "向 Google Sheets 逐条追加行是确定性外部写入动作，其后仍需 Slack 摘要，判为 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "向 Slack 发送格式化摘要",
+      "node_type": "terminal",
+      "operation_family": "send_summary",
+      "inputs": [
+        {
+          "name": "brief",
+          "type": "object",
+          "description": "竞争简报内容，含在摘要中"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post Digest To Slack"],
+      "requirement_evidence": [
+        "并向指定的 Slack 频道发送一份格式化的摘要，摘要中包含上述竞争简报"
+      ],
+      "rationale": "向 Slack 发送包含竞争简报的格式化摘要是用户可见的完成动作，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收链接后触发抓取任务。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交任务后轮询状态。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "结果就绪后下载并清洗评论。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "清洗后按商品分组加权。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "加权评论集合交给语言模型抽取主题。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "抽取主题后比对缺口并排序。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "识别缺口后撰写竞争简报。"
+    },
+    {
+      "edge_id": "cfg8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "简报完成后逐条追加到 Google Sheets。"
+    },
+    {
+      "edge_id": "cfg9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入 Sheets 后向 Slack 发送摘要。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "product_links",
+      "condition": null,
+      "rationale": "商品链接传给抓取任务触发节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "scrape_task_id",
+      "condition": null,
+      "rationale": "任务标识传给轮询节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "scrape_ready",
+      "condition": null,
+      "rationale": "就绪结果引用传给下载清洗节点。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "raw_reviews",
+      "condition": null,
+      "rationale": "清洗后的评论传给分组加权节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "product_review_sets",
+      "condition": null,
+      "rationale": "加权评论集合传给主题抽取节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "review_themes",
+      "condition": null,
+      "rationale": "抽取的主题传给缺口比对节点。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "competitive_gaps",
+      "condition": null,
+      "rationale": "竞争缺口传给简报撰写节点。"
+    },
+    {
+      "edge_id": "dfg8",
+      "source": "n7",
+      "target": "n9",
+      "variable": "top_complaints",
+      "condition": null,
+      "rationale": "排名靠前的抱怨逐条追加到 Sheets。"
+    },
+    {
+      "edge_id": "dfg9",
+      "source": "n7",
+      "target": "n9",
+      "variable": "competitive_gaps",
+      "condition": null,
+      "rationale": "竞争缺口逐条追加到 Sheets。"
+    },
+    {
+      "edge_id": "dfg10",
+      "source": "n8",
+      "target": "n10",
+      "variable": "brief",
+      "condition": null,
+      "rationale": "竞争简报包含在 Slack 摘要中。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n10"],
+  "confidence": 0.93,
+  "notes": "按需求建模：抓取任务轮询折叠为单节点（30 秒间隔、最长 10 分钟，max_iterations<=20）；主题抽取为 semantic，缺口比对与排名为 code，竞争简报为 semantic；Google Sheets 追加与 Slack 摘要为收尾输出。原生图中的 Sticky Note、Set Analysis Config 配置细节未在需求中声明，未单列。"
+}

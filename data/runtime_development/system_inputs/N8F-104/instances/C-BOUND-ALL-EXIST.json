@@ -1,0 +1,35 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-104",
+  "case_id": "C-BOUND-ALL-EXIST",
+  "kind": "boundary",
+  "input_data": {
+    "fixtures": {
+      "F-POST-MANUAL": {
+        "source": "manual",
+        "post": {
+          "id": 123,
+          "title": "Building AI Workflows",
+          "content": "In this post we discuss AI automation for business workflows."
+        }
+      },
+      "F-EXISTING-TAGS": {
+        "tags": [
+          {
+            "id": 1,
+            "name": "AI"
+          },
+          {
+            "id": 2,
+            "name": "n8n"
+          },
+          {
+            "id": 3,
+            "name": "Workflow"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "DE2DB6AA94F2FA8932830A0E210C241E1B164FB7DC677CC8C90D870D5AE7417F"
+}

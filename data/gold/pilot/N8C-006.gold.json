@@ -1,0 +1,799 @@
+{
+  "pilot_id": "N8C-006",
+  "annotator_id": "GA-01",
+  "status": "submitted",
+  "requirement_sha256": "1b7d36a355f2add7005add2bb7b20f81584596b28d7b97e2927ac2ffe141122e",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "6-hour schedule trigger",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Scheduled run signal emitted every 6 hours"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "The system runs on a 6-hour schedule"
+      ],
+      "rationale": "Declared scheduled entry point; emits only a start signal. Separate from the manual trigger because the requirement declares both entry modes."
+    },
+    {
+      "node_id": "n2",
+      "label": "Manual trigger for testing and one-off runs",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Manually started run signal"
+        }
+      ],
+      "native_evidence": [],
+      "requirement_evidence": [
+        "a manual trigger is also available for testing and one-off runs"
+      ],
+      "rationale": "Explicitly declared alternative entry point retained because the frozen requirement declares it; no dedicated manual node appears in the supplied native evidence, so native_evidence is empty and disclosed."
+    },
+    {
+      "node_id": "n3",
+      "label": "Pull fresh content from RSS feeds",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the feed pull"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rss_articles",
+          "type": "array",
+          "description": "Fresh articles pulled from The Verge, TechCrunch, and Ars Technica RSS feeds"
+        }
+      ],
+      "native_evidence": [
+        "The Verge – Tech",
+        "TechCrunch",
+        "Ars Technica – Technology Lab"
+      ],
+      "requirement_evidence": [
+        "It pulls fresh content from The Verge, TechCrunch, and Ars Technica RSS feeds"
+      ],
+      "rationale": "The three declared feed reads form one content-pull contract; deterministic external I/O."
+    },
+    {
+      "node_id": "n4",
+      "label": "Read posted-article records from Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the tracking read"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "posted_records",
+          "type": "array",
+          "description": "Records of articles already posted in previous runs"
+        }
+      ],
+      "native_evidence": [
+        "Get row(s) in sheet"
+      ],
+      "requirement_evidence": [
+        "with smart filtering ensuring only new, unposted articles are processed"
+      ],
+      "rationale": "The declared deduplication contract requires reading the tracking records; parallel with the feed pull (native Schedule Trigger connects to both reads)."
+    },
+    {
+      "node_id": "n5",
+      "label": "Filter out already-posted articles",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "rss_articles",
+          "type": "array",
+          "description": "Freshly pulled articles"
+        },
+        {
+          "name": "posted_records",
+          "type": "array",
+          "description": "Records of previously posted articles"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "new_articles",
+          "type": "array",
+          "description": "Articles that are new and unposted"
+        }
+      ],
+      "native_evidence": [
+        "Merge",
+        "Check if Already Posted"
+      ],
+      "requirement_evidence": [
+        "with smart filtering ensuring only new, unposted articles are processed"
+      ],
+      "rationale": "Deterministic comparison of article identifiers against posted records; the native random selection (Pick Random Post) is not declared and is excluded."
+    },
+    {
+      "node_id": "n6",
+      "label": "Iterate over new articles",
+      "node_type": "code",
+      "operation_family": "iteration",
+      "inputs": [
+        {
+          "name": "new_articles",
+          "type": "array",
+          "description": "New articles to process one at a time"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_article",
+          "type": "object",
+          "description": "The article currently being processed, with its title, content and source link"
+        }
+      ],
+      "native_evidence": [
+        "Pick Random Post"
+      ],
+      "requirement_evidence": [
+        "For each new article the system shall"
+      ],
+      "rationale": "The frozen requirement declares per-article processing ('for each new article'), modelled as an iteration node; the native node's random single-pick is narrower than the declared contract and excluded. Iteration ends when all new articles are processed (at most 20 iterations per run)."
+    },
+    {
+      "node_id": "n7",
+      "label": "Transform RSS content into Medium-style article with AI models",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "current_article",
+          "type": "object",
+          "description": "RSS article to transform"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Engaging Medium-style article with title and formatted content"
+        }
+      ],
+      "native_evidence": [
+        "Basic LLM Chain",
+        "Groq Chat Model"
+      ],
+      "requirement_evidence": [
+        "transform the RSS content into an engaging Medium-style article using AI models"
+      ],
+      "rationale": "Open-text rewriting into an engaging article; requires language-model generation."
+    },
+    {
+      "node_id": "n8",
+      "label": "Generate image prompt for cover visual with AI",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Article the cover prompt is derived from"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_prompt",
+          "type": "string",
+          "description": "Descriptive prompt for a relevant, professional marketing-style cover visual"
+        }
+      ],
+      "native_evidence": [
+        "Generate Image Prompt (Gemini)",
+        "Google Gemini Chat Model"
+      ],
+      "requirement_evidence": [
+        "automatically generate a relevant image prompt for cover visuals"
+      ],
+      "rationale": "Creative prompt generation grounded in the article content; cannot be replaced by deterministic rules."
+    },
+    {
+      "node_id": "n9",
+      "label": "Generate professional marketing-style cover image",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "image_prompt",
+          "type": "string",
+          "description": "Prompt sent to the image generation service"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cover_image",
+          "type": "object",
+          "description": "Generated cover image (downloaded content with its URL)"
+        }
+      ],
+      "native_evidence": [
+        "Create Pollinations + URL",
+        "DOWNLOAD IMAGE"
+      ],
+      "requirement_evidence": [
+        "generate professional marketing-style cover images"
+      ],
+      "rationale": "Deterministic external service call and retrieval using the prompt; the creative part is the upstream prompt node, so this is code."
+    },
+    {
+      "node_id": "n10",
+      "label": "Create Google Doc with formatted article for review",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Formatted article written into the document"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "review_doc",
+          "type": "object",
+          "description": "Google Doc containing the formatted article, with its document link"
+        }
+      ],
+      "native_evidence": [
+        "Create Google Doc",
+        "Update Doc",
+        "Code1",
+        "Code2",
+        "REFORMAT ARTICLE"
+      ],
+      "requirement_evidence": [
+        "create a Google Doc with the formatted article for easy review"
+      ],
+      "rationale": "Deterministic formatting and document creation/update; the visible outcome is the review document."
+    },
+    {
+      "node_id": "n11",
+      "label": "Send preview to Slack and wait for approval",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Article content included in the preview"
+        },
+        {
+          "name": "review_doc",
+          "type": "object",
+          "description": "Document link included in the preview"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_response",
+          "type": "object",
+          "description": "The reviewer's explicit approval or rejection response from Slack"
+        }
+      ],
+      "native_evidence": [
+        "Send a message2",
+        "Send message and wait for response",
+        "Wait1"
+      ],
+      "requirement_evidence": [
+        "send a preview to a Slack channel/DM for human approval and wait for explicit approval before publishing"
+      ],
+      "rationale": "Declared human-approval gate: send the preview and suspend until the reviewer responds."
+    },
+    {
+      "node_id": "n12",
+      "label": "Check approval status",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "approval_response",
+          "type": "object",
+          "description": "Reviewer response to evaluate"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_decision",
+          "type": "object",
+          "description": "Resolved decision: approved or rejected"
+        }
+      ],
+      "native_evidence": [
+        "Check Approval Status"
+      ],
+      "requirement_evidence": [
+        "wait for explicit approval before publishing",
+        "If the content is rejected"
+      ],
+      "rationale": "Deterministic evaluation of the reviewer response that gates the publishing branch."
+    },
+    {
+      "node_id": "n13",
+      "label": "Auto-publish article to Medium",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "current_article",
+          "type": "object",
+          "description": "Source title and link of the article"
+        },
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Article content to publish"
+        },
+        {
+          "name": "cover_image",
+          "type": "object",
+          "description": "Cover image included in the published post"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Publish to Medium"
+      ],
+      "requirement_evidence": [
+        "Upon approval, the system shall auto-publish the article to Medium"
+      ],
+      "rationale": "User-visible completion action on the approval branch: the article is published on Medium; the four on-approval outcomes are declared in parallel without an order, so each is a terminal with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n14",
+      "label": "Send formatted content via Gmail",
+      "node_type": "terminal",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Formatted article content sent by email"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a message1"
+      ],
+      "requirement_evidence": [
+        "send the formatted content via Gmail"
+      ],
+      "rationale": "User-visible completion action on the approval branch; terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n15",
+      "label": "Archive content in Google Drive",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "medium_article",
+          "type": "object",
+          "description": "Article content archived"
+        },
+        {
+          "name": "cover_image",
+          "type": "object",
+          "description": "Cover image archived"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Upload file"
+      ],
+      "requirement_evidence": [
+        "store everything in Google Drive for archiving"
+      ],
+      "rationale": "User-visible completion action on the approval branch: approved content is archived in Google Drive; terminal node with no outgoing CFG edge. The native pre-approval upload conflicts with the requirement order and is overridden by the requirement."
+    },
+    {
+      "node_id": "n16",
+      "label": "Update Google Sheets to prevent duplicates",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "current_article",
+          "type": "object",
+          "description": "Article identity recorded to prevent future duplicates"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Get row(s) in sheet"
+      ],
+      "requirement_evidence": [
+        "update Google Sheets to prevent duplicates"
+      ],
+      "rationale": "User-visible completion action on the approval branch: the tracking sheet is updated so the article is not processed again; terminal node with no outgoing CFG edge. The update itself is declared behavior of the frozen requirement."
+    },
+    {
+      "node_id": "n17",
+      "label": "Send rejection notification via Slack",
+      "node_type": "terminal",
+      "operation_family": "message_send",
+      "inputs": [
+        {
+          "name": "approval_decision",
+          "type": "object",
+          "description": "Rejection decision triggering the notification"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Rejection Notification"
+      ],
+      "requirement_evidence": [
+        "If the content is rejected, the system sends a clean rejection notification via Slack and does not publish the content."
+      ],
+      "rationale": "Declared failure-handling outcome; the rejection branch has no publishing actions. Terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scheduled runs start the feed pull."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Scheduled runs start the tracking read in parallel."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Manual runs start the feed pull."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Manual runs start the tracking read in parallel."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Filtering waits for the pulled articles."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Filtering waits for the posted records."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "The filtered new articles enter the per-article iteration."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "for each new article; iteration ends when all new articles are processed (at most 20 iterations)",
+      "rationale": "Each emitted article is transformed."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "The image prompt is derived from the generated article."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "The cover image is generated from the prompt."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "The review document is created after content and cover generation (declared step order 2 then 3)."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "The preview references the created review document."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "The reviewer response is evaluated."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": "reviewer explicitly approved the article",
+      "rationale": "Approval branch: publish to Medium."
+    },
+    {
+      "edge_id": "c15",
+      "source": "n12",
+      "target": "n14",
+      "variable": null,
+      "condition": "reviewer explicitly approved the article",
+      "rationale": "Approval branch: send via Gmail."
+    },
+    {
+      "edge_id": "c16",
+      "source": "n12",
+      "target": "n15",
+      "variable": null,
+      "condition": "reviewer explicitly approved the article",
+      "rationale": "Approval branch: archive in Google Drive."
+    },
+    {
+      "edge_id": "c17",
+      "source": "n12",
+      "target": "n16",
+      "variable": null,
+      "condition": "reviewer explicitly approved the article",
+      "rationale": "Approval branch: update the duplicate-prevention tracking."
+    },
+    {
+      "edge_id": "c18",
+      "source": "n12",
+      "target": "n17",
+      "variable": null,
+      "condition": "reviewer rejected the article",
+      "rationale": "Rejection branch: notify via Slack and do not publish."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The schedule signal starts the feed pull."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n4",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The schedule signal starts the tracking read."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The manual signal starts the feed pull."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The manual signal starts the tracking read."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "rss_articles",
+      "condition": null,
+      "rationale": "Filtering consumes the pulled articles."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "posted_records",
+      "condition": null,
+      "rationale": "Filtering compares against posted records."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "new_articles",
+      "condition": null,
+      "rationale": "Iteration runs over the filtered articles."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "current_article",
+      "condition": null,
+      "rationale": "The article transformation consumes the current article."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n7",
+      "target": "n8",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "The image prompt is generated from the article."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n8",
+      "target": "n9",
+      "variable": "image_prompt",
+      "condition": null,
+      "rationale": "The image service call uses the prompt."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n7",
+      "target": "n10",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "The Google Doc receives the formatted article."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n7",
+      "target": "n11",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "The Slack preview includes the article content."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n10",
+      "target": "n11",
+      "variable": "review_doc",
+      "condition": null,
+      "rationale": "The Slack preview includes the document link."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n11",
+      "target": "n12",
+      "variable": "approval_response",
+      "condition": null,
+      "rationale": "The status check evaluates the reviewer response."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n6",
+      "target": "n13",
+      "variable": "current_article",
+      "condition": null,
+      "rationale": "Publishing uses the source title and link."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n7",
+      "target": "n13",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "Publishing posts the article content."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n9",
+      "target": "n13",
+      "variable": "cover_image",
+      "condition": null,
+      "rationale": "Publishing embeds the cover image."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n7",
+      "target": "n14",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "The Gmail message carries the formatted content."
+    },
+    {
+      "edge_id": "d19",
+      "source": "n7",
+      "target": "n15",
+      "variable": "medium_article",
+      "condition": null,
+      "rationale": "Archiving stores the article content."
+    },
+    {
+      "edge_id": "d20",
+      "source": "n9",
+      "target": "n15",
+      "variable": "cover_image",
+      "condition": null,
+      "rationale": "Archiving stores the cover image."
+    },
+    {
+      "edge_id": "d21",
+      "source": "n6",
+      "target": "n16",
+      "variable": "current_article",
+      "condition": null,
+      "rationale": "The tracking update records the article identity."
+    },
+    {
+      "edge_id": "d22",
+      "source": "n12",
+      "target": "n17",
+      "variable": "approval_decision",
+      "condition": null,
+      "rationale": "The rejection notification follows the resolved rejection decision."
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n2"
+  ],
+  "terminal_nodes": [
+    "n13",
+    "n14",
+    "n15",
+    "n16",
+    "n17"
+  ],
+  "confidence": 0.88,
+  "notes": "共识 Gold（17 节点）：双触发入口 → 并行读取（RSS + Sheets）→ 过滤 → 逐篇迭代 → AI 改写(semantic) → 封面提示词(semantic) → 封面生成(code) → Google Doc → Slack 审批 → 分支（批准：Medium/Gmail/Drive/Sheets 四个并列 terminal；拒绝：Slack 通知 terminal）。迭代声明终止条件（max_iterations<=20）。混合任务类型边：n7(semantic)→n10/n11/n13/n14/n15(code, medium_article) 等。排除未声明实现：随机选稿、审批前上传 Drive。"
+}

@@ -1,0 +1,393 @@
+{
+  "pilot_id": "N8C-008",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "0f0d3098f9687151f8d615575e119638ad319d458a0a7cd18b1e88afc1f61f80",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Form submission with subject code, syllabus topics and email",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "syllabus_topics",
+          "type": "array",
+          "description": "Syllabus topics (per unit) submitted via the form"
+        },
+        {
+          "name": "subject_code",
+          "type": "string",
+          "description": "Submitted subject name and code"
+        },
+        {
+          "name": "recipient_email",
+          "type": "string",
+          "description": "Email address to receive the exam question paper"
+        }
+      ],
+      "native_evidence": [
+        "On form submission"
+      ],
+      "requirement_evidence": [
+        "A student or faculty member fills out a form with subject code, syllabus topics, and their email address"
+      ],
+      "rationale": "Declared entry point: the form submission that carries all inputs for the run."
+    },
+    {
+      "node_id": "n2",
+      "label": "Create Part A question set with AI agent (2 marks)",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "syllabus_topics",
+          "type": "array",
+          "description": "Syllabus topics the Part A questions are based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "part_a_questions",
+          "type": "array",
+          "description": "Part A questions, each worth 2 marks (count and marks customizable)"
+        }
+      ],
+      "native_evidence": [
+        "Part A QP Agent",
+        "OpenAI Chat Model",
+        "Structured Output Parser"
+      ],
+      "requirement_evidence": [
+        "pass the syllabus to AI agents to create question sets — Part A questions with 2 marks"
+      ],
+      "rationale": "Question generation from syllabus content requires language-model creation; the frozen requirement fixes Part A at 2 marks per question."
+    },
+    {
+      "node_id": "n3",
+      "label": "Create Part B question set with AI agent (13 marks)",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "syllabus_topics",
+          "type": "array",
+          "description": "Syllabus topics the Part B questions are based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "part_b_questions",
+          "type": "array",
+          "description": "Part B questions, each worth 13 marks (count and marks customizable)"
+        }
+      ],
+      "native_evidence": [
+        "Part B QP Agent1",
+        "OpenAI Chat Model1",
+        "Structured Output Parser1"
+      ],
+      "requirement_evidence": [
+        "Part B questions with 13 marks"
+      ],
+      "rationale": "Question generation from syllabus content requires language-model creating; the frozen requirement fixes Part B at 13 marks per question."
+    },
+    {
+      "node_id": "n4",
+      "label": "Create Part C question set with AI agent (14 marks)",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "syllabus_topics",
+          "type": "array",
+          "description": "Syllabus topics the Part C questions are based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "part_c_questions",
+          "type": "array",
+          "description": "Part C questions, each worth 14 marks (count and marks customizable)"
+        }
+      ],
+      "native_evidence": [
+        "Part C QP Agent",
+        "OpenAI Chat Model2",
+        "Structured Output Parser2"
+      ],
+      "requirement_evidence": [
+        "Part C questions with 14 marks"
+      ],
+      "rationale": "Question generation from syllabus content requires language-model creating; the frozen requirement fixes Part C at 14 marks per question."
+    },
+    {
+      "node_id": "n5",
+      "label": "Combine all AI-generated questions into a single structured document",
+      "node_type": "code",
+      "operation_family": "aggregation",
+      "inputs": [
+        {
+          "name": "part_a_questions",
+          "type": "array",
+          "description": "Generated Part A questions"
+        },
+        {
+          "name": "part_b_questions",
+          "type": "array",
+          "description": "Generated Part B questions"
+        },
+        {
+          "name": "part_c_questions",
+          "type": "array",
+          "description": "Generated Part C questions"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "combined_questions",
+          "type": "object",
+          "description": "All questions combined into a single structured document keyed by part"
+        }
+      ],
+      "native_evidence": [
+        "Merge",
+        "Merge1",
+        "Code"
+      ],
+      "requirement_evidence": [
+        "combine all AI-generated questions into a single structured document"
+      ],
+      "rationale": "Deterministic merging of the three question sets into one structured object."
+    },
+    {
+      "node_id": "n6",
+      "label": "Format questions into a clean HTML exam paper",
+      "node_type": "code",
+      "operation_family": "formatting",
+      "inputs": [
+        {
+          "name": "combined_questions",
+          "type": "object",
+          "description": "Structured question document to format"
+        },
+        {
+          "name": "subject_code",
+          "type": "string",
+          "description": "Subject code placed in the paper header"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "html_paper",
+          "type": "string",
+          "description": "The formatted exam paper as clean HTML"
+        }
+      ],
+      "native_evidence": [
+        "QP Formatter with HTML"
+      ],
+      "requirement_evidence": [
+        "format the questions into a clean HTML exam paper"
+      ],
+      "rationale": "Deterministic template rendering of the questions into HTML."
+    },
+    {
+      "node_id": "n7",
+      "label": "Send formatted exam paper to the user's email",
+      "node_type": "terminal",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "html_paper",
+          "type": "string",
+          "description": "Formatted exam paper delivered as the email body"
+        },
+        {
+          "name": "recipient_email",
+          "type": "string",
+          "description": "Address entered in the form that receives the paper"
+        },
+        {
+          "name": "subject_code",
+          "type": "string",
+          "description": "Subject used in the email subject line"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Gmail"
+      ],
+      "requirement_evidence": [
+        "send the formatted exam paper to the user's email (with option to CC/BCC)"
+      ],
+      "rationale": "User-visible completion action delivering the visible outcome; terminal node with no outgoing CFG edge. CC/BCC remains a declared delivery option."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "Form submission starts Part A generation."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Form submission starts Part B generation in parallel."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Form submission starts Part C generation in parallel."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Combination waits for Part A questions."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Combination waits for Part B questions."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Combination waits for Part C questions."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "The combined document is formatted into HTML."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "The formatted paper is emailed."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "syllabus_topics",
+      "condition": null,
+      "rationale": "Part A questions are generated from the submitted syllabus."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "syllabus_topics",
+      "condition": null,
+      "rationale": "Part B questions are generated from the submitted syllabus."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "syllabus_topics",
+      "condition": null,
+      "rationale": "Part C questions are generated from the submitted syllabus."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n5",
+      "variable": "part_a_questions",
+      "condition": null,
+      "rationale": "Combination consumes the Part A set."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "part_b_questions",
+      "condition": null,
+      "rationale": "Combination consumes the Part B set."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "part_c_questions",
+      "condition": null,
+      "rationale": "Combination consumes the Part C set."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "combined_questions",
+      "condition": null,
+      "rationale": "Formatting renders the combined questions."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n1",
+      "target": "n6",
+      "variable": "subject_code",
+      "condition": null,
+      "rationale": "The paper header shows the subject code."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n7",
+      "variable": "html_paper",
+      "condition": null,
+      "rationale": "The email body carries the formatted HTML paper."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n1",
+      "target": "n7",
+      "variable": "recipient_email",
+      "condition": null,
+      "rationale": "The paper is sent to the entered email address."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n1",
+      "target": "n7",
+      "variable": "subject_code",
+      "condition": null,
+      "rationale": "The subject line uses the subject code."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "Fan-out/fan-in structure: the form submission drives three parallel AI question agents (one per declared part) whose outputs are merged, formatted to HTML, and emailed. Marks follow the frozen requirement (Part A 2, Part B 13, Part C 14); the native Part A prompt contains an internally inconsistent mark figure ('each worth 13 marks' alongside '2 marks each'), and the requirement's declared values take precedence per the evidence hierarchy. The native Gmail node sets a fixed BCC recipient; the frozen requirement declares only the CC/BCC option, so no fixed recipient was added to Gold."
+}

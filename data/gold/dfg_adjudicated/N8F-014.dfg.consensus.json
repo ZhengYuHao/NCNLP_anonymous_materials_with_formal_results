@@ -1,0 +1,181 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-014",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "用户发送的语音消息",
+        "用户发送的语音消息（音频内容）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g3",
+      "data_items": [
+        "用户发送的食物图片"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g4",
+      "data_items": [
+        "用户的文本消息",
+        "用户发送的文本消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g6",
+      "data_items": [
+        "用户的注册请求消息",
+        "用户的注册相关消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g7",
+      "data_items": [
+        "用户的目标设置/更新请求消息"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-014-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "用户如 update my protein goal 的目标设置请求经接收路由步骤进入系统后，由目标更新步骤解析并执行更新，真实消费该请求消息。",
+      "confidence": 0.75,
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "语音转写文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "食物图片识别分析结果",
+        "食物图片识别结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "估算的热量、蛋白质、碳水化合物与脂肪"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g7",
+      "data_items": [
+        "解析出的目标设置/更新值"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-014-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "更新档案前由 AI 助手解析目标请求（g7 的原生证据含 Cal IA Agent），解析出的目标值供档案更新写入使用。",
+      "confidence": 0.7,
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g8",
+      "data_items": [
+        "经解析的日报生成请求"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-014-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "用户输入 report 的解析归属 AI 助手行为，报告生成步骤消费经解析的日报生成请求后汇总数据并生成带进度条的日报。",
+      "confidence": 0.6,
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g9",
+      "data_items": [
+        "AI 助手的回复文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g8",
+      "data_items": [
+        "餐食记录（营养素数据）",
+        "餐食记录数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "用户档案数据",
+        "用户档案（含注册信息与初始目标）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "用户热量与蛋白质目标",
+        "更新后的热量目标与蛋白质目标"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "带进度条的每日营养汇总"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d15"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.888888888888889,
+    "shared_edge_count": 12,
+    "adjudicated_dispute_count": 3,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

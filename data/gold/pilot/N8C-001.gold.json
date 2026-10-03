@@ -1,0 +1,1051 @@
+{
+  "pilot_id": "N8C-001",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "ae6a943021b8ea90a27f3bca8a8a5a8638de1fb12217ecb04b878c0469bdf64c",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Manual start",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "start_event",
+          "type": "object",
+          "description": "Manual start signal that initiates the assessment run"
+        }
+      ],
+      "native_evidence": [
+        "Manual Trigger - Start Audit",
+        "edge: Manual Trigger - Start Audit -> Set Client Config"
+      ],
+      "requirement_evidence": [
+        "it starts manually, or optionally when a new client row is added to a Google Sheets queue"
+      ],
+      "rationale": "Declared on-demand manual entry point; it only emits a start signal and performs no transformation."
+    },
+    {
+      "node_id": "n2",
+      "label": "Google Sheets client queue row trigger (optional)",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "queue_row",
+          "type": "object",
+          "description": "New client row added to the Google Sheets queue, carrying the client intake data"
+        }
+      ],
+      "native_evidence": [
+        "Optional - Watch Client Queue",
+        "Optional - Map Queue Row to Config"
+      ],
+      "requirement_evidence": [
+        "or optionally when a new client row is added to a Google Sheets queue"
+      ],
+      "rationale": "The frozen requirement declares the optional queue-row start as a condition, so it is modelled as a second entry node."
+    },
+    {
+      "node_id": "n3",
+      "label": "Load client configuration and sector guidance",
+      "node_type": "code",
+      "operation_family": "configuration",
+      "inputs": [
+        {
+          "name": "start_event",
+          "type": "object",
+          "description": "Present when the run is started manually"
+        },
+        {
+          "name": "queue_row",
+          "type": "object",
+          "description": "Present when the run is started by a new queue row; the row is mapped into the same configuration contract"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client configuration (identity, source/output locations, financial assumptions) enriched with sector guidance resolved from the selected sector"
+        }
+      ],
+      "native_evidence": [
+        "Set Client Config",
+        "Industry Template Selector",
+        "Optional - Map Queue Row to Config"
+      ],
+      "requirement_evidence": [
+        "load the client configuration and sector guidance"
+      ],
+      "rationale": "Requirement step (1) loads configuration and sector guidance as one action; sector guidance is a deterministic lookup from the selected sector, so a single code node covers the contract."
+    },
+    {
+      "node_id": "n4",
+      "label": "Download source evidence from Google Drive",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Provides the source document location for this client"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "drive_documents",
+          "type": "array",
+          "description": "Downloaded source evidence documents with content and metadata"
+        }
+      ],
+      "native_evidence": [
+        "1.1 Google Drive - Org Data"
+      ],
+      "requirement_evidence": [
+        "download the source evidence from Google Drive"
+      ],
+      "rationale": "External read action declared in step (1); deterministic I/O, no open-text understanding."
+    },
+    {
+      "node_id": "n5",
+      "label": "Read RACI, tools inventory, KPI snapshot and benchmarks from Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Provides the master sheet location"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheets_data",
+          "type": "object",
+          "description": "Rows of the RACI matrix, tools inventory, KPI snapshot and benchmarks read from Google Sheets"
+        }
+      ],
+      "native_evidence": [
+        "1.2 Google Sheets - RACI Matrix",
+        "1.3 Google Sheets - Tools Inventory",
+        "1.4 KPI Snapshot - Google Sheets",
+        "2.4a Google Sheets - Benchmarks"
+      ],
+      "requirement_evidence": [
+        "read the RACI, tools inventory, KPI snapshot, and benchmarks from Google Sheets"
+      ],
+      "rationale": "Requirement step (1) declares the four sheet reads as one evidence-collection contract, so they form a single method-neutral read node."
+    },
+    {
+      "node_id": "n6",
+      "label": "Normalize and score evidence into current-state dataset",
+      "node_type": "code",
+      "operation_family": "normalization_scoring",
+      "inputs": [
+        {
+          "name": "drive_documents",
+          "type": "array",
+          "description": "Downloaded source evidence documents"
+        },
+        {
+          "name": "sheets_data",
+          "type": "object",
+          "description": "RACI, tools, KPI and benchmark rows"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client identity used to key the dataset"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_state",
+          "type": "object",
+          "description": "Single structured current-state dataset (org structure, tools, KPIs, documents) with basic data-quality signals"
+        }
+      ],
+      "native_evidence": [
+        "Merge Discovery Data",
+        "2.1 Data Cleaner"
+      ],
+      "requirement_evidence": [
+        "normalize and score the collected evidence into a single structured current-state dataset with basic data-quality signals"
+      ],
+      "rationale": "Deterministic cleaning, merging and scoring of typed evidence rows; fully declared rules, no open-text generation."
+    },
+    {
+      "node_id": "n7",
+      "label": "Analyze inefficiencies with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "current_state",
+          "type": "object",
+          "description": "Structured current-state dataset to analyze"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Sector and compliance context guiding the analysis"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Identified inefficiencies with scores and an analysis summary"
+        }
+      ],
+      "native_evidence": [
+        "2.2 Analyse Inefficiencies With OpenAI"
+      ],
+      "requirement_evidence": [
+        "use a language model to analyze inefficiencies"
+      ],
+      "rationale": "Open-text qualitative analysis of operating-model evidence; frozen deterministic rules cannot replace it. Separate from recommendations because it has its own output contract consumed downstream."
+    },
+    {
+      "node_id": "n8",
+      "label": "Generate AI/automation recommendations with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Inefficiencies to map to AI/automation solutions"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Sector guidance and compliance requirements the recommendations must align to"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "AI/automation recommendations per process with fit, technology, complexity, saving and ROI estimates"
+        }
+      ],
+      "native_evidence": [
+        "2.3 Map AI and Automation Opportunities"
+      ],
+      "requirement_evidence": [
+        "generate AI/automation recommendations aligned to the selected sector and compliance needs"
+      ],
+      "rationale": "Generation of recommendations from the inefficiency analysis under sector/compliance constraints; requires language-model judgement."
+    },
+    {
+      "node_id": "n9",
+      "label": "Generate future-state target operating model with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Analysis findings the target model must address"
+        },
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "Recommended AI/automation solutions incorporated into the target model"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client and sector context for the design"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "target_operating_model",
+          "type": "object",
+          "description": "Future-state target operating model: org design, technology architecture, roadmap and a new RACI"
+        }
+      ],
+      "native_evidence": [
+        "3.1 Generate Target Operating Model",
+        "edge: Merge Analysis Results -> Limit to First Item (Before Executive Summary) -> 3.1 Generate Target Operating Model"
+      ],
+      "requirement_evidence": [
+        "generate a future-state target operating model (org design, technology architecture, roadmap, and a new RACI)"
+      ],
+      "rationale": "Open-ended design of the future operating model from the merged analysis; semantic generation with a JSON output contract."
+    },
+    {
+      "node_id": "n10",
+      "label": "Calculate cautious/hybrid/aggressive ROI scenarios",
+      "node_type": "code",
+      "operation_family": "financial_calculation",
+      "inputs": [
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Inefficiency cost base for benefit calculation"
+        },
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "Recommendation complexity mix driving implementation cost"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Financial assumptions from the client configuration"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "roi_scenarios",
+          "type": "object",
+          "description": "Cautious/hybrid/aggressive scenarios with investment, annual benefit, NPV, IRR, payback and ROI"
+        }
+      ],
+      "native_evidence": [
+        "3.2 Financial Model Deep-Dive"
+      ],
+      "requirement_evidence": [
+        "calculate cautious/hybrid/aggressive ROI scenarios"
+      ],
+      "rationale": "Deterministic financial computation over typed inputs; the requirement declares the calculation, and fixed rules can fulfil it without loss."
+    },
+    {
+      "node_id": "n11",
+      "label": "Build Mermaid diagrams",
+      "node_type": "code",
+      "operation_family": "diagram_building",
+      "inputs": [
+        {
+          "name": "target_operating_model",
+          "type": "object",
+          "description": "Blueprint content rendered into diagrams"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client identity used to key the diagrams"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mermaid_diagrams",
+          "type": "array",
+          "description": "Mermaid diagram items keyed by diagram type"
+        }
+      ],
+      "native_evidence": [
+        "3.3a Mermaid Diagram Generator",
+        "2.4b Benchmark Comparator"
+      ],
+      "requirement_evidence": [
+        "build Mermaid diagrams"
+      ],
+      "rationale": "Diagram construction from upstream outputs is a declared deterministic build step; no open-text understanding is required."
+    },
+    {
+      "node_id": "n12",
+      "label": "Generate executive transformation report with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "target_operating_model",
+          "type": "object",
+          "description": "Blueprint narrated in the report"
+        },
+        {
+          "name": "roi_scenarios",
+          "type": "object",
+          "description": "Financial scenario figures quoted in the report"
+        },
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Current-state findings for the assessment sections"
+        },
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "Recommended solutions referenced in the report"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client and sector context for the narrative"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "executive_report",
+          "type": "string",
+          "description": "Executive transformation report text"
+        }
+      ],
+      "native_evidence": [
+        "3.4 Generate Executive Transformation Report",
+        "3.4A Prepare Executive Report Context"
+      ],
+      "requirement_evidence": [
+        "generate an executive transformation report"
+      ],
+      "rationale": "Long-form executive narrative synthesis; requires language-model generation and cannot be replaced by fixed rules."
+    },
+    {
+      "node_id": "n13",
+      "label": "Generate internal consultant rationale with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "executive_report",
+          "type": "string",
+          "description": "Executive summary whose reasoning is explained"
+        },
+        {
+          "name": "roi_scenarios",
+          "type": "object",
+          "description": "Financial model behind the recommendations"
+        },
+        {
+          "name": "inefficiency_analysis",
+          "type": "object",
+          "description": "Supporting analysis"
+        },
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "Supporting recommendations"
+        },
+        {
+          "name": "target_operating_model",
+          "type": "object",
+          "description": "Blueprint whose choices are justified"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client context for the rationale"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "consultant_rationale",
+          "type": "string",
+          "description": "Internal consultant rationale document text"
+        }
+      ],
+      "native_evidence": [
+        "3.5 Consultant Rationale Generator",
+        "edge: 3.4 Generate Executive Transformation Report -> Limit to First Item (Rationale) -> 3.5 Consultant Rationale Generator"
+      ],
+      "requirement_evidence": [
+        "an internal consultant rationale"
+      ],
+      "rationale": "Separate open-text generation contract explaining the reasoning behind the recommendations; depends on the executive report per the declared ordering."
+    },
+    {
+      "node_id": "n14",
+      "label": "Assemble final payload",
+      "node_type": "code",
+      "operation_family": "payload_assembly",
+      "inputs": [
+        {
+          "name": "executive_report",
+          "type": "string",
+          "description": "Executive summary content"
+        },
+        {
+          "name": "consultant_rationale",
+          "type": "string",
+          "description": "Rationale content"
+        },
+        {
+          "name": "target_operating_model",
+          "type": "object",
+          "description": "Models and new RACI for the structured outputs"
+        },
+        {
+          "name": "roi_scenarios",
+          "type": "object",
+          "description": "Scenario figures for models and KPI projections"
+        },
+        {
+          "name": "recommendations",
+          "type": "object",
+          "description": "Recommendation rows"
+        },
+        {
+          "name": "mermaid_diagrams",
+          "type": "array",
+          "description": "Diagram rows"
+        },
+        {
+          "name": "current_state",
+          "type": "object",
+          "description": "Audit and KPI baseline data for the audit summary"
+        },
+        {
+          "name": "client_config",
+          "type": "object",
+          "description": "Client identity and run metadata"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_payload",
+          "type": "object",
+          "description": "Final payload: sheet-ready structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) plus the consolidated text report"
+        }
+      ],
+      "native_evidence": [
+        "Final Payload",
+        "Generate Professional Report",
+        "Extract New RACI",
+        "Extract Recommendations Data",
+        "Extract KPI Updates",
+        "Parse"
+      ],
+      "requirement_evidence": [
+        "then assemble a final payload"
+      ],
+      "rationale": "Deterministic aggregation of all upstream outputs into the deliverable payload declared as the last step before the visible outcomes."
+    },
+    {
+      "node_id": "n15",
+      "label": "Write structured outputs to Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "final_payload",
+          "type": "object",
+          "description": "Sheet-ready structured outputs to persist"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "4.1 Write Operating Model to Google Sheets",
+        "4.1b Write Recommendations to Google Sheets",
+        "Write New RACI to Sheet",
+        "Write Diagrams to Sheet",
+        "Write Rationale to Sheet",
+        "Write Audit Master to Sheet",
+        "Write Exec Summary to Sheet",
+        "Write KPI Benchmarking to Sheet",
+        "AI Projections"
+      ],
+      "requirement_evidence": [
+        "the structured outputs (models, recommendations, RACI, diagrams, audit summary, executive summary, KPI benchmarking/projections) are written to Google Sheets"
+      ],
+      "rationale": "User-visible completion action: persisting the structured outputs; terminal node with no outgoing CFG edge. The multiple native sheet writes realise one declared outcome."
+    },
+    {
+      "node_id": "n16",
+      "label": "Upload consolidated text report to Google Drive",
+      "node_type": "terminal",
+      "operation_family": "file_upload",
+      "inputs": [
+        {
+          "name": "final_payload",
+          "type": "object",
+          "description": "Contains the consolidated text report to upload"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Generate Professional Report",
+        "Upload file"
+      ],
+      "requirement_evidence": [
+        "a consolidated text report is uploaded to Google Drive"
+      ],
+      "rationale": "User-visible completion action: uploading the consolidated report; terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Manual start initiates configuration loading."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Optional queue-row start initiates the same configuration loading path."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Evidence download needs the loaded configuration."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "Sheet reads need the loaded configuration; parallel with the Drive download."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Normalization waits for the Drive evidence."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Normalization waits for the sheet evidence."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "Inefficiency analysis runs on the normalized current-state dataset."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "Recommendations are generated from the inefficiency analysis."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "Target operating model generation follows the completed analysis and recommendations."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "ROI calculation needs the recommendations and analysis; it may proceed alongside blueprint generation."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n9",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "Diagrams are built from the generated blueprint."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n9",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "Executive report needs the blueprint."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n10",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "Executive report needs the financial scenarios."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "Consultant rationale is generated after the executive report."
+    },
+    {
+      "edge_id": "c15",
+      "source": "n11",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "Payload assembly waits for the diagrams."
+    },
+    {
+      "edge_id": "c16",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "Payload assembly waits for the rationale (and transitively for the report, model and scenarios)."
+    },
+    {
+      "edge_id": "c17",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "Structured outputs are written after the payload is assembled."
+    },
+    {
+      "edge_id": "c18",
+      "source": "n14",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "The consolidated report is uploaded after the payload is assembled."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n3",
+      "variable": "start_event",
+      "condition": null,
+      "rationale": "Configuration loading consumes the manual start signal."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "queue_row",
+      "condition": null,
+      "rationale": "Configuration loading maps the queue row into the configuration contract."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Drive download needs source locations from the configuration."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Sheet reads need the master sheet id from the configuration."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "drive_documents",
+      "condition": null,
+      "rationale": "Normalization consumes the downloaded documents."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "sheets_data",
+      "condition": null,
+      "rationale": "Normalization consumes the sheet rows."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n3",
+      "target": "n6",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Normalization keys the dataset by client identity."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "current_state",
+      "condition": null,
+      "rationale": "Inefficiency analysis consumes the structured current-state dataset."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n3",
+      "target": "n7",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Analysis is aligned to the selected sector from the configuration."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n7",
+      "target": "n8",
+      "variable": "inefficiency_analysis",
+      "condition": null,
+      "rationale": "Recommendations are produced for each identified inefficiency."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n3",
+      "target": "n8",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Recommendations must comply with sector guidance and compliance needs."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n7",
+      "target": "n9",
+      "variable": "inefficiency_analysis",
+      "condition": null,
+      "rationale": "Blueprint generation consumes the analysis findings."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n8",
+      "target": "n9",
+      "variable": "recommendations",
+      "condition": null,
+      "rationale": "Blueprint generation incorporates the recommended solutions."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n3",
+      "target": "n9",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Blueprint is designed for the client and sector context."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n7",
+      "target": "n10",
+      "variable": "inefficiency_analysis",
+      "condition": null,
+      "rationale": "Benefit calculation is based on inefficiency costs."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n8",
+      "target": "n10",
+      "variable": "recommendations",
+      "condition": null,
+      "rationale": "Implementation cost is driven by recommendation complexity."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n3",
+      "target": "n10",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "ROI scenarios use the financial assumptions from the configuration."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n9",
+      "target": "n11",
+      "variable": "target_operating_model",
+      "condition": null,
+      "rationale": "Diagrams render the generated blueprint."
+    },
+    {
+      "edge_id": "d19",
+      "source": "n3",
+      "target": "n11",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Diagrams are keyed by client identity."
+    },
+    {
+      "edge_id": "d20",
+      "source": "n9",
+      "target": "n12",
+      "variable": "target_operating_model",
+      "condition": null,
+      "rationale": "Executive report narrates the blueprint."
+    },
+    {
+      "edge_id": "d21",
+      "source": "n10",
+      "target": "n12",
+      "variable": "roi_scenarios",
+      "condition": null,
+      "rationale": "Executive report quotes the scenario figures."
+    },
+    {
+      "edge_id": "d22",
+      "source": "n7",
+      "target": "n12",
+      "variable": "inefficiency_analysis",
+      "condition": null,
+      "rationale": "Executive report describes current-state findings."
+    },
+    {
+      "edge_id": "d23",
+      "source": "n8",
+      "target": "n12",
+      "variable": "recommendations",
+      "condition": null,
+      "rationale": "Executive report references the recommendations."
+    },
+    {
+      "edge_id": "d24",
+      "source": "n3",
+      "target": "n12",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Report is framed for the client and sector."
+    },
+    {
+      "edge_id": "d25",
+      "source": "n12",
+      "target": "n13",
+      "variable": "executive_report",
+      "condition": null,
+      "rationale": "Rationale explains the reasoning behind the executive summary."
+    },
+    {
+      "edge_id": "d26",
+      "source": "n10",
+      "target": "n13",
+      "variable": "roi_scenarios",
+      "condition": null,
+      "rationale": "Rationale documents the financial assumptions."
+    },
+    {
+      "edge_id": "d27",
+      "source": "n7",
+      "target": "n13",
+      "variable": "inefficiency_analysis",
+      "condition": null,
+      "rationale": "Rationale cites the supporting analysis."
+    },
+    {
+      "edge_id": "d28",
+      "source": "n8",
+      "target": "n13",
+      "variable": "recommendations",
+      "condition": null,
+      "rationale": "Rationale justifies each recommendation."
+    },
+    {
+      "edge_id": "d29",
+      "source": "n9",
+      "target": "n13",
+      "variable": "target_operating_model",
+      "condition": null,
+      "rationale": "Rationale justifies blueprint choices."
+    },
+    {
+      "edge_id": "d30",
+      "source": "n3",
+      "target": "n13",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Rationale is written for the client context."
+    },
+    {
+      "edge_id": "d31",
+      "source": "n12",
+      "target": "n14",
+      "variable": "executive_report",
+      "condition": null,
+      "rationale": "Payload carries the executive summary output."
+    },
+    {
+      "edge_id": "d32",
+      "source": "n13",
+      "target": "n14",
+      "variable": "consultant_rationale",
+      "condition": null,
+      "rationale": "Payload carries the rationale output."
+    },
+    {
+      "edge_id": "d33",
+      "source": "n9",
+      "target": "n14",
+      "variable": "target_operating_model",
+      "condition": null,
+      "rationale": "Payload carries models and the new RACI."
+    },
+    {
+      "edge_id": "d34",
+      "source": "n10",
+      "target": "n14",
+      "variable": "roi_scenarios",
+      "condition": null,
+      "rationale": "Payload carries scenario figures and KPI projections."
+    },
+    {
+      "edge_id": "d35",
+      "source": "n8",
+      "target": "n14",
+      "variable": "recommendations",
+      "condition": null,
+      "rationale": "Payload carries recommendation rows."
+    },
+    {
+      "edge_id": "d36",
+      "source": "n11",
+      "target": "n14",
+      "variable": "mermaid_diagrams",
+      "condition": null,
+      "rationale": "Payload carries diagram rows."
+    },
+    {
+      "edge_id": "d37",
+      "source": "n6",
+      "target": "n14",
+      "variable": "current_state",
+      "condition": null,
+      "rationale": "Payload derives audit summary and KPI baseline data from the current-state dataset."
+    },
+    {
+      "edge_id": "d38",
+      "source": "n3",
+      "target": "n14",
+      "variable": "client_config",
+      "condition": null,
+      "rationale": "Payload is keyed by client identity and run metadata."
+    },
+    {
+      "edge_id": "d39",
+      "source": "n14",
+      "target": "n15",
+      "variable": "final_payload",
+      "condition": null,
+      "rationale": "Structured outputs are written from the assembled payload."
+    },
+    {
+      "edge_id": "d40",
+      "source": "n14",
+      "target": "n16",
+      "variable": "final_payload",
+      "condition": null,
+      "rationale": "The consolidated text report is uploaded from the assembled payload."
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n2"
+  ],
+  "terminal_nodes": [
+    "n15",
+    "n16"
+  ],
+  "confidence": 0.85,
+  "notes": "Optional native modules not declared in the frozen requirement were excluded from Gold: Slack/Gmail notifications, Supabase memory storage, queue status updates (Mark Queue Processing/Complete), and the ADKAR change-management framework. The optional Google Sheets queue trigger is retained as a second entry because the frozen requirement explicitly declares it as a run condition. Multiple native sheet-write nodes were collapsed into one terminal outcome node, matching the single declared visible outcome."
+}

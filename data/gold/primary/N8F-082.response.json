@@ -1,0 +1,695 @@
+{
+  "task_id": "N8F-082",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "84cb33472a458eb5f92eae22c72baa38e82a12f52ec387e92a7167affe1ad239",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收项目需求申请（回调或手动）并规范化字段",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "normalized_request",
+          "type": "object",
+          "description": "规范化后的需求申请"
+        }
+      ],
+      "native_evidence": [
+        "When Project Request Received",
+        "Manual Execution Trigger",
+        "Normalize Project Request"
+      ],
+      "requirement_evidence": [
+        "通过回调接口接收项目需求申请（也支持手动测试提交），并对传入字段做规范化"
+      ],
+      "rationale": "双入口合并为同一处理流程并规范化字段"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验需求简述必填项",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "normalized_request",
+          "type": "object",
+          "description": "规范化后的需求申请"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "必填项校验结果"
+        },
+        {
+          "name": "normalized_request",
+          "type": "object",
+          "description": "通过校验的规范化申请（透传）"
+        }
+      ],
+      "native_evidence": [
+        "Check Brief Completeness",
+        "If Brief Complete"
+      ],
+      "requirement_evidence": [
+        "检查需求简述的必填项是否齐备"
+      ],
+      "rationale": "确定性必填校验"
+    },
+    {
+      "node_id": "n3",
+      "label": "返回 400 响应并列出缺失字段与澄清问题",
+      "node_type": "terminal",
+      "operation_family": "safe_reject",
+      "inputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "必填项校验结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Prepare Clarification",
+        "Send Clarification Needed Response"
+      ],
+      "requirement_evidence": [
+        "不齐备时返回 400 响应，列出缺失字段并给出澄清问题"
+      ],
+      "rationale": "400 响应为安全拒绝的最终动作"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型生成分诊摘要、类型判定与要素抽取",
+      "node_type": "semantic",
+      "operation_family": "analysis",
+      "inputs": [
+        {
+          "name": "normalized_request",
+          "type": "object",
+          "description": "规范化后的需求申请"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "分诊摘要、申请类型、风险、依赖、待决策事项与建议负责人类型"
+        }
+      ],
+      "native_evidence": [
+        "OpenAI Classify Request",
+        "Parse Classification Result"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成简短的分诊摘要、判定申请类型，并抽取风险、依赖、待决策事项与建议的负责人类型"
+      ],
+      "rationale": "分诊摘要与要素抽取需语言模型"
+    },
+    {
+      "node_id": "n5",
+      "label": "确定性风险与紧急度打分并确定分诊去向",
+      "node_type": "code",
+      "operation_family": "scoring",
+      "inputs": [
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "分诊摘要与要素"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_triage",
+          "type": "object",
+          "description": "风险/紧急度评分与去向"
+        }
+      ],
+      "native_evidence": [
+        "Calculate Risk and Urgency"
+      ],
+      "requirement_evidence": [
+        "依据申请元信息与语言模型输出，进行确定性的风险与紧急度打分，据此决定分诊去向"
+      ],
+      "rationale": "确定性规则打分"
+    },
+    {
+      "node_id": "n6",
+      "label": "在 Airtable 创建分诊记录",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "normalized_request",
+          "type": "object",
+          "description": "规范化后的需求申请"
+        },
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "分诊摘要与要素"
+        },
+        {
+          "name": "scored_triage",
+          "type": "object",
+          "description": "评分与去向"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "triage_record",
+          "type": "object",
+          "description": "Airtable 分诊记录"
+        }
+      ],
+      "native_evidence": [
+        "Store Triage Record in Airtable"
+      ],
+      "requirement_evidence": [
+        "在 Airtable 中创建分诊记录，写入申请信息、摘要、评分与去向信息"
+      ],
+      "rationale": "确定性 Airtable 写入"
+    },
+    {
+      "node_id": "n7",
+      "label": "判断评分是否超过审批阈值",
+      "node_type": "code",
+      "operation_family": "branching",
+      "inputs": [
+        {
+          "name": "scored_triage",
+          "type": "object",
+          "description": "评分与去向"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "threshold_decision",
+          "type": "object",
+          "description": "是否超阈值判定"
+        }
+      ],
+      "native_evidence": [
+        "If Needs Approval"
+      ],
+      "requirement_evidence": [
+        "若评分超过审批阈值"
+      ],
+      "rationale": "确定性阈值判定分支"
+    },
+    {
+      "node_id": "n8",
+      "label": "准备审批消息、（可选）发送 Slack 并记录审批结论",
+      "node_type": "code",
+      "operation_family": "approval",
+      "inputs": [
+        {
+          "name": "triage_record",
+          "type": "object",
+          "description": "Airtable 分诊记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "approval_result",
+          "type": "object",
+          "description": "审批结论"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Approval Request Data",
+        "Post Approval to Slack",
+        "Log Approval Decision"
+      ],
+      "requirement_evidence": [
+        "则准备审批消息并（可选）发送到 Slack，记录审批结论"
+      ],
+      "rationale": "审批消息准备与结论记录为确定性动作"
+    },
+    {
+      "node_id": "n9",
+      "label": "指派负责人或将申请标记为已拒绝",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "分诊摘要与要素"
+        },
+        {
+          "name": "approval_result",
+          "type": "object",
+          "description": "审批结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assignment",
+          "type": "object",
+          "description": "负责人指派或拒绝标记"
+        }
+      ],
+      "native_evidence": [
+        "If Request Approved",
+        "Assign Triage Owner",
+        "Prepare Rejection Response"
+      ],
+      "requirement_evidence": [
+        "随后指派负责人或将申请标记为已拒绝"
+      ],
+      "rationale": "按审批结论确定性指派或拒绝；未超阈值时直接指派"
+    },
+    {
+      "node_id": "n10",
+      "label": "构建结构化交付交接内容",
+      "node_type": "code",
+      "operation_family": "transformation",
+      "inputs": [
+        {
+          "name": "assignment",
+          "type": "object",
+          "description": "负责人指派或拒绝标记"
+        },
+        {
+          "name": "triage_record",
+          "type": "object",
+          "description": "Airtable 分诊记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "handoff",
+          "type": "object",
+          "description": "交付交接内容（负责人、状态、下一步、审批结果）"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Handoff"
+      ],
+      "requirement_evidence": [
+        "构建结构化的交付交接内容，把负责人、状态、下一步动作与审批结果"
+      ],
+      "rationale": "确定性组装交接内容"
+    },
+    {
+      "node_id": "n11",
+      "label": "更新 Airtable 记录",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "triage_record",
+          "type": "object",
+          "description": "Airtable 分诊记录"
+        },
+        {
+          "name": "handoff",
+          "type": "object",
+          "description": "交付交接内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "updated_record",
+          "type": "object",
+          "description": "更新后的 Airtable 记录"
+        }
+      ],
+      "native_evidence": [
+        "Patch Airtable Status"
+      ],
+      "requirement_evidence": [
+        "更新回 Airtable 记录"
+      ],
+      "rationale": "确定性 Airtable 更新"
+    },
+    {
+      "node_id": "n12",
+      "label": "向调用方返回分诊结果",
+      "node_type": "terminal",
+      "operation_family": "respond",
+      "inputs": [
+        {
+          "name": "updated_record",
+          "type": "object",
+          "description": "更新后的 Airtable 记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Triage Outcome"
+      ],
+      "requirement_evidence": [
+        "并向调用方返回分诊结果"
+      ],
+      "rationale": "返回结果为最终动作"
+    },
+    {
+      "node_id": "n13",
+      "label": "按周计划加载未结分诊记录",
+      "node_type": "code",
+      "operation_family": "trigger_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "open_records",
+          "type": "object[]",
+          "description": "未结分诊记录"
+        }
+      ],
+      "native_evidence": [
+        "Weekly Triage Summary Trigger",
+        "Fetch Open Triage Requests"
+      ],
+      "requirement_evidence": [
+        "按周计划加载 Airtable 中未结的分诊记录"
+      ],
+      "rationale": "周计划触发并加载未结记录"
+    },
+    {
+      "node_id": "n14",
+      "label": "生成运营汇总",
+      "node_type": "code",
+      "operation_family": "reporting",
+      "inputs": [
+        {
+          "name": "open_records",
+          "type": "object[]",
+          "description": "未结分诊记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weekly_summary",
+          "type": "object",
+          "description": "运营汇总内容"
+        }
+      ],
+      "native_evidence": [
+        "Compile Weekly Summary"
+      ],
+      "requirement_evidence": [
+        "生成运营汇总"
+      ],
+      "rationale": "确定性汇总生成"
+    },
+    {
+      "node_id": "n15",
+      "label": "（可选）通过 Gmail 发送运营汇总邮件",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "weekly_summary",
+          "type": "object",
+          "description": "运营汇总内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Weekly Summary"
+      ],
+      "requirement_evidence": [
+        "并（可选）通过 Gmail 以邮件发送"
+      ],
+      "rationale": "邮件发送为最终动作（可选执行）"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后进入必填校验"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "brief_complete == false",
+      "rationale": "必填不齐返回 400"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "brief_complete == true",
+      "rationale": "必填齐备进入分诊"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "分诊要素抽取后打分"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "打分后创建 Airtable 记录"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录创建后判定审批"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": "score > threshold",
+      "rationale": "超阈值进入审批流"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": "score <= threshold",
+      "rationale": "未超阈值直接指派"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "审批结论后指派或拒绝"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "指派/拒绝后构建交接"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "交接后更新 Airtable"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "更新后返回结果"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "加载未结记录后生成汇总"
+    },
+    {
+      "edge_id": "c14",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总后发送邮件"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "normalized_request",
+      "condition": null,
+      "rationale": "申请供必填校验"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "validation_result",
+      "condition": null,
+      "rationale": "校验结果用于 400 响应"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "normalized_request",
+      "condition": null,
+      "rationale": "通过校验的申请供 LLM 分诊"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "classification",
+      "condition": null,
+      "rationale": "分诊要素用于打分"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "classification",
+      "condition": null,
+      "rationale": "摘要与要素写入 Airtable"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n1",
+      "target": "n6",
+      "variable": "normalized_request",
+      "condition": null,
+      "rationale": "申请信息写入 Airtable"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "scored_triage",
+      "condition": null,
+      "rationale": "评分与去向写入 Airtable"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n5",
+      "target": "n7",
+      "variable": "scored_triage",
+      "condition": null,
+      "rationale": "评分用于阈值判定"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n8",
+      "variable": "triage_record",
+      "condition": null,
+      "rationale": "记录用于审批消息"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n8",
+      "target": "n9",
+      "variable": "approval_result",
+      "condition": null,
+      "rationale": "审批结论用于指派/拒绝"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n4",
+      "target": "n9",
+      "variable": "classification",
+      "condition": null,
+      "rationale": "建议负责人类型用于指派"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n9",
+      "target": "n10",
+      "variable": "assignment",
+      "condition": null,
+      "rationale": "指派/拒绝结果用于交接"
+    },
+    {
+      "edge_id": "d13",
+      "source": "n6",
+      "target": "n10",
+      "variable": "triage_record",
+      "condition": null,
+      "rationale": "记录用于交接内容"
+    },
+    {
+      "edge_id": "d14",
+      "source": "n10",
+      "target": "n11",
+      "variable": "handoff",
+      "condition": null,
+      "rationale": "交接内容用于更新"
+    },
+    {
+      "edge_id": "d15",
+      "source": "n6",
+      "target": "n11",
+      "variable": "triage_record",
+      "condition": null,
+      "rationale": "原记录用于更新"
+    },
+    {
+      "edge_id": "d16",
+      "source": "n11",
+      "target": "n12",
+      "variable": "updated_record",
+      "condition": null,
+      "rationale": "更新结果用于返回"
+    },
+    {
+      "edge_id": "d17",
+      "source": "n13",
+      "target": "n14",
+      "variable": "open_records",
+      "condition": null,
+      "rationale": "未结记录用于汇总"
+    },
+    {
+      "edge_id": "d18",
+      "source": "n14",
+      "target": "n15",
+      "variable": "weekly_summary",
+      "condition": null,
+      "rationale": "汇总用于邮件"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n13"
+  ],
+  "terminal_nodes": [
+    "n3",
+    "n12",
+    "n15"
+  ],
+  "confidence": 0.85,
+  "notes": "双车道：主链（webhook/手动→规范化→必填校验→400 或 LLM 分诊→打分→Airtable→审批分支→交接→更新→返回）+ 周报链（周计划→未结记录→汇总→可选 Gmail）。审批分支：超阈值走审批+指派/拒绝，未超阈值直接指派。"
+}

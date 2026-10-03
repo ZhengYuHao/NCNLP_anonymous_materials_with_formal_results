@@ -1,0 +1,257 @@
+{
+  "pilot_id": "N8C-011",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "4691a5fb0de00ffdf2ab47f4bd246fd1e97fd04789407708f552bd24bfd60f6c",
+  "fixtures": [
+    {
+      "fixture_id": "F-VIDEO-INPUT",
+      "purpose": "父工作流提供的预分析视频数据",
+      "input_data": {
+        "video_id": "VID-2026-001",
+        "transcript": "Today we discuss how vector databases power retrieval-augmented generation. First, embeddings...",
+        "key_moments": [{"start_s": 0, "end_s": 12, "label": "intro"}, {"start_s": 45, "end_s": 90, "label": "embedding demo"}],
+        "visual_analysis": [{"start_s": 45, "end_s": 90, "description": "screen recording of code"}],
+        "metadata": {"title": "Vector DBs for RAG", "duration_s": 240, "resolution": "1920x1080"},
+        "video_overview": "Tutorial on vector databases for RAG systems"
+      }
+    },
+    {
+      "fixture_id": "F-BROLL-REQUIREMENTS",
+      "purpose": "AI Video Director 判定需要的 3 段 B-roll（2s/24fps/720p 为需求声明规格）",
+      "input_data": {
+        "required_clips": [
+          {"id": "b1", "prompt": "abstract data streams", "duration_seconds": 2, "fps": 24, "resolution": "720p"},
+          {"id": "b2", "prompt": "database server room", "duration_seconds": 2, "fps": 24, "resolution": "720p"},
+          {"id": "b3", "prompt": "code on screen", "duration_seconds": 2, "fps": 24, "resolution": "720p"}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-CONCEPTS",
+      "dependency_type": "language_model",
+      "operation": "generate_three_short_concepts",
+      "request_contract": {"video_data": "transcript, key moments, overview"},
+      "response_contract": {
+        "concepts": [
+          {"id": "concept-1", "hook": "Stop building RAG the hard way.", "body_structure": "problem, demo, result", "cta": "Follow for part 2", "avatar_script": "Full avatar script for concept 1...", "lead_magnet_prompt": "Checklist: 5 steps to a working RAG"},
+          {"id": "concept-2", "hook": "The 3 mistakes everyone makes with embeddings.", "body_structure": "mistake1, mistake2, mistake3", "cta": "Download the guide", "avatar_script": "Full avatar script for concept 2...", "lead_magnet_prompt": "Guide: embedding pitfalls"},
+          {"id": "concept-3", "hook": "Watch me build a vector DB in 60 seconds.", "body_structure": "build, test, ship", "cta": "Subscribe", "avatar_script": "Full avatar script for concept 3...", "lead_magnet_prompt": "Template: RAG starter"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AVATAR-CREATE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "create_avatar_video",
+      "request_contract": {"script": "concept avatar script", "resolution": "1080x1920"},
+      "response_contract": {"video_id": "heygen-1", "status": "processing", "created": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AVATAR-POLL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_avatar_status",
+      "request_contract": {"video_id": "heygen-1"},
+      "response_contract": {"status": "completed", "video_url": "https://cdn.heygen.example/avatar-1.mp4"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AVATAR-POLL-DELAYED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_avatar_status",
+      "request_contract": {"video_id": "heygen-1"},
+      "response_contract": {"sequence": ["processing", "processing", "completed"], "video_url": "https://cdn.heygen.example/avatar-1.mp4"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-BROLL-DIRECTOR",
+      "dependency_type": "language_model",
+      "operation": "determine_required_broll",
+      "request_contract": {"concept": "concept structure"},
+      "response_contract": {
+        "clips": [
+          {"id": "b1", "prompt": "abstract data streams", "duration_seconds": 2, "fps": 24, "resolution": "720p"},
+          {"id": "b2", "prompt": "database server room", "duration_seconds": 2, "fps": 24, "resolution": "720p"},
+          {"id": "b3", "prompt": "code on screen", "duration_seconds": 2, "fps": 24, "resolution": "720p"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BROLL-GEN",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "generate_broll_clip",
+      "request_contract": {"prompt": "b-roll prompt", "duration_seconds": 2, "fps": 24, "resolution": "720p"},
+      "response_contract": {"clip_url": "https://replicate.example/clip-1.mp4", "status": "completed"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STORYBOARD",
+      "dependency_type": "language_model",
+      "operation": "create_beat_storyboard",
+      "request_contract": {"concept": "concept + avatar url + broll clips"},
+      "response_contract": {
+        "beats": [
+          {"beat": 1, "layout": "avatar_full_frame", "transition": "fade", "duration_s": 3, "overlay": "hook text"},
+          {"beat": 2, "layout": "split_screen", "transition": "slide", "duration_s": 5, "overlay": "demo"},
+          {"beat": 3, "layout": "picture_in_picture", "transition": "zoom", "duration_s": 4, "overlay": "focus moment"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RENDER-SUBMIT",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "submit_composition_render",
+      "request_contract": {"payload": "render payload with avatar, broll_clips, transitions, text overlays, effects; output_resolution 1080x1920; layout_types"},
+      "response_contract": {"render_id": "creatomate-1", "status": "processing", "submitted": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RENDER-POLL",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_render_status",
+      "request_contract": {"render_id": "creatomate-1"},
+      "response_contract": {"status": "completed", "download_url": "https://cdn.creatomate.example/render-1.mp4"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RENDER-POLL-DELAYED",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "poll_render_status",
+      "request_contract": {"render_id": "creatomate-1"},
+      "response_contract": {"sequence": ["processing", "processing", "completed"], "download_url": "https://cdn.creatomate.example/render-1.mp4"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RENDER-DOWNLOAD",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "download_finished_render",
+      "request_contract": {"download_url": "render download url"},
+      "response_contract": {"bytes": 1245184, "size_mb": 1.19, "mime_type": "video/mp4"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDRIVE-UPLOAD",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "upload_and_share_video",
+      "request_contract": {"filename": "short_*.mp4", "content": "video bytes"},
+      "response_contract": {"file_id": "VID-UP-001", "link": "https://drive.google.com/file/d/VID-UP-001/view", "shared": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COPYWRITER",
+      "dependency_type": "language_model",
+      "operation": "generate_social_media_copy",
+      "request_contract": {"video": "finished short", "platforms": ["youtube_shorts", "instagram_reels", "tiktok"]},
+      "response_contract": {
+        "copy": {
+          "youtube_shorts": {"title": "RAG in 60s", "description": "Build a vector DB fast.", "hashtags": ["#rag", "#ai"], "caption": "Watch this"},
+          "instagram_reels": {"title": "RAG tip", "description": "3 embedding mistakes.", "hashtags": ["#ai", "#database"], "caption": "Save this"},
+          "tiktok": {"title": "RAG hack", "description": "Vector DB demo.", "hashtags": ["#coding"], "caption": "Follow for more"}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "log_tracker_row",
+      "request_contract": {"sheet": "Tracker", "row": "[video_id, concept_id, drive_link, gdoc_link, copy]" },
+      "response_contract": {"logged": true, "row_number": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LEADMAGNET",
+      "dependency_type": "language_model",
+      "operation": "generate_lead_magnet_document",
+      "request_contract": {"cta_promise": "concept lead magnet prompt"},
+      "response_contract": {"document_md": "# RAG Starter Checklist\n1. Pick an embedding model\n2. Chunk your docs\n3. ..."},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDOCS-CREATE",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "convert_and_upload_public_google_doc",
+      "request_contract": {"title": "lead magnet title", "content_html": "converted HTML"},
+      "response_contract": {"doc_id": "GDOC-001", "link": "https://docs.google.com/document/d/GDOC-001/view", "shared_publicly": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FULL-PIPELINE",
+      "kind": "positive",
+      "fixture_ids": ["F-VIDEO-INPUT"],
+      "mock_ids": ["M-LLM-CONCEPTS", "M-AVATAR-CREATE", "M-AVATAR-POLL", "M-LLM-BROLL-DIRECTOR", "M-BROLL-GEN", "M-LLM-STORYBOARD", "M-RENDER-SUBMIT", "M-RENDER-POLL", "M-RENDER-DOWNLOAD", "M-GDRIVE-UPLOAD", "M-LLM-COPYWRITER", "M-GSHEETS-LOG", "M-LLM-LEADMAGNET", "M-GDOCS-CREATE"],
+      "assertions": [
+        {"assertion_id": "A-THREE-CONCEPTS", "target": "output.concepts", "operator": "length_equals", "expected": 3, "rationale": "需求声明每个源视频生成 3 个唯一短视频概念"},
+        {"assertion_id": "A-CONCEPT-FIELDS", "target": "output.concepts[0].avatar_script", "operator": "exists", "expected": true, "rationale": "需求声明的概念要素之一：完整 avatar 脚本（hook/body structure/CTA/avatar script/lead magnet prompt 均为需求原文要素）"},
+        {"assertion_id": "A-CONCEPT-LEADMAGNET", "target": "output.concepts[0].lead_magnet_prompt", "operator": "exists", "expected": true, "rationale": "需求声明的概念要素：lead magnet 交付提示"},
+        {"assertion_id": "A-AVATAR-CREATED", "target": "mock.M-AVATAR-CREATE.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明每个概念生成 1 个竖屏（1080×1920）AI avatar 视频"},
+        {"assertion_id": "A-AVATAR-POLLED", "target": "mock.M-AVATAR-POLL.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明轮询状态端点直到渲染完成"},
+        {"assertion_id": "A-AVATAR-URL", "target": "output.avatar_video_urls", "operator": "length_equals", "expected": 3, "rationale": "需求声明捕获 avatar 视频 URL；字段名为本 Oracle 输出契约命名"},
+        {"assertion_id": "A-BROLL-GENERATED", "target": "mock.M-BROLL-GEN.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明按 Video Director 判定生成 2 秒竖屏 B-roll 片段（3 段来自 mock 固定响应）"},
+        {"assertion_id": "A-RENDER-SUBMITTED", "target": "mock.M-RENDER-SUBMIT.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明每个概念提交一次合成渲染"},
+        {"assertion_id": "A-RENDER-DOWNLOADED", "target": "mock.M-RENDER-DOWNLOAD.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明渲染完成轮询后下载成品"},
+        {"assertion_id": "A-UPLOADED-SHARED", "target": "mock.M-GDRIVE-UPLOAD.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明成品视频上传 Google Drive 并分享"},
+        {"assertion_id": "A-COPY-PLATFORMS", "target": "mock.M-LLM-COPYWRITER.requests[0].platforms", "operator": "contains", "expected": "tiktok", "rationale": "需求声明社媒文案覆盖 YouTube Shorts/Instagram Reels/TikTok 三平台"},
+        {"assertion_id": "A-TRACKER-LOGGED", "target": "mock.M-GSHEETS-LOG.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明将一切记录到 Google Sheets 追踪表（每短片一行）"},
+        {"assertion_id": "A-LEADMAGNET-DOCS", "target": "mock.M-GDOCS-CREATE.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明每个概念基于 CTA 承诺生成可下载 lead magnet 并上传为公开共享 Google Doc"},
+        {"assertion_id": "A-TRACKER-LINKS", "target": "mock.M-GSHEETS-LOG.requests[0].row", "operator": "matches", "expected": ".*drive\\.google\\.com.*", "rationale": "需求声明追踪表链接成品视频与 lead magnet 文档（来自 Drive/Doc mock）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-POLL-COMPLETES",
+      "kind": "boundary",
+      "fixture_ids": ["F-VIDEO-INPUT"],
+      "mock_ids": ["M-LLM-CONCEPTS", "M-AVATAR-CREATE", "M-AVATAR-POLL-DELAYED", "M-LLM-BROLL-DIRECTOR", "M-BROLL-GEN", "M-LLM-STORYBOARD", "M-RENDER-SUBMIT", "M-RENDER-POLL-DELAYED", "M-RENDER-DOWNLOAD", "M-GDRIVE-UPLOAD", "M-LLM-COPYWRITER", "M-GSHEETS-LOG", "M-LLM-LEADMAGNET", "M-GDOCS-CREATE"],
+      "assertions": [
+        {"assertion_id": "A-POLL-TERMINATES", "target": "mock.M-AVATAR-POLL-DELAYED.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明轮询直到渲染完成；确定性状态序列 processing/processing/completed 后终止"},
+        {"assertion_id": "A-AVATAR-URL-CAPTURED", "target": "output.avatar_video_urls[0]", "operator": "matches", "expected": "^https://", "rationale": "轮询完成后捕获 avatar 视频 URL（需求声明行为）"},
+        {"assertion_id": "A-RENDER-POLL-TERMINATES", "target": "mock.M-RENDER-POLL-DELAYED.call_count", "operator": "equals", "expected": 3, "rationale": "渲染轮询同样在 completed 后终止"},
+        {"assertion_id": "A-DOWNLOADS-COMPLETE", "target": "mock.M-RENDER-DOWNLOAD.call_count", "operator": "equals", "expected": 3, "rationale": "需求声明渲染完成后下载成品；以行为调用计数判定"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-BROLL-AGGREGATION",
+      "kind": "boundary",
+      "fixture_ids": ["F-VIDEO-INPUT", "F-BROLL-REQUIREMENTS"],
+      "mock_ids": ["M-LLM-CONCEPTS", "M-AVATAR-CREATE", "M-AVATAR-POLL", "M-LLM-BROLL-DIRECTOR", "M-BROLL-GEN", "M-LLM-STORYBOARD", "M-RENDER-SUBMIT", "M-RENDER-POLL", "M-RENDER-DOWNLOAD", "M-GDRIVE-UPLOAD", "M-LLM-COPYWRITER", "M-GSHEETS-LOG", "M-LLM-LEADMAGNET", "M-GDOCS-CREATE"],
+      "assertions": [
+        {"assertion_id": "A-ALL-CLIPS-AGGREGATED", "target": "mock.M-RENDER-SUBMIT.requests[0].body.broll_clips", "operator": "length_equals", "expected": 3, "rationale": "需求声明将 B-roll 片段聚合进最终合成；broll_clips 为渲染载荷字段（本 Oracle 输出契约命名）"},
+        {"assertion_id": "A-CLIP-SPEC", "target": "mock.M-RENDER-SUBMIT.requests[0].body.broll_clips[0].duration_seconds", "operator": "equals", "expected": 2, "rationale": "需求声明的 B-roll 规格：2 秒片段"},
+        {"assertion_id": "A-CLIP-FPS", "target": "mock.M-RENDER-SUBMIT.requests[0].body.broll_clips[0].fps", "operator": "equals", "expected": 24, "rationale": "需求声明的 B-roll 规格：24fps"},
+        {"assertion_id": "A-CLIP-RESOLUTION", "target": "mock.M-RENDER-SUBMIT.requests[0].body.broll_clips[0].resolution", "operator": "equals", "expected": "720p", "rationale": "需求声明的 B-roll 规格：720p 竖屏"},
+        {"assertion_id": "A-COMPOSITION", "target": "mock.M-RENDER-SUBMIT.requests[0].body.output_resolution", "operator": "equals", "expected": "1080x1920", "rationale": "需求声明的最终合成规格：1080×1920"},
+        {"assertion_id": "A-LAYOUT-TYPES", "target": "mock.M-RENDER-SUBMIT.requests[0].body.layout_types", "operator": "contains", "expected": "avatar_full_frame", "rationale": "需求声明的布局类型：avatar full-frame/split-screen/picture-in-picture（hook/CTA 用 avatar 全帧）"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-THREE-CONCEPTS/A-CONCEPT-FIELDS/A-CONCEPT-LEADMAGNET（需求概念要素原文）、A-AVATAR-CREATED/A-AVATAR-POLLED（需求 1080×1920 与轮询）、A-BROLL-GENERATED/A-CLIP-*（需求 2s/24fps/720p）、A-COMPOSITION/A-LAYOUT-TYPES（需求 1080×1920 与三类布局）、A-UPLOADED-SHARED/A-COPY-PLATFORMS/A-TRACKER-LOGGED/A-LEADMAGNET-DOCS/A-TRACKER-LINKS（需求动作清单）。\n- 修改：A-DOWNLOADS-COMPLETE 由 output.render_download_urls 改为 M-RENDER-DOWNLOAD.call_count（删除自创输出字段，改行为调用计数）；A-AVATAR-URL/A-AVATAR-URL-CAPTURED 保留但注明字段名为本 Oracle 输出契约命名（需求仅声明'捕获 URL'）。\n- 删除：output.render_download_urls 字段断言。"
+}

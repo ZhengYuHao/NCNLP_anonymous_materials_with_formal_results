@@ -1,0 +1,221 @@
+{
+  "task_id": "N8F-063",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "2228d29a984540c895927123effc3e3c200f9a47e42fea46930d7e569055fa21",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 聊天消息",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "telegram_message",
+          "type": "object",
+          "description": "用户发送给 Telegram 机器人的聊天消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户在聊天中提出的问题"
+        }
+      ],
+      "native_evidence": [
+        "telegramInput"
+      ],
+      "requirement_evidence": [
+        "业务用户在 Telegram 中向机器人发送一条聊天消息提出问题",
+        "系统收到发往该 Telegram 机器人的聊天消息后被触发"
+      ],
+      "rationale": "需求声明收到发往 Telegram 机器人的聊天消息时触发，为流程入口的确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取活动日程",
+      "node_type": "code",
+      "operation_family": "external_data_read",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "收到聊天消息的触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "schedule_rows",
+          "type": "array",
+          "description": "Google Sheets 中已排期的活动日程数据"
+        }
+      ],
+      "native_evidence": [
+        "Schedule"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 中读取已排期的活动日程"
+      ],
+      "rationale": "需求声明从 Google Sheets 读取已排期活动日程，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "转换为表格化文本",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "schedule_rows",
+          "type": "array",
+          "description": "活动日程数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "table_text",
+          "type": "string",
+          "description": "日程转换后的表格化文本形式"
+        }
+      ],
+      "native_evidence": [
+        "ScheduleToMarkdown"
+      ],
+      "requirement_evidence": [
+        "将日程转换为表格化的文本形式"
+      ],
+      "rationale": "需求声明将日程转换为表格化文本作为模型上下文，为确定性格式化变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型回答用户问题",
+      "node_type": "semantic",
+      "operation_family": "llm_qa",
+      "inputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户提出的问题"
+        },
+        {
+          "name": "table_text",
+          "type": "string",
+          "description": "表格化的日程文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer_text",
+          "type": "string",
+          "description": "语言模型基于日程数据给出的回答"
+        }
+      ],
+      "native_evidence": [
+        "ScheduleBot",
+        "LLM"
+      ],
+      "requirement_evidence": [
+        "据此交由语言模型处理用户在 Telegram 中提出的问题"
+      ],
+      "rationale": "需求声明由语言模型结合日程文本回答用户问题，需开放语义理解与问答生成，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "回传回答到 Telegram 会话",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "answer_text",
+          "type": "string",
+          "description": "语言模型给出的回答"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "telegramResponse"
+      ],
+      "requirement_evidence": [
+        "语言模型给出的回答被回传到同一个 Telegram 会话中，作为对该用户的答复"
+      ],
+      "rationale": "需求声明将回答回传到同一 Telegram 会话，为确定性外部发送动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到聊天消息后读取活动日程。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "日程读取后转换为表格化文本。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "表格文本就绪后由语言模型回答问题。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "回答生成后回传至原 Telegram 会话。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n4",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "用户问题传给语言模型节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "schedule_rows",
+      "condition": null,
+      "rationale": "日程数据传给格式化节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "table_text",
+      "condition": null,
+      "rationale": "表格化日程文本传给语言模型节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "answer_text",
+      "condition": null,
+      "rationale": "回答传给 Telegram 回传节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.95,
+  "notes": "按冻结需求建模：Telegram 消息触发为入口；读取日程、转换为表格化文本为确定性 code；语言模型结合日程回答用户问题判 semantic；回答回传同一会话为终止节点。原生中的 n8n 调试入口（n8nInput）、输入规范化 Set 节点、记忆与模型连接均为需求未声明的实现细节，未纳入。"
+}

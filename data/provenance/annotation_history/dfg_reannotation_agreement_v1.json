@@ -1,0 +1,4394 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-reannotation-agreement-v1",
+  "status": "PASS_WITH_ADJUDICATION_REQUIRED",
+  "metric_scope": "pre-adjudication lane_A versus lane_B over frozen shared business-step endpoints",
+  "formal_test_opened": false,
+  "task_count": 33,
+  "threshold": 0.85,
+  "aggregate_endpoint_metrics": {
+    "matches": 289,
+    "primary_count": 316,
+    "double_count": 323,
+    "precision": 0.9145569620253164,
+    "recall": 0.8947368421052632,
+    "f1": 0.9045383411580594
+  },
+  "threshold_passed": true,
+  "perfect_agreement_task_count": 14,
+  "endpoint_adjudication_task_count": 19,
+  "lane_a_only_edge_count": 27,
+  "lane_b_only_edge_count": 34,
+  "shared_endpoint_data_item_exact_string_rate_diagnostic": 0.28027681660899656,
+  "per_task": [
+    {
+      "task_id": "N8F-002",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "筛选后的活跃预警信息（预警类型、位置、严重程度）"
+          ],
+          "lane_b_data_items": [
+            "筛选后的活跃威胁预警信息（天气/地震/洪水）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "受影响房产位置清单"
+          ],
+          "lane_b_data_items": [
+            "受影响的房产位置"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "受影响房产信息"
+          ],
+          "lane_b_data_items": [
+            "受影响的房产位置"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "受影响房产位置"
+          ],
+          "lane_b_data_items": [
+            "受影响的房产位置"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "保险风险敞口计算结果"
+          ],
+          "lane_b_data_items": [
+            "保险风险敞口计算结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "受损评估报告"
+          ],
+          "lane_b_data_items": [
+            "受损评估报告"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "受损评估报告"
+          ],
+          "lane_b_data_items": [
+            "受损评估报告"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-003",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "待监测新闻主题列表"
+          ],
+          "lane_b_data_items": [
+            "待监测新闻主题列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "检索时间窗口配置（天/周/月）"
+          ],
+          "lane_b_data_items": [
+            "时间窗口配置（天/周/月）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "报告形式偏好（详细版/简版）"
+          ],
+          "lane_b_data_items": [
+            "报告形式偏好（详细版/简版）"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "内容大纲"
+          ],
+          "lane_b_data_items": [
+            "内容大纲"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "分配到各子主题的研究任务"
+          ],
+          "lane_b_data_items": [
+            "分配的子主题与研究任务"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "各子主题研究结果与引用资料"
+          ],
+          "lane_b_data_items": [
+            "各子主题研究结果（含自动引用）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "完成的时事通讯稿件"
+          ],
+          "lane_b_data_items": [
+            "完成的时事通讯稿件"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-004",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 11,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "竞品频道地址与扫描配置"
+          ],
+          "lane_b_data_items": [
+            "竞品频道地址与扫描配置"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "扫描配置中的冷却窗口与每轮输出上限"
+          ],
+          "lane_b_data_items": [
+            "冷却窗口与每轮上限配置"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "就绪的抓取视频数据快照"
+          ],
+          "lane_b_data_items": [
+            "抓取快照中的视频数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "异常突出视频列表及日均播放量指标"
+          ],
+          "lane_b_data_items": [
+            "标记的异常突出视频及日均播放量指标"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "已简报视频的历史记录"
+          ],
+          "lane_b_data_items": [
+            "已输出过简报的历史视频记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "入选异常突出视频（含转录开头与章节标题）"
+          ],
+          "lane_b_data_items": [
+            "入选的异常突出视频（转录开头与章节标题）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "入选异常视频及排名指标"
+          ],
+          "lane_b_data_items": [
+            "入选异常视频及其播放量指标"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "提取的钩子类型、核心承诺与主题"
+          ],
+          "lane_b_data_items": [
+            "各视频的钩子类型、核心承诺与主题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "跨视频内容简报"
+          ],
+          "lane_b_data_items": [
+            "跨视频内容简报"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "按视频拆分的记录行"
+          ],
+          "lane_b_data_items": [
+            "每个异常视频对应的输出记录行"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "格式化排名摘要"
+          ],
+          "lane_b_data_items": [
+            "按排名排列的格式化摘要"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-007",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 9,
+        "primary_count": 12,
+        "double_count": 11,
+        "precision": 0.75,
+        "recall": 0.8181818181818182,
+        "f1": 0.7826086956521738
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d3",
+          "source_group": "g2",
+          "target_group": "g6",
+          "data_items": [
+            "冷却期参数"
+          ],
+          "rationale": "『剔除在冷却窗口内已经报送过的标签或配乐』，冷却过滤真实读取冷却期配置。"
+        },
+        {
+          "edge_id": "d8",
+          "source_group": "g6",
+          "target_group": "g8",
+          "data_items": [
+            "新入选标签/配乐及互动指标"
+          ],
+          "rationale": "『对最终列表排序』，排序对象为冷却过滤后的入选列表及其指标。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g7",
+          "target_group": "g9",
+          "data_items": [
+            "提取的内容形式、切入角度与主题"
+          ],
+          "rationale": "策略简报基于提取出的内容形式与切入角度生成，属真实数据消费。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d11",
+          "source_group": "g5",
+          "target_group": "g11",
+          "data_items": [
+            "互动指标数据与表现最好帖子链接"
+          ],
+          "rationale": "冻结需求明确\"摘要中包含指标数据和表现最好帖子的链接\"，g11 组装的摘要直接消费 g5 聚合筛选产出的指标与最佳帖子信息。"
+        },
+        {
+          "edge_id": "d7",
+          "source_group": "g7",
+          "target_group": "g8",
+          "data_items": [
+            "各标签的内容形式、切入角度与主题"
+          ],
+          "rationale": "冻结需求\"使用语言模型……提取内容形式、切入角度和主题，对最终列表排序\"，排序基于 g7 的提取结果。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "待分析话题列表"
+          ],
+          "lane_b_data_items": [
+            "待分析话题列表及取样参数"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "阈值参数（取样帖数、最低播放量、提升幅度）"
+          ],
+          "lane_b_data_items": [
+            "提升幅度与帖子数量等阈值参数"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "就绪快照中的帖子数据"
+          ],
+          "lane_b_data_items": [
+            "抓取快照中的帖子数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "每篇帖子的互动率数据"
+          ],
+          "lane_b_data_items": [
+            "每篇帖子的互动率及帖子数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "达标的标签/配乐分组"
+          ],
+          "lane_b_data_items": [
+            "达标的标签与配乐分组"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "入选标签下表现最好帖子的文案"
+          ],
+          "lane_b_data_items": [
+            "入选标签及其表现最好帖子的文案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "排序后的入选标签/配乐记录"
+          ],
+          "lane_b_data_items": [
+            "每个入选标签/配乐对应的记录行"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "排名摘要所需的指标数据与最佳帖子链接"
+          ],
+          "lane_b_data_items": [
+            "按排名排列的标签/配乐列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "排序后的最终列表"
+          ],
+          "lane_b_data_items": [
+            "排序后的最终标签列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-008",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 12,
+        "primary_count": 14,
+        "double_count": 13,
+        "precision": 0.8571428571428571,
+        "recall": 0.9230769230769231,
+        "f1": 0.888888888888889
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d11",
+          "source_group": "g8",
+          "target_group": "g10",
+          "data_items": [
+            "通过阈值的审查结论内容"
+          ],
+          "rationale": "『在对应位置创建行内评审评论』，评论内容为通过阈值筛选的审查结论。"
+        },
+        {
+          "edge_id": "d12",
+          "source_group": "g8",
+          "target_group": "g11",
+          "data_items": [
+            "退化回复中的审查结论内容"
+          ],
+          "rationale": "『否则退化为在触发评论所在的讨论区中回复评论』，退化回复承载相同的结论内容。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d12",
+          "source_group": "g9",
+          "target_group": "g11",
+          "data_items": [
+            "差异位置解析结果与退化回复内容"
+          ],
+          "rationale": "冻结需求\"否则退化为在触发评论所在的讨论区中回复评论\"，退化分支由解析失败触发，回复内容由 g9 构建（native 证据含 Build Fallback Comment）。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "触发评论中的合并请求标识信息"
+          ],
+          "lane_b_data_items": [
+            "触发评论中的合并请求标识信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "合并请求变更差异"
+          ],
+          "lane_b_data_items": [
+            "合并请求变更差异"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "逐文件差异条目及评审上下文"
+          ],
+          "lane_b_data_items": [
+            "单个变更文件的差异内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "逐文件差异条目及评审上下文"
+          ],
+          "lane_b_data_items": [
+            "单个变更文件的差异内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "逐文件差异条目及评审上下文"
+          ],
+          "lane_b_data_items": [
+            "单个变更文件的差异内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "缺陷维度审查结论"
+          ],
+          "lane_b_data_items": [
+            "缺陷维度的审查结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "安全维度审查结论"
+          ],
+          "lane_b_data_items": [
+            "安全维度的审查结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "可维护性维度审查结论"
+          ],
+          "lane_b_data_items": [
+            "可维护性维度的审查结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "复核归一后的审查结论（含严重程度与置信度）"
+          ],
+          "lane_b_data_items": [
+            "复核归一后的审查结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g12",
+          "lane_a_data_items": [
+            "本次审查结果（有无结论及结论情况）"
+          ],
+          "lane_b_data_items": [
+            "本次审查结论情况（有无结论及其数量）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "可发布结论中的文件与行位置信息"
+          ],
+          "lane_b_data_items": [
+            "达标审查结论（含文件与行位置信息）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "解析得到的有效差异位置"
+          ],
+          "lane_b_data_items": [
+            "有效的 GitLab 差异位置及行内评论内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-009",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 9,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.8181818181818182,
+        "recall": 0.8181818181818182,
+        "f1": 0.8181818181818182
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d10",
+          "source_group": "g11",
+          "target_group": "g12",
+          "data_items": [
+            "最终任务元数据与任务记录"
+          ],
+          "rationale": "『向 Discord 发送完成通知』，完成通知基于已设定的任务元数据与保存的任务记录构建。"
+        },
+        {
+          "edge_id": "d6",
+          "source_group": "g7",
+          "target_group": "g8",
+          "data_items": [
+            "审核人反馈"
+          ],
+          "rationale": "『需修改：依据审核人反馈重新生成提示词』，重新生成真实消费审核人反馈内容。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d4",
+          "source_group": "g3",
+          "target_group": "g5",
+          "data_items": [
+            "规整后的 UGC 提示词字段"
+          ],
+          "rationale": "冻结需求\"将提示词预览发布到 Discord\"，预览内容包含 g3 解析出的提示词。"
+        },
+        {
+          "edge_id": "d7",
+          "source_group": "g6",
+          "target_group": "g8",
+          "data_items": [
+            "审核人要求修改时给出的反馈"
+          ],
+          "rationale": "冻结需求\"需修改：依据审核人反馈重新生成提示词\"，g8 重新生成直接消费 g6 收集的审核反馈。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "产品图片与 UGC 提示词、选定的视频风格"
+          ],
+          "lane_b_data_items": [
+            "产品图片、UGC 提示词与选定的视频风格"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "模型返回的 UGC 提示词内容（图片提示词、视频提示词、反向约束）"
+          ],
+          "lane_b_data_items": [
+            "语言模型返回的提示词生成结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "规整后的图片提示词"
+          ],
+          "lane_b_data_items": [
+            "解析后的图片提示词与反向约束"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "规整后的视频提示词"
+          ],
+          "lane_b_data_items": [
+            "解析后的视频提示词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "生成的图片"
+          ],
+          "lane_b_data_items": [
+            "生成的图片"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "审核人决定（通过/需修改/拒绝）与反馈"
+          ],
+          "lane_b_data_items": [
+            "审核人的决定（通过/需修改/拒绝）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "重新生成的模型返回内容"
+          ],
+          "lane_b_data_items": [
+            "重新生成的模型输出"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "生成的视频链接"
+          ],
+          "lane_b_data_items": [
+            "生成的视频链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "视频生成结果"
+          ],
+          "lane_b_data_items": [
+            "视频生成结果（链接与最终状态）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-010",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "下载的合同 PDF 文件"
+          ],
+          "lane_b_data_items": [
+            "下载的合同 PDF 文件"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "原始合同文件"
+          ],
+          "lane_b_data_items": [
+            "原始合同文件（及其文件标识）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "合同全文文本"
+          ],
+          "lane_b_data_items": [
+            "合同全文文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "结构化分析结果（合同类型、关键条款、风险评分、风险项、缺失条款、改进建议）"
+          ],
+          "lane_b_data_items": [
+            "结构化合同分析结果（合同类型、关键条款、风险评分、风险项、缺失条款、改进建议）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "风险详情"
+          ],
+          "lane_b_data_items": [
+            "风险详情"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "HTML 律师报告"
+          ],
+          "lane_b_data_items": [
+            "HTML 律师报告"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "报告链接"
+          ],
+          "lane_b_data_items": [
+            "已保存报告的链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-011",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 10,
+        "primary_count": 14,
+        "double_count": 16,
+        "precision": 0.7142857142857143,
+        "recall": 0.625,
+        "f1": 0.6666666666666666
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d1",
+          "source_group": "g1",
+          "target_group": "g2",
+          "data_items": [
+            "用户提供的播放列表或视频链接"
+          ],
+          "rationale": "『自动抓取该链接对应的视频详情与字幕文本』，抓取真实消费用户提供的链接。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g5",
+          "target_group": "g8",
+          "data_items": [
+            "上下文存储中的历史意图"
+          ],
+          "rationale": "意图理解的 native 证据含 Get Previous Context Intent -> Message Intent，理解新消息时读取此前记录的上下文意图。"
+        },
+        {
+          "edge_id": "d13",
+          "source_group": "g6",
+          "target_group": "g13",
+          "data_items": [
+            "生成的摘要回答"
+          ],
+          "rationale": "第二标的『向用户返回摘要』（native 证据为 AI Agent 汇总输出）由问答代理基于向量库与摘要内容生成后返回。"
+        },
+        {
+          "edge_id": "d10",
+          "source_group": "g8",
+          "target_group": "g5",
+          "data_items": [
+            "提取的处理目标（当前讨论的视频或播放列表）"
+          ],
+          "rationale": "『使用上下文存储记住当前正在讨论的视频或播放列表』，上下文更新写入意图理解提取的处理目标。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d5",
+          "source_group": "g10",
+          "target_group": "g11",
+          "data_items": [
+            "需要用户确认的处理数量"
+          ],
+          "rationale": "冻结需求\"可能会询问需要处理的数量\"，数量询问在校验发现需确认后发起，g11 询问内容依赖 g10 的校验结果。"
+        },
+        {
+          "edge_id": "d6",
+          "source_group": "g10",
+          "target_group": "g2",
+          "data_items": [
+            "确认后的处理数量限制"
+          ],
+          "rationale": "冻结需求\"若为播放列表，可一次处理其中的多个视频\"，g2 抓取按确认的数量限制处理（native 证据含 Limit 节点）。"
+        },
+        {
+          "edge_id": "d11",
+          "source_group": "g2",
+          "target_group": "g5",
+          "data_items": [
+            "当前处理的视频/播放列表标识"
+          ],
+          "rationale": "冻结需求\"使用上下文存储记住当前正在讨论的视频或播放列表\"，记录的对象即 g2 正在抓取处理的视频或播放列表。"
+        },
+        {
+          "edge_id": "d16",
+          "source_group": "g3",
+          "target_group": "g13",
+          "data_items": [
+            "生成的摘要"
+          ],
+          "rationale": "冻结需求可见结果含\"单个视频或整个播放列表的快速摘要\"，g13 向用户返回摘要，其内容为 g3 生成的摘要。"
+        },
+        {
+          "edge_id": "d4",
+          "source_group": "g9",
+          "target_group": "g10",
+          "data_items": [
+            "播放列表处理数量请求"
+          ],
+          "rationale": "g10 校验播放列表处理数量，其校验对象是路由到新链接处理分支后待确认的处理数量（native 证据含 Process Status / Playlist Limit）。"
+        },
+        {
+          "edge_id": "d3",
+          "source_group": "g9",
+          "target_group": "g2",
+          "data_items": [
+            "待处理的视频或播放列表链接"
+          ],
+          "rationale": "冻结需求\"自动抓取该链接对应的视频详情与字幕文本\"，g2 抓取的对象是经意图路由确认的新链接。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "用户提出的问题（含连续追问）"
+          ],
+          "lane_b_data_items": [
+            "用户的问题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "用户消息"
+          ],
+          "lane_b_data_items": [
+            "用户消息（链接或提问）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "lane_a_data_items": [
+            "需要处理的视频数量询问"
+          ],
+          "lane_b_data_items": [
+            "数量询问消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "视频字幕文本"
+          ],
+          "lane_b_data_items": [
+            "视频字幕文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "处理后的视频详情与字幕信息"
+          ],
+          "lane_b_data_items": [
+            "视频详情与字幕等处理后信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "内容摘要"
+          ],
+          "lane_b_data_items": [
+            "生成的摘要"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "向量库检索结果"
+          ],
+          "lane_b_data_items": [
+            "向量数据库中的摘要与内容检索结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "上下文存储中的当前讨论内容"
+          ],
+          "lane_b_data_items": [
+            "已保存的对话上下文（当前讨论的视频/播放列表）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "问题答案"
+          ],
+          "lane_b_data_items": [
+            "针对用户问题的答案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "用户意图（处理新链接或回答提问）"
+          ],
+          "lane_b_data_items": [
+            "解析出的消息意图（处理新链接或回答提问）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-012",
+      "reviewer_a": "DFG-A01",
+      "reviewer_b": "DFG-B01",
+      "endpoint_metrics": {
+        "matches": 14,
+        "primary_count": 15,
+        "double_count": 15,
+        "precision": 0.9333333333333333,
+        "recall": 0.9333333333333333,
+        "f1": 0.9333333333333333
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d15",
+          "source_group": "g10",
+          "target_group": "g15",
+          "data_items": [
+            "编辑记录标识"
+          ],
+          "rationale": "发布结果写回的是已创建的编辑记录（native 证据含 If Airtable Record Exists 与 Update Existing Airtable Record），回写需定位该记录。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d11",
+          "source_group": "g12",
+          "target_group": "g11",
+          "data_items": [
+            "未通过质量检查的结果"
+          ],
+          "rationale": "冻结需求\"若不通过则重新生成\"，质检失败结果回传触发并指导 g11 重新生成配图，属真实数据回流而非仅先后关系。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "lane_a_data_items": [
+            "生成的方形配图"
+          ],
+          "lane_b_data_items": [
+            "生成的方形配图"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "lane_a_data_items": [
+            "通过质检的配图"
+          ],
+          "lane_b_data_items": [
+            "通过质量检查的配图"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "已上传的配图资源标识"
+          ],
+          "lane_b_data_items": [
+            "已上传的 LinkedIn 配图资源"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g14",
+          "target_group": "g15",
+          "lane_a_data_items": [
+            "发布结果"
+          ],
+          "lane_b_data_items": [
+            "LinkedIn 发布结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "最近发布历史"
+          ],
+          "lane_b_data_items": [
+            "最近发布历史"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "多源 RSS 最新文章"
+          ],
+          "lane_b_data_items": [
+            "多源 RSS 最新文章"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "清洗后的候选文章"
+          ],
+          "lane_b_data_items": [
+            "清洗去重后的候选文章"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "编辑选题的来源链接与元数据"
+          ],
+          "lane_b_data_items": [
+            "选中选题的来源链接与元数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "选中的编辑选题"
+          ],
+          "lane_b_data_items": [
+            "选中的编辑选题"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "帖子初稿"
+          ],
+          "lane_b_data_items": [
+            "帖子初稿"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "精简后的帖子文案"
+          ],
+          "lane_b_data_items": [
+            "精简后的帖子文案"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "最终文案"
+          ],
+          "lane_b_data_items": [
+            "最终帖子文案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "帖子最终文案（用于配图内容）"
+          ],
+          "lane_b_data_items": [
+            "最终帖子文案（用于生成配图卡片）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "帖子最终文案"
+          ],
+          "lane_b_data_items": [
+            "最终帖子文案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-014",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 12,
+        "primary_count": 14,
+        "double_count": 13,
+        "precision": 0.8571428571428571,
+        "recall": 0.9230769230769231,
+        "f1": 0.888888888888889
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d7",
+          "source_group": "g1",
+          "target_group": "g7",
+          "data_items": [
+            "用户的目标设置/更新请求消息"
+          ],
+          "rationale": "用户如 update my protein goal 的请求需先经 g1 路由到达，再由 Cal IA Agent（g7 原生证据之一）解析后更新档案，目标更新步骤消费该请求消息。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g4",
+          "target_group": "g8",
+          "data_items": [
+            "日报生成请求（report 指令经 AI 助理解析）"
+          ],
+          "rationale": "用户输入 report 的交互归属 g4 的 AI 助手（需求证据含该典型交互），报告生成步骤（Get Report）消费经解析的日报生成请求。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d8",
+          "source_group": "g4",
+          "target_group": "g7",
+          "data_items": [
+            "解析出的目标设置/更新值"
+          ],
+          "rationale": "更新档案前由 AI 助手解析目标请求（g7 第二标原生证据含 Cal IA Agent），解析结果供 Update Profile Data 写入使用。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "用户发送的语音消息"
+          ],
+          "lane_b_data_items": [
+            "用户发送的语音消息（音频内容）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "用户发送的食物图片"
+          ],
+          "lane_b_data_items": [
+            "用户发送的食物图片"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "用户的文本消息"
+          ],
+          "lane_b_data_items": [
+            "用户发送的文本消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "用户的注册请求消息"
+          ],
+          "lane_b_data_items": [
+            "用户的注册相关消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "语音转写文本"
+          ],
+          "lane_b_data_items": [
+            "语音转写文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "食物图片识别分析结果"
+          ],
+          "lane_b_data_items": [
+            "食物图片识别结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "估算的热量、蛋白质、碳水化合物与脂肪"
+          ],
+          "lane_b_data_items": [
+            "估算的热量、蛋白质、碳水化合物与脂肪"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "AI 助手的回复文本"
+          ],
+          "lane_b_data_items": [
+            "AI 助手的回复文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "餐食记录（营养素数据）"
+          ],
+          "lane_b_data_items": [
+            "餐食记录数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "用户档案数据"
+          ],
+          "lane_b_data_items": [
+            "用户档案（含注册信息与初始目标）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "用户热量与蛋白质目标"
+          ],
+          "lane_b_data_items": [
+            "更新后的热量目标与蛋白质目标"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "带进度条的每日营养汇总"
+          ],
+          "lane_b_data_items": [
+            "带进度条的每日营养汇总"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-015",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 14,
+        "primary_count": 14,
+        "double_count": 14,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "主题或现成文稿"
+          ],
+          "lane_b_data_items": [
+            "主题或现成文稿"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "选定的语音合成音色"
+          ],
+          "lane_b_data_items": [
+            "选定的语音合成音色"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "选定的视觉风格"
+          ],
+          "lane_b_data_items": [
+            "选定的视觉风格"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "选定的图像生成服务"
+          ],
+          "lane_b_data_items": [
+            "选定的图像生成服务"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "脚本文本"
+          ],
+          "lane_b_data_items": [
+            "完整脚本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "脚本文本"
+          ],
+          "lane_b_data_items": [
+            "完整脚本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "脚本时间信息"
+          ],
+          "lane_b_data_items": [
+            "脚本时间信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "带时间戳的字幕"
+          ],
+          "lane_b_data_items": [
+            "带时间戳的字幕"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "场景片段内容"
+          ],
+          "lane_b_data_items": [
+            "场景片段"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "图像生成提示词"
+          ],
+          "lane_b_data_items": [
+            "图像生成提示词"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "各场景图片"
+          ],
+          "lane_b_data_items": [
+            "各场景图片"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "各短视频片段"
+          ],
+          "lane_b_data_items": [
+            "短视频片段"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "最终完整视频"
+          ],
+          "lane_b_data_items": [
+            "最终视频"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "视频链接"
+          ],
+          "lane_b_data_items": [
+            "视频链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-016",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 10,
+        "precision": 1.0,
+        "recall": 0.6,
+        "f1": 0.7499999999999999
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d4",
+          "source_group": "g4",
+          "target_group": "g6",
+          "data_items": [
+            "待评论帖子的信息"
+          ],
+          "rationale": "待评论清单文件 instagram_post_to_comment.csv 记录所选待评论帖子。"
+        },
+        {
+          "edge_id": "d5",
+          "source_group": "g4",
+          "target_group": "g7",
+          "data_items": [
+            "所选帖子（评论目标）"
+          ],
+          "rationale": "需求明示“将该回复发布到所选帖子下”，发布目标为 g4 选出的帖子。"
+        },
+        {
+          "edge_id": "d7",
+          "source_group": "g5",
+          "target_group": "g7",
+          "data_items": [
+            "生成的评论回复内容"
+          ],
+          "rationale": "需求明示“将该回复发布到所选帖子下”，发布的即语言模型撰写的回复。"
+        },
+        {
+          "edge_id": "d10",
+          "source_group": "g8",
+          "target_group": "g4",
+          "data_items": [
+            "已评论记录（帖子链接列表）"
+          ],
+          "rationale": "g4 内的校验步骤（Check if in List / If）读取已评论记录以避免重复评论，该记录由 g8 写入维护（跨运行数据维护关系，依据需求“避免对同一帖子重复评论”）。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "生成的话题标签"
+          ],
+          "lane_b_data_items": [
+            "生成的话题标签"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "话题标签下最近的帖子列表"
+          ],
+          "lane_b_data_items": [
+            "抓取到的最近帖子列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "选定帖子的内容"
+          ],
+          "lane_b_data_items": [
+            "随机选中的帖子"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "评论回复与待评论帖子信息"
+          ],
+          "lane_b_data_items": [
+            "生成的评论回复内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "待评论帖子清单文件"
+          ],
+          "lane_b_data_items": [
+            "上传到 SharePoint 的待评论清单文件"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "已发布评论的帖子链接"
+          ],
+          "lane_b_data_items": [
+            "已发布评论的帖子链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-018",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 8,
+        "precision": 1.0,
+        "recall": 0.875,
+        "f1": 0.9333333333333333
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d8",
+          "source_group": "g7",
+          "target_group": "g1",
+          "data_items": [
+            "已发布标题记录（新增标题）"
+          ],
+          "rationale": "发布成功后写入的标题由 g1 中的读取步骤在后续运行读取用于去重（需求：使其在其他时段不会被再次发布），属于写入-读取的数据维护关系。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "已发布标题记录"
+          ],
+          "lane_b_data_items": [
+            "已发布标题记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "新闻数据源返回的近期新闻条目"
+          ],
+          "lane_b_data_items": [
+            "新闻数据源返回的近期新闻条目"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "筛选后的候选文章（链接、标题）"
+          ],
+          "lane_b_data_items": [
+            "筛选后的候选文章（含链接、图片、标题）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "通过校验的文章（标题、摘要、图片链接）"
+          ],
+          "lane_b_data_items": [
+            "通过校验的文章（标题、摘要、链接、图片）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "文章图片链接"
+          ],
+          "lane_b_data_items": [
+            "帖文文案与保留的图片链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "清理后的帖文文案"
+          ],
+          "lane_b_data_items": [
+            "生成的帖文文案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "图片文件与可用性结果"
+          ],
+          "lane_b_data_items": [
+            "图片可用性验证结果（及图片文件）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-020",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 15,
+        "primary_count": 16,
+        "double_count": 15,
+        "precision": 0.9375,
+        "recall": 1.0,
+        "f1": 0.967741935483871
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d14",
+          "source_group": "g10",
+          "target_group": "g18",
+          "data_items": [
+            "选题行标识"
+          ],
+          "rationale": "状态更新针对 g10 选取的那条选题行（把该选题行的状态更新为就绪），需消费选题行标识。"
+        }
+      ],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "选定的新选题"
+          ],
+          "lane_b_data_items": [
+            "选中的状态为新的选题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "lane_a_data_items": [
+            "俄文文章草稿"
+          ],
+          "lane_b_data_items": [
+            "俄文文章草稿"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "lane_a_data_items": [
+            "最终文章文本"
+          ],
+          "lane_b_data_items": [
+            "最终文章文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g15",
+          "lane_a_data_items": [
+            "最终文章文本"
+          ],
+          "lane_b_data_items": [
+            "最终文章文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "Google 文档"
+          ],
+          "lane_b_data_items": [
+            "Google 文档及其链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g14",
+          "target_group": "g18",
+          "lane_a_data_items": [
+            "Google 文档链接"
+          ],
+          "lane_b_data_items": [
+            "Google 文档链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g15",
+          "target_group": "g16",
+          "lane_a_data_items": [
+            "英文配图描述"
+          ],
+          "lane_b_data_items": [
+            "英文配图描述（最多两组）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g16",
+          "target_group": "g17",
+          "lane_a_data_items": [
+            "生成的图片"
+          ],
+          "lane_b_data_items": [
+            "生成的配图"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g17",
+          "target_group": "g18",
+          "lane_a_data_items": [
+            "图片元数据与共享链接"
+          ],
+          "lane_b_data_items": [
+            "图片元数据（含共享链接）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "电子表格查找结果（是否已存在）"
+          ],
+          "lane_b_data_items": [
+            "电子表格存在性检查结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "已发布与已排队的标题（排除清单）"
+          ],
+          "lane_b_data_items": [
+            "已发布与已排队的标题（排除清单）"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "随机女性主题分类（分类成员）"
+          ],
+          "lane_b_data_items": [
+            "随机女性主题分类"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "新生成的俄文选题"
+          ],
+          "lane_b_data_items": [
+            "语言模型生成的俄文选题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "去重后的选题"
+          ],
+          "lane_b_data_items": [
+            "过滤后的新选题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "选题工作表中的选题（状态为新）"
+          ],
+          "lane_b_data_items": [
+            "选题工作表中的选题（含状态字段）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-023",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 8,
+        "double_count": 9,
+        "precision": 0.875,
+        "recall": 0.7777777777777778,
+        "f1": 0.823529411764706
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d8",
+          "source_group": "g6",
+          "target_group": "g9",
+          "data_items": [
+            "视频链接"
+          ],
+          "rationale": "Telegram 通知附上视频链接，该链接来自成片合成结果（Send Video URL via Telegram）。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d8",
+          "source_group": "g7",
+          "target_group": "g8",
+          "data_items": [
+            "发布结果与状态"
+          ],
+          "rationale": "发布后更新状态（Update Status to \"DONE\"），发布结果属于被存储的跟踪信息。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g8",
+          "target_group": "g9",
+          "data_items": [
+            "视频链接与文案"
+          ],
+          "rationale": "需求明示通知“附上视频链接与文案”，两者来自存储的元数据与结果。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "用户的创意输入（文字与商品图片）"
+          ],
+          "lane_b_data_items": [
+            "Telegram 文字与商品图片"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "图像生成提示词"
+          ],
+          "lane_b_data_items": [
+            "图像生成提示词"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "广告创意（主提示）"
+          ],
+          "lane_b_data_items": [
+            "广告创意/主提示词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "视频脚本（格式化提示词）"
+          ],
+          "lane_b_data_items": [
+            "视频脚本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "各短视频片段"
+          ],
+          "lane_b_data_items": [
+            "生成的短视频片段"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "成片广告视频"
+          ],
+          "lane_b_data_items": [
+            "成片广告视频"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "成片结果（视频与链接）"
+          ],
+          "lane_b_data_items": [
+            "成片视频链接与结果数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-024",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 15,
+        "primary_count": 16,
+        "double_count": 18,
+        "precision": 0.9375,
+        "recall": 0.8333333333333334,
+        "f1": 0.8823529411764706
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d11",
+          "source_group": "g8",
+          "target_group": "g15",
+          "data_items": [
+            "退房当天的预订信息（未设置清洁人员邮箱）"
+          ],
+          "rationale": "提醒房东未设置清洁人员邮箱时，提醒内容与判断依据来自 g8 识别的退房当天预订信息。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d13",
+          "source_group": "g13",
+          "target_group": "g15",
+          "data_items": [
+            "清洁任务信息（未设置清洁人员邮箱）"
+          ],
+          "rationale": "提醒房东未设置清洁人员邮箱基于该清洁任务的指派状态。"
+        },
+        {
+          "edge_id": "d5",
+          "source_group": "g4",
+          "target_group": "g6",
+          "data_items": [
+            "预订确认信息"
+          ],
+          "rationale": "Telegram 通知房东的内容基于规范化后的预订数据（Confirm Booking to Host）。"
+        },
+        {
+          "edge_id": "d10",
+          "source_group": "g9",
+          "target_group": "g12",
+          "data_items": [
+            "消息发送确认内容"
+          ],
+          "rationale": "Telegram 确认基于已生成并已发送的客人消息（posts a confirmation to Telegram）。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "预订请求数据"
+          ],
+          "lane_b_data_items": [
+            "预订请求内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "清洁任务信息（含清洁人员邮箱设置）"
+          ],
+          "lane_b_data_items": [
+            "清洁任务信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g17",
+          "lane_a_data_items": [
+            "清洁任务记录"
+          ],
+          "lane_b_data_items": [
+            "清洁任务记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g17",
+          "target_group": "g18",
+          "lane_a_data_items": [
+            "本周统计"
+          ],
+          "lane_b_data_items": [
+            "本周统计结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g17",
+          "target_group": "g20",
+          "lane_a_data_items": [
+            "本周无活动的统计结果"
+          ],
+          "lane_b_data_items": [
+            "本周活动统计（无活动情形）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g18",
+          "target_group": "g19",
+          "lane_a_data_items": [
+            "周报内容"
+          ],
+          "lane_b_data_items": [
+            "房东周报文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "被跳过的预订内容与校验结果"
+          ],
+          "lane_b_data_items": [
+            "被判定无效的预订数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "有效预订数据"
+          ],
+          "lane_b_data_items": [
+            "有效的预订数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "规范化后的预订记录（含预订编号）"
+          ],
+          "lane_b_data_items": [
+            "规范化预订记录（含预订编号）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g17",
+          "lane_a_data_items": [
+            "预订记录"
+          ],
+          "lane_b_data_items": [
+            "预订工作表记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "预订记录"
+          ],
+          "lane_b_data_items": [
+            "预订工作表记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g13",
+          "lane_a_data_items": [
+            "退房当天的行程"
+          ],
+          "lane_b_data_items": [
+            "退房当天的到期预订"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "到期行程（入住/退房/评价请求）"
+          ],
+          "lane_b_data_items": [
+            "到期行程（预订信息与消息类型）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "生成的客人消息"
+          ],
+          "lane_b_data_items": [
+            "生成的客人消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "客人消息文本"
+          ],
+          "lane_b_data_items": [
+            "生成的客人消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-026",
+      "reviewer_a": "DFG-A02",
+      "reviewer_b": "DFG-B02",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 8,
+        "double_count": 9,
+        "precision": 0.875,
+        "recall": 0.7777777777777778,
+        "f1": 0.823529411764706
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d5",
+          "source_group": "g3",
+          "target_group": "g6",
+          "data_items": [
+            "商家资料完整度评分"
+          ],
+          "rationale": "排名报告按商家得分排序（Rank Prospects），消费 g3 计算的完整度缺口评分。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d4",
+          "source_group": "g3",
+          "target_group": "g5",
+          "data_items": [
+            "候选商家档案与评论数据"
+          ],
+          "rationale": "抽取抱怨主题针对候选商家的三星及以下评分评论，评论数据来自下载的商家档案。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g7",
+          "target_group": "g4",
+          "data_items": [
+            "已记录候选商家（历史写入记录）"
+          ],
+          "rationale": "g4 读取 Google Sheets 中已记录的候选商家做 90 天去重，这些记录由 g7 逐行追加维护，属跨运行的写入-读取数据流。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "检索配置（城市、品类、阈值与投递目标）"
+          ],
+          "lane_b_data_items": [
+            "城市与品类配置"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "检索就绪的商家档案（快照结果）"
+          ],
+          "lane_b_data_items": [
+            "检索结果（商家档案快照）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "打分后的商家档案"
+          ],
+          "lane_b_data_items": [
+            "打分后的候选商家列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "过滤后的候选商家（含评论数据）"
+          ],
+          "lane_b_data_items": [
+            "过滤后的候选商家"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "抱怨主题抽取结果"
+          ],
+          "lane_b_data_items": [
+            "抱怨主题与候选商家数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "排名报告中的候选商家行"
+          ],
+          "lane_b_data_items": [
+            "排名报告（逐行候选商家数据）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "格式化的排名摘要内容"
+          ],
+          "lane_b_data_items": [
+            "带排名的格式化摘要"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-029",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 18,
+        "primary_count": 21,
+        "double_count": 22,
+        "precision": 0.8571428571428571,
+        "recall": 0.8181818181818182,
+        "f1": 0.8372093023255814
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d14",
+          "source_group": "g1",
+          "target_group": "g11",
+          "data_items": [
+            "用户标识、渠道、消息、时间戳"
+          ],
+          "rationale": "记录到 Google Sheets 的用户标识、渠道、消息、时间戳字段来自归一化后的消息数据。"
+        },
+        {
+          "edge_id": "d18",
+          "source_group": "g10",
+          "target_group": "g11",
+          "data_items": [
+            "是否升级与升级原因"
+          ],
+          "rationale": "记录字段中的是否升级与升级原因来自升级处理（工单创建）链路并被日志真实写入。"
+        },
+        {
+          "edge_id": "d21",
+          "source_group": "g15",
+          "target_group": "g5",
+          "data_items": [
+            "导入向量知识库的自有文档"
+          ],
+          "rationale": "答复生成通过向量知识库以工具方式检索自有文档，手动导入分支生产的文档内容被检索真实消费（跨分支数据依赖）。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d19",
+          "source_group": "g11",
+          "target_group": "g12",
+          "data_items": [
+            "已记录的会话数据"
+          ],
+          "rationale": "每周任务发布的是真实数据，其来源为已记录到 Google Sheets 的会话记录，g12 聚合时读取这些数据。"
+        },
+        {
+          "edge_id": "d14",
+          "source_group": "g2",
+          "target_group": "g11",
+          "data_items": [
+            "用户标识、渠道、消息内容"
+          ],
+          "rationale": "Sheets 记录字段包含用户标识、渠道、消息，均来自接入并检查后的消息数据。"
+        },
+        {
+          "edge_id": "d18",
+          "source_group": "g4",
+          "target_group": "g11",
+          "data_items": [
+            "是否升级与升级原因"
+          ],
+          "rationale": "记录字段包含是否升级与升级原因，g11 消费升级分支产出的原因信息。"
+        },
+        {
+          "edge_id": "d22",
+          "source_group": "g5",
+          "target_group": "g14",
+          "data_items": [
+            "过期的会话记忆记录"
+          ],
+          "rationale": "清理旧的会话记忆需读取 g5 持久化保存的会话记忆（保留期默认 30 天），删除操作以读取该存储为前提。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "归一化后的客户消息（内容与渠道等元数据）"
+          ],
+          "lane_b_data_items": [
+            "归一化后的统一消息结构（含渠道、消息内容、用户标识）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "原始渠道与客户邮件主题等消息元数据"
+          ],
+          "lane_b_data_items": [
+            "原始渠道信息与客户原始主题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "lane_a_data_items": [
+            "聚合后的周统计数据"
+          ],
+          "lane_b_data_items": [
+            "汇总后的每周统计数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "周统计数据"
+          ],
+          "lane_b_data_items": [
+            "待归档的周统计数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "前置检查未通过的消息及未通过原因",
+            "是否来自在线聊天渠道"
+          ],
+          "lane_b_data_items": [
+            "未通过的前置检查类型与消息信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "转人工请求匹配等检查判定结果（升级原因来源）",
+            "客户消息上下文"
+          ],
+          "lane_b_data_items": [
+            "六种语言匹配的明确转人工请求检测结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "通过前置检查的客户消息"
+          ],
+          "lane_b_data_items": [
+            "通过全部前置检查的归一化消息"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "客户消息文本"
+          ],
+          "lane_b_data_items": [
+            "待情绪分析的消息内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "升级原因",
+            "为人工客服撰写的简短说明"
+          ],
+          "lane_b_data_items": [
+            "升级原因与给人工客服的简短说明"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "答复内容"
+          ],
+          "lane_b_data_items": [
+            "答复内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "生成的答复内容",
+            "检索依据信息（是否检索知识库、是否返回内容）"
+          ],
+          "lane_b_data_items": [
+            "是否检索了知识库及知识库返回的内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "生成的答复内容"
+          ],
+          "lane_b_data_items": [
+            "生成的答复内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "情绪结果"
+          ],
+          "lane_b_data_items": [
+            "情绪结果（用于推导工单优先级）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "情绪"
+          ],
+          "lane_b_data_items": [
+            "情绪结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "情绪分析结果"
+          ],
+          "lane_b_data_items": [
+            "情绪判定结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "置信度"
+          ],
+          "lane_b_data_items": [
+            "置信度得分"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "置信度得分"
+          ],
+          "lane_b_data_items": [
+            "置信度得分（含问候致谢短路标志）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "升级判定结论（置信度或情绪判定结果）"
+          ],
+          "lane_b_data_items": [
+            "升级判定结果与触发原因（置信度不足或负面情绪）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-032",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1": 0.9090909090909091
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d4",
+          "source_group": "g3",
+          "target_group": "g5",
+          "data_items": [
+            "生成的博客与社交媒体内容"
+          ],
+          "rationale": "发布到选定平台的内容即生成的内容，g5 消费 g3 产出。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "YouTube 视频链接"
+          ],
+          "lane_b_data_items": [
+            "YouTube 视频链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "字幕文本"
+          ],
+          "lane_b_data_items": [
+            "视频字幕文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "生成的博客文章与社交媒体内容"
+          ],
+          "lane_b_data_items": [
+            "生成的博客与社交媒体内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "批准后的待发布内容（含批准结果）"
+          ],
+          "lane_b_data_items": [
+            "人工批准结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "发布结果与所发布内容的信息"
+          ],
+          "lane_b_data_items": [
+            "发布的内容与发布结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-033",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "Instagram Reel 链接"
+          ],
+          "lane_b_data_items": [
+            "Instagram Reel 链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "下载的 Reel 视频文件"
+          ],
+          "lane_b_data_items": [
+            "下载的 Reel 视频文件"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "Reel 描述（元数据）"
+          ],
+          "lane_b_data_items": [
+            "Reel 描述元数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "音频文件"
+          ],
+          "lane_b_data_items": [
+            "转换后的音频文件"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "转写文本"
+          ],
+          "lane_b_data_items": [
+            "语音转写文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本"
+          ],
+          "lane_b_data_items": [
+            "分析产出（内容领域定位、核心信息、3 条切入点与 3 条短视频脚本）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-034",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 9,
+        "primary_count": 9,
+        "double_count": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "入选帖子（用于逐帖获取评论的帖子标识）"
+          ],
+          "lane_b_data_items": [
+            "入选的趋势帖子"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "帖子所链接文章的地址"
+          ],
+          "lane_b_data_items": [
+            "帖子所链接文章的地址"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "按评分排名前 30 条的评论"
+          ],
+          "lane_b_data_items": [
+            "按评分取前 30 条的评论内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "评论分析结论（整体情绪、主要叙事、受众洞察、公关启示）"
+          ],
+          "lane_b_data_items": [
+            "评论分析结果（整体情绪、主要叙事、受众洞察、公关启示）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "文章正文内容"
+          ],
+          "lane_b_data_items": [
+            "抽取的文章正文"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "文章内容分析结论（核心故事要素、技术要素、叙事机会、可传播要素）"
+          ],
+          "lane_b_data_items": [
+            "文章要素分析结果（核心故事、技术、叙事机会、可传播要素）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "每篇帖子的综合报告"
+          ],
+          "lane_b_data_items": [
+            "每篇帖子的综合报告"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "报告压缩包文件"
+          ],
+          "lane_b_data_items": [
+            "打包的压缩包文件"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "上传后的压缩包及其链接"
+          ],
+          "lane_b_data_items": [
+            "压缩包在 Google Drive 的访问链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-035",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 11,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "Reddit 帖子链接"
+          ],
+          "lane_b_data_items": [
+            "Reddit 帖子链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "配音音色与语速参数"
+          ],
+          "lane_b_data_items": [
+            "配音音色与语速参数"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "帖子及评论文本"
+          ],
+          "lane_b_data_items": [
+            "Reddit 帖子内容与评论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "每个片段的库存素材检索词"
+          ],
+          "lane_b_data_items": [
+            "片段素材检索词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "每个片段的文本内容"
+          ],
+          "lane_b_data_items": [
+            "结构化片段文本"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "片段文本内容（用作字幕文本）"
+          ],
+          "lane_b_data_items": [
+            "片段文本内容（字幕来源）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "匹配的竖版视频素材"
+          ],
+          "lane_b_data_items": [
+            "匹配的竖版视频素材"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "配音音频"
+          ],
+          "lane_b_data_items": [
+            "配音音频（字幕同步依据）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "配音音频"
+          ],
+          "lane_b_data_items": [
+            "各片段配音音频"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "同步字幕"
+          ],
+          "lane_b_data_items": [
+            "同步字幕"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "成品视频的访问链接"
+          ],
+          "lane_b_data_items": [
+            "渲染完成的成品视频链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-038",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 4,
+        "primary_count": 4,
+        "double_count": 4,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "使用者的自然语言问题",
+            "目标数据表名"
+          ],
+          "lane_b_data_items": [
+            "目标表名与自然语言问题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "生成的 SQL 查询"
+          ],
+          "lane_b_data_items": [
+            "生成的 SQL 查询"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "查询结果数据"
+          ],
+          "lane_b_data_items": [
+            "SQL 查询返回的结果数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "整理后的分析结论"
+          ],
+          "lane_b_data_items": [
+            "整理后的分析结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-046",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 9,
+        "double_count": 8,
+        "precision": 0.7777777777777778,
+        "recall": 0.875,
+        "f1": 0.823529411764706
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d6",
+          "source_group": "g6",
+          "target_group": "g8",
+          "data_items": [
+            "规范化后的线索明细"
+          ],
+          "rationale": "使用语言模型为每条线索生成开发信，生成步骤真实消费线索明细。"
+        },
+        {
+          "edge_id": "d9",
+          "source_group": "g6",
+          "target_group": "g9",
+          "data_items": [
+            "线索明细（名称、电话、网站、地址、州、关键词）"
+          ],
+          "rationale": "追加写入 Leads 标签页的字段包含线索明细，真实消费清洗后的线索数据。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d6",
+          "source_group": "g7",
+          "target_group": "g8",
+          "data_items": [
+            "线索明细与提取到的联系邮箱"
+          ],
+          "rationale": "为线索生成开发信需读取线索明细与联系邮箱，g8 消费这些数据。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "标记为 Active 的州",
+            "已配置的关键词"
+          ],
+          "lane_b_data_items": [
+            "生效州清单与已配置关键词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "搜索词（关键词 in 州）"
+          ],
+          "lane_b_data_items": [
+            "按“关键词 in 州”组合的搜索词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "搜索服务返回的错误信息"
+          ],
+          "lane_b_data_items": [
+            "搜索服务返回的错误信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "拆分后的单条商家线索"
+          ],
+          "lane_b_data_items": [
+            "拆分后的单条商家线索"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "含网站的线索及其网站地址"
+          ],
+          "lane_b_data_items": [
+            "规范化且去重后的线索（含网站地址）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "提取到的联系邮箱"
+          ],
+          "lane_b_data_items": [
+            "线索明细与联系邮箱（写入字段）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "生成的 B2B 开发信"
+          ],
+          "lane_b_data_items": [
+            "生成的 B2B 开发信"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-056",
+      "reviewer_a": "DFG-A03",
+      "reviewer_b": "DFG-B03",
+      "endpoint_metrics": {
+        "matches": 6,
+        "primary_count": 7,
+        "double_count": 6,
+        "precision": 0.8571428571428571,
+        "recall": 1.0,
+        "f1": 0.923076923076923
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d1",
+          "source_group": "g2",
+          "target_group": "g4",
+          "data_items": [
+            "本次使用的 Instagram 账号会话（Cookie）"
+          ],
+          "rationale": "按话题标签抓取帖子时使用轮换选出的账号会话执行，真实消费。"
+        }
+      ],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "本次使用的 Instagram 账号会话（Cookie）"
+          ],
+          "lane_b_data_items": [
+            "选定账号的会话凭据（执行点赞所用账号）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "生成的话题标签"
+          ],
+          "lane_b_data_items": [
+            "生成的话题标签"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "抓取到的候选帖子列表"
+          ],
+          "lane_b_data_items": [
+            "抓取到的最近帖子列表"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "选定的未点赞帖子"
+          ],
+          "lane_b_data_items": [
+            "查重后选定的待点赞帖子"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "已点赞帖子的链接"
+          ],
+          "lane_b_data_items": [
+            "已点赞帖子的链接"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "已点赞帖子记录"
+          ],
+          "lane_b_data_items": [
+            "已点赞帖子记录（查重依据）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-058",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 2,
+        "primary_count": 2,
+        "double_count": 2,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "目标关键词与监控域名/参数"
+          ],
+          "lane_b_data_items": [
+            "目标关键词与域名等监控参数"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "关键词排名数据",
+            "排名变化与 SEO 优化机会分析结果"
+          ],
+          "lane_b_data_items": [
+            "解析后的关键词排名数据",
+            "排名变化与 SEO 优化机会"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-060",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 6,
+        "primary_count": 7,
+        "double_count": 6,
+        "precision": 0.8571428571428571,
+        "recall": 1.0,
+        "f1": 0.923076923076923
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d4",
+          "source_group": "g3",
+          "target_group": "g5",
+          "data_items": [
+            "生成的合照图像"
+          ],
+          "rationale": "冻结需求“将生成的合照图像两两配对”，配对步骤真实读取 g3 产出的合照图像。"
+        }
+      ],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "用户人脸照片",
+            "名人参考图（最多 4 张）"
+          ],
+          "lane_b_data_items": [
+            "用户人脸照片与名人参考图"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "真实感合照构图的优化提示词"
+          ],
+          "lane_b_data_items": [
+            "优化后的合照构图提示词"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "生成的合照图像及生成结果"
+          ],
+          "lane_b_data_items": [
+            "生成的合照图像结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "已保存的合照结果行记录（含就绪状态）"
+          ],
+          "lane_b_data_items": [
+            "已保存的合照图像记录（含就绪状态）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "配对后的合照图像（名人 1 → 名人 2）"
+          ],
+          "lane_b_data_items": [
+            "配对好的合照图像（名人 1 → 名人 2）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "生成的行走过渡视频",
+            "视频元数据"
+          ],
+          "lane_b_data_items": [
+            "生成的行走过渡视频及元数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-082",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 15,
+        "primary_count": 16,
+        "double_count": 17,
+        "precision": 0.9375,
+        "recall": 0.8823529411764706,
+        "f1": 0.9090909090909091
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d14",
+          "source_group": "g6",
+          "target_group": "g12",
+          "data_items": [
+            "Airtable 中的未结分诊记录"
+          ],
+          "rationale": "按周加载的未结分诊记录即 g6 创建并写入 Airtable 的分诊记录。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d11",
+          "source_group": "g15",
+          "target_group": "g8",
+          "data_items": [
+            "审批决策（批准或拒绝）"
+          ],
+          "rationale": "审批结论来自 g15 审批决策回调接收的决策数据，g8 据此记录审批结论。"
+        },
+        {
+          "edge_id": "d10",
+          "source_group": "g6",
+          "target_group": "g8",
+          "data_items": [
+            "已创建的分诊记录"
+          ],
+          "rationale": "记录审批结论前需查找并定位 g6 创建的待审批分诊记录（Find Pending Airtable Request）。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "规范化后的项目需求申请字段"
+          ],
+          "lane_b_data_items": [
+            "规范化后的申请字段"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "规范化后的需求申请内容"
+          ],
+          "lane_b_data_items": [
+            "规范化后的完整申请内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "申请元信息"
+          ],
+          "lane_b_data_items": [
+            "申请元信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "申请信息"
+          ],
+          "lane_b_data_items": [
+            "申请信息"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "分诊结果与交付交接内容"
+          ],
+          "lane_b_data_items": [
+            "分诊结果与交接内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "lane_a_data_items": [
+            "加载的未结分诊记录"
+          ],
+          "lane_b_data_items": [
+            "未结分诊记录"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "lane_a_data_items": [
+            "运营汇总内容"
+          ],
+          "lane_b_data_items": [
+            "运营汇总内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "缺失字段清单",
+            "澄清问题"
+          ],
+          "lane_b_data_items": [
+            "缺失字段清单与澄清问题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "分诊摘要",
+            "申请类型与风险/依赖/待决策事项等抽取结果"
+          ],
+          "lane_b_data_items": [
+            "语言模型分诊输出（摘要、类型、风险、依赖、待决策事项、建议负责人类型）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "分诊摘要与类型判定"
+          ],
+          "lane_b_data_items": [
+            "分诊摘要"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "风险与紧急度评分",
+            "分诊去向"
+          ],
+          "lane_b_data_items": [
+            "风险与紧急度评分及分诊去向"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "风险与紧急度评分"
+          ],
+          "lane_b_data_items": [
+            "风险与紧急度评分"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "分诊记录标识（更新目标）"
+          ],
+          "lane_b_data_items": [
+            "待更新的分诊记录标识"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "审批结论（批准/拒绝）"
+          ],
+          "lane_b_data_items": [
+            "审批结论"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "指派的负责人",
+            "审批处理结果"
+          ],
+          "lane_b_data_items": [
+            "负责人与审批结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-089",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 10,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.9090909090909091,
+        "recall": 0.9090909090909091,
+        "f1": 0.9090909090909091
+      },
+      "lane_a_only_edges": [
+        {
+          "edge_id": "d5",
+          "source_group": "g3",
+          "target_group": "g6",
+          "data_items": [
+            "分诊类型"
+          ],
+          "rationale": "“置信度充足时按类型分流”，分流依据的反馈类型由 g3 的语言模型分析产出。"
+        }
+      ],
+      "lane_b_only_edges": [
+        {
+          "edge_id": "d5",
+          "source_group": "g4",
+          "target_group": "g6",
+          "data_items": [
+            "反馈类型与置信度判定结果"
+          ],
+          "rationale": "按类型分流读取反馈类型，并以置信度充足为前提，真实消费 g4 的判定产出。"
+        }
+      ],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "原始 UAT 反馈数据"
+          ],
+          "lane_b_data_items": [
+            "原始 UAT 反馈数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "规范化清洗后的反馈文本"
+          ],
+          "lane_b_data_items": [
+            "规范化清洗后的反馈文本（测试人、版本、页面、反馈内容）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "模型分诊输出（类型、严重程度与情感、摘要与建议标题、置信度）"
+          ],
+          "lane_b_data_items": [
+            "模型输出（类型、严重程度与情感、摘要、置信度）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "不可靠校验结果",
+            "待复核的反馈内容"
+          ],
+          "lane_b_data_items": [
+            "判定为不可靠的模型输出与反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "lane_a_data_items": [
+            "体验改进反馈及分诊结果"
+          ],
+          "lane_b_data_items": [
+            "判定为体验改进的反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g11",
+          "lane_a_data_items": [
+            "无效噪音反馈及分诊结果"
+          ],
+          "lane_b_data_items": [
+            "判定为无效噪音的反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g12",
+          "lane_a_data_items": [
+            "分流后的反馈与分诊处理结果"
+          ],
+          "lane_b_data_items": [
+            "反馈类型与分诊处理结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "严重缺陷反馈及分诊结果"
+          ],
+          "lane_b_data_items": [
+            "判定为严重缺陷的反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "严重缺陷反馈信息（告警内容）"
+          ],
+          "lane_b_data_items": [
+            "判定为严重缺陷的反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "lane_a_data_items": [
+            "功能需求反馈及分诊结果"
+          ],
+          "lane_b_data_items": [
+            "判定为功能需求的反馈内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": true
+    },
+    {
+      "task_id": "N8F-097",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "公司主页链接（company_url）",
+            "国家/地区（geo）"
+          ],
+          "lane_b_data_items": [
+            "公司主页链接（company_url）与国家/地区（geo）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "公司原始数据（概览、评分、评论、常见问题）"
+          ],
+          "lane_b_data_items": [
+            "公司原始数据（概览、评分、评论、常见问题）"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "公司原始数据（评分、评论等）"
+          ],
+          "lane_b_data_items": [
+            "公司原始数据（评论、评分等）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "结构化字段数据"
+          ],
+          "lane_b_data_items": [
+            "结构化字段数据"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "详细摘要"
+          ],
+          "lane_b_data_items": [
+            "详细摘要"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "统一输出对象（结构化数据与摘要）"
+          ],
+          "lane_b_data_items": [
+            "合并后的统一输出对象（最终报告）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-099",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "斜杠命令中提供的人员姓名"
+          ],
+          "lane_b_data_items": [
+            "斜杠命令中提供的姓名"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "校验通过的完整姓名（名/姓）"
+          ],
+          "lane_b_data_items": [
+            "通过校验的完整姓名"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g8",
+          "lane_a_data_items": [
+            "校验未通过结果（未提供完整姓名）"
+          ],
+          "lane_b_data_items": [
+            "校验未通过结果（未提供完整姓名）"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "定位到的 LinkedIn 个人主页（URL）"
+          ],
+          "lane_b_data_items": [
+            "定位到的 LinkedIn 个人主页"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "最近 20 条帖子内容"
+          ],
+          "lane_b_data_items": [
+            "最近 20 条帖子内容"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "lane_a_data_items": [
+            "发帖节奏、主要主题与近期亮点分析结果"
+          ],
+          "lane_b_data_items": [
+            "发帖分析结果（发帖频率、主要主题、近期亮点）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "lane_a_data_items": [
+            "格式化 HTML 报告"
+          ],
+          "lane_b_data_items": [
+            "格式化的 HTML 报告"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-101",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 3,
+        "primary_count": 3,
+        "double_count": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "用户自然语言问题"
+          ],
+          "lane_b_data_items": [
+            "用户的自然语言问题"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "Google Sheets 实时数据行"
+          ],
+          "lane_b_data_items": [
+            "Google Sheets 实时数据行"
+          ],
+          "normalized_string_sets_equal_diagnostic": true
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "计算得到的答案（含实际数字）"
+          ],
+          "lane_b_data_items": [
+            "包含实际数字的答案"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    },
+    {
+      "task_id": "N8F-107",
+      "reviewer_a": "DFG-A04",
+      "reviewer_b": "DFG-B04",
+      "endpoint_metrics": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "lane_a_only_edges": [],
+      "lane_b_only_edges": [],
+      "shared_edges": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "lane_a_data_items": [
+            "请求中的可选输出结构（JSON Schema）"
+          ],
+          "lane_b_data_items": [
+            "请求中携带的输出结构（JSON Schema）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "自然语言指令"
+          ],
+          "lane_b_data_items": [
+            "自然语言指令（prompt）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "lane_a_data_items": [
+            "校验失败信息（说明与示例结构）"
+          ],
+          "lane_b_data_items": [
+            "结构不合法的校验结果与错误说明（含示例结构）"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "lane_a_data_items": [
+            "校验通过的输出结构或宽松默认结构"
+          ],
+          "lane_b_data_items": [
+            "校验通过或回退后的输出结构"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "lane_a_data_items": [
+            "格式化后的结构化结果"
+          ],
+          "lane_b_data_items": [
+            "与结构一致的结构化 JSON 结果"
+          ],
+          "normalized_string_sets_equal_diagnostic": false
+        }
+      ],
+      "requires_endpoint_adjudication": false
+    }
+  ]
+}

@@ -1,0 +1,369 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-040",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "290fb97f66b43eb4ecb2be1ae9d02050075c7ce48490ad38fb4bbda1fd842741",
+  "natural_language_requirement": "该流程由人工手动启动。系统从源 Google Sheets 工作表读取全部公司记录，仅保留公司名称、网站与“是否已充实”三项；已标记为已充实的记录直接跳过。对其余每家公司，系统使用网络搜索服务与语言模型调研该公司，返回行业、简介、目标客户、总部所在地与规模估计等结构化信息，其中目标客户列表会被整理为逗号分隔的文本。充实后的公司记录追加写入另一个 Google Sheets 工作表，同时按公司名称定位源工作表中的原始记录，将其“是否已充实”更新为是，避免重复处理。",
+  "public_interfaces": [
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_enriched",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "company_name": {
+                "type": "string"
+              },
+              "website": {
+                "type": "string"
+              },
+              "industry": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "target_customers": {
+                "type": "string"
+              },
+              "headquarters": {
+                "type": "string"
+              },
+              "estimated_size": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "company_name",
+              "website",
+              "industry",
+              "description",
+              "target_customers",
+              "headquarters",
+              "estimated_size"
+            ]
+          }
+        },
+        "required": [
+          "tab",
+          "row"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "appended_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "appended_rows"
+        ]
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_source_rows",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "rows": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "company_name": {
+                  "type": "string"
+                },
+                "enriched": {
+                  "type": "string"
+                },
+                "website": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "company_name",
+                "enriched",
+                "website"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "rows"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "update_source_enriched",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tab": {
+            "type": "string"
+          },
+          "company_name": {
+            "type": "string"
+          },
+          "enriched": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tab",
+          "company_name",
+          "enriched"
+        ]
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "updated_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated_rows"
+        ]
+      }
+    },
+    {
+      "dependency_type": "lmChatGoogleGemini",
+      "operation": "enrich_company",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "estimated_size": {
+            "type": "string"
+          },
+          "headquarters": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "target_customers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "description",
+          "estimated_size",
+          "headquarters",
+          "industry",
+          "target_customers"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "toolSerpApi",
+      "operation": "web_search",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "snippets": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "url"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "snippets"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "enrichment_data",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "industry": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "target_customers": {
+              "type": "string"
+            },
+            "headquarters": {
+              "type": "string"
+            },
+            "estimated_size": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "industry",
+            "description",
+            "target_customers",
+            "headquarters",
+            "estimated_size"
+          ],
+          "additionalProperties": false
+        },
+        "description": "含行业、简介、目标客户、总部所在地与规模估计的结构化信息",
+        "requirement_evidence": [
+          "系统使用网络搜索服务与语言模型调研该公司，返回行业、简介、目标客户、总部所在地与规模估计等结构化信息"
+        ],
+        "source_operations": [
+          "enrich_company"
+        ],
+        "design_sources": [
+          "n4.enrichment_data"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "enriched_record",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "company_name": {
+              "type": "string"
+            },
+            "website": {
+              "type": "string"
+            },
+            "industry": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "target_customers": {
+              "type": "string"
+            },
+            "headquarters": {
+              "type": "string"
+            },
+            "estimated_size": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "company_name",
+            "website",
+            "industry",
+            "description",
+            "target_customers",
+            "headquarters",
+            "estimated_size"
+          ]
+        },
+        "description": "写入输出工作表的充实记录，包含公司名称、网站、行业、简介、目标客户（逗号分隔文本）、总部所在地与规模估计",
+        "requirement_evidence": [
+          "充实后的公司记录追加写入另一个 Google Sheets 工作表"
+        ],
+        "source_operations": [
+          "append_enriched"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "source_enriched_update_result",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "updated_rows": {
+              "type": "integer"
+            },
+            "company_name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "updated_rows",
+            "company_name"
+          ]
+        },
+        "description": "源工作表中按公司名称更新“是否已充实”标记的结果，包含更新行数及公司名称以核验定位",
+        "requirement_evidence": [
+          "同时按公司名称定位源工作表中的原始记录，将其“是否已充实”更新为是，避免重复处理。"
+        ],
+        "source_operations": [
+          "update_source_enriched"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "C1ED79FA788DBBBBA934DB1280A1D40C48DC9254D7A592B305DBB9E2C5DC6D2C",
+  "public_interface_sha256": "E2BCBE348A840EB318C9A19299BA1E75931627BF6785C7F8FF3833977A8A809E",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

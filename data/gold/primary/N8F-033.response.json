@@ -1,0 +1,299 @@
+{
+  "task_id": "N8F-033",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "1dde265c853a22b92937e6962b6835d918850d0c7dbe0a00cfcbf169fb2bbdfe",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Reel 链接",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "telegram_message",
+          "type": "object",
+          "description": "用户通过 Telegram 发送的消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reel_url",
+          "type": "string",
+          "description": "从消息中解析出的 Instagram Reel 链接"
+        }
+      ],
+      "native_evidence": ["Telegram Trigger", "Extract::Instagram Reel URL"],
+      "requirement_evidence": ["用户通过 Telegram 发送一条 Instagram Reel 链接即可启动处理"],
+      "rationale": "需求声明用户通过 Telegram 发送 Reel 链接启动流程，为确定性入站解析，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "下载 Reel 并获取元数据",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "reel_url",
+          "type": "string",
+          "description": "Instagram Reel 链接"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_file",
+          "type": "binary",
+          "description": "下载的 Reel 视频文件"
+        },
+        {
+          "name": "reel_metadata",
+          "type": "object",
+          "description": "Reel 元数据，含描述文本"
+        }
+      ],
+      "native_evidence": ["Apify::Scrape Reel Metadata", "Download::Reel File"],
+      "requirement_evidence": ["系统自动下载该 Reel", "结合转写文本与该 Reel 的描述"],
+      "rationale": "需求声明自动下载 Reel 视频，并需要 Reel 描述用于后续分析，为确定性外部抓取与下载动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "视频转音频",
+      "node_type": "code",
+      "operation_family": "media_conversion",
+      "inputs": [
+        {
+          "name": "video_file",
+          "type": "binary",
+          "description": "Reel 视频文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "转换后的音频文件"
+        }
+      ],
+      "native_evidence": ["FreeConvert::Import Reel", "FreeConvert::Submit MP3 Conversion", "Check::Import Status", "Check::Conversion Status", "Download::MP3 File"],
+      "requirement_evidence": ["将视频转换为音频"],
+      "rationale": "需求声明将视频转换为音频，为确定性外部转换动作；导入与转换的轮询折叠进本节点契约，终止条件 status==completed、max_iterations<=10，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语音转写为文本",
+      "node_type": "semantic",
+      "operation_family": "speech_to_text",
+      "inputs": [
+        {
+          "name": "audio_file",
+          "type": "binary",
+          "description": "音频文件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写出的语音文本"
+        }
+      ],
+      "native_evidence": ["AssemblyAI::Submit Transcription", "Check::Transcript Status"],
+      "requirement_evidence": ["再把语音转写为文本"],
+      "rationale": "需求声明将语音转写为文本，语音内容理解无法用确定性规则无损替代，判 semantic；提交与轮询折叠进契约，终止条件 status==completed、max_iterations<=10。"
+    },
+    {
+      "node_id": "n5",
+      "label": "分析内容并生成创意",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "string",
+          "description": "转写文本"
+        },
+        {
+          "name": "reel_metadata",
+          "type": "object",
+          "description": "Reel 描述等元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_result",
+          "type": "object",
+          "description": "内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本"
+        }
+      ],
+      "native_evidence": ["AI::Generate Hook Ideas & Scripts", "Mistral Cloud Chat Model", "Structured Output Parser"],
+      "requirement_evidence": ["结合转写文本与该 Reel 的描述，使用语言模型进行分析，产出：内容领域定位、核心信息、3 条具有传播潜力的内容切入点，以及 3 条可直接使用的短视频脚本"],
+      "rationale": "需求声明使用语言模型结合转写文本与描述分析并产出创意内容，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "整理结果记录",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "analysis_result",
+          "type": "object",
+          "description": "分析产出结果"
+        },
+        {
+          "name": "reel_metadata",
+          "type": "object",
+          "description": "Reel 元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheet_record",
+          "type": "object",
+          "description": "规整后的待写表格记录"
+        }
+      ],
+      "native_evidence": ["Storage::Log to Google Sheet"],
+      "requirement_evidence": ["上述全部结果保存到 Google Sheets"],
+      "rationale": "需求声明将全部结果保存到 Google Sheets；保存动作拆分为规整记录的确定性整理与外部写入两个最小可测操作，本节点为整理部分，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "写入 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "sheet_record",
+          "type": "object",
+          "description": "规整后的待写记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Storage::Log to Google Sheet"],
+      "requirement_evidence": ["上述全部结果保存到 Google Sheets，便于创作者或团队后续复用"],
+      "rationale": "需求声明将结果写入 Google Sheets，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "链接解析后下载 Reel。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "视频下载后转为音频。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "音频就绪后转写为文本。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写完成后结合描述分析内容。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后整理结果记录。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录整理完成后写入表格。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "reel_url",
+      "condition": null,
+      "rationale": "Reel 链接传给下载节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "video_file",
+      "condition": null,
+      "rationale": "视频文件传给转换节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n5",
+      "variable": "reel_metadata",
+      "condition": null,
+      "rationale": "Reel 描述传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "audio_file",
+      "condition": null,
+      "rationale": "音频文件传给转写节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "转写文本传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "analysis_result",
+      "condition": null,
+      "rationale": "分析结果传给记录整理节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n2",
+      "target": "n6",
+      "variable": "reel_metadata",
+      "condition": null,
+      "rationale": "Reel 元数据传入记录整理节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "sheet_record",
+      "condition": null,
+      "rationale": "规整记录传给表格写入节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n7"],
+  "confidence": 0.93,
+  "notes": "需求为 Telegram 发起、下载 Reel、转音频、转写、结合描述分析产出创意并保存到 Sheets 的线性流程。转音频与转写的轮询均折叠进各自节点契约（终止条件 status==completed、max_iterations<=10）。保存动作拆分为整理记录（code）与写入 Sheets（terminal）两个最小可测操作。原生的 URL 无效、下载失败、无语音、AI 输出校验重试等失败处理未在需求声明，未纳入。"
+}

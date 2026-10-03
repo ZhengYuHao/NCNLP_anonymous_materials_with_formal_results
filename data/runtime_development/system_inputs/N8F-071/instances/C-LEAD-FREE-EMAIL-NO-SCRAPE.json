@@ -1,0 +1,19 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-071",
+  "case_id": "C-LEAD-FREE-EMAIL-NO-SCRAPE",
+  "kind": "negative",
+  "input_data": {
+    "lead": {
+      "name": "Bob Smith",
+      "email": "bob.smith@gmail.com",
+      "company": "",
+      "website": "",
+      "job_title": "Freelancer",
+      "phone": "",
+      "message": "Hello, want to learn more",
+      "source": "website-form"
+    }
+  },
+  "input_sha256": "47850F26E1EDF234850972C63B0182528BA8EF572237168486FB52C10591CD50"
+}

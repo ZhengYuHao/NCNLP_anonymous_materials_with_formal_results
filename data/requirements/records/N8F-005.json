@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-005",
+  "source_id": "n8n:13367",
+  "workflow_sha256": "d4c9019b80f31d124e355cceee5ff3f3db63156b1e6e4fe332e10ec3320f4de2",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4c4474220641eb053aa44e37e2e028a8fc69af414e843f2f51660cbcdeedba59",
+  "requirement": {
+    "requirement_text": "系统提供一个 Telegram 机器人，用户通过文本、语音或图片与机器人交互，由 AI 智能体生成或修改图片。\n输入与鉴权：用户通过 Telegram 发送消息、语音留言或图片；系统依据用户的 Telegram ID 进行鉴权，仅通过鉴权的用户可使用该服务。\n输入处理：\n- 文本消息：直接交给 AI 智能体处理；\n- 语音消息：先经语音转写能力转换为文本；\n- 图片：从 Telegram 下载后上传至文件托管服务，并生成可公开访问的 URL。\n处理过程：\n1. AI 智能体分析用户输入，判断执行文生图（根据文字描述生成新图片）还是图生图（依据提示词修改已有图片）；\n2. 智能体调用相应的图像生成能力执行生成任务；\n3. 生成采用异步方式：提交任务后按任务标识轮询生成结果，直至结果返回。\n输出：图片生成完成后，通过 Telegram 消息将图片发回给用户。",
+    "source_spans": [
+      {
+        "start": 1521,
+        "end": 1680,
+        "text": "This workflow creates a Telegram bot that uses AI to generate and transform images through Grok Imagine models, with support for text, voice, and image inputs."
+      },
+      {
+        "start": 1682,
+        "end": 1840,
+        "text": "Telegram Input Handling: Users interact with the bot by sending messages, voice notes, or images. The workflow authenticates users based on their Telegram ID."
+      },
+      {
+        "start": 1860,
+        "end": 2093,
+        "text": "   Text messages → Directly sent to the AI agent\n   Voice messages → Transcribed using OpenAI Whisper, then converted to text\n   Images → Downloaded from Telegram, uploaded to an FTP server (BunnyCDN), and the public URL is generated"
+      },
+      {
+        "start": 2179,
+        "end": 2350,
+        "text": "analyzes user input and determines whether to:\n   Generate a new image from text description (text-to-image)\n   Transform an existing image using a prompt (image-to-image)"
+      },
+      {
+        "start": 2457,
+        "end": 2634,
+        "text": "   Text-to-Image: Creates images from text prompts using \"grok-imagine/text-to-image\" model\n   Image-to-Image: Modifies existing images using \"grok-imagine/image-to-image\" model"
+      },
+      {
+        "start": 2654,
+        "end": 2764,
+        "text": "The workflow uses Wait nodes to handle asynchronous image generation, polling Kie.ai for results via task IDs."
+      },
+      {
+        "start": 2783,
+        "end": 2866,
+        "text": "Once images are generated, they're sent back to the user through Telegram messages."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户通过 Telegram 发送的文本消息",
+        "用户通过 Telegram 发送的语音留言",
+        "用户通过 Telegram 发送的图片",
+        "用户的 Telegram ID"
+      ],
+      "conditions": [
+        "仅 Telegram ID 鉴权通过的用户可使用该服务",
+        "文本消息直接交给 AI 智能体处理",
+        "语音消息需先转写为文本",
+        "图片需先上传至文件托管服务并生成公开访问 URL",
+        "由 AI 智能体判断执行文生图还是图生图",
+        "图像生成采用异步方式，按任务标识轮询结果"
+      ],
+      "allowed_actions": [
+        "依据 Telegram ID 对用户鉴权",
+        "将语音消息转写为文本",
+        "下载图片、上传至文件托管服务并生成公开访问 URL",
+        "分析用户输入并判断生成方式",
+        "调用图像生成能力生成新图片",
+        "调用图像生成能力修改已有图片",
+        "按任务标识轮询异步生成结果",
+        "通过 Telegram 将图片发回用户"
+      ],
+      "visible_outcomes": [
+        "用户通过 Telegram 收到的生成图片",
+        "用户通过 Telegram 收到的修改后的图片"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-005.packet.json",
+    "packet_sha256": "3b163a8707cab7968082a5dc2dfc0b5526d702e054d42f9d904511cb64c83134",
+    "public_description_sha256": "1abfa4525fe27d8878f0e02959e66310907835de46760a86f2c318b6d5a33ccc"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-005.response.json",
+    "verification_response_sha256": "599b3841110f0fdbaace57f90ca920a21cb97c0fe7c6af74fbad4130fce42289",
+    "decision": "accept"
+  },
+  "formal_index": 16
+}

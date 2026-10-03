@@ -1,0 +1,309 @@
+{
+  "task_id": "N8F-006",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "ac45d955b0d7dcb3e4587f9932067b71b124ed23cf22d1cf00d6926a200ec942",
+  "fixtures": [
+    {
+      "fixture_id": "F-FORM-DIABETES",
+      "purpose": "正常用例：网页表单提交 2 型糖尿病患者的疾病、年龄与性别，首次评估不合格后经一次优化通过",
+      "input_data": {
+        "form": {
+          "disease": "type 2 diabetes",
+          "age": 55,
+          "gender": "female"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FORM-HYPERTENSION-PASS",
+      "purpose": "边界用例：表单提交高血压患者信息，首次质量评估即通过，验证无需迭代优化的最短路径",
+      "input_data": {
+        "form": {
+          "disease": "hypertension",
+          "age": 40,
+          "gender": "male"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-GEN-DIABETES",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "generate_health_guide",
+      "request_contract": {
+        "disease": "type 2 diabetes",
+        "age": 55,
+        "gender": "female"
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Type 2 diabetes is a chronic condition affecting blood sugar regulation.",
+          "natural_remedies": "Cinnamon and berberine may support glycemic control.",
+          "prevention_strategies": "Maintain balanced meals and regular physical activity.",
+          "healing_recipes": "",
+          "personalization": {
+            "disease": "type 2 diabetes",
+            "age_group": "50-60",
+            "gender": "female"
+          }
+        },
+        "completeness": "missing_healing_recipes"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-FAIL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "first_generation"
+      },
+      "response_contract": {
+        "qa_passed": false,
+        "missing_sections": ["healing_recipes"],
+        "issues": ["Healing recipes section is empty"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-OPTIMIZE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "optimize_guide",
+      "request_contract": {
+        "issues": ["Healing recipes section is empty"]
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Type 2 diabetes is a chronic condition affecting blood sugar regulation.",
+          "natural_remedies": "Cinnamon and berberine may support glycemic control.",
+          "prevention_strategies": "Maintain balanced meals and regular physical activity.",
+          "healing_recipes": "Oatmeal breakfast bowl with berries and cinnamon.",
+          "personalization": {
+            "disease": "type 2 diabetes",
+            "age_group": "50-60",
+            "gender": "female"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-PASS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "optimized_guide"
+      },
+      "response_contract": {
+        "qa_passed": true,
+        "missing_sections": [],
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-GEN-HYPERTENSION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "generate_health_guide",
+      "request_contract": {
+        "disease": "hypertension",
+        "age": 40,
+        "gender": "male"
+      },
+      "response_contract": {
+        "guide": {
+          "medical_info": "Hypertension is persistently elevated blood pressure.",
+          "natural_remedies": "Hibiscus tea and potassium-rich foods may help.",
+          "prevention_strategies": "Reduce sodium intake and exercise regularly.",
+          "healing_recipes": "Garlic lemon water morning drink.",
+          "personalization": {
+            "disease": "hypertension",
+            "age_group": "40-50",
+            "gender": "male"
+          }
+        },
+        "completeness": "complete"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-QA-PASS-FIRST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatClaude",
+      "operation": "evaluate_guide_quality",
+      "request_contract": {
+        "guide": "hypertension_guide"
+      },
+      "response_contract": {
+        "qa_passed": true,
+        "missing_sections": [],
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDOCS-CREATE",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "create_document",
+      "request_contract": {
+        "content": "formatted_guide_with_timestamps"
+      },
+      "response_contract": {
+        "document_id": "doc-health-guide-12345",
+        "url": "https://docs.google.com/document/d/doc-health-guide-12345"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-DIABETES-ITERATION",
+      "kind": "positive",
+      "fixture_ids": ["F-FORM-DIABETES"],
+      "mock_ids": ["M-LLM-GEN-DIABETES", "M-LLM-QA-FAIL", "M-LLM-OPTIMIZE", "M-LLM-QA-PASS", "M-GDOCS-CREATE"],
+      "assertions": [
+        {
+          "assertion_id": "A-DM-1",
+          "target": "final_output.guide.medical_info",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求指南包含医学信息，最终内容必须存在 medical_info 字段"
+        },
+        {
+          "assertion_id": "A-DM-2",
+          "target": "final_output.guide.natural_remedies",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求指南包含自然疗法，最终内容必须存在 natural_remedies 字段"
+        },
+        {
+          "assertion_id": "A-DM-3",
+          "target": "final_output.guide.prevention_strategies",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求指南包含预防策略，最终内容必须存在 prevention_strategies 字段"
+        },
+        {
+          "assertion_id": "A-DM-4",
+          "target": "final_output.guide.healing_recipes",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "首次生成缺少疗愈食谱导致评估不合格，优化后该字段必须被填充"
+        },
+        {
+          "assertion_id": "A-DM-5",
+          "target": "final_output.guide.personalization.disease",
+          "operator": "equals",
+          "expected": "type 2 diabetes",
+          "rationale": "内容须按提交的疾病进行个性化定制，定制字段必须与输入疾病一致"
+        },
+        {
+          "assertion_id": "A-DM-6",
+          "target": "exec_log.quality.iteration_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "首次评估不合格应触发一次优化，迭代次数必须为 1"
+        },
+        {
+          "assertion_id": "A-DM-7",
+          "target": "exec_log.quality.qa_final_passed",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "需求要求仅审核通过的内容进入排版与导出，最终评估必须通过"
+        },
+        {
+          "assertion_id": "A-DM-8",
+          "target": "final_output.document_id",
+          "operator": "equals",
+          "expected": "doc-health-guide-12345",
+          "rationale": "审核通过后须导出 Google Docs，输出必须包含 mock 返回的文档 ID"
+        },
+        {
+          "assertion_id": "A-DM-9",
+          "target": "final_output.timestamps.local_timestamp",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "排版环节须附加本地时间戳，输出必须包含 local_timestamp 字段"
+        },
+        {
+          "assertion_id": "A-DM-10",
+          "target": "final_output.timestamps.utc_timestamp",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "排版环节须附加 UTC 时间戳，输出必须包含 utc_timestamp 字段"
+        },
+        {
+          "assertion_id": "A-DM-11",
+          "target": "exec_log.metrics.token_used",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求记录 token 用量执行指标"
+        },
+        {
+          "assertion_id": "A-DM-12",
+          "target": "exec_log.metrics.processing_time_ms",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求记录处理耗时执行指标"
+        },
+        {
+          "assertion_id": "A-DM-13",
+          "target": "exec_log.metrics.quality_iterations",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求要求记录质量迭代次数，其值必须与实际迭代次数一致"
+        }
+      ]
+    },
+    {
+      "case_id": "C-HYPERTENSION-NO-ITERATION",
+      "kind": "boundary",
+      "fixture_ids": ["F-FORM-HYPERTENSION-PASS"],
+      "mock_ids": ["M-LLM-GEN-HYPERTENSION", "M-LLM-QA-PASS-FIRST", "M-GDOCS-CREATE"],
+      "assertions": [
+        {
+          "assertion_id": "A-HT-1",
+          "target": "exec_log.quality.qa_final_passed",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "首次评估通过时流程应直接放行"
+        },
+        {
+          "assertion_id": "A-HT-2",
+          "target": "exec_log.quality.iteration_count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "首次评估即通过，不应发生任何迭代优化，迭代次数必须为 0"
+        },
+        {
+          "assertion_id": "A-HT-3",
+          "target": "final_output.guide.healing_recipes",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "首次生成内容完整，疗愈食谱字段必须非空"
+        },
+        {
+          "assertion_id": "A-HT-4",
+          "target": "final_output.document_id",
+          "operator": "equals",
+          "expected": "doc-health-guide-12345",
+          "rationale": "通过评估的指南必须进入排版与 Google Docs 导出环节"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常路径（首次评估不合格经 1 次优化后通过）与边界路径（首轮即通过、迭代次数为 0）。需求未规定异常输入（如缺少年龄字段）的处理策略，故不设错误分支用例。语言模型生成/评估/优化与 Google Docs 导出全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为字段存在性、数值相等、非空与调用次数等可计算条件。"
+}

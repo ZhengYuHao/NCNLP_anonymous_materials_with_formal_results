@@ -1,0 +1,33 @@
+{
+  "freeze_id": "n8n-s1-d22-observable-projection-v2",
+  "status": "FROZEN_BEFORE_FORMAL_EVALUATION",
+  "frozen_at": "2026-09-13T21:44:01+08:00",
+  "formal_test_executed": false,
+  "task_count": 29,
+  "human_review_row_count": 69,
+  "unresolved_root_count": 0,
+  "oracle_manifest_sha256": "D304C044090AFD8F31B86166741582D14D7DB617F447E33A1F36AA3BF6C1F94A",
+  "files": [
+    {
+      "path": "human_review_original.csv",
+      "size_bytes": 13849,
+      "sha256": "22CA836D5A5DBD60BDD1B7D012BC597AED4B9C6D3D5F43817F645A144886EA5A"
+    },
+    {
+      "path": "projection.csv",
+      "size_bytes": 13905,
+      "sha256": "965780E4D8DC9F759A89FFAC1E41087DBD6750470D1D805908FE61282161642E"
+    },
+    {
+      "path": "projection.json",
+      "size_bytes": 63394,
+      "sha256": "F2B26213F2AF0591F8779B7C310B4E11E199FADC08DD7CB0853074F1057635EA"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 179,
+      "sha256": "CE1CF83D40A2FEE14B27CF012DE3FF5225F267D341CD45437C7D37575E003A18"
+    }
+  ],
+  "invalidation_rule": "Any post-freeze file change invalidates this manifest."
+}

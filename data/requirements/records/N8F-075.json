@@ -1,0 +1,95 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-075",
+  "source_id": "n8n:11631",
+  "workflow_sha256": "aabe2088df75247ab608b0c1c0a721c64e75d46a556f8ceeda5c9016e521ad71",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "044c35a6501445e6b8f1135e7ced3f035a6b40a07ab82bd45a9db7d103796a97",
+  "requirement": {
+    "requirement_text": "系统每天上午 9:00 运行。首先进行选题：系统对照 Google Sheets 中记录的历史选题以避免重复，然后由语言模型生成一个新的问答式内容方案。接着进行视频制作：系统调用视频渲染服务，基于模板生成视频，并把生成好的文案与图片动态填入。生成的视频被发送到 Slack，供人工审核。只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram。发布成功后，系统将本次的新选题保存回 Google Sheets，并在 Slack 中发出发布成功通知。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 257,
+        "text": "Automate your Instagram growth strategy by generating and posting viral Reels using AI and Creatomate. This workflow plans content topics based on trends, generates video assets, and handles the approval and posting process—all without manual video editing."
+      },
+      {
+        "start": 273,
+        "end": 317,
+        "text": "Schedule Trigger: Runs every day at 9:00 AM."
+      },
+      {
+        "start": 318,
+        "end": 461,
+        "text": "Topic Planning: Checks past topics from Google Sheets to avoid duplicates, then uses OpenAI (GPT-4o) to generate a new quiz-style content plan."
+      },
+      {
+        "start": 462,
+        "end": 592,
+        "text": "Video Generation: Uses Creatomate to generate a video based on a template, dynamically inserting the AI-generated text and images."
+      },
+      {
+        "start": 593,
+        "end": 660,
+        "text": "Approval Loop: Sends the generated video to Slack for human review."
+      },
+      {
+        "start": 661,
+        "end": 751,
+        "text": "Posting: Once approved in Slack, the workflow automatically uploads the Reel to Instagram."
+      },
+      {
+        "start": 752,
+        "end": 845,
+        "text": "Logging: Saves the new topic to Google Sheets and notifies Slack upon successful publication."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中记录的历史选题",
+        "语言模型生成的新问答式内容方案（含文案与图片）"
+      ],
+      "conditions": [
+        "每天 09:00 触发",
+        "新选题需与 Google Sheets 中的历史选题比对以避免重复",
+        "生成的视频须在 Slack 中经人工审核通过后才发布"
+      ],
+      "allowed_actions": [
+        "对照 Google Sheets 历史选题去重，并由语言模型生成新的问答式内容方案",
+        "调用视频渲染服务基于模板生成视频，并动态填入文案与图片",
+        "将生成的视频发送到 Slack 供人工审核",
+        "审核通过后将视频作为 Reel 上传到 Instagram",
+        "将本次新选题保存回 Google Sheets",
+        "发布成功后在 Slack 发出通知"
+      ],
+      "visible_outcomes": [
+        "Slack 收到待审核的视频",
+        "审核通过后 Instagram 上发布一条 Reel",
+        "Google Sheets 中新增本次选题记录",
+        "发布成功后 Slack 收到通知"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-075.packet.json",
+    "packet_sha256": "4535e61595797adf768b39b296cc7b19ab0a44da6afa4a52873de9a35ab902b1",
+    "public_description_sha256": "84e345d8f0585baa60612e3b6a0ef392ce24c267f689fedaad81455101224c0d"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-075.response.json",
+    "verification_response_sha256": "2ea9911f8f478f534bd3fe01d01878824bca5dd37484d6bcca43ec54ed8e4120",
+    "decision": "accept"
+  },
+  "formal_index": 86
+}

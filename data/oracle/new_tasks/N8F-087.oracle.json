@@ -1,0 +1,390 @@
+{
+  "task_id": "N8F-087",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "75225bf9174935e25b2784c55430a653af8ea548a72e03cab84a3198ad49eecb",
+  "fixtures": [
+    {
+      "fixture_id": "F-BLOG-PUBLISH-TODAY",
+      "purpose": "正常用例：计划发布日期与当天一致，验证文章发布全流程",
+      "input_data": {
+        "blog_post": {
+          "title": "10 SEO Tips for Local Business",
+          "keywords": ["local seo", "local business"],
+          "scheduled_date": "2026-09-02",
+          "service_areas": ["Austin", "Dallas"],
+          "word_count": 1500,
+          "style": "professional",
+          "cta": "Book a free audit",
+          "logos": ["https://mock-images/logo.png"],
+          "internal_links": ["https://blog.example.com/seo-basics"],
+          "external_links": ["https://example.org/guide"]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-BLOG-FUTURE-DATE",
+      "purpose": "负例：计划发布日期在当天之后，验证文章不发布",
+      "input_data": {
+        "blog_post": {
+          "title": "Holiday Marketing Ideas",
+          "keywords": ["holiday marketing"],
+          "scheduled_date": "2026-12-01",
+          "service_areas": ["Austin"],
+          "word_count": 1200,
+          "style": "casual",
+          "cta": "Contact us",
+          "logos": [],
+          "internal_links": [],
+          "external_links": []
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-READ-BLOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_blog_schedule",
+      "request_contract": {
+        "sheet": "blog_schedule"
+      },
+      "response_contract": {
+        "row": {"title": "10 SEO Tips for Local Business", "keywords": ["local seo", "local business"], "scheduled_date": "2026-09-02", "service_areas": ["Austin", "Dallas"], "word_count": 1500, "style": "professional", "cta": "Book a free audit", "logos": ["https://mock-images/logo.png"], "internal_links": ["https://blog.example.com/seo-basics"], "external_links": ["https://example.org/guide"]}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SEO-CONTENT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_seo_content",
+      "request_contract": {
+        "title": "10 SEO Tips for Local Business",
+        "keywords": ["local seo", "local business"],
+        "service_areas": ["Austin", "Dallas"],
+        "word_count": 1500,
+        "style": "professional",
+        "cta": "Book a free audit"
+      },
+      "response_contract": {
+        "title": "10 SEO Tips for Local Business",
+        "subtitle": "Rank higher in your city",
+        "introduction": "Local SEO helps your business appear in nearby searches. This guide shares ten practical tips that any local business can apply today. Start with your Google profile, then refine your website and content. Consistent effort delivers lasting results for your community and your revenue. Focus on what matters most to customers near you. Optimize every detail and measure the outcome.",
+        "chapters": [
+          {"heading": "Optimize Your Google Profile", "body": "Claim your profile and keep hours accurate. Add photos of your Austin location. Link to your Dallas service page. Book a free audit to find gaps. See our SEO basics for more. The official guide from example.org covers this deeply."},
+          {"heading": "Build Local Content", "body": "Write about local events in Austin and Dallas. Use keywords naturally in every chapter. Include your service areas in the text. Encourage reviews and respond to them. Book a free audit after publishing."}
+        ],
+        "conclusion": "Local SEO rewards steady work. Claim your profile, create local content, and track your rankings. The tips above work for Austin and Dallas businesses alike. Book a free audit and start improving today. Monitor your progress monthly and adjust your strategy. Small consistent steps build a strong online presence over time. Each calendar month, review what worked and double down.",
+        "faq": [
+          {"question": "What is local SEO?", "answer": "Local SEO optimizes your online presence to rank for searches in your area."},
+          {"question": "How fast do results appear?", "answer": "Most businesses see movement within 4-8 weeks."},
+          {"question": "Do I need a website?", "answer": "Yes, a website is essential for rankings and conversions."},
+          {"question": "Can you help with Austin?", "answer": "We serve Austin and Dallas with tailored local strategies."},
+          {"question": "Is local SEO expensive?", "answer": "It scales with your budget and goals."}
+        ],
+        "url_slug": "10-seo-tips-for-local-business",
+        "meta_title": "10 SEO Tips for Local Business | SEO Guide",
+        "meta_description": "Ten actionable local SEO tips for Austin and Dallas businesses."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FEATURE-IMAGE",
+      "dependency_type": "n8n-nodes-base.editImage",
+      "operation": "generate_feature_image",
+      "request_contract": {
+        "title": "10 SEO Tips for Local Business"
+      },
+      "response_contract": {
+        "image_url": "https://mock-images/feature-seo.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-CREATE-POST",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "create_post",
+      "request_contract": {
+        "title": "10 SEO Tips for Local Business",
+        "content": "<h2>Optimize Your Google Profile</h2><p>Claim your profile and keep hours accurate.</p><h2>Build Local Content</h2><p>Write about local events.</p>",
+        "slug": "10-seo-tips-for-local-business",
+        "status": "publish"
+      },
+      "response_contract": {
+        "post_id": 501,
+        "link": "https://wp.example.com/10-seo-tips-for-local-business",
+        "status": "publish"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-UPLOAD-IMAGE",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "upload_media",
+      "request_contract": {
+        "image_url": "https://mock-images/feature-seo.png"
+      },
+      "response_contract": {
+        "media_id": 601,
+        "source_url": "https://wp.example.com/wp-content/uploads/feature-seo.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-SET-FEATURED",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "set_featured_image",
+      "request_contract": {
+        "post_id": 501,
+        "media_id": 601
+      },
+      "response_contract": {
+        "post_id": 501,
+        "featured_media": 601,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WP-SET-META",
+      "dependency_type": "n8n-nodes-base.wordpress",
+      "operation": "set_seo_meta",
+      "request_contract": {
+        "post_id": 501,
+        "meta_title": "10 SEO Tips for Local Business | SEO Guide",
+        "meta_description": "Ten actionable local SEO tips for Austin and Dallas businesses."
+      },
+      "response_contract": {
+        "post_id": 501,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-PUBLISH-NOTIFY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "team@example.com"
+      },
+      "response_contract": {
+        "message_id": "mail-087-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HTML-DESIGN",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_html_post",
+      "request_contract": {
+        "title": "10 SEO Tips for Local Business",
+        "chapters": [{"heading": "Optimize Your Google Profile", "body": "Claim your profile and keep hours accurate."}, {"heading": "Build Local Content", "body": "Write about local events."}]
+      },
+      "response_contract": {
+        "html": "<div class=\"blog-post\"><h1>10 SEO Tips for Local Business</h1><h2>Optimize Your Google Profile</h2><p>Claim your profile and keep hours accurate.</p><h2>Build Local Content</h2><p>Write about local events.</p></div>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-READ-FUTURE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_blog_schedule",
+      "request_contract": {
+        "sheet": "blog_schedule"
+      },
+      "response_contract": {
+        "row": {"title": "Holiday Marketing Ideas", "keywords": ["holiday marketing"], "scheduled_date": "2026-12-01", "service_areas": ["Austin"], "word_count": 1200, "style": "casual", "cta": "Contact us", "logos": [], "internal_links": [], "external_links": []}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-BLOG-PUBLISH-TODAY",
+      "kind": "positive",
+      "fixture_ids": ["F-BLOG-PUBLISH-TODAY"],
+      "mock_ids": ["M-SHEETS-READ-BLOG", "M-LLM-SEO-CONTENT", "M-FEATURE-IMAGE", "M-WP-CREATE-POST", "M-WP-UPLOAD-IMAGE", "M-WP-SET-FEATURED", "M-WP-SET-META", "M-GMAIL-PUBLISH-NOTIFY", "M-HTML-DESIGN"],
+      "assertions": [
+        {
+          "assertion_id": "A-087-1",
+          "target": "exec_log.date_check.scheduled_date",
+          "operator": "equals",
+          "expected": "2026-09-02",
+          "rationale": "必须将计划发布日期与当天比较，本用例计划日期与当天一致"
+        },
+        {
+          "assertion_id": "A-087-2",
+          "target": "exec_log.date_check.should_publish",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "计划发布日期与当天一致时文章应在预定日期发布"
+        },
+        {
+          "assertion_id": "A-087-3",
+          "target": "exec_log.llm.content.introduction_word_count",
+          "operator": "equals",
+          "expected": 60,
+          "rationale": "语言模型必须生成约 60 词的引言，固定模拟引言恰好 60 词（按空白分词计数）"
+        },
+        {
+          "assertion_id": "A-087-4",
+          "target": "exec_log.llm.content.conclusion_word_count",
+          "operator": "equals",
+          "expected": 60,
+          "rationale": "语言模型必须生成约 60 词的结论，固定模拟结论恰好 60 词（按空白分词计数）"
+        },
+        {
+          "assertion_id": "A-087-5",
+          "target": "exec_log.llm.content.faq",
+          "operator": "length_equals",
+          "expected": 5,
+          "rationale": "常见问题段落必须为 4 至 6 组问答，固定模拟生成 5 组"
+        },
+        {
+          "assertion_id": "A-087-6",
+          "target": "exec_log.llm.content.faq[0].question",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每组常见问题必须包含问题字段"
+        },
+        {
+          "assertion_id": "A-087-7",
+          "target": "exec_log.llm.content.faq[0].answer",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "每组常见问题必须包含答案字段"
+        },
+        {
+          "assertion_id": "A-087-8",
+          "target": "exec_log.llm.content.chapters[0].body",
+          "operator": "contains",
+          "expected": "Book a free audit",
+          "rationale": "章节中必须自然地融入行动号召，正文必须包含配置的 CTA 文案"
+        },
+        {
+          "assertion_id": "A-087-9",
+          "target": "exec_log.llm.content.chapters[0].body",
+          "operator": "contains",
+          "expected": "Austin",
+          "rationale": "章节中必须融入服务地区，正文必须包含配置的服务地区"
+        },
+        {
+          "assertion_id": "A-087-10",
+          "target": "exec_log.llm.content.chapters[0].body",
+          "operator": "contains",
+          "expected": "https://blog.example.com/seo-basics",
+          "rationale": "章节中必须融入内链，正文必须包含配置的内链地址"
+        },
+        {
+          "assertion_id": "A-087-11",
+          "target": "exec_log.llm.content.chapters[0].body",
+          "operator": "contains",
+          "expected": "https://example.org/guide",
+          "rationale": "章节中必须融入外链，正文必须包含配置的外链地址"
+        },
+        {
+          "assertion_id": "A-087-12",
+          "target": "exec_log.wordpress.create.post_id",
+          "operator": "equals",
+          "expected": 501,
+          "rationale": "必须在 WordPress 中创建文章，文章标识必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-087-13",
+          "target": "exec_log.wordpress.upload.media_id",
+          "operator": "equals",
+          "expected": 601,
+          "rationale": "必须生成并在 WordPress 中上传文章封面图"
+        },
+        {
+          "assertion_id": "A-087-14",
+          "target": "exec_log.wordpress.set_featured.featured_media",
+          "operator": "equals",
+          "expected": 601,
+          "rationale": "必须将上传的图片设置为特色图片"
+        },
+        {
+          "assertion_id": "A-087-15",
+          "target": "exec_log.wordpress.set_meta.meta_title",
+          "operator": "contains",
+          "expected": "SEO",
+          "rationale": "必须写入面向搜索的元信息，元标题必须包含 SEO 关键词"
+        },
+        {
+          "assertion_id": "A-087-16",
+          "target": "exec_log.gmail.notify.to",
+          "operator": "equals",
+          "expected": "team@example.com",
+          "rationale": "文章发布后必须向团队成员或客户发送邮件通知"
+        },
+        {
+          "assertion_id": "A-087-17",
+          "target": "exec_log.gmail.notify.body",
+          "operator": "contains",
+          "expected": "https://wp.example.com/10-seo-tips-for-local-business",
+          "rationale": "邮件通知必须包含文章链接"
+        },
+        {
+          "assertion_id": "A-087-18",
+          "target": "exec_log.gmail.notify.body",
+          "operator": "contains",
+          "expected": "10 SEO Tips for Local Business",
+          "rationale": "邮件通知必须包含文章标题"
+        },
+        {
+          "assertion_id": "A-087-19",
+          "target": "exec_log.html_design",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "可按需生成可直接使用的 HTML 排版文章，固定模拟中该选项启用"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BLOG-FUTURE-SKIP",
+      "kind": "negative",
+      "fixture_ids": ["F-BLOG-FUTURE-DATE"],
+      "mock_ids": ["M-SHEETS-READ-FUTURE"],
+      "assertions": [
+        {
+          "assertion_id": "A-087-20",
+          "target": "exec_log.date_check.should_publish",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "计划发布日期（2026-12-01）在当天之后，文章不应在当天发布"
+        },
+        {
+          "assertion_id": "A-087-21",
+          "target": "exec_log.wordpress.create.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "未到预定发布日期时不得在 WordPress 中创建文章"
+        },
+        {
+          "assertion_id": "A-087-22",
+          "target": "exec_log.gmail.notify.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "未发布文章时不得发送发布通知邮件"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两条路径：发布日期与当天一致（Sheets 读取→日期比较→LLM 生成 SEO 内容（60 词引言、42 词结论、5 组 FAQ、章节融入 CTA/服务地区/内外链）→封面图→WordPress 创建+上传+特色图+元信息→邮件通知（标题+链接）→可选 HTML 排版）与未来日期（不发布、不创建、不通知）。所有外部依赖（Sheets、OpenAI、editImage、WordPress、Gmail）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等（含按空白分词统计的词数）、内容包含与调用次数检查。"
+}

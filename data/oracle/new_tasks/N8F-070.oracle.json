@@ -1,0 +1,210 @@
+{
+  "task_id": "N8F-070",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "35d8aee243d2daa5f7903b434182f62c135eed4481223b8e11be7613d6267a8b",
+  "fixtures": [
+    {
+      "fixture_id": "F-14D-METRICS",
+      "purpose": "正常用例：Google Sheets 提供最近 14 天（两周各 7 天）的业务指标数据，验证周环比与派生指标计算",
+      "input_data": {
+        "metrics_sheet": [
+          {"date": "2026-08-19", "revenue": 10000, "leads": 50, "conversions": 5, "ad_spend": 2000, "support_tickets": 30},
+          {"date": "2026-08-20", "revenue": 10500, "leads": 55, "conversions": 6, "ad_spend": 2100, "support_tickets": 28},
+          {"date": "2026-08-21", "revenue": 9800, "leads": 48, "conversions": 4, "ad_spend": 1950, "support_tickets": 33},
+          {"date": "2026-08-22", "revenue": 11000, "leads": 60, "conversions": 7, "ad_spend": 2200, "support_tickets": 25},
+          {"date": "2026-08-23", "revenue": 10800, "leads": 58, "conversions": 6, "ad_spend": 2150, "support_tickets": 27},
+          {"date": "2026-08-24", "revenue": 9500, "leads": 45, "conversions": 5, "ad_spend": 1900, "support_tickets": 35},
+          {"date": "2026-08-25", "revenue": 10400, "leads": 52, "conversions": 6, "ad_spend": 2080, "support_tickets": 29},
+          {"date": "2026-08-26", "revenue": 11500, "leads": 62, "conversions": 8, "ad_spend": 2300, "support_tickets": 24},
+          {"date": "2026-08-27", "revenue": 12100, "leads": 65, "conversions": 9, "ad_spend": 2400, "support_tickets": 22},
+          {"date": "2026-08-28", "revenue": 11800, "leads": 63, "conversions": 8, "ad_spend": 2350, "support_tickets": 23},
+          {"date": "2026-08-29", "revenue": 12500, "leads": 70, "conversions": 10, "ad_spend": 2500, "support_tickets": 20},
+          {"date": "2026-08-30", "revenue": 13200, "leads": 74, "conversions": 11, "ad_spend": 2600, "support_tickets": 18},
+          {"date": "2026-08-31", "revenue": 12900, "leads": 72, "conversions": 10, "ad_spend": 2550, "support_tickets": 19},
+          {"date": "2026-09-01", "revenue": 13600, "leads": 78, "conversions": 12, "ad_spend": 2700, "support_tickets": 17}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-READ",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_metrics_rows",
+      "request_contract": {
+        "sheet": "business_metrics",
+        "days": 14
+      },
+      "response_contract": {
+        "rows": "metrics_rows_from_fixture"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DIGEST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_performance_digest",
+      "request_contract": {
+        "calculated_metrics": "metrics_with_wow"
+      },
+      "response_contract": {
+        "digest": {
+          "headline": "Revenue up 15% week-over-week.",
+          "wins": "Revenue and leads both grew strongly.",
+          "areas_to_watch": "Support tickets dropped, monitor load.",
+          "recommended_priorities": "Double down on ad spend.",
+          "outlook": "Momentum expected to continue."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-SEND",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_digest_text",
+      "request_contract": {
+        "channel": "#weekly-digest",
+        "text": "digest_plain_text"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1111111111.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_digest",
+      "request_contract": {
+        "to": "team@example.com",
+        "subject": "Weekly Performance Digest",
+        "html_body": "<html><body><table><tr><th>Metric</th></tr></table></body></html>"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-070",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-14D-WOW-DIGEST",
+      "kind": "positive",
+      "fixture_ids": ["F-14D-METRICS"],
+      "mock_ids": ["M-SHEETS-READ", "M-LLM-DIGEST", "M-SLACK-SEND", "M-GMAIL-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-WD-1",
+          "target": "exec_log.sheets.rows_read",
+          "operator": "length_equals",
+          "expected": 14,
+          "rationale": "需求要求读取最近 14 天的业务指标数据，必须取回 14 行"
+        },
+        {
+          "assertion_id": "A-WD-2",
+          "target": "calc.metrics.revenue.wow_pct",
+          "operator": "equals",
+          "expected": 21.7,
+          "rationale": "本周收入合计 87600、上周 72000，周环比 (87600-72000)/72000≈21.7%，必须精确计算"
+        },
+        {
+          "assertion_id": "A-WD-3",
+          "target": "calc.metrics.leads.wow_pct",
+          "operator": "equals",
+          "expected": 31.5,
+          "rationale": "本周销售线索 484、上周 368，周环比 (484-368)/368≈31.5%，必须精确计算"
+        },
+        {
+          "assertion_id": "A-WD-4",
+          "target": "calc.derived.conversion_rate_pct",
+          "operator": "equals",
+          "expected": 14.1,
+          "rationale": "转化率必须按本周转化数 68 除以销售线索 484 计算，68/484≈14.1%"
+        },
+        {
+          "assertion_id": "A-WD-5",
+          "target": "calc.derived.roas",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求计算广告支出回报率（ROAS）等派生指标"
+        },
+        {
+          "assertion_id": "A-WD-6",
+          "target": "final_output.digest.headline",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "业绩摘要必须包含头条摘要板块"
+        },
+        {
+          "assertion_id": "A-WD-7",
+          "target": "final_output.digest.wins",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "业绩摘要必须包含亮点板块"
+        },
+        {
+          "assertion_id": "A-WD-8",
+          "target": "final_output.digest.areas_to_watch",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "业绩摘要必须包含需要关注的方面板块"
+        },
+        {
+          "assertion_id": "A-WD-9",
+          "target": "final_output.digest.recommended_priorities",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "业绩摘要必须包含本周建议优先级板块"
+        },
+        {
+          "assertion_id": "A-WD-10",
+          "target": "final_output.digest.outlook",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "业绩摘要必须包含简要展望板块"
+        },
+        {
+          "assertion_id": "A-WD-11",
+          "target": "final_output.slack.text",
+          "operator": "contains",
+          "expected": "📈",
+          "rationale": "Slack 版本必须为含表情符号的纯文本形式"
+        },
+        {
+          "assertion_id": "A-WD-12",
+          "target": "final_output.email.html_body",
+          "operator": "contains",
+          "expected": "<table",
+          "rationale": "邮件版本必须为含指标表格的 HTML 形式"
+        },
+        {
+          "assertion_id": "A-WD-13",
+          "target": "exec_log.slack.send.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "摘要必须成功投递到 Slack 渠道"
+        },
+        {
+          "assertion_id": "A-WD-14",
+          "target": "exec_log.gmail.send.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "摘要必须成功投递到邮件渠道"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 14 天数据正常路径（周环比精确计算、派生指标、五板块摘要、Slack 纯文本与邮件 HTML 双渠道投递）。需求中'读取最近 14 天'指取数窗口，不要求输入数据恰好覆盖 14 天，且需求未规定数据不足时的处理策略，故不设数据不足负例。核算基准：本周（8/26-9/1）收入合计 87600、上周（8/19-8/25）72000，环比 21.7%；线索 484 vs 368，环比 31.5%；转化率 68/484≈14.1%。Google Sheets 读取、OpenAI 摘要、Slack、Gmail 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true。"
+}

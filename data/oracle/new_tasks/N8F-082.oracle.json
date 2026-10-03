@@ -1,0 +1,400 @@
+{
+  "task_id": "N8F-082",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "84cb33472a458eb5f92eae22c72baa38e82a12f52ec387e92a7167affe1ad239",
+  "fixtures": [
+    {
+      "fixture_id": "F-REQ-COMPLETE",
+      "purpose": "完整且低风险的常规项目申请，验证正常分诊（不进入审批分支）",
+      "input_data": {
+        "request_id": "REQ-1001",
+        "brief": "Build a customer portal with login and order history",
+        "requester_email": "jane@example.com",
+        "department": "Sales",
+        "source": "webhook"
+      }
+    },
+    {
+      "fixture_id": "F-REQ-HIGH",
+      "purpose": "元数据明确为高风险的申请（severity=critical、urgency=immediate），验证进入审批分支",
+      "input_data": {
+        "request_id": "REQ-1002",
+        "brief": "Fix critical security vulnerability in payment processing",
+        "requester_email": "ops@example.com",
+        "department": "Security",
+        "metadata": {
+          "severity": "critical",
+          "urgency": "immediate"
+        },
+        "source": "webhook"
+      }
+    },
+    {
+      "fixture_id": "F-REQ-MISSING",
+      "purpose": "缺少必填需求简述的申请，验证返回 400",
+      "input_data": {
+        "request_id": "REQ-1003",
+        "requester_email": "jane@example.com",
+        "brief": null,
+        "source": "webhook"
+      }
+    },
+    {
+      "fixture_id": "F-REQ-WHITESPACE",
+      "purpose": "简述仅为空白字符的边界申请，验证同样视为不齐备",
+      "input_data": {
+        "request_id": "REQ-1004",
+        "requester_email": "jane@example.com",
+        "brief": "   ",
+        "source": "webhook"
+      }
+    },
+    {
+      "fixture_id": "F-APPROVAL-THRESHOLD",
+      "purpose": "固定审批阈值配置",
+      "input_data": {
+        "approval_threshold": 50
+      }
+    },
+    {
+      "fixture_id": "F-WEEKLY-TRIGGER",
+      "purpose": "周计划触发与固定的未结分诊记录，验证每周运营汇总邮件（邮件发送已启用）",
+      "input_data": {
+        "trigger": "schedule",
+        "run_at": "2026-09-07T09:00:00Z",
+        "email_enabled": true,
+        "open_records": [
+          {
+            "record_id": "REC-2001",
+            "summary": "Routine feature request",
+            "score": 20,
+            "status": "open",
+            "owner": "Engineering",
+            "next_action": "Schedule kickoff"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-TRIAGE-LOW",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_triage",
+      "request_contract": {
+        "request_id": "REQ-1001"
+      },
+      "response_contract": {
+        "summary": "Routine feature request",
+        "request_type": "feature",
+        "risks": [],
+        "dependencies": [
+          "customer DB"
+        ],
+        "decisions_needed": [
+          "UX approach"
+        ],
+        "recommended_owner_type": "Engineering"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TRIAGE-HIGH",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_triage",
+      "request_contract": {
+        "request_id": "REQ-1002"
+      },
+      "response_contract": {
+        "summary": "Critical security fix",
+        "request_type": "incident",
+        "risks": [
+          "data exposure"
+        ],
+        "dependencies": [],
+        "decisions_needed": [
+          "deployment window"
+        ],
+        "recommended_owner_type": "Security"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-CREATE",
+      "dependency_type": "airtable",
+      "operation": "create_record",
+      "request_contract": {
+        "record_must_have_summary_score_routing": true
+      },
+      "response_contract": {
+        "record_id": "REC-2001",
+        "status": "created"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-UPDATE",
+      "dependency_type": "airtable",
+      "operation": "update_record",
+      "request_contract": {
+        "fields_must_include_owner_status_next_action_approval": true
+      },
+      "response_contract": {
+        "record_id": "REC-2001",
+        "status": "updated"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-APPROVAL",
+      "dependency_type": "slack",
+      "operation": "post_approval_message",
+      "request_contract": {
+        "channel": "#approvals"
+      },
+      "response_contract": {
+        "status": "posted",
+        "ts": "1725206400.000005"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-READ-OPEN",
+      "dependency_type": "airtable",
+      "operation": "read_open_records",
+      "request_contract": {
+        "filter_status": "open"
+      },
+      "response_contract": {
+        "records": "see fixture F-WEEKLY-TRIGGER.open_records"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-WEEKLY",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "subject_is_weekly_ops_summary": true
+      },
+      "response_contract": {
+        "status": "sent",
+        "message_id": "G-W-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-LOW-RISK",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-REQ-COMPLETE",
+        "F-APPROVAL-THRESHOLD"
+      ],
+      "mock_ids": [
+        "M-LLM-TRIAGE-LOW",
+        "M-AIRTABLE-CREATE",
+        "M-AIRTABLE-UPDATE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.triage_record.record_id",
+          "operator": "equals",
+          "expected": "REC-2001",
+          "rationale": "完整申请必须在 Airtable 中创建分诊记录"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.triage_record.summary",
+          "operator": "contains",
+          "expected": "Routine feature request",
+          "rationale": "分诊记录须写入语言模型生成的摘要"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.triage_record.score",
+          "operator": "exists",
+          "rationale": "分诊记录须包含确定性风险/紧急度评分",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.response.status_code",
+          "operator": "equals",
+          "expected": 200,
+          "rationale": "须向调用方返回分诊结果（非400）"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.airtable_update.status",
+          "operator": "equals",
+          "expected": "updated",
+          "rationale": "须更新 Airtable 记录（负责人、状态、下一步动作与审批结果）"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.approval_slack",
+          "operator": "not_exists",
+          "rationale": "常规低风险申请（风险项为空）不进入审批分支",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-HIGH-RISK",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-REQ-HIGH",
+        "F-APPROVAL-THRESHOLD"
+      ],
+      "mock_ids": [
+        "M-LLM-TRIAGE-HIGH",
+        "M-AIRTABLE-CREATE",
+        "M-AIRTABLE-UPDATE",
+        "M-SLACK-APPROVAL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01-POS-HIGH-RISK",
+          "target": "output.approval_message",
+          "operator": "exists",
+          "rationale": "高风险固定输入（severity=critical、urgency=immediate、风险项非空）下，确定性评分超过审批阈值，须准备审批消息",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-02-POS-HIGH-RISK",
+          "target": "output.approval_slack.posted",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "启用 Slack 时审批消息发送到 Slack"
+        },
+        {
+          "assertion_id": "A-POS-03-POS-HIGH-RISK",
+          "target": "output.approval_outcome",
+          "operator": "exists",
+          "rationale": "须记录审批结论并指派负责人或标记为已拒绝",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-04-POS-HIGH-RISK",
+          "target": "output.airtable_update.status",
+          "operator": "equals",
+          "expected": "updated",
+          "rationale": "审批结论须回写 Airtable 记录"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-MISSING-BRIEF",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-REQ-MISSING"
+      ],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.response.status_code",
+          "operator": "equals",
+          "expected": 400,
+          "rationale": "必填的需求简述缺失时返回 400"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.response.missing_fields",
+          "operator": "contains",
+          "expected": "brief",
+          "rationale": "400 响应必须列出缺失字段"
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.response.clarification_questions",
+          "operator": "exists",
+          "rationale": "400 响应必须给出澄清问题",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.triage_record",
+          "operator": "not_exists",
+          "rationale": "校验失败不得创建分诊记录",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-WHITESPACE-BRIEF",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-REQ-WHITESPACE"
+      ],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.response.status_code",
+          "operator": "equals",
+          "expected": 400,
+          "rationale": "边界：简述仅为空白字符时视为必填项不齐备，返回 400"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.triage_record",
+          "operator": "not_exists",
+          "rationale": "空白简述不得创建分诊记录",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-WEEKLY-SUMMARY",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-WEEKLY-TRIGGER"
+      ],
+      "mock_ids": [
+        "M-AIRTABLE-READ-OPEN",
+        "M-GMAIL-WEEKLY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-W1",
+          "target": "output.weekly_summary.record_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每周汇总基于未结分诊记录生成，固定夹具中未结记录恰为 1 条"
+        },
+        {
+          "assertion_id": "A-POS-W2",
+          "target": "output.weekly_summary.email.subject",
+          "operator": "contains",
+          "expected": "ops summary",
+          "rationale": "邮件主题须为运营汇总（weekly ops summary）"
+        },
+        {
+          "assertion_id": "A-POS-W3",
+          "target": "output.weekly_summary.email.message_id",
+          "operator": "equals",
+          "expected": "G-W-0001",
+          "rationale": "夹具中邮件发送已启用，汇总须通过 Gmail 发出并返回固定回执"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "LLM 分诊、Airtable 创建/更新/读取未结记录、Slack 审批、Gmail 周报均为固定模拟。400 校验完全由输入决定；审批分支依赖固定阈值50与固定元数据/LLM输出，高风险（critical+immediate+风险项非空）与低风险（常规请求+风险项为空）夹具保证分支结果确定。周报用例（C-POS-WEEKLY-SUMMARY）依据需求第四.2：周计划加载未结记录、生成运营汇总并经 Gmail 发送，记录数、主题与发送回执均可程序判定。"
+}

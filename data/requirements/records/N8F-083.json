@@ -1,0 +1,79 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-083",
+  "source_id": "n8n:16039",
+  "workflow_sha256": "4ffad93b240b58383697de64473a9190de5279935bb424c8b12607a0fe3cdaad",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cd6ad0b61888c9ca2666081316453d3658df8f9ac593b55537fe14bb17539cc0",
+  "requirement": {
+    "requirement_text": "一、输入\n当 Chatwoot 会话中产生新消息时，通过回调接口接收该消息；支持任意 Chatwoot 收件箱，包括网页组件、WhatsApp、Telegram 等。\n\n二、主要处理\n1. 提取消息与发送方字段，整理为统一结构；随后忽略外发消息，避免自动回复自身消息而陷入循环。\n2. 若该 Chatwoot 会话已指派人工客服（或在对话过程中转人工），则停止自动处理，以免打断人工服务。\n3. 获取可用的客服列表，若有在线客服则随机选取一位，并把客服在线状态传给智能助手。\n4. 由语言模型结合会话历史生成回复，并可从向量知识库中检索常见问题的答案。\n\n三、转人工\n需要转人工时，把选定的客服指派到该会话，或通过 Gmail 发送内部摘要邮件。\n\n四、最终结果\n把生成的回复拆分为较短的片段依次发回该 Chatwoot 会话，使回复节奏更接近人工对话。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 299,
+        "text": "Quick overview\nThis workflow automates customer chat with Chatwoot & n8n AI agent that handles incoming chats, qualifies leads, answers FAQs from Pinecone knowledge base, and escalates to a live human agent when one is online. Works with any Chatwoot inbox: web widget, WhatsApp, Telegram, and more."
+      },
+      {
+        "start": 301,
+        "end": 1290,
+        "text": "How it works\nReceives a POST webhook from Chatwoot when a message is created in a conversation.\nExtracts message and sender fields into a clean structure, then ignores outgoing messages to prevent the bot from replying to its own messages in an infinite loop.\nStops processing if the Chatwoot conversation already has a human assignee (or is escalated to a human during chat) to avoid interrupting live support.\nFetches available Chatwoot agents, selects a random online agent (if any), and passes the availability status to the AI assistant.\nGenerates a response using Groq (chat model) with Postgres (Superbase) chat history, optionally retrieving answers from a Pinecone knowledge base using Google Gemini embeddings and chat completions.\nWhen escalation is required, assigns the selected Chatwoot agent to the conversation or sends an internal summary email via Gmail.\nSplits the AI output into short chunks and posts them back to the Chatwoot conversation for human-like short replies"
+      },
+      {
+        "start": 3416,
+        "end": 3730,
+        "text": "This workflow handles these — through Chatwoot as a medium to connect multiple inboxes and using n8n to power those with Back-end automation, this workflow can help users handle incoming chats across multiple platforms. Plus, it handles human handovers, and only replies when there's no human assigned to the chat."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Chatwoot 会话中产生的新消息（可来自网页组件、WhatsApp、Telegram 等任意收件箱）",
+        "该会话的可用客服列表与在线状态",
+        "同一会话的历史消息",
+        "向量知识库中的常见问题内容"
+      ],
+      "conditions": [
+        "外发消息被忽略，不对自身消息自动回复",
+        "会话已指派人工客服或在对话中转人工时停止自动处理",
+        "有在线客服时随机选取一位",
+        "仅在无人工客服负责时才自动回复",
+        "需要转人工时指派客服或发送内部摘要邮件"
+      ],
+      "allowed_actions": [
+        "提取并整理消息与发送方字段",
+        "忽略外发消息",
+        "查询客服在线状态并选取在线客服",
+        "由语言模型结合会话历史生成回复",
+        "从向量知识库检索常见问题答案",
+        "将选定的客服指派到会话",
+        "通过 Gmail 发送内部摘要邮件",
+        "把回复拆分为较短片段依次发回会话"
+      ],
+      "visible_outcomes": [
+        "用户在 Chatwoot 会话中收到分条发送的短回复",
+        "需要转人工时会话被指派给被选中的客服，或相关人员收到内部摘要邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-083.packet.json",
+    "packet_sha256": "6a4c14e4c1333b23f6d0e7f7c98177971d2a07932c1abe4a3b8c6d193cfc4708",
+    "public_description_sha256": "549bc8813f2233de76c6e06c741fe83b4545063f12e1ef17f890df6f7fcfd551"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-083.response.json",
+    "verification_response_sha256": "30e2f6350f6299cf7a34d4c2918fdea363adba4a03b1a5e503ccdc77e550b902",
+    "decision": "accept"
+  },
+  "formal_index": 94
+}

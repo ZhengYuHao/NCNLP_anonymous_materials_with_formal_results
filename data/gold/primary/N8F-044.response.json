@@ -1,0 +1,214 @@
+{
+  "task_id": "N8F-044",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "da4b467856b0718bff1440b64ce9c0bd3298e0e8391f276d5c01be61d9d3d2f6",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "人工手动启动新闻采集处理",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "需求 source_span: \"Run the workflow manually or use the daily schedule trigger at 13:00.\"",
+        "原生图无独立手动触发节点（native_nodes 中仅有 Schedule Trigger 一个 trigger）"
+      ],
+      "requirement_evidence": [
+        "处理可由人工手动启动"
+      ],
+      "rationale": "n1 为需求声明的行为边界（手动启动入口），由 n8n 界面的手动执行入口承载，并非原生独立触发节点的复制；为确定性触发，判 code。原生证据仅用于佐证该入口存在，未虚构节点名称。"
+    },
+    {
+      "node_id": "n2",
+      "label": "每日 13:00 定时触发新闻采集处理",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Schedule Trigger (scheduleTrigger, 每日 13:00)"
+      ],
+      "requirement_evidence": [
+        "也可按每日 13:00 的定时计划执行"
+      ],
+      "rationale": "需求声明的定时触发入口（每日 13:00），判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "从 Google Sheets 输入表读取检索关键词",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "keywords",
+          "type": "array",
+          "description": "输入表中的检索关键词"
+        }
+      ],
+      "native_evidence": [
+        "Get rows from sheet (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "系统从 Google Sheets 输入表读取检索关键词"
+      ],
+      "rationale": "需求声明的读取动作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "通过新闻数据源服务采集英文与日文来源的最新新闻文章",
+      "node_type": "code",
+      "operation_family": "external_fetch",
+      "inputs": [
+        {
+          "name": "keywords",
+          "type": "array",
+          "description": "检索关键词"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "articles",
+          "type": "array",
+          "description": "英文与日文来源的最新新闻文章"
+        }
+      ],
+      "native_evidence": [
+        "HTTP Request (EN) (httpRequest)",
+        "HTTP Request (JP) (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "通过新闻数据源服务采集英文与日文来源的最新新闻文章"
+      ],
+      "rationale": "需求声明的外部数据源采集（英日双源），为确定性外部调用，判 code；双源并行请求为实现细节，合并为同一契约。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型生成约 50 字符的日文摘要",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "articles",
+          "type": "array",
+          "description": "采集到的新闻文章"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summarized_articles",
+          "type": "array",
+          "description": "附日文摘要的结果（日期、关键词、摘要、链接）"
+        }
+      ],
+      "native_evidence": [
+        "Summarize with OpenAI (openAi)"
+      ],
+      "requirement_evidence": [
+        "并交由语言模型生成摘要，摘要为约 50 个字符的日文简述"
+      ],
+      "rationale": "需求声明由语言模型生成日文摘要，判 semantic；长度约 50 字符为契约约束。"
+    },
+    {
+      "node_id": "n6",
+      "label": "按日期、关键词、摘要与链接追加写入 Google Sheets 输出表",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "summarized_articles",
+          "type": "array",
+          "description": "含日文摘要的结果记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append rows to sheet (googleSheets, append)"
+      ],
+      "requirement_evidence": [
+        "每篇结果按日期、关键词、摘要与链接追加写入 Google Sheets 的输出表"
+      ],
+      "rationale": "需求声明的追加写入动作，为最终交付，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "手动启动后读取关键词"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后读取关键词"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取关键词后采集新闻"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "采集后生成摘要"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后追加写入输出表"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n3",
+      "target": "n4",
+      "variable": "keywords",
+      "condition": null,
+      "rationale": "新闻采集基于检索关键词"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "articles",
+      "condition": null,
+      "rationale": "摘要生成基于采集到的文章"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "summarized_articles",
+      "condition": null,
+      "rationale": "输出表写入使用含摘要的结果记录"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n2"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "线性流程建模：手动与定时两个并列入口汇入同一处理链。n1（手动启动）的模型依据是冻结需求声明的行为边界与官方说明原文 \"Run the workflow manually...\"，原生图中不存在独立 manualTrigger 节点，手动入口由 n8n 工作流执行界面的手动运行承载，n1 为需求层面的入口建模而非原生节点复制；n2 对应原生 Schedule Trigger（每日 13:00）。原生 If Search Required 分支、Split Articles (EN/JP)、Merge Articles、Prepare fields 为需求未声明的实现细节，未纳入；需求仅声明采集英文与日文来源，未声明双请求并行，故合并为单一采集契约。"
+}

@@ -1,0 +1,221 @@
+{
+  "task_id": "N8F-049",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "4ccd8f5d02570388a81d1e4791c5eb3759fc4b68c3ed66aa8508375f09e5c74d",
+  "fixtures": [
+    {
+      "fixture_id": "F-ISSUE-HIGH",
+      "purpose": "正常用例：新增的高优先级缺陷 issue，验证分类后创建 Linear 任务并回写评论",
+      "input_data": {
+        "issue": {
+          "number": 123,
+          "title": "Login endpoint returns 500 on invalid token",
+          "body": "Reproduction steps: 1) call POST /login with an expired JWT 2) observe HTTP 500. Expected: 401.",
+          "state": "open",
+          "created_at": "2026-08-01T09:00:00Z",
+          "html_url": "https://github.com/mock-org/mock-repo/issues/123"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-ISSUE-LOW",
+      "purpose": "边界用例：低优先级的功能增强 issue，验证不同分类结果仍能创建任务",
+      "input_data": {
+        "issue": {
+          "number": 124,
+          "title": "Add dark mode toggle to settings",
+          "body": "Would be nice to have a dark mode option in the settings page.",
+          "state": "open",
+          "created_at": "2026-08-02T09:00:00Z",
+          "html_url": "https://github.com/mock-org/mock-repo/issues/124"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-CLASSIFY-HIGH",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "classify_issue",
+      "request_contract": {
+        "title": "Login endpoint returns 500 on invalid token",
+        "body": "Reproduction steps: 1) call POST /login with an expired JWT 2) observe HTTP 500. Expected: 401."
+      },
+      "response_contract": {
+        "type": "bug",
+        "priority": "high",
+        "summary": "Invalid token handling returns 500 instead of 401"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CLASSIFY-LOW",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "classify_issue",
+      "request_contract": {
+        "title": "Add dark mode toggle to settings",
+        "body": "Would be nice to have a dark mode option in the settings page."
+      },
+      "response_contract": {
+        "type": "feature",
+        "priority": "low",
+        "summary": "Dark mode toggle for settings page"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINEAR-CREATE",
+      "dependency_type": "n8n-nodes-base.linear",
+      "operation": "create_task",
+      "request_contract": {
+        "title": "Login endpoint returns 500 on invalid token",
+        "description": "Invalid token handling returns 500 instead of 401",
+        "priority": "high"
+      },
+      "response_contract": {
+        "id": "LIN-1001",
+        "identifier": "MOCK-1",
+        "url": "https://linear.app/mock/issue/MOCK-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LINEAR-CREATE-LOW",
+      "dependency_type": "n8n-nodes-base.linear",
+      "operation": "create_task",
+      "request_contract": {
+        "title": "Add dark mode toggle to settings",
+        "description": "Dark mode toggle for settings page",
+        "priority": "low"
+      },
+      "response_contract": {
+        "id": "LIN-1002",
+        "identifier": "MOCK-2",
+        "url": "https://linear.app/mock/issue/MOCK-2"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GH-COMMENT",
+      "dependency_type": "n8n-nodes-base.github",
+      "operation": "create_issue_comment",
+      "request_contract": {
+        "issue_number": 123,
+        "body": "Classified as bug with high priority."
+      },
+      "response_contract": {
+        "id": "comment-501",
+        "html_url": "https://github.com/mock-org/mock-repo/issues/123#issuecomment-501"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GH-COMMENT-LOW",
+      "dependency_type": "n8n-nodes-base.github",
+      "operation": "create_issue_comment",
+      "request_contract": {
+        "issue_number": 124,
+        "body": "Classified as feature with low priority."
+      },
+      "response_contract": {
+        "id": "comment-502",
+        "html_url": "https://github.com/mock-org/mock-repo/issues/124#issuecomment-502"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-HIGH-PRIORITY-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-ISSUE-HIGH"],
+      "mock_ids": ["M-LLM-CLASSIFY-HIGH", "M-LINEAR-CREATE", "M-GH-COMMENT"],
+      "assertions": [
+        {
+          "assertion_id": "A-HIGH-1",
+          "target": "exec_log.mock_calls.M-LLM-CLASSIFY-HIGH.request_contract.title",
+          "operator": "equals",
+          "expected": "Login endpoint returns 500 on invalid token",
+          "rationale": "送入模型分析的关键数据必须来自该 issue，标题不得被替换"
+        },
+        {
+          "assertion_id": "A-HIGH-2",
+          "target": "exec_log.mock_calls.M-LINEAR-CREATE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每个新增 issue 必须创建一个 Linear 任务"
+        },
+        {
+          "assertion_id": "A-HIGH-3",
+          "target": "exec_log.mock_calls.M-LINEAR-CREATE.request_contract.title",
+          "operator": "equals",
+          "expected": "Login endpoint returns 500 on invalid token",
+          "rationale": "Linear 任务标题必须沿用 issue 标题"
+        },
+        {
+          "assertion_id": "A-HIGH-4",
+          "target": "exec_log.mock_calls.M-LINEAR-CREATE.request_contract.priority",
+          "operator": "equals",
+          "expected": "high",
+          "rationale": "Linear 任务必须携带模型判定的优先级"
+        },
+        {
+          "assertion_id": "A-HIGH-5",
+          "target": "exec_log.mock_calls.M-GH-COMMENT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须在该 issue 下添加一条评论"
+        },
+        {
+          "assertion_id": "A-HIGH-6",
+          "target": "exec_log.mock_calls.M-GH-COMMENT.request_contract.issue_number",
+          "operator": "equals",
+          "expected": 123,
+          "rationale": "评论必须回写到原 issue 编号"
+        },
+        {
+          "assertion_id": "A-HIGH-7",
+          "target": "exec_log.mock_calls.M-GH-COMMENT.request_contract.body",
+          "operator": "contains",
+          "expected": "bug",
+          "rationale": "评论内容必须包含分类结果（类型）"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LOW-PRIORITY-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": ["F-ISSUE-LOW"],
+      "mock_ids": ["M-LLM-CLASSIFY-LOW", "M-LINEAR-CREATE-LOW", "M-GH-COMMENT-LOW"],
+      "assertions": [
+        {
+          "assertion_id": "A-LOW-1",
+          "target": "exec_log.mock_calls.M-LINEAR-CREATE-LOW.request_contract.priority",
+          "operator": "equals",
+          "expected": "low",
+          "rationale": "低优先级分类结果必须原样传递给 Linear 任务"
+        },
+        {
+          "assertion_id": "A-LOW-2",
+          "target": "exec_log.mock_calls.M-GH-COMMENT-LOW.request_contract.issue_number",
+          "operator": "equals",
+          "expected": 124,
+          "rationale": "评论必须回写到对应 issue 编号 124"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖新增 issue 的分类闭环（提取 → LLM 分类 → Linear 创建 → GitHub 评论回写），并以低优先级 issue 作边界验证分类结果的忠实传递。GitHub、Linear 与 LLM 全部固定模拟；断言检查请求参数相等、评论回写编号与内容包含分类结果。"
+}

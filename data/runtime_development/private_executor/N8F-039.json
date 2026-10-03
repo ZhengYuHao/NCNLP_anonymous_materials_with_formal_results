@@ -1,0 +1,217 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-039",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-MLS-LISTINGS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_mls_listings",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "listings": [
+          {
+            "id": "L-1",
+            "price": 450000,
+            "beds": 3,
+            "baths": 2,
+            "sqft": 1800,
+            "zip": "78701"
+          },
+          {
+            "id": "L-2",
+            "price": 520000,
+            "beds": 4,
+            "baths": 3,
+            "sqft": 2200,
+            "zip": "78702"
+          },
+          {
+            "id": "L-3",
+            "price": 380000,
+            "beds": 3,
+            "baths": 2,
+            "sqft": 1600,
+            "zip": "78703"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PUBLIC-RECORDS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_public_records",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "records": [
+          {
+            "id": "PR-1",
+            "type": "sale",
+            "amount": 430000,
+            "date": "2026-08-01"
+          },
+          {
+            "id": "PR-2",
+            "type": "sale",
+            "amount": 510000,
+            "date": "2026-08-15"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEMOGRAPHICS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_demographics",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "population": 1000000,
+        "median_age": 33,
+        "population_growth_pct": 3.1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MACRO-INDICATORS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_macro_indicators",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "mortgage_rate_pct": 6.5,
+        "unemployment_pct": 4.2,
+        "gdp_growth_pct": 2.8
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_market_with_calculator",
+      "request_contract": {
+        "listings": [
+          {
+            "id": "L-1",
+            "price": 450000,
+            "beds": 3,
+            "baths": 2,
+            "sqft": 1800,
+            "zip": "78701"
+          },
+          {
+            "id": "L-2",
+            "price": 520000,
+            "beds": 4,
+            "baths": 3,
+            "sqft": 2200,
+            "zip": "78702"
+          },
+          {
+            "id": "L-3",
+            "price": 380000,
+            "beds": 3,
+            "baths": 2,
+            "sqft": 1600,
+            "zip": "78703"
+          }
+        ],
+        "public_records": [
+          {
+            "id": "PR-1",
+            "type": "sale",
+            "amount": 430000,
+            "date": "2026-08-01"
+          },
+          {
+            "id": "PR-2",
+            "type": "sale",
+            "amount": 510000,
+            "date": "2026-08-15"
+          }
+        ],
+        "demographics": {
+          "population": 1000000,
+          "median_age": 33,
+          "population_growth_pct": 3.1
+        },
+        "macro": {
+          "mortgage_rate_pct": 6.5,
+          "unemployment_pct": 4.2,
+          "gdp_growth_pct": 2.8
+        }
+      },
+      "response_contract": {
+        "insight": {
+          "median_list_price": 450000,
+          "avg_price_per_sqft": 252.14,
+          "market_verdict": "buy",
+          "opportunity_score": 78,
+          "risk_factors": [
+            "rising mortgage rates"
+          ],
+          "recommendation": "Focus acquisitions on 78703 submarket."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-TO-ACQUISITION",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "acquisition@example.com"
+      },
+      "response_contract": {
+        "message_id": "mail-039-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-TO-INVESTORS",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_contract": {
+        "channel": "#investors"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1767300000.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-MARKET-POSITIVE",
+      "fixture_ids": [
+        "F-MARKET-ANALYSIS"
+      ],
+      "mock_ids": [
+        "M-MLS-LISTINGS",
+        "M-PUBLIC-RECORDS",
+        "M-DEMOGRAPHICS",
+        "M-MACRO-INDICATORS",
+        "M-LLM-ANALYSIS",
+        "M-GMAIL-TO-ACQUISITION",
+        "M-SLACK-TO-INVESTORS"
+      ]
+    }
+  ]
+}

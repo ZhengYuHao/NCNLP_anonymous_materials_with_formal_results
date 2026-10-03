@@ -1,0 +1,110 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-022",
+  "source_id": "n8n:18325",
+  "workflow_sha256": "7aee459d40e6754791ee7fbe486e3e568e9de43497342e1855645055b45ec44f",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "822104ae68f8d74a4d8e96600ece7130cee04b32867181b6018b02049c4cf2cd",
+  "requirement": {
+    "requirement_text": "从表单提交获取交易名称、Google Drive 文件夹 ID 以及用于接收通知的邮箱地址。\n\n为本次运行生成唯一运行标识，并列出该 Google Drive 数据室内的文件。随后逐个处理每个文件：从 Google Drive 下载文件并抽取文档文本；把抽取出的文本交给语言模型，用于判定文档类别并生成包含风险等级、标记项与简短摘要的发现结果；解析该结果后，把每个文档的发现追加到 Google Sheets 的尽职调查工作表。\n\n全部文档处理完毕后，从 Google Sheets 取回本次运行的全部发现，交给语言模型起草一份尽职调查执行摘要；将摘要转换为 HTML，并通过邮件发送到提交时提供的通知邮箱。\n\n工作流运行失败，以及语言模型分析与摘要环节返回的问题，都会向 Slack 发送告警。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 290,
+        "text": "This workflow starts from an n8n form submission, reviews all documents in a Google Drive data room using OpenAI (gpt-4o-mini), logs per-document risk findings to Google Sheets, then compiles an executive summary and emails the report via Gmail, with Slack alerts for errors."
+      },
+      {
+        "start": 305,
+        "end": 409,
+        "text": "Receives a form submission with the deal name, Google Drive folder ID, and a notification email address."
+      },
+      {
+        "start": 410,
+        "end": 501,
+        "text": "Creates a unique run ID and lists files in Google Drive for the provided data room context."
+      },
+      {
+        "start": 502,
+        "end": 590,
+        "text": "Loops through each file, downloads it from Google Drive, and extracts the document text."
+      },
+      {
+        "start": 591,
+        "end": 737,
+        "text": "Sends the extracted text to OpenAI (gpt-4o-mini) to classify the document and generate a JSON finding with risk level, flags, and a short summary."
+      },
+      {
+        "start": 738,
+        "end": 843,
+        "text": "Parses the AI output and appends each document’s finding to a Google Sheets “Due Diligence Findings” tab."
+      },
+      {
+        "start": 844,
+        "end": 1014,
+        "text": "After all documents are processed, fetches all findings for the run from Google Sheets and sends them to OpenAI (gpt-4o-mini) to draft an executive due diligence summary."
+      },
+      {
+        "start": 1015,
+        "end": 1103,
+        "text": "Converts the summary to HTML and sends it to the submitted notification email via Gmail."
+      },
+      {
+        "start": 1104,
+        "end": 1219,
+        "text": "Posts error alerts to Slack for workflow failures and for issues returned by the OpenAI analysis and summary steps."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "表单提交的交易名称",
+        "表单提交的 Google Drive 文件夹 ID",
+        "表单提交的通知邮箱地址",
+        "该 Google Drive 数据室内的文档文件"
+      ],
+      "conditions": [
+        "为每次运行生成唯一运行标识",
+        "按文件逐个处理",
+        "全部文档处理完毕后才生成执行摘要"
+      ],
+      "allowed_actions": [
+        "列出并下载 Google Drive 中的文件",
+        "抽取文档文本",
+        "调用语言模型判定文档类别并生成风险等级、标记项与简短摘要",
+        "向 Google Sheets 追加每个文档的发现",
+        "取回本次运行全部发现并调用语言模型起草执行摘要",
+        "将摘要转换为 HTML",
+        "通过邮件把 HTML 摘要发送到通知邮箱",
+        "向 Slack 发送错误告警"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 尽职调查工作表中每个文档一条发现记录，含风险等级、标记项与简短摘要",
+        "通知邮箱收到一份 HTML 格式的尽职调查执行摘要邮件",
+        "Slack 中出现告警消息"
+      ],
+      "failure_behavior": [
+        "工作流运行失败时向 Slack 发送告警",
+        "语言模型分析与摘要环节返回问题时向 Slack 发送告警"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-022.packet.json",
+    "packet_sha256": "8ba508af4ff4127d3691b87d6ed511f309b25f45098c4293652cbb157bc5d130",
+    "public_description_sha256": "cb6270aefe1de94650e3a30be99c08ce8e7b2c5d9ed4700f467650a9af8b0763"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-022.response.json",
+    "verification_response_sha256": "3dbb52459b0fcfebc052d0ea4c952cd0dd046b6292eea3e0893210dff7620022",
+    "decision": "accept"
+  },
+  "formal_index": 33
+}

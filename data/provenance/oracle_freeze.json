@@ -1,0 +1,633 @@
+{
+  "freeze_id": "n8n-s1-d10-oracle-spec-v4",
+  "status": "FROZEN_BEFORE_FORMAL_EVALUATION",
+  "created_at": "2026-09-13T21:32:03+08:00",
+  "formal_test_executed": false,
+  "task_count": 109,
+  "case_count": 324,
+  "assertion_count": 1569,
+  "repeat_count": 3,
+  "supersedes_manifest_sha256": "EF1D5B9A0FC57590410D266C6297C6447E25D04326E5266DADBE13EA41394DC3",
+  "errata": [
+    {
+      "erratum_id": "OE-N8F026-EMPTY-01",
+      "status": "CANDIDATE_PENDING_REVIEW",
+      "task_id": "N8F-026",
+      "case_id": "C-NEG-EMPTY-RESULTS",
+      "problem": "The case supplied F-PROFILES-EMPTY while its download mock referenced F-PROFILES.",
+      "change": {
+        "added_mock_id": "M-BD-DOWNLOAD-EMPTY",
+        "response_fixture": "F-PROFILES-EMPTY",
+        "replaced_case_mock_id": "M-BD-DOWNLOAD"
+      },
+      "requirements_changed": false,
+      "assertions_changed": false,
+      "formal_test_executed": false,
+      "source_task_sha256": "798BC54801E2997CDE03E97655D7BDFC7718F03CA084CB15595F4C653C144B7B",
+      "candidate_task_sha256": "E43507ACA0317A8D297BB2ECE4E8C9EDCB852B7AC8BF68BA97C48C60C4D098C4"
+    },
+    {
+      "erratum_id": "OE-N8F080-SUBJECT-01",
+      "status": "RESOLVED_BY_INDEPENDENT_PROJECTION_REVIEW",
+      "task_id": "N8F-080",
+      "case_id": "C-POS-REPORT",
+      "removed_assertion_id": "A-11",
+      "removed_target": "output.emails.outlook.subject",
+      "reason": "The natural-language requirement does not constrain the email subject, and neither the reviewed public output contract nor the public operation request exposes it.",
+      "requirements_changed": false,
+      "expected_business_behavior_changed": false,
+      "assertion_count_delta": -1,
+      "formal_test_executed": false
+    }
+  ],
+  "files": [
+    {
+      "path": "full_audit.json",
+      "size_bytes": 16865,
+      "sha256": "3F8776FB07E154181DD273EE42F5810147D3C60DA1722D4F7431D85C85F97A1B"
+    },
+    {
+      "path": "oracle/N8F-001.oracle.json",
+      "size_bytes": 16954,
+      "sha256": "63F77610C3073A0E519314DCF834D748AEDADE57425FDE267B3B2EA48E7C7ABB"
+    },
+    {
+      "path": "oracle/N8F-002.oracle.json",
+      "size_bytes": 8449,
+      "sha256": "1A8FB2ABF5785BC511171AC427D51A0952F08D662C1EC0E1D5A18C4769FBCD31"
+    },
+    {
+      "path": "oracle/N8F-003.oracle.json",
+      "size_bytes": 7755,
+      "sha256": "405BBD41B43D2DE57F7C4010D00E45FA15CBFDBCA67D360131D9C06B1D31DFE9"
+    },
+    {
+      "path": "oracle/N8F-004.oracle.json",
+      "size_bytes": 20302,
+      "sha256": "935111C5DC19154FCD6173060CB9DBD5ADA1495E3D8A9FF756AE0B73684087BF"
+    },
+    {
+      "path": "oracle/N8F-005.oracle.json",
+      "size_bytes": 11094,
+      "sha256": "E23B20DA823CF1022C8EEDC7A6C20A7AC898B9479579B9D58595615CA232EA37"
+    },
+    {
+      "path": "oracle/N8F-006.oracle.json",
+      "size_bytes": 11521,
+      "sha256": "19E62F9425C9061B97A6526365FEAB505B62A4A59C6008F2F995B966C61C3AF1"
+    },
+    {
+      "path": "oracle/N8F-007.oracle.json",
+      "size_bytes": 18284,
+      "sha256": "9717F4ED6873328DDE1AC08FA9422FB64AC3260A3A7FE6216B08927FFC0A3CC6"
+    },
+    {
+      "path": "oracle/N8F-008.oracle.json",
+      "size_bytes": 14278,
+      "sha256": "7BD9ADE1A9017FC3379A14DDA092BCEF221A1BCDCB5FC7A796F15287664D6E56"
+    },
+    {
+      "path": "oracle/N8F-009.oracle.json",
+      "size_bytes": 12211,
+      "sha256": "950D4B00605A653CA12D91B438378EA9EFE42653F0B608E6F8495EE3ACC7D970"
+    },
+    {
+      "path": "oracle/N8F-010.oracle.json",
+      "size_bytes": 11021,
+      "sha256": "4A9BB70D15F991C7FF4E937D1B223A55A5AA1FAB652ACDA8B95D5FED8DD969E1"
+    },
+    {
+      "path": "oracle/N8F-011.oracle.json",
+      "size_bytes": 7447,
+      "sha256": "7D50887E885D16AFF97339A80F0258577608E9672D63DFEA2533BC5FC139D6ED"
+    },
+    {
+      "path": "oracle/N8F-012.oracle.json",
+      "size_bytes": 15153,
+      "sha256": "95F1E729EA393BF836A201778B7505C865EA75053DFA4313E3B4293978A1520B"
+    },
+    {
+      "path": "oracle/N8F-013.oracle.json",
+      "size_bytes": 11462,
+      "sha256": "B2D7591331E3481547609A351A0703FDA5A266159349E02603CFD78EE5AE8E58"
+    },
+    {
+      "path": "oracle/N8F-014.oracle.json",
+      "size_bytes": 14861,
+      "sha256": "E7C6480343AB564EFC2126460ECEE7A14D5247A66139EECB9498DD0CDA6103C4"
+    },
+    {
+      "path": "oracle/N8F-015.oracle.json",
+      "size_bytes": 17145,
+      "sha256": "4130583E821D0425DEBF301FBF4EBD268541BDCDA650317F9DB6B38BC5C239CE"
+    },
+    {
+      "path": "oracle/N8F-016.oracle.json",
+      "size_bytes": 10926,
+      "sha256": "6CF9E525FCB431C4035990F8B107C6BB2DD53CA36BED381EAF51649E44CAFE7B"
+    },
+    {
+      "path": "oracle/N8F-017.oracle.json",
+      "size_bytes": 11957,
+      "sha256": "7660E432C1EAC70BDE97F25C0A62917E5B91015BE63D02363FB71CFE38071343"
+    },
+    {
+      "path": "oracle/N8F-018.oracle.json",
+      "size_bytes": 19955,
+      "sha256": "D777E88AF020063EAC9013819C5F04DE13718D0D2FB5113998D9521FBCF0398D"
+    },
+    {
+      "path": "oracle/N8F-019.oracle.json",
+      "size_bytes": 8262,
+      "sha256": "61502733ABA9C90B5BEF8D33F9F662A6BB2FE5CD9F05D27AA336B863DD54FADC"
+    },
+    {
+      "path": "oracle/N8F-020.oracle.json",
+      "size_bytes": 16316,
+      "sha256": "5D11F786E79C73338ECB5D7FE83527DFE993F173599FD361CE8F432516D2E15B"
+    },
+    {
+      "path": "oracle/N8F-021.oracle.json",
+      "size_bytes": 11836,
+      "sha256": "EBC7C123CB90D70C2638B219FC2BE4F5B8A898704B942CC8DC6D9EAEA0DF288A"
+    },
+    {
+      "path": "oracle/N8F-022.oracle.json",
+      "size_bytes": 13420,
+      "sha256": "4EED0BA38894475512FB305ECCF5E3E5BA44D840FAA3D8A3E368F00519D58047"
+    },
+    {
+      "path": "oracle/N8F-023.oracle.json",
+      "size_bytes": 11725,
+      "sha256": "F421B3EAA09C2AB8459DF22F392AFB7ACE089DCE9330AE7B68DD74C3BD91D383"
+    },
+    {
+      "path": "oracle/N8F-024.oracle.json",
+      "size_bytes": 24758,
+      "sha256": "DA8B664B88C7D2996B584B2042BB7748C5807868DB080F5938A0153A396CC506"
+    },
+    {
+      "path": "oracle/N8F-025.oracle.json",
+      "size_bytes": 8976,
+      "sha256": "16A8E06B83C2FC3A3209F9A66295B05557EE029D57489F0A76FC9EA3EDAF4FE5"
+    },
+    {
+      "path": "oracle/N8F-026.oracle.json",
+      "size_bytes": 13994,
+      "sha256": "E43507ACA0317A8D297BB2ECE4E8C9EDCB852B7AC8BF68BA97C48C60C4D098C4"
+    },
+    {
+      "path": "oracle/N8F-027.oracle.json",
+      "size_bytes": 8517,
+      "sha256": "4E2F6D7D4D351D223994E4E9A9CDFD30849FAF2C068EA25FE1C1B2BBBC418314"
+    },
+    {
+      "path": "oracle/N8F-028.oracle.json",
+      "size_bytes": 24831,
+      "sha256": "F3A194E987AC262C55C928B110DAD568A527CB8972C80AD4829DC0F0FEA33FFB"
+    },
+    {
+      "path": "oracle/N8F-029.oracle.json",
+      "size_bytes": 20609,
+      "sha256": "059B21E9F5C17D27D0A0AA9E5F48850ADA68664A0E6E3601952D9326CCE8CCDA"
+    },
+    {
+      "path": "oracle/N8F-030.oracle.json",
+      "size_bytes": 14415,
+      "sha256": "CFEF8463BB1265A6B5AF2ED528D14B5C4A2F4E4D9CA1160BFC6EFCF3798B5205"
+    },
+    {
+      "path": "oracle/N8F-031.oracle.json",
+      "size_bytes": 8666,
+      "sha256": "F4029EFD6EB0FA9F90F5638D49B88CA0256888C97C740BAA4FFE0C9AEA7403D8"
+    },
+    {
+      "path": "oracle/N8F-032.oracle.json",
+      "size_bytes": 9380,
+      "sha256": "561B35733CC386259410934363B8678E79FE407B6C11667CD5683CB0AD338C03"
+    },
+    {
+      "path": "oracle/N8F-033.oracle.json",
+      "size_bytes": 7372,
+      "sha256": "60D672D464F2051E0DD764306C1BA0F3F303F268A508A8488A659F5FA026EE11"
+    },
+    {
+      "path": "oracle/N8F-034.oracle.json",
+      "size_bytes": 20040,
+      "sha256": "755B763D363D03E30D028DA4FA8097877F29B345AB7DF04320A5A2AA301062D8"
+    },
+    {
+      "path": "oracle/N8F-035.oracle.json",
+      "size_bytes": 7158,
+      "sha256": "FA7C09F1AF51443CECAD6183ED963F571DBF421C01C57D9A9F02025689689FC8"
+    },
+    {
+      "path": "oracle/N8F-036.oracle.json",
+      "size_bytes": 10915,
+      "sha256": "C9510D68739912D9E1C00C21A04E52891CA091A128DF98A9D05476F3FDA2F38B"
+    },
+    {
+      "path": "oracle/N8F-037.oracle.json",
+      "size_bytes": 12355,
+      "sha256": "D6D70750EEC74879CB86F5C88615A07443342D8EB839213B29684FFDE8FB5DD5"
+    },
+    {
+      "path": "oracle/N8F-038.oracle.json",
+      "size_bytes": 7077,
+      "sha256": "A384B51FBEBE643809BFD09147515807B5EB5FF2ED511902D9A54193E6E61460"
+    },
+    {
+      "path": "oracle/N8F-039.oracle.json",
+      "size_bytes": 8562,
+      "sha256": "E2E7F4102211E8FEA8A5AAC1D6972B1AFC09E85646ED1965FA9ED5B290D8E363"
+    },
+    {
+      "path": "oracle/N8F-040.oracle.json",
+      "size_bytes": 9027,
+      "sha256": "9D74A4F6A11F9A1DE7F2B50CDCF8C2A7F25F7B6C16C60C8DB32CD7DA1021B502"
+    },
+    {
+      "path": "oracle/N8F-041.oracle.json",
+      "size_bytes": 16369,
+      "sha256": "95BCD69E6E6B3F8160E0C0E1A4A097FD7B33B9B73FABEC9D2D5369ADEC302E18"
+    },
+    {
+      "path": "oracle/N8F-042.oracle.json",
+      "size_bytes": 12140,
+      "sha256": "E9BD8DBF72C8C55617B48BF96502F816104845AED0F8D6F77CE19CB061A9FEAD"
+    },
+    {
+      "path": "oracle/N8F-043.oracle.json",
+      "size_bytes": 7972,
+      "sha256": "DD10086FC3EFB080B753E2AA9933842A8925B200A9ECB1B6753F7C8A8EA7C622"
+    },
+    {
+      "path": "oracle/N8F-044.oracle.json",
+      "size_bytes": 7554,
+      "sha256": "82054BB92B66D4C9EED9D88EB34CDB01AD82FE7126BE4F35FADB100DC885FFFD"
+    },
+    {
+      "path": "oracle/N8F-045.oracle.json",
+      "size_bytes": 17944,
+      "sha256": "2185E4284F124DFC250613B11CE447BDE7FF22125FEF54E8D1C8A02DFDBBCCE5"
+    },
+    {
+      "path": "oracle/N8F-046.oracle.json",
+      "size_bytes": 12096,
+      "sha256": "3D79D7CD1D9991A932600C474B0BE65C5CB5579F31DCDCAD8CF11C4D886785CF"
+    },
+    {
+      "path": "oracle/N8F-047.oracle.json",
+      "size_bytes": 18538,
+      "sha256": "2B3E2BED301ABC2069511EDDB3A5AF1D3A5E1E4A2572F4873BA6DA130C528D4C"
+    },
+    {
+      "path": "oracle/N8F-048.oracle.json",
+      "size_bytes": 13322,
+      "sha256": "379AF655A9F45360013242C64902BF58D322CEA39ADD1AB9B8F032E5645331BB"
+    },
+    {
+      "path": "oracle/N8F-049.oracle.json",
+      "size_bytes": 8209,
+      "sha256": "E1D9A7F6C2B0BC5E076B9430DC1F4605F279B1054590DADFBB1371E1DAD384D3"
+    },
+    {
+      "path": "oracle/N8F-050.oracle.json",
+      "size_bytes": 9626,
+      "sha256": "F6CD6208EDE3D3C1FA574720797B6CDF3CBAC4DD5C9CF85CA3939FDDC470806E"
+    },
+    {
+      "path": "oracle/N8F-051.oracle.json",
+      "size_bytes": 10421,
+      "sha256": "1609EC275AA72DDEF5E30C5B9572AC8ABD8B69FA41497CA866279D3CDE9A8049"
+    },
+    {
+      "path": "oracle/N8F-052.oracle.json",
+      "size_bytes": 12005,
+      "sha256": "12883907C1480E0C8C420FA4E17B5B6C5F60BD5D2B474F573423650C3DFB4086"
+    },
+    {
+      "path": "oracle/N8F-053.oracle.json",
+      "size_bytes": 14789,
+      "sha256": "85AD52205E111FC936B576D8376C3A85C6AD3FD6B7558117210DBE9F5FF6ED5D"
+    },
+    {
+      "path": "oracle/N8F-054.oracle.json",
+      "size_bytes": 10284,
+      "sha256": "930EB071513AAB7CD25DB069B4719A74EEECDBD7A45F9E71BDA79044A4C91AD8"
+    },
+    {
+      "path": "oracle/N8F-055.oracle.json",
+      "size_bytes": 8768,
+      "sha256": "A8CA1AA3C6DFA9A0FF5840A28A0DE145D2C62733C84F1EE4A3A084C436AC2100"
+    },
+    {
+      "path": "oracle/N8F-056.oracle.json",
+      "size_bytes": 11054,
+      "sha256": "AAB5AEF724CFB2F3E72C4E8599CDDCF70079620EE3DA351D4204FEB8E61E254B"
+    },
+    {
+      "path": "oracle/N8F-057.oracle.json",
+      "size_bytes": 11324,
+      "sha256": "9CA1031C527C26EB5DA110110E2EAA39E33C60C4CDF37E755F603DC8DD9F362E"
+    },
+    {
+      "path": "oracle/N8F-058.oracle.json",
+      "size_bytes": 9372,
+      "sha256": "F7FC4C0EC0BEB438A5B990DA5C9876AB73CE04FCAC6B7EEDCBE74D94878C487D"
+    },
+    {
+      "path": "oracle/N8F-059.oracle.json",
+      "size_bytes": 5494,
+      "sha256": "91E13E56200B8DAAC9428DDA9862A01E0D063BD58E8FC3FBC7ACF23510212595"
+    },
+    {
+      "path": "oracle/N8F-060.oracle.json",
+      "size_bytes": 7035,
+      "sha256": "F25BAB9F604C93BD1DA170E96FF1B09F93E69C8829750965D414692D08A30D7A"
+    },
+    {
+      "path": "oracle/N8F-061.oracle.json",
+      "size_bytes": 6986,
+      "sha256": "32BFC6E99081D05D3185E2E1CB76CCC864A3F965353E8A0F772DE3D31788A62A"
+    },
+    {
+      "path": "oracle/N8F-062.oracle.json",
+      "size_bytes": 9892,
+      "sha256": "A9F3B98D8400497C3F747E4FF19EF52DF3051975D9B4339C2B39E208091AB262"
+    },
+    {
+      "path": "oracle/N8F-063.oracle.json",
+      "size_bytes": 7219,
+      "sha256": "6240569C84B590FDF670E10FC97AADF972CA61AC1F6C3DA58E52877D26751F64"
+    },
+    {
+      "path": "oracle/N8F-064.oracle.json",
+      "size_bytes": 10843,
+      "sha256": "7EC9D12058339386F0487953853BD323637B022C88F99A265B91B0846D60617C"
+    },
+    {
+      "path": "oracle/N8F-065.oracle.json",
+      "size_bytes": 13635,
+      "sha256": "85DDA91B8F22322478DEE3F63B6E9E4ED537A4EB48B9DC72C7492E02345C30FC"
+    },
+    {
+      "path": "oracle/N8F-066.oracle.json",
+      "size_bytes": 10496,
+      "sha256": "1F40DF39EA61D1CA76F5008A91E9B9BEFC7A028640C8041172F6AA3EC3A50D37"
+    },
+    {
+      "path": "oracle/N8F-067.oracle.json",
+      "size_bytes": 7061,
+      "sha256": "76CD146C46F0F9CBAD0401725401245175AAF41F2AC83B897E621A4565FBEAF1"
+    },
+    {
+      "path": "oracle/N8F-068.oracle.json",
+      "size_bytes": 11142,
+      "sha256": "0DDEFC816F6F1B38598AADF98AC4BD4B53915D6A1AA3F81DD87893E0714ED9BE"
+    },
+    {
+      "path": "oracle/N8F-069.oracle.json",
+      "size_bytes": 12521,
+      "sha256": "A8F46176FAFB11742FAF7DB454650C4CC7632860A5FAD6E0FC368EFF64702C27"
+    },
+    {
+      "path": "oracle/N8F-070.oracle.json",
+      "size_bytes": 8949,
+      "sha256": "043ACA1CED676896E12C3E120C0BB587D95E867ED8FD6E1427E2195306D8F9C6"
+    },
+    {
+      "path": "oracle/N8F-071.oracle.json",
+      "size_bytes": 16376,
+      "sha256": "FCA0CA880EE5EFBD023A5DC84A4E54E1DF2DB3AAD1472C956DF5BC7569CFEE6A"
+    },
+    {
+      "path": "oracle/N8F-072.oracle.json",
+      "size_bytes": 6388,
+      "sha256": "FB1374AFE297E21B06CF7108E9C5717CBD4D37DD36DD613A319B4E6816FFEE28"
+    },
+    {
+      "path": "oracle/N8F-073.oracle.json",
+      "size_bytes": 12127,
+      "sha256": "BE2821A04D54FABE5B87529492820188D2E0AE64E80977F4DB915EEC6F9B7264"
+    },
+    {
+      "path": "oracle/N8F-074.oracle.json",
+      "size_bytes": 9960,
+      "sha256": "ED5AF72BDB801F7499C3FD35668CC7C4C6CFC84708419055DE28994F09880C09"
+    },
+    {
+      "path": "oracle/N8F-075.oracle.json",
+      "size_bytes": 7868,
+      "sha256": "E671496003483BFB287BE9340090031548604D3185C52A21440814F363C49C98"
+    },
+    {
+      "path": "oracle/N8F-076.oracle.json",
+      "size_bytes": 15168,
+      "sha256": "030A7DB24F1EB0CCF3887B94AA73B743E735FEB4041B22180AD54C8E4E8BD006"
+    },
+    {
+      "path": "oracle/N8F-077.oracle.json",
+      "size_bytes": 11579,
+      "sha256": "1BE15D32B6BF99988DDF9A6519DF9F8A1C8988CAD8967C9B0E236D177C610E12"
+    },
+    {
+      "path": "oracle/N8F-078.oracle.json",
+      "size_bytes": 10376,
+      "sha256": "BF27CB535FEF39A1E0E87CD3D75DB99849FA767B843A26BF8F89BE36C1B4E686"
+    },
+    {
+      "path": "oracle/N8F-079.oracle.json",
+      "size_bytes": 16476,
+      "sha256": "74869F7321A7024D68B40C9D6587188905EEBB1F2163135B1F3B1DF4C4BD733B"
+    },
+    {
+      "path": "oracle/N8F-080.oracle.json",
+      "size_bytes": 24501,
+      "sha256": "B581BCA60D83BC611E5275E719089AAA25DBE156BDBEA0F14ADF9F638B97A270"
+    },
+    {
+      "path": "oracle/N8F-081.oracle.json",
+      "size_bytes": 12656,
+      "sha256": "FDDDF0968CDD2813D508A463C63D5A6BF8EAC2508FEB1B0D182092F42A71C549"
+    },
+    {
+      "path": "oracle/N8F-082.oracle.json",
+      "size_bytes": 12817,
+      "sha256": "FCAE5E73D039013203B6466C77FF0F757C039547DB391AF0A1EDD46EBAAD4C87"
+    },
+    {
+      "path": "oracle/N8F-083.oracle.json",
+      "size_bytes": 10540,
+      "sha256": "991709C713183DF08C3A5E1F21326FCD6A78985A3462ABA0A0FF0BAE5EB71BF6"
+    },
+    {
+      "path": "oracle/N8F-084.oracle.json",
+      "size_bytes": 6132,
+      "sha256": "70AD88E803033290C65851B6E395F70DA1284E8AE51C6869C75732C051E87563"
+    },
+    {
+      "path": "oracle/N8F-085.oracle.json",
+      "size_bytes": 10724,
+      "sha256": "87B0F6C9FCDB2884C7E509BF98ADF6300F587566D838AD307ED8FD18ECE7C1DA"
+    },
+    {
+      "path": "oracle/N8F-086.oracle.json",
+      "size_bytes": 7975,
+      "sha256": "64C90699042F16A330279E5A805216ADC16F1954847E267F30E375D93014E1FC"
+    },
+    {
+      "path": "oracle/N8F-087.oracle.json",
+      "size_bytes": 17112,
+      "sha256": "858E445F27F34C7BB8DA383925974F1BC9ADFF845EF3FE66AE3D44BBD87B858B"
+    },
+    {
+      "path": "oracle/N8F-088.oracle.json",
+      "size_bytes": 7621,
+      "sha256": "B02AE352FB791FEFB72848B05E3EC0BE2304CCA9385399DDB7D48835A0B48E4E"
+    },
+    {
+      "path": "oracle/N8F-089.oracle.json",
+      "size_bytes": 19011,
+      "sha256": "04020FE3423FD47D98BCDF974420916FCD87A7D12634C03D3C1EAC66CDEC17ED"
+    },
+    {
+      "path": "oracle/N8F-090.oracle.json",
+      "size_bytes": 8291,
+      "sha256": "D61B39D11AC02E9DE5422FD2C1744E19C826854AAF7515B7B6F709D800DEA9D5"
+    },
+    {
+      "path": "oracle/N8F-091.oracle.json",
+      "size_bytes": 11622,
+      "sha256": "FDF8F505B409B7F74ECBE25E770E157BBC9174B8E1175B28A0531602B68F8A05"
+    },
+    {
+      "path": "oracle/N8F-092.oracle.json",
+      "size_bytes": 11948,
+      "sha256": "29573DF0670DB8FB6C3404C0CD82637CDF26F805501EEBDA7D3B6996AAA6D1C7"
+    },
+    {
+      "path": "oracle/N8F-093.oracle.json",
+      "size_bytes": 9237,
+      "sha256": "77B392005A6A7B0D7DD4F6E380CD5C3318EC0CCA95DD7A873F4434D3DB4CF925"
+    },
+    {
+      "path": "oracle/N8F-094.oracle.json",
+      "size_bytes": 5864,
+      "sha256": "F7CC01EE58609A5064629255162791801670EC21E93277B2C2400B7E53A1FB60"
+    },
+    {
+      "path": "oracle/N8F-095.oracle.json",
+      "size_bytes": 13100,
+      "sha256": "716C01D029F804BA42184A0F9FAD61459BD8C219A232BAE6A6BE3934B1F58BED"
+    },
+    {
+      "path": "oracle/N8F-096.oracle.json",
+      "size_bytes": 10945,
+      "sha256": "1D61DC127D976B84F994F702C12B0450C16DA0CBC87467649E060C676927A731"
+    },
+    {
+      "path": "oracle/N8F-097.oracle.json",
+      "size_bytes": 10058,
+      "sha256": "A1BDCB24356B780CDD65B5026F3646DB03072A433FCA80E564F763002995D9E0"
+    },
+    {
+      "path": "oracle/N8F-098.oracle.json",
+      "size_bytes": 9342,
+      "sha256": "2D3E33EB2CA8CF0096154701861C89795D2A55E5D175FBC25F9F7DF024070799"
+    },
+    {
+      "path": "oracle/N8F-099.oracle.json",
+      "size_bytes": 8757,
+      "sha256": "E2C6594DBB8845CDEE4B9A8CB4A5DC0F0120FC7806AD4968DFC905337A2E9C72"
+    },
+    {
+      "path": "oracle/N8F-100.oracle.json",
+      "size_bytes": 8669,
+      "sha256": "D22FE8B4881EBEAC84673D602C528C5EEE7DE649EC4B8BB16B31E819416DDBD8"
+    },
+    {
+      "path": "oracle/N8F-101.oracle.json",
+      "size_bytes": 10443,
+      "sha256": "AE413CB521CE27EA2B02B677DFDDAC84C525E9062998AF0F3FF69B38C32EB937"
+    },
+    {
+      "path": "oracle/N8F-102.oracle.json",
+      "size_bytes": 10730,
+      "sha256": "FFEADE471911DB8E6619B0ACFEED2F017AC788CC8AC47E3B6600214C7C415C9C"
+    },
+    {
+      "path": "oracle/N8F-103.oracle.json",
+      "size_bytes": 9554,
+      "sha256": "34D19B6417DE6062E4551AE8E72ACF2C4E95F497EAD3DC86F1BCF3D3D11B0469"
+    },
+    {
+      "path": "oracle/N8F-104.oracle.json",
+      "size_bytes": 9232,
+      "sha256": "4EFA0EA9FA49A5AE15A09CCD7EFE401F4BF3B0B4879C0599594273DA58292425"
+    },
+    {
+      "path": "oracle/N8F-105.oracle.json",
+      "size_bytes": 7144,
+      "sha256": "A20EEB15336039C7D69FB6CE9E786299A8BC2B5FD23A88D753045A5BE96C475B"
+    },
+    {
+      "path": "oracle/N8F-106.oracle.json",
+      "size_bytes": 9411,
+      "sha256": "153F85B016FD0D385C22EA534726A436640C1A729CB88B773841D05092B5930B"
+    },
+    {
+      "path": "oracle/N8F-107.oracle.json",
+      "size_bytes": 11125,
+      "sha256": "4A86038C24102E266A13DFC167F7B8C78137DCB4137809FE5DC323193B283359"
+    },
+    {
+      "path": "oracle/N8F-108.oracle.json",
+      "size_bytes": 6497,
+      "sha256": "EF6235E260F1D8BF06178104C3BA3F60BD1E3847D1ACD94BA01192FBFE108351"
+    },
+    {
+      "path": "oracle/N8F-109.oracle.json",
+      "size_bytes": 8263,
+      "sha256": "613B8F6D763B3AE013A4B8E9FC518FD35C06A888324BB1CF880637F4805EA3A3"
+    },
+    {
+      "path": "oracle.schema.json",
+      "size_bytes": 4877,
+      "sha256": "ADD62B289C4B99BF8CC21E50C6DF25BCB50F644F0DF822CA4E29AE3D0DAF5887"
+    },
+    {
+      "path": "provenance/change_record.json",
+      "size_bytes": 894,
+      "sha256": "DDC99AE2603B40E2DF63E1039EC434A52A45FCAEC189BB9C8704FC743FD2B963"
+    },
+    {
+      "path": "provenance/manifest.json",
+      "size_bytes": 16430,
+      "sha256": "B73AF6E06E37A0C93F2B904B3551838D7BCD2289FBCE372A30169EE44F532493"
+    },
+    {
+      "path": "provenance/OE-N8F026-EMPTY-01.json",
+      "size_bytes": 692,
+      "sha256": "99FC6A58E22817F6D8199810610EC0C017A689A9B54BA71D7F0CC191C5950D33"
+    },
+    {
+      "path": "provenance/OE-N8F080-SUBJECT-01.json",
+      "size_bytes": 576,
+      "sha256": "6B683131EBF8CCB8DAE736143AA89E86640CCBDF80575B721AB6CCF5784CDEC2"
+    },
+    {
+      "path": "provenance/reviewer_confirmation.md",
+      "size_bytes": 3935,
+      "sha256": "D56D5734C1267D5014A57457719FDB4D32D17E13A19F2EE28F9D5625E33EF4A6"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 229,
+      "sha256": "E14BE4F58856964A158EDFAF16B94B4CB9F20CB287FA94D0E8BE02C925DFDC22"
+    }
+  ],
+  "invalidation_rule": "Any post-generation file change invalidates this candidate manifest.",
+  "frozen_at": "2026-09-13T21:34:53+08:00",
+  "source_candidate_manifest_sha256": "BDD06FC8C9A4ACC43AC6DD82BD9CE195BB6DA0A9F26115ECEBD0ED28E89CA343"
+}

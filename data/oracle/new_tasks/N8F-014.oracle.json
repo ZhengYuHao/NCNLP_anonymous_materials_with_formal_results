@@ -1,0 +1,442 @@
+{
+  "task_id": "N8F-014",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "913ca08f54c52f5e3248f9ef8bcbe0f6f4136e2a1d30a8116484a38558566c8d",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-TEXT-MEAL",
+      "purpose": "正常用例：用户通过 Telegram 发送文本消息描述一餐（鸡肉沙拉），验证文本直接处理并估算宏量营养素",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-1001",
+          "message_type": "text",
+          "text": "I had a grilled chicken salad for lunch"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-VOICE-MEAL",
+      "purpose": "正常用例：用户发送语音消息，验证先转写再处理并记录餐食",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-1002",
+          "message_type": "voice",
+          "voice_file_id": "voice-abc123"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-PHOTO-MEAL",
+      "purpose": "正常用例：用户发送食物照片，验证 AI 识别食物后记录热量与营养素",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-1003",
+          "message_type": "photo",
+          "photo_file_id": "photo-xyz789"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-REPORT",
+      "purpose": "正常用例：用户输入 report，验证返回带进度条的每日营养汇总",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-1001",
+          "message_type": "text",
+          "text": "report"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-UPDATE-GOAL",
+      "purpose": "正常用例：用户说 update my protein goal，验证更新 Google Sheets 中的用户档案",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-1001",
+          "message_type": "text",
+          "text": "update my protein goal to 150"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-REGISTER",
+      "purpose": "正常用例：新用户发送注册意图消息，验证仅引导注册且不收集体重身高等个人健康数据",
+      "input_data": {
+        "telegram_message": {
+          "chat_id": "chat-2000",
+          "message_type": "text",
+          "text": "register"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GEMINI-MACROS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "operation": "estimate_macros_from_meal",
+      "request_contract": {
+        "meal_description": "grilled chicken salad"
+      },
+      "response_contract": {
+        "food_items": ["grilled chicken", "mixed salad"],
+        "calories": 350,
+        "protein_g": 32,
+        "carbs_g": 18,
+        "fat_g": 12
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ASR-TRANSCRIBE",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "transcribe_voice",
+      "request_contract": {
+        "voice_file_id": "voice-abc123"
+      },
+      "response_contract": {
+        "transcript": "I had a salmon bowl for dinner"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GEMINI-FOOD-RECOGNITION",
+      "dependency_type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "operation": "recognize_food_from_photo",
+      "request_contract": {
+        "photo_file_id": "photo-xyz789"
+      },
+      "response_contract": {
+        "food_items": ["avocado toast", "poached egg"],
+        "meal_label": "avocado toast with poached egg"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-MEAL-APPEND",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_meal_log",
+      "request_contract": {
+        "sheet": "meal_logs",
+        "row": {
+          "chat_id": "chat-1001",
+          "meal": "grilled chicken salad",
+          "calories": 350,
+          "protein_g": 32,
+          "carbs_g": 18,
+          "fat_g": 12
+        }
+      },
+      "response_contract": {
+        "row_number": 42,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-PROFILE-GET",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "get_user_profile",
+      "request_contract": {
+        "sheet": "user_profiles",
+        "chat_id": "chat-1001"
+      },
+      "response_contract": {
+        "chat_id": "chat-1001",
+        "calorie_goal": 2000,
+        "protein_goal": 120
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-MEAL-READ",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_today_meals",
+      "request_contract": {
+        "sheet": "meal_logs",
+        "chat_id": "chat-1001",
+        "date": "2026-09-02"
+      },
+      "response_contract": {
+        "meals": [
+          {
+            "meal": "grilled chicken salad",
+            "calories": 350,
+            "protein_g": 32,
+            "carbs_g": 18,
+            "fat_g": 12
+          },
+          {
+            "meal": "salmon bowl",
+            "calories": 520,
+            "protein_g": 41,
+            "carbs_g": 30,
+            "fat_g": 22
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GEMINI-DAILY-REPORT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "operation": "generate_daily_report",
+      "request_contract": {
+        "meals": "daily_meals",
+        "goals": {
+          "calorie_goal": 2000,
+          "protein_goal": 120
+        }
+      },
+      "response_contract": {
+        "summary": "You consumed 870 calories and 73g protein today.",
+        "progress_bar": "calories: [||||||-----] 43%",
+        "protein_progress_bar": "protein: [||||||||--] 61%"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-PROFILE-UPDATE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_user_profile",
+      "request_contract": {
+        "sheet": "user_profiles",
+        "chat_id": "chat-1001",
+        "field": "protein_goal",
+        "value": 150
+      },
+      "response_contract": {
+        "updated": true,
+        "protein_goal": 150
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GEMINI-REGISTER",
+      "dependency_type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "operation": "registration_guide",
+      "request_contract": {
+        "chat_id": "chat-2000",
+        "intent": "register"
+      },
+      "response_contract": {
+        "reply": "Welcome! Please set your calorie and protein goals.",
+        "health_data_required": false
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TEXT-MEAL",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-TEXT-MEAL"],
+      "mock_ids": ["M-GEMINI-MACROS", "M-SHEETS-MEAL-APPEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-TM-1",
+          "target": "meal_log.calories",
+          "operator": "equals",
+          "expected": 350,
+          "rationale": "需求要求自动估算热量，文本餐食的估算结果必须与固定模型响应一致"
+        },
+        {
+          "assertion_id": "A-TM-2",
+          "target": "meal_log.protein_g",
+          "operator": "equals",
+          "expected": 32,
+          "rationale": "蛋白质估算必须与固定模型响应一致"
+        },
+        {
+          "assertion_id": "A-TM-3",
+          "target": "meal_log.carbs_g",
+          "operator": "equals",
+          "expected": 18,
+          "rationale": "碳水化合物估算必须与固定模型响应一致"
+        },
+        {
+          "assertion_id": "A-TM-4",
+          "target": "meal_log.fat_g",
+          "operator": "equals",
+          "expected": 12,
+          "rationale": "脂肪估算必须与固定模型响应一致"
+        },
+        {
+          "assertion_id": "A-TM-5",
+          "target": "exec_log.sheets.append_meal_log.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "餐食记录必须写入 Google Sheets 餐食日志"
+        }
+      ]
+    },
+    {
+      "case_id": "C-VOICE-MEAL",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-VOICE-MEAL"],
+      "mock_ids": ["M-ASR-TRANSCRIBE", "M-GEMINI-MACROS", "M-SHEETS-MEAL-APPEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-VM-1",
+          "target": "exec_log.asr.transcript",
+          "operator": "equals",
+          "expected": "I had a salmon bowl for dinner",
+          "rationale": "需求要求语音消息先转写再处理，转写文本必须来自转写服务且被传递到后续环节"
+        },
+        {
+          "assertion_id": "A-VM-2",
+          "target": "meal_log.meal",
+          "operator": "contains",
+          "expected": "salmon",
+          "rationale": "转写后的内容必须被用于餐食识别，日志中的餐食描述应来自转写结果"
+        },
+        {
+          "assertion_id": "A-VM-3",
+          "target": "meal_log.calories",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "语音路径记录的餐食必须包含热量估算字段"
+        }
+      ]
+    },
+    {
+      "case_id": "C-PHOTO-MEAL",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-PHOTO-MEAL"],
+      "mock_ids": ["M-GEMINI-FOOD-RECOGNITION", "M-GEMINI-MACROS", "M-SHEETS-MEAL-APPEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-PM-1",
+          "target": "exec_log.food_recognition.meal_label",
+          "operator": "equals",
+          "expected": "avocado toast with poached egg",
+          "rationale": "需求要求食物图片经 AI 识别分析，识别标签必须来自图像识别响应"
+        },
+        {
+          "assertion_id": "A-PM-2",
+          "target": "meal_log.calories",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "图片路径记录的餐食必须包含热量估算字段"
+        },
+        {
+          "assertion_id": "A-PM-3",
+          "target": "meal_log.meal",
+          "operator": "contains",
+          "expected": "avocado",
+          "rationale": "餐食描述必须基于识别出的食物内容"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REPORT",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-REPORT"],
+      "mock_ids": ["M-SHEETS-PROFILE-GET", "M-SHEETS-MEAL-READ", "M-GEMINI-DAILY-REPORT"],
+      "assertions": [
+        {
+          "assertion_id": "A-RP-1",
+          "target": "daily_report.summary",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求推送每日进度消息，输出必须包含汇总文本"
+        },
+        {
+          "assertion_id": "A-RP-2",
+          "target": "daily_report.progress_bar",
+          "operator": "contains",
+          "expected": "43%",
+          "rationale": "进度条必须包含基于当日摄入与目标计算的可视化比例"
+        },
+        {
+          "assertion_id": "A-RP-3",
+          "target": "daily_report.protein_progress_bar",
+          "operator": "contains",
+          "expected": "61%",
+          "rationale": "蛋白质进度条必须包含基于蛋白摄入与目标计算的比例"
+        },
+        {
+          "assertion_id": "A-RP-4",
+          "target": "exec_log.sheets.get_user_profile.chat_id",
+          "operator": "equals",
+          "expected": "chat-1001",
+          "rationale": "生成日报前必须读取该用户档案中的目标数据"
+        }
+      ]
+    },
+    {
+      "case_id": "C-UPDATE-GOAL",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-UPDATE-GOAL"],
+      "mock_ids": ["M-SHEETS-PROFILE-UPDATE"],
+      "assertions": [
+        {
+          "assertion_id": "A-UG-1",
+          "target": "exec_log.sheets.update_user_profile.field",
+          "operator": "equals",
+          "expected": "protein_goal",
+          "rationale": "需求要求用户可设置并更新蛋白质目标，更新的字段必须为蛋白质目标"
+        },
+        {
+          "assertion_id": "A-UG-2",
+          "target": "exec_log.sheets.update_user_profile.value",
+          "operator": "equals",
+          "expected": 150,
+          "rationale": "目标更新值必须与用户请求一致"
+        },
+        {
+          "assertion_id": "A-UG-3",
+          "target": "exec_log.sheets.update_user_profile.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "用户档案更新必须成功写入 Google Sheets"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REGISTER-NO-HEALTH-DATA",
+      "kind": "boundary",
+      "fixture_ids": ["F-TG-REGISTER"],
+      "mock_ids": ["M-GEMINI-REGISTER"],
+      "assertions": [
+        {
+          "assertion_id": "A-RG-1",
+          "target": "registration.reply",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "注册引导必须向用户返回引导消息"
+        },
+        {
+          "assertion_id": "A-RG-2",
+          "target": "registration.health_data_required",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "需求要求注册不存储个人健康数据、不需要体重或身高，引导流程不得要求健康数据"
+        },
+        {
+          "assertion_id": "A-RG-3",
+          "target": "exec_log.mock_calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "注册流程只应触发引导消息生成，不得调用体重身高收集等任何额外服务"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖文本、语音、图片三种输入的正常路径、report 日报路径、目标更新路径，以及注册不收集健康数据的边界用例。语音转写、Gemini 宏量估算/食物识别/日报生成、Google Sheets 读写全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数值相等、字段存在、内容包含与调用次数等可计算条件。"
+}

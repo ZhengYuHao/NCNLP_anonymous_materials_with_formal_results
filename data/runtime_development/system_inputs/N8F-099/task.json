@@ -1,0 +1,357 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-099",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "34969c87042ec9fe218374afbef1fae036a50a783b37c51e28d2748ed25ae54a",
+  "natural_language_requirement": "客户成功与销售人员在 Slack 中输入斜杠命令 /check-linkedin [全名] 发起查询。系统首先校验所提供的是完整姓名（而非仅有名）；随后检索并定位对应的 LinkedIn 个人主页，抓取其最近发布的 20 条帖子；由语言模型分析发帖频率与节奏模式、主要主题与关注领域，并提炼出带上下文的近期亮点；最后生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱。报告包含最近发帖日期、发帖节奏与主要主题、近期动态概览，以及两个主要议题及其关键词与判断依据。系统不访问 LinkedIn 的非公开内容，也不提供实时更新，结果仅为某一时刻的快照。对于非常常见的姓名，系统可能无法准确定位到正确的 LinkedIn 个人主页。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@apify/n8n-nodes-apify.apify",
+      "operation": "discover_and_scrape_posts",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "full_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "full_name"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "posts": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "date",
+                "id",
+                "text"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "profile_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "posts",
+          "profile_url"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "gmail",
+      "operation": "send_html_report",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "html": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "html",
+          "subject",
+          "to"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_activity",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "posts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "posts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "cadence": {
+            "type": "string"
+          },
+          "detailed_topics": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "keywords": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "rationale": {
+                  "type": "string"
+                },
+                "topic": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "keywords",
+                "rationale",
+                "topic"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "latest_post_date": {
+            "type": "string"
+          },
+          "recent_highlights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "top_themes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "cadence",
+          "detailed_topics",
+          "latest_post_date",
+          "recent_highlights",
+          "top_themes"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "profile_url",
+        "schema": {
+          "type": "string"
+        },
+        "description": "定位到的 LinkedIn 个人主页地址",
+        "requirement_evidence": [
+          "随后检索并定位对应的 LinkedIn 个人主页",
+          "对于非常常见的姓名，系统可能无法准确定位到正确的 LinkedIn 个人主页"
+        ],
+        "source_operations": [
+          "discover_and_scrape_posts"
+        ],
+        "design_sources": [
+          "n3.profile_url"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "recent_posts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "date",
+              "id",
+              "text"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "该人最近发布的 20 条帖子（公开内容，不访问非公开内容）",
+        "requirement_evidence": [
+          "抓取其最近发布的 20 条帖子",
+          "系统不访问 LinkedIn 的非公开内容"
+        ],
+        "source_operations": [
+          "discover_and_scrape_posts"
+        ],
+        "design_sources": [
+          "n4.recent_posts"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "analysis",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "latest_post_date": {
+              "type": "string"
+            },
+            "cadence": {
+              "type": "string"
+            },
+            "top_themes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "recent_highlights": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "detailed_topics": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "topic": {
+                    "type": "string"
+                  },
+                  "keywords": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "rationale": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "topic",
+                  "keywords",
+                  "rationale"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "latest_post_date",
+            "cadence",
+            "top_themes",
+            "recent_highlights",
+            "detailed_topics"
+          ],
+          "additionalProperties": false
+        },
+        "description": "发帖频率与节奏模式、主要主题与关注领域、带上下文的近期亮点，以及两个主要议题及其关键词与判断依据",
+        "requirement_evidence": [
+          "由语言模型分析发帖频率与节奏模式、主要主题与关注领域，并提炼出带上下文的近期亮点",
+          "报告包含最近发帖日期、发帖节奏与主要主题、近期动态概览，以及两个主要议题及其关键词与判断依据"
+        ],
+        "source_operations": [
+          "analyze_activity"
+        ],
+        "design_sources": [
+          "n5.analysis"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "html_report",
+        "schema": {
+          "type": "string"
+        },
+        "description": "格式化的 HTML 情报简报",
+        "requirement_evidence": [
+          "最后生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱"
+        ],
+        "source_operations": [
+          "send_html_report"
+        ],
+        "design_sources": [
+          "n6.html_report"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "email_delivery_status",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message_id",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "description": "通过邮件发送报告到用户邮箱的发送状态和消息ID",
+        "requirement_evidence": [
+          "生成一份格式化的 HTML 报告并通过邮件发送到用户邮箱"
+        ],
+        "source_operations": [
+          "send_html_report"
+        ],
+        "design_sources": [
+          "n7"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "8CA76C83AA98AB58CF58D9C2EBF150A0A07D8C11A0D1BA4B6050C7CE9C0C8C04",
+  "public_interface_sha256": "CF18758E84ADC13A4048D48CF812267DDC93E2DF0A596FE7A43DAB5488A7FEA5",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

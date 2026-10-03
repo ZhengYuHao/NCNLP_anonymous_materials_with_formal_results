@@ -1,0 +1,72 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-067",
+  "source_id": "n8n:11969",
+  "workflow_sha256": "edf8c7e4f565b33a1ba2198276ad2d90b5f2d487165e760f64aa0091767150cd",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "4c2d929f22e617cccf94800be9fe9fc3885ba014c22e00b8f0d0ebd6230840e6",
+  "requirement": {
+    "requirement_text": "系统按小时定时触发，也可以通过手动方式触发。触发后，系统从指定的 Google Sheets 中读取已排期的内容，并识别出已经可以发布的条目。随后由语言模型分析这些原始内容，为每个条目生成两个优化版本：一版是短小精悍、受字符数限制的 Twitter 帖子，另一版是更正式、更详实的 LinkedIn 帖子。系统同时生成相关的话题标签与互动建议。之后，系统把这些帖子同时发布到对应平台。发布完成后，系统将已发布内容的线上链接回写到该 Google Sheets，并向指定的 Slack 频道发送一份发布情况摘要，便于追踪。",
+    "source_spans": [
+      {
+        "start": 76,
+        "end": 232,
+        "text": "This workflow automates the entire lifecycle of social media management—from fetching draft content to AI-driven optimization and multi-platform publishing."
+      },
+      {
+        "start": 472,
+        "end": 643,
+        "text": "The workflow is triggered either hourly or manually via a webhook. It fetches scheduled content from a designated Google Sheet and identifies posts ready for publication. "
+      },
+      {
+        "start": 646,
+        "end": 1064,
+        "text": "An AI Agent (OpenAI) then analyzes the raw content to generate two optimized versions: a punchy, character-limited post for Twitter and a more professional, detailed version for LinkedIn. After generating relevant hashtags and engagement tips, the workflow publishes the posts simultaneously. Finally, it logs the live URLs back to your spreadsheet and sends a performance summary to a Slack channel for easy tracking."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中已排期的内容条目"
+      ],
+      "conditions": [
+        "每小时定时触发或手动触发",
+        "仅处理已可发布的排期条目"
+      ],
+      "allowed_actions": [
+        "从指定 Google Sheets 读取已排期内容并识别可发布条目",
+        "调用语言模型生成 Twitter 版与 LinkedIn 版两个优化版本",
+        "生成相关话题标签与互动建议",
+        "将帖子同时发布到 Twitter 与 LinkedIn",
+        "将已发布内容的线上链接回写到 Google Sheets",
+        "向指定 Slack 频道发送发布情况摘要"
+      ],
+      "visible_outcomes": [
+        "Twitter 与 LinkedIn 上各发布一条优化后的帖子",
+        "Google Sheets 中回写了已发布内容的线上链接",
+        "指定 Slack 频道收到一份发布情况摘要"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-067.packet.json",
+    "packet_sha256": "8e61accbd5a9160ae012bf44be0454c7e0e4bd9a1758213da8cbee22e3feb611",
+    "public_description_sha256": "a8de9ad5671839ec5b718a26521a4153209a89589206a86c3a5f7e8ccd57fa73"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-067.response.json",
+    "verification_response_sha256": "05d9dae35c6c7f5488cf27894f177881585466d0efcfc6ce9d8ce0971e30eef8",
+    "decision": "accept"
+  },
+  "formal_index": 78
+}

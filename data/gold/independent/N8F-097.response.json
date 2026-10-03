@@ -1,0 +1,244 @@
+{
+  "task_id": "N8F-097",
+  "annotator_id": "GM-B-02",
+  "status": "submitted",
+  "requirement_sha256": "09b114592de6f6b1dc54665f21ce0d29acbf6d659b39ff3140207f1d9e073eff",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动触发并读取输入参数（公司链接与地区）",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "company_query",
+          "type": "object",
+          "description": "Glassdoor 公司主页链接（company_url）与所在国家/地区（geo）"
+        }
+      ],
+      "native_evidence": ["When clicking 'Execute workflow'", "Set the Input Fields"],
+      "requirement_evidence": ["手动执行启动，用户需指定一家公司在 Glassdoor 的公司主页链接以及所在国家/地区"],
+      "rationale": "手动触发与输入参数读取为确定性入口行为，判为 code；作为流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "通过网页抓取服务获取公司原始数据",
+      "node_type": "code",
+      "operation_family": "web_scraping",
+      "inputs": [
+        {
+          "name": "company_query",
+          "type": "object",
+          "description": "公司链接与地区参数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "抓取的原始数据：公司概览、评分、评论与常见问题"
+        }
+      ],
+      "native_evidence": ["Decodo"],
+      "requirement_evidence": ["系统通过网页抓取服务获取该公司的原始数据，包括公司概览、评分、评论与常见问题"],
+      "rationale": "调用网页抓取服务获取数据为确定性外部动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "整理原始数据为定义好的结构化字段",
+      "node_type": "semantic",
+      "operation_family": "structured_extraction",
+      "inputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "抓取的原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "结构化字段：公司概览（名称、规模、网站、类型）、评分明细、评论摘要（优点、缺点、职位）、常见问题与关键要点"
+        }
+      ],
+      "native_evidence": ["Structured Data Extractor", "Structured Output Parser", "Google Gemini Chat Model for Structured Data Extract"],
+      "requirement_evidence": ["随后由语言模型将原始数据整理为定义好的结构化字段：公司概览（名称、规模、网站、类型）、评分明细、评论摘要（优点、缺点、职位）、常见问题与关键要点"],
+      "rationale": "将非规整原始数据整理为定义字段需要开放文本理解与抽取，判为 semantic；结构化输出解析器为模型依赖，折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成详细摘要",
+      "node_type": "semantic",
+      "operation_family": "summarization",
+      "inputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "抓取的原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "详细摘要：公司声誉、工作文化、员工情绪趋势、优势与劣势、招聘建议"
+        }
+      ],
+      "native_evidence": ["Summarizer", "Google Gemini Chat Model for Summarization"],
+      "requirement_evidence": ["再由语言模型生成一份详细摘要，突出公司声誉、工作文化、员工情绪趋势、优势与劣势以及招聘建议"],
+      "rationale": "摘要写作为开放文本生成，判为 semantic；与结构化抽取为需求分别声明的两步语言模型行为，单列节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "合并结构化数据与摘要为统一输出对象",
+      "node_type": "code",
+      "operation_family": "result_merge",
+      "inputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "结构化字段数据"
+        },
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "详细摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_object",
+          "type": "object",
+          "description": "统一的输出报告对象"
+        }
+      ],
+      "native_evidence": ["Merge", "Format the Response"],
+      "requirement_evidence": ["将结构化数据与摘要合并为统一的输出对象"],
+      "rationale": "确定性合并与格式化，判为 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "导出结构化数据报告文件（以公司名命名）",
+      "node_type": "terminal",
+      "operation_family": "file_export",
+      "inputs": [
+        {
+          "name": "report_object",
+          "type": "object",
+          "description": "统一输出报告对象"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Create a Binary Response", "Read/Write Files from Disk"],
+      "requirement_evidence": ["最终将报告转换为结构化数据文件导出，文件名使用公司名称"],
+      "rationale": "文件转换与写出是用户可见的最终完成动作，判为 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "参数就绪后执行网页抓取。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始数据用于结构化整理。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始数据同时用于摘要生成（两条语言模型行为并行消费同一原始数据）。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "结构化数据进入合并。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要进入合并。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "统一报告对象导出为文件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "company_query",
+      "condition": null,
+      "rationale": "抓取消费公司链接与地区参数。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "raw_company_data",
+      "condition": null,
+      "rationale": "结构化整理消费原始数据。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "raw_company_data",
+      "condition": null,
+      "rationale": "摘要生成消费原始数据。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "structured_data",
+      "condition": null,
+      "rationale": "合并消费结构化字段。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "summary",
+      "condition": null,
+      "rationale": "合并消费摘要。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "report_object",
+      "condition": null,
+      "rationale": "导出消费统一报告对象。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6"],
+  "confidence": 0.9,
+  "notes": "结构与需求步骤一一对应：抓取（code）→ 结构化整理（semantic）与摘要生成（semantic）并行消费同一原始数据 → 合并（code）→ 文件导出（terminal）。原生的两个 Gemini 模型节点与输出解析器为模型依赖，折叠进对应语义节点；'文件名使用公司名称'折叠进导出节点契约。"
+}

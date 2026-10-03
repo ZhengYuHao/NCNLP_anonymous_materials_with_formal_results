@@ -1,0 +1,125 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-026",
+  "case_id": "C-POS-WEEKLY",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-CONFIG": {
+        "city": "Austin",
+        "categories": [
+          "Plumber",
+          "Electrician"
+        ],
+        "score_threshold": 60,
+        "contact_window_days": 90,
+        "sheet_id": "SHEET-PROSPECTS",
+        "slack_channel": "#prospects",
+        "run_date": "2026-09-02"
+      },
+      "F-PROFILES": {
+        "profiles": [
+          {
+            "business_id": "B-001",
+            "category": "Plumber",
+            "name": "Alpha Plumbing",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": false
+            },
+            "last_contacted": "2026-08-03",
+            "reviews": [
+              {
+                "stars": 2,
+                "text": "Slow service"
+              }
+            ]
+          },
+          {
+            "business_id": "B-002",
+            "category": "Plumber",
+            "name": "Beta Pipes",
+            "completeness_gaps": {
+              "photos": false,
+              "hours": false
+            },
+            "last_contacted": null,
+            "reviews": [
+              {
+                "stars": 3,
+                "text": "High price"
+              }
+            ]
+          },
+          {
+            "business_id": "B-003",
+            "category": "Electrician",
+            "name": "Gamma Electric",
+            "completeness_gaps": {
+              "photos": false,
+              "hours": false
+            },
+            "last_contacted": "2026-05-25",
+            "reviews": [
+              {
+                "stars": 1,
+                "text": "Rude staff"
+              }
+            ]
+          },
+          {
+            "business_id": "B-004",
+            "category": "Electrician",
+            "name": "Delta Sparks",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": true
+            },
+            "last_contacted": null,
+            "reviews": [
+              {
+                "stars": 5,
+                "text": "Great work"
+              },
+              {
+                "stars": 2,
+                "text": "Late arrival"
+              }
+            ]
+          },
+          {
+            "business_id": "B-005",
+            "category": "Plumber",
+            "name": "Epsilon Drains",
+            "completeness_gaps": {
+              "photos": true,
+              "hours": false
+            },
+            "last_contacted": "2026-06-04",
+            "reviews": [
+              {
+                "stars": 4,
+                "text": "Good"
+              }
+            ]
+          }
+        ]
+      },
+      "F-PREVIOUS-PROSPECTS": {
+        "rows": [
+          {
+            "business_id": "B-001",
+            "name": "Alpha Plumbing",
+            "last_contacted": "2026-08-03"
+          },
+          {
+            "business_id": "B-005",
+            "name": "Epsilon Drains",
+            "last_contacted": "2026-06-04"
+          }
+        ]
+      }
+    }
+  },
+  "input_sha256": "FD1EBE28364F8D1416834C19F341273F8383133D5C1D047B2BA7432D87A1450F"
+}

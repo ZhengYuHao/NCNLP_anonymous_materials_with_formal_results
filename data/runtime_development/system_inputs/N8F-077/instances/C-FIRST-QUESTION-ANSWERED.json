@@ -1,0 +1,14 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-077",
+  "case_id": "C-FIRST-QUESTION-ANSWERED",
+  "kind": "positive",
+  "input_data": {
+    "slack_thread_ts": "1700000000.000100",
+    "channel": "C123456",
+    "question": "What was the total revenue in Q3?",
+    "target_table": "sales",
+    "warehouse_id": "wh-main"
+  },
+  "input_sha256": "D7FDD7F1B52D6323CCC7F6C95866791245738BA3E18B6D81B50B1001FEEDEC4D"
+}

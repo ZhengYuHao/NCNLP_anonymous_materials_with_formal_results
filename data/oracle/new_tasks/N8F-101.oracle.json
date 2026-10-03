@@ -1,0 +1,298 @@
+{
+  "task_id": "N8F-101",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "5a67c53da6298958cb9f283ff6ab8efb72121a8b2560a4835f6bc19e8b10a5c1",
+  "fixtures": [
+    {
+      "fixture_id": "F-SH-BEST-MONTH",
+      "purpose": "正常用例：用户询问“哪个月最好？”，智能体应读取表格实时数据，基于数据计算后返回包含实际数字的答案",
+      "input_data": {
+        "chat_session_id": "chat-0001",
+        "question": "Which month was best?",
+        "sheet_data": [
+          {"Month": "2026-04", "Revenue": 800},
+          {"Month": "2026-05", "Revenue": 1000},
+          {"Month": "2026-06", "Revenue": 1500}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SH-FOLLOWUP",
+      "purpose": "正常用例：用户追问“那之前一个月呢？”，对话记忆应保留上下文使追问衔接，答案仍基于表格真实数据",
+      "input_data": {
+        "chat_session_id": "chat-0001",
+        "question": "And the month before that?",
+        "history": [
+          {"role": "user", "content": "Which month was best?"},
+          {"role": "assistant", "content": "June 2026 had the highest revenue of 1500."}
+        ],
+        "sheet_data": [
+          {"Month": "2026-04", "Revenue": 800},
+          {"Month": "2026-05", "Revenue": 1000},
+          {"Month": "2026-06", "Revenue": 1500}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SH-REVENUE-BY-COUNTRY",
+      "purpose": "正常用例：用户询问“按国家拆分收入？”，智能体应读取实时数据并聚合返回各国家收入数字",
+      "input_data": {
+        "chat_session_id": "chat-0002",
+        "question": "Revenue by country?",
+        "sheet_data": [
+          {"Country": "US", "Revenue": 2000},
+          {"Country": "DE", "Revenue": 1200},
+          {"Country": "US", "Revenue": 500}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-SH-MISSING-EMAIL",
+      "purpose": "正常用例：用户询问“哪些行缺少邮箱？”，智能体应基于实时数据筛选并返回缺失邮箱的行标识",
+      "input_data": {
+        "chat_session_id": "chat-0003",
+        "question": "Which rows are missing an email?",
+        "sheet_data": [
+          {"Name": "Alice", "Email": "alice@example.com"},
+          {"Name": "Bob", "Email": ""},
+          {"Name": "Carol", "Email": "carol@example.com"},
+          {"Name": "Dan", "Email": null}
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SH-READ-ROWS",
+      "dependency_type": "n8n-nodes-base.googleSheetsTool",
+      "operation": "read_live_rows",
+      "request_contract": {
+        "read_actual_data": true
+      },
+      "response_contract": {
+        "rows": [
+          {"Month": "2026-04", "Revenue": 800},
+          {"Month": "2026-05", "Revenue": 1000},
+          {"Month": "2026-06", "Revenue": 1500}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-READ-ROWS-COUNTRY",
+      "dependency_type": "n8n-nodes-base.googleSheetsTool",
+      "operation": "read_live_rows",
+      "request_contract": {
+        "read_actual_data": true
+      },
+      "response_contract": {
+        "rows": [
+          {"Country": "US", "Revenue": 2000},
+          {"Country": "DE", "Revenue": 1200},
+          {"Country": "US", "Revenue": 500}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-READ-ROWS-EMAIL",
+      "dependency_type": "n8n-nodes-base.googleSheetsTool",
+      "operation": "read_live_rows",
+      "request_contract": {
+        "read_actual_data": true
+      },
+      "response_contract": {
+        "rows": [
+          {"Name": "Alice", "Email": "alice@example.com"},
+          {"Name": "Bob", "Email": ""},
+          {"Name": "Carol", "Email": "carol@example.com"},
+          {"Name": "Dan", "Email": null}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-LLM-BEST-MONTH",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "answer_question",
+      "request_contract": {
+        "question": "Which month was best?"
+      },
+      "response_contract": {
+        "answer": "June 2026 had the highest revenue of 1500."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-LLM-FOLLOWUP",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "answer_question",
+      "request_contract": {
+        "question": "And the month before that?",
+        "history_length": 2
+      },
+      "response_contract": {
+        "answer": "May 2026 had revenue of 1000."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-LLM-COUNTRY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "answer_question",
+      "request_contract": {
+        "question": "Revenue by country?"
+      },
+      "response_contract": {
+        "answer": "US: 2500, DE: 1200."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-LLM-MISSING-EMAIL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "answer_question",
+      "request_contract": {
+        "question": "Which rows are missing an email?"
+      },
+      "response_contract": {
+        "answer": "Bob and Dan are missing an email."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SH-MEMORY-LOAD",
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "operation": "load_context",
+      "request_contract": {
+        "session_id": "chat-0001"
+      },
+      "response_contract": {
+        "messages": [
+          {"role": "user", "content": "Which month was best?"},
+          {"role": "assistant", "content": "June 2026 had the highest revenue of 1500."}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-BEST-MONTH",
+      "kind": "positive",
+      "fixture_ids": ["F-SH-BEST-MONTH"],
+      "mock_ids": ["M-SH-READ-ROWS", "M-SH-LLM-BEST-MONTH"],
+      "assertions": [
+        {
+          "assertion_id": "A-BM-1",
+          "target": "exec_log.googleSheetsTool.read_live_rows.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "回答问题前必须读取 Google Sheets 中的实时数据行"
+        },
+        {
+          "assertion_id": "A-BM-2",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "1500",
+          "rationale": "答案必须包含从真实数据计算得到的实际数字（六月收入 1500）"
+        },
+        {
+          "assertion_id": "A-BM-3",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "June",
+          "rationale": "答案必须指出真实数据中表现最好的月份"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FOLLOWUP-CONTEXT",
+      "kind": "positive",
+      "fixture_ids": ["F-SH-FOLLOWUP"],
+      "mock_ids": ["M-SH-MEMORY-LOAD", "M-SH-READ-ROWS", "M-SH-LLM-FOLLOWUP"],
+      "assertions": [
+        {
+          "assertion_id": "A-FU-1",
+          "target": "exec_log.memoryBufferWindow.load_context.request.session_id",
+          "operator": "equals",
+          "expected": "chat-0001",
+          "rationale": "追问必须加载同一会话的记忆上下文"
+        },
+        {
+          "assertion_id": "A-FU-2",
+          "target": "exec_log.lmChatOpenAi.answer_question.request.history_length",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "生成追问答案时必须携带前文问答（2 条消息）作为上下文"
+        },
+        {
+          "assertion_id": "A-FU-3",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "1000",
+          "rationale": "追问答案必须基于真实数据（五月收入 1000），而非凭记忆猜测"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REVENUE-BY-COUNTRY",
+      "kind": "positive",
+      "fixture_ids": ["F-SH-REVENUE-BY-COUNTRY"],
+      "mock_ids": ["M-SH-READ-ROWS-COUNTRY", "M-SH-LLM-COUNTRY"],
+      "assertions": [
+        {
+          "assertion_id": "A-RC-1",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "2500",
+          "rationale": "按国家拆分收入必须聚合真实数据，US 两行合计 2500"
+        },
+        {
+          "assertion_id": "A-RC-2",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "1200",
+          "rationale": "答案必须包含 DE 国家的实际收入 1200"
+        }
+      ]
+    },
+    {
+      "case_id": "C-MISSING-EMAIL",
+      "kind": "positive",
+      "fixture_ids": ["F-SH-MISSING-EMAIL"],
+      "mock_ids": ["M-SH-READ-ROWS-EMAIL", "M-SH-LLM-MISSING-EMAIL"],
+      "assertions": [
+        {
+          "assertion_id": "A-ME-1",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "Bob",
+          "rationale": "空字符串邮箱的行必须被识别为缺少邮箱"
+        },
+        {
+          "assertion_id": "A-ME-2",
+          "target": "output.answer",
+          "operator": "contains",
+          "expected": "Dan",
+          "rationale": "空值邮箱的行必须被识别为缺少邮箱"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖最佳月份、按国家拆分收入、缺失邮箱筛选三类数据问题以及带上下文的追问衔接。关键约束是答案必须来自读取表格实时数据后的计算，不得凭记忆猜测；固定表格数据与固定 LLM 回答均模拟，deterministic 与 side_effects_disabled 均为 true；断言为读取调用次数、上下文长度、答案包含实际数字与实体名称。"
+}

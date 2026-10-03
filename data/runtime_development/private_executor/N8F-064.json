@@ -1,0 +1,198 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-064",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-QUOTE-SPY",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "SPY"
+      },
+      "response_contract": {
+        "symbol": "SPY",
+        "open": 498.0,
+        "close": 510.0,
+        "prev_close": 500.0,
+        "high": 512.0,
+        "low": 497.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-QQQ",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "QQQ"
+      },
+      "response_contract": {
+        "symbol": "QQQ",
+        "open": 450.0,
+        "close": 448.0,
+        "prev_close": 450.0,
+        "high": 452.0,
+        "low": 447.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-EURUSD",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "EUR/USD"
+      },
+      "response_contract": {
+        "symbol": "EUR/USD",
+        "open": 1.085,
+        "close": 1.09,
+        "prev_close": 1.085,
+        "high": 1.091,
+        "low": 1.084
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-XAU",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "XAU"
+      },
+      "response_contract": {
+        "symbol": "XAU",
+        "open": 2500.0,
+        "close": 2520.0,
+        "prev_close": 2500.0,
+        "high": 2525.0,
+        "low": 2495.0
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-CL",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "CL"
+      },
+      "response_contract": {
+        "symbol": "CL",
+        "open": 80.0,
+        "close": 79.5,
+        "prev_close": 80.0,
+        "high": 80.2,
+        "low": 79.3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-QUOTE-CL-FAIL",
+      "dependency_type": "httpRequest",
+      "operation": "twelvedata_get_quote",
+      "request_contract": {
+        "symbol": "CL"
+      },
+      "response_contract": {
+        "error": "rate_limit_exceeded",
+        "status": 429
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYST",
+      "dependency_type": "lmChatGroq",
+      "operation": "generate_market_snapshot",
+      "request_contract": {},
+      "response_contract": {
+        "sections": {
+          "market_summary": "Markets were mixed today.",
+          "key_movers": [
+            "SPY +2.0%",
+            "QQQ -0.4%"
+          ],
+          "risk_sentiment": "Risk-on bias",
+          "actionable_outlook": "Consider adding SPY exposure."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-REPORT",
+      "dependency_type": "googleSheets",
+      "operation": "append_main_report",
+      "request_contract": {},
+      "response_contract": {
+        "row": 15
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-ERROR",
+      "dependency_type": "googleSheets",
+      "operation": "append_error_log",
+      "request_contract": {},
+      "response_contract": {
+        "row": 3
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {},
+      "response_contract": {
+        "message_id": "g-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-REPORT",
+      "fixture_ids": [
+        "F-WATCHLIST"
+      ],
+      "mock_ids": [
+        "M-QUOTE-SPY",
+        "M-QUOTE-QQQ",
+        "M-QUOTE-EURUSD",
+        "M-QUOTE-XAU",
+        "M-QUOTE-CL",
+        "M-LLM-ANALYST",
+        "M-APPEND-REPORT",
+        "M-GMAIL"
+      ]
+    },
+    {
+      "case_id": "C-NEG-API-FAILURE",
+      "fixture_ids": [
+        "F-WATCHLIST"
+      ],
+      "mock_ids": [
+        "M-QUOTE-SPY",
+        "M-QUOTE-QQQ",
+        "M-QUOTE-EURUSD",
+        "M-QUOTE-XAU",
+        "M-QUOTE-CL-FAIL",
+        "M-LLM-ANALYST",
+        "M-APPEND-REPORT",
+        "M-APPEND-ERROR",
+        "M-GMAIL"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+% RQ1 fault containment (recomputed from results/rq1 records)
+\begin{table}[!htbp]
+\centering
+\caption{RQ1: outcomes of the confirmed silent harmful faults after checking is enabled (recomputed).}
+\label{tab:fault-containment}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llrrrrr@{}}
+\toprule
+Artifact & Fault & Silent & Repaired & Refused & Contained & Escaped \\
+\midrule
+Facts & Remove threshold & 66 & 50 & 10 & 5 & 1 \\
+Facts & Invert comparison & 70 & 52 & 12 & 4 & 2 \\
+Facts & Remove action & 64 & 48 & 10 & 5 & 1 \\
+Assignment & Corrupt node assignment & 58 & 42 & 12 & 3 & 1 \\
+Relations & Remove control/data edge & 62 & 42 & 14 & 5 & 1 \\
+Types & Illegal type & 20 & 10 & 10 & 0 & 0 \\
+DSL & Undefined variable & 0 & 0 & 0 & 0 & 0 \\
+DSL & Invalid syntax & 0 & 0 & 0 & 0 & 0 \\
+DSL & Wrong business logic & 72 & 50 & 12 & 7 & 3 \\
+\midrule
+Total & --- & 412 & 294 & 80 & 29 & 9 \\
+\bottomrule
+\end{tabular*}
+\end{table}

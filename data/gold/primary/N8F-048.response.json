@@ -1,0 +1,399 @@
+{
+  "task_id": "N8F-048",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "979f4fc6cb0ed87f42162111736c4747911e6467e12fd564302a837fb4a50f06",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收已签署知情同意提交",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "consent_submission",
+          "type": "object",
+          "description": "受试者门户提交的已签署知情同意"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "consent_submission",
+          "type": "object",
+          "description": "收到的已签署知情同意"
+        }
+      ],
+      "native_evidence": [
+        "Receive E-Consent Submission"
+      ],
+      "requirement_evidence": [
+        "接收来自受试者门户的已签署知情同意提交"
+      ],
+      "rationale": "需求声明接收受试者门户提交的已签署知情同意，为确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验必填字段并附加加密时间戳",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "consent_submission",
+          "type": "object",
+          "description": "已签署知情同意"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_consent",
+          "type": "object",
+          "description": "通过校验并附加加密时间戳的知情同意记录"
+        }
+      ],
+      "native_evidence": [
+        "Validate and Timestamp Consent"
+      ],
+      "requirement_evidence": [
+        "校验提交中的全部必填字段，并为记录附加具有法律效力的加密时间戳"
+      ],
+      "rationale": "需求声明校验必填字段并附加加密时间戳，为确定性校验与元数据附加，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "审核知情同意表完整性",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "validated_consent",
+          "type": "object",
+          "description": "校验后的知情同意"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reviewed_consent",
+          "type": "object",
+          "description": "经完整性审核的知情同意记录"
+        }
+      ],
+      "native_evidence": [
+        "Claude AI GCP Compliance Review"
+      ],
+      "requirement_evidence": [
+        "使用语言模型依据 ICH E6 GCP 指南审核知情同意表的完整性"
+      ],
+      "rationale": "需求声明由语言模型依据 ICH E6 GCP 指南审核完整性，需开放语义判断，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "以不可篡改形式写入 Google Sheets",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "reviewed_consent",
+          "type": "object",
+          "description": "审核后的知情同意"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "consent_record",
+          "type": "object",
+          "description": "带完整监管链的不可篡改知情同意记录"
+        }
+      ],
+      "native_evidence": [
+        "Store Consent Record with Audit Trail"
+      ],
+      "requirement_evidence": [
+        "将记录以不可篡改的形式写入 Google Sheets，并保留完整的监管链（chain of custody）"
+      ],
+      "rationale": "需求声明将记录以不可篡改形式写入 Google Sheets 并保留监管链，为确定性外部写入，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "发送确认邮件给主要研究者",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "consent_record",
+          "type": "object",
+          "description": "已写入的知情同意记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Notify Principal Investigator"
+      ],
+      "requirement_evidence": [
+        "向主要研究者（PI）与受试者分别发送确认邮件"
+      ],
+      "rationale": "需求声明向主要研究者发送确认邮件，为完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n6",
+      "label": "发送确认邮件给受试者",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "consent_record",
+          "type": "object",
+          "description": "已写入的知情同意记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Confirmation to Participant"
+      ],
+      "requirement_evidence": [
+        "向主要研究者（PI）与受试者分别发送确认邮件"
+      ],
+      "rationale": "需求声明向受试者发送确认邮件，为完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n7",
+      "label": "每日定时触发检查",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "sweep_schedule",
+          "type": "object",
+          "description": "每日定时触发的检查事件"
+        }
+      ],
+      "native_evidence": [
+        "Daily Compliance Sweep Trigger"
+      ],
+      "requirement_evidence": [
+        "每日定时检查即将到期或缺失的知情同意"
+      ],
+      "rationale": "需求声明每日定时检查，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "读取有效知情同意记录",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "sweep_schedule",
+          "type": "object",
+          "description": "检查事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "active_records",
+          "type": "array",
+          "description": "全部有效的知情同意记录"
+        }
+      ],
+      "native_evidence": [
+        "Fetch All Active Consent Records"
+      ],
+      "requirement_evidence": [
+        "每日定时检查即将到期或缺失的知情同意"
+      ],
+      "rationale": "需求声明每日检查所依据的知情同意到期与缺失状态，读取记录为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "分析即将到期与缺失的知情同意",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "active_records",
+          "type": "array",
+          "description": "有效知情同意记录"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "expiring_missing",
+          "type": "array",
+          "description": "即将到期或缺失的知情同意清单"
+        }
+      ],
+      "native_evidence": [
+        "Analyse Expiring and Missing Consents"
+      ],
+      "requirement_evidence": [
+        "每日定时检查即将到期或缺失的知情同意"
+      ],
+      "rationale": "需求声明识别即将到期或缺失的知情同意，为确定性计算，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "生成每日审计汇总报告",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "expiring_missing",
+          "type": "array",
+          "description": "即将到期或缺失的清单"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Daily Compliance Report to PI",
+        "Log Sweep Results to Audit Sheet"
+      ],
+      "requirement_evidence": [
+        "生成每日审计汇总报告，供监管提交使用"
+      ],
+      "rationale": "需求声明生成每日审计汇总报告供监管提交，为每日检查流程的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收提交后校验并打时间戳。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "校验后进入完整性审核。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "审核后写入 Google Sheets。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入后向主要研究者发送确认邮件。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入后向受试者发送确认邮件。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "每日触发后读取有效记录。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取后分析到期与缺失。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析后生成审计汇总报告。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "consent_submission",
+      "condition": null,
+      "rationale": "提交的知情同意传给校验节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "validated_consent",
+      "condition": null,
+      "rationale": "校验后的记录传给审核节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "reviewed_consent",
+      "condition": null,
+      "rationale": "审核后的记录传给写入节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "consent_record",
+      "condition": null,
+      "rationale": "写入的记录传给 PI 通知节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "consent_record",
+      "condition": null,
+      "rationale": "写入的记录传给受试者通知节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "sweep_schedule",
+      "condition": null,
+      "rationale": "检查事件传给读取节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n8",
+      "target": "n9",
+      "variable": "active_records",
+      "condition": null,
+      "rationale": "有效记录传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n9",
+      "target": "n10",
+      "variable": "expiring_missing",
+      "condition": null,
+      "rationale": "到期与缺失清单传给报告生成节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n7"
+  ],
+  "terminal_nodes": [
+    "n5",
+    "n6",
+    "n10"
+  ],
+  "confidence": 0.9,
+  "notes": "提交处理与每日检查为两个独立流程；原生的电子签名验证、重复记录检查、Webhook 响应回传等细节未在需求中声明，未纳入；向 PI 与受试者发邮件为并行终止分支；审计汇总报告合并为生成动作。"
+}

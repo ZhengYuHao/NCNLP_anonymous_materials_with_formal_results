@@ -1,0 +1,171 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-011",
+  "source_id": "n8n:13676",
+  "workflow_sha256": "2c9be7e4f002f1a6e003344b7ef574864b31ea5d3f8f6d285c180ddde60d0312",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "4691a5fb0de00ffdf2ab47f4bd246fd1e97fd04789407708f552bd24bfd60f6c",
+  "requirement": {
+    "pilot_id": "N8C-011",
+    "requirement_text": "The system is called as a sub-workflow, triggered by a parent workflow that provides pre-analysed video data (transcript, key moments/sections, visual analysis, and metadata). For each source video it shall: (1) extract and structure the key snippets, B-roll timestamps, and video context ready for AI processing; (2) use a language model-powered AI agent to analyse the transcript, key moments, and video overview and generate 3 unique short-form concepts per video, each including a hook, body structure, CTA, full avatar script, and a lead magnet deliverable prompt, using structured output parsing to guarantee clean JSON; (3) loop through each concept and run the full production pipeline in parallel for each one: (a) send each concept's full script to an avatar video generation service to generate a vertical (1080×1920) AI avatar video, poll the status endpoint until rendering is complete, and capture the avatar video URL; (b) while the avatar renders, determine what B-roll is needed via an AI Video Director and send prompts to a video generation service to generate 2-second vertical clips at 24fps and 720p, with multiple clips generated and aggregated; (c) use a language model-powered AI Video Director to create a beat-by-beat storyboard with dynamic layout transitions, specifying layout types (avatar full-frame for hooks/CTAs, split-screen for demos, picture-in-picture overlays for focus moments), transition effects, and timing; (d) convert the storyboard into a render payload assembling avatar video, B-roll clips, transitions, text overlays, and effects into a single 1080×1920 composition, send the render to a rendering service, poll until complete, and download it; (e) upload the finished video to Google Drive and share it; (f) use a language model-powered Social Media Copywriter to generate platform-optimised titles, descriptions, hashtags, and captions for YouTube Shorts, Instagram Reels, and TikTok, and log everything to a Google Sheets tracker; (g) in parallel, use a language model-powered Document Generator to create a downloadable lead magnet (actionable guide, template, checklist, etc.) based on the CTA promise from each concept, convert it to HTML, upload it as a Google Doc, share it publicly, and link it in the tracker sheet. Visible outcomes: for each source video, 3 unique shorts are generated, and for each short — a finished rendered vertical video (1080×1920 MP4) uploaded to Google Drive; AI avatar narration with hook, body, and CTA; AI-generated B-roll video clips; dynamic layouts with scroll-stopping transitions; platform-optimised copy (YouTube, Instagram, TikTok); a lead magnet Google Doc with shareable link; and a full tracking row in Google Sheets. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 152,
+        "end": 518,
+        "text": "It takes the structured output from a video digestion workflow (transcript, key moments, metadata) and produces finished, rendered vertical shorts complete with AI-generated avatar narration, AI-generated B-roll video clips, dynamic multi-layout compositions, social media copy, and a lead magnet document — all uploaded to Google Drive and tracked in Google Sheets."
+      },
+      {
+        "start": 520,
+        "end": 685,
+        "text": "It's designed to be called as a sub-workflow — triggered by a parent workflow that provides video analysis data (transcript, key moments, visual analysis, metadata)."
+      },
+      {
+        "start": 1060,
+        "end": 1194,
+        "text": "A Gemini-powered AI agent analyses the transcript, key moments, and video overview to generate 3 unique short-form concepts per video."
+      },
+      {
+        "start": 1195,
+        "end": 1303,
+        "text": "Each concept includes a hook, body structure, CTA, full avatar script, and a lead magnet deliverable prompt."
+      },
+      {
+        "start": 1304,
+        "end": 1369,
+        "text": "The agent uses structured output parsing to guarantee clean JSON."
+      },
+      {
+        "start": 1489,
+        "end": 1592,
+        "text": "The workflow loops through each concept and for each one runs the full production pipeline in parallel:"
+      },
+      {
+        "start": 1629,
+        "end": 1731,
+        "text": "Each concept's full script is sent to HeyGen's API to generate a vertical (1080×1920) AI avatar video."
+      },
+      {
+        "start": 1732,
+        "end": 1840,
+        "text": "The workflow polls HeyGen's status endpoint until rendering is complete, then captures the avatar video URL."
+      },
+      {
+        "start": 2028,
+        "end": 2172,
+        "text": "The AI Video Director determines what B-roll is needed, and prompts are sent to Replicate to generate 2-second vertical clips at 24fps and 720p."
+      },
+      {
+        "start": 2265,
+        "end": 2366,
+        "text": "A Gemini-powered AI Video Director creates a beat-by-beat storyboard with dynamic layout transitions."
+      },
+      {
+        "start": 2367,
+        "end": 2557,
+        "text": "It generates a RenderScript specifying layout types (avatar full-frame for hooks/CTAs, split-screen for demos, picture-in-picture overlays for focus moments), transition effects, and timing."
+      },
+      {
+        "start": 2830,
+        "end": 2945,
+        "text": "assembling avatar video, B-roll clips, transitions, text overlays, and effects into a single 1080×1920 composition."
+      },
+      {
+        "start": 2946,
+        "end": 3025,
+        "text": "The render is sent to Creatomate's API, polled until complete, then downloaded."
+      },
+      {
+        "start": 3058,
+        "end": 3116,
+        "text": "The finished video is uploaded to Google Drive and shared."
+      },
+      {
+        "start": 3117,
+        "end": 3281,
+        "text": "An OpenAI-powered Social Media Copywriter generates platform-optimised titles, descriptions, hashtags, and captions for YouTube Shorts, Instagram Reels, and TikTok."
+      },
+      {
+        "start": 3282,
+        "end": 3330,
+        "text": "Everything is logged to a Google Sheets tracker."
+      },
+      {
+        "start": 3387,
+        "end": 3547,
+        "text": "a Gemini-powered Document Generator creates a downloadable lead magnet (actionable guide, template, checklist, etc.) based on the CTA promise from each concept."
+      },
+      {
+        "start": 3548,
+        "end": 3660,
+        "text": "The document is converted to HTML and uploaded as a Google Doc, shared publicly, and linked in the tracker sheet"
+      },
+      {
+        "start": 6355,
+        "end": 6416,
+        "text": "For each source video, the workflow generates 3 unique shorts"
+      },
+      {
+        "start": 6441,
+        "end": 6514,
+        "text": "Finished rendered vertical video (1080×1920 MP4) uploaded to Google Drive"
+      },
+      {
+        "start": 6598,
+        "end": 6646,
+        "text": "Dynamic layouts with scroll-stopping transitions"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Pre-analysed video data from a parent workflow: transcript, key moments/sections, B-roll clips, visual analysis, metadata, and video overview"
+      ],
+      "conditions": [
+        "Called as a sub-workflow by a parent workflow via an execute-workflow style trigger",
+        "3 unique short-form concepts are generated per source video",
+        "Avatar videos are vertical 1080×1920",
+        "B-roll clips are 2-second vertical clips at 24fps and 720p",
+        "Avatar rendering and final rendering are confirmed by polling status endpoints until complete"
+      ],
+      "allowed_actions": [
+        "Extract and structure key snippets, B-roll timestamps, and video context ready for AI processing",
+        "Use a language model-powered AI agent to generate 3 unique short-form concepts per video, each with hook, body structure, CTA, full avatar script, and a lead magnet deliverable prompt, using structured output parsing",
+        "Loop through each concept and run the full production pipeline in parallel for each one",
+        "Send each concept's full script to an avatar video generation service to generate a vertical (1080×1920) AI avatar video, poll the status endpoint until rendering is complete, and capture the avatar video URL",
+        "Determine needed B-roll via an AI Video Director and send prompts to a video generation service to generate 2-second vertical clips at 24fps and 720p, aggregating multiple clips",
+        "Use a language model-powered AI Video Director to create a beat-by-beat storyboard with dynamic layout transitions, layout types (avatar full-frame, split-screen, picture-in-picture), transition effects, and timing",
+        "Convert the storyboard into a render payload assembling avatar video, B-roll clips, transitions, text overlays, and effects into a single 1080×1920 composition",
+        "Send the render to a rendering service, poll until complete, and download it",
+        "Upload the finished video to Google Drive and share it",
+        "Use a language model-powered Social Media Copywriter to generate platform-optimised titles, descriptions, hashtags, and captions for YouTube Shorts, Instagram Reels, and TikTok",
+        "Log everything to a Google Sheets tracker",
+        "Use a language model-powered Document Generator to create a downloadable lead magnet based on the CTA promise from each concept, convert it to HTML, upload it as a Google Doc, share it publicly, and link it in the tracker sheet"
+      ],
+      "visible_outcomes": [
+        "Per source video: 3 unique shorts, each with a finished rendered vertical video (1080×1920 MP4) uploaded to Google Drive",
+        "AI avatar narration with hook, body, and CTA",
+        "AI-generated B-roll video clips",
+        "Dynamic layouts with scroll-stopping transitions",
+        "Platform-optimised copy (YouTube, Instagram, TikTok)",
+        "A lead magnet Google Doc with shareable link",
+        "A full tracking row in Google Sheets"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 10
+}

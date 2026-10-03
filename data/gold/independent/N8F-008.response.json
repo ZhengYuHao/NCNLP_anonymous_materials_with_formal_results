@@ -1,0 +1,518 @@
+{
+  "task_id": "N8F-008",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "0d8092e139b1fcb82853a17bb96fae354b6e8640d231b9b4bf84f52b9ed049cf",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "监听讨论区触发评论",
+      "node_type": "code",
+      "operation_family": "trigger_webhook",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_comment",
+          "type": "object",
+          "description": "GitLab 讨论区触发评论事件（含项目、合并请求与讨论标识）"
+        }
+      ],
+      "native_evidence": ["GitLab Discussion Webhook (webhook POST)"],
+      "requirement_evidence": ["当用户在 GitLab 合并请求（merge request）讨论区发布触发评论时，启动代码审查流程", "仅当用户在合并请求讨论区发布触发评论时启动"],
+      "rationale": "以 webhook 接收讨论区评论事件为入口；仅当评论匹配触发短语时启动的门控折叠进触发节点契约（需求将其声明为启动条件而非独立动作）。确定性契约，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "加载合并请求变更",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "trigger_comment",
+          "type": "object",
+          "description": "GitLab 讨论区触发评论事件（含项目、合并请求与讨论标识）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "mr_changes",
+          "type": "object",
+          "description": "合并请求的变更内容（差异）"
+        }
+      ],
+      "native_evidence": ["Fetch Merge Request Changes (httpRequest)"],
+      "requirement_evidence": ["系统据此加载该合并请求的变更内容", "加载合并请求的变更内容"],
+      "rationale": "按触发评论定位并拉取合并请求差异，确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "拆分差异并准备逐文件评审上下文",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "mr_changes",
+          "type": "object",
+          "description": "合并请求的变更内容（差异）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_review_context",
+          "type": "array",
+          "description": "逐文件的评审上下文条目（差异、行号映射与合并请求元信息）"
+        }
+      ],
+      "native_evidence": ["Split Changed Files (splitOut)", "Filter Supported Diffs (if)", "Prepare Review Context (code)"],
+      "requirement_evidence": ["将变更差异按每个变更文件拆分为一个条目，跳过不适合行内评审的文件", "跳过不适合行内评审的文件"],
+      "rationale": "按文件拆分、跳过不适用文件以及为审查准备行号映射均是基于类型化差异的确定性变换与过滤，合并为一个节点契约。判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "缺陷维度并行审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_review_context",
+          "type": "array",
+          "description": "逐文件的评审上下文条目（差异、行号映射与合并请求元信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "bug_findings",
+          "type": "array",
+          "description": "缺陷审查者输出的结构化审查结论"
+        }
+      ],
+      "native_evidence": ["Analyze Bugs (langchain.agent)", "Bug Reviewer Model (lmChatAzureOpenAi)", "Parse Bug Review Output (outputParserStructured)"],
+      "requirement_evidence": ["由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"],
+      "rationale": "缺陷检测需开放文本理解与代码推理，判 semantic。三个审查者之一，与安全、可维护性审查并列并行。"
+    },
+    {
+      "node_id": "n5",
+      "label": "安全维度并行审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_review_context",
+          "type": "array",
+          "description": "逐文件的评审上下文条目（差异、行号映射与合并请求元信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "security_findings",
+          "type": "array",
+          "description": "安全审查者输出的结构化审查结论"
+        }
+      ],
+      "native_evidence": ["Analyze Security Risks (langchain.agent)", "Security Reviewer Model (lmChatAzureOpenAi)", "Parse Security Review Output (outputParserStructured)"],
+      "requirement_evidence": ["由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"],
+      "rationale": "安全风险检测需开放文本理解与代码推理，判 semantic。三个审查者之二。"
+    },
+    {
+      "node_id": "n6",
+      "label": "可维护性维度并行审查",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "file_review_context",
+          "type": "array",
+          "description": "逐文件的评审上下文条目（差异、行号映射与合并请求元信息）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "maintainability_findings",
+          "type": "array",
+          "description": "可维护性审查者输出的结构化审查结论"
+        }
+      ],
+      "native_evidence": ["Analyze Maintainability Risks (langchain.agent)", "Maintainability Reviewer Model (lmChatAzureOpenAi)", "Parse Maintainability Review Output (outputParserStructured)"],
+      "requirement_evidence": ["由语言模型担任三个并行审查者，分别针对缺陷、安全和可维护性审查每个文件"],
+      "rationale": "可维护性评估需开放文本理解与代码推理，判 semantic。三个审查者之三。需求明确声明三个并行审查者，故单列三个语义节点而非折叠。"
+    },
+    {
+      "node_id": "n7",
+      "label": "汇总三路审查结论",
+      "node_type": "code",
+      "operation_family": "aggregation",
+      "inputs": [
+        {
+          "name": "bug_findings",
+          "type": "array",
+          "description": "缺陷审查者输出的结构化审查结论"
+        },
+        {
+          "name": "security_findings",
+          "type": "array",
+          "description": "安全审查者输出的结构化审查结论"
+        },
+        {
+          "name": "maintainability_findings",
+          "type": "array",
+          "description": "可维护性审查者输出的结构化审查结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "combined_findings",
+          "type": "object",
+          "description": "合并去重后的审查结论及对应文件上下文"
+        }
+      ],
+      "native_evidence": ["Merge Reviewer Results (merge, 3 inputs)", "Combine Findings (code)"],
+      "requirement_evidence": ["汇总三个审查者的结论"],
+      "rationale": "聚合三路结论为一份待复核清单（含机械去重），是确定性聚合变换，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "语言模型复核与归一",
+      "node_type": "semantic",
+      "operation_family": "llm_verification",
+      "inputs": [
+        {
+          "name": "combined_findings",
+          "type": "object",
+          "description": "合并去重后的审查结论及对应文件上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "verified_findings",
+          "type": "array",
+          "description": "复核后的审查结论（剔除弱结论与重复项，严重程度与置信度已统一表示）"
+        }
+      ],
+      "native_evidence": ["Verify Findings (langchain.agent)", "Verifier Model (lmChatAzureOpenAi)", "Parse Verification Output (outputParserStructured)", "Normalize Verified Findings (code)"],
+      "requirement_evidence": ["再由语言模型进行复核：剔除力度不足或重复的结论，并统一严重程度与置信度的表示"],
+      "rationale": "判断结论是否力度不足/重复并对严重程度与置信度做统一表示，需语义判断，判 semantic。原生的行号规范化等确定性后处理折叠进本节点输出契约。"
+    },
+    {
+      "node_id": "n9",
+      "label": "按阈值筛选可发布结论",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "verified_findings",
+          "type": "array",
+          "description": "复核后的审查结论（剔除弱结论与重复项，严重程度与置信度已统一表示）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "置信度达到配置阈值且状态为保留的审查结论（可为空）"
+        }
+      ],
+      "native_evidence": ["Check Findings Exist (if)", "Split Verified Findings (splitOut)", "Filter Publishable Findings (if)"],
+      "requirement_evidence": ["仅发布置信度达到配置阈值的审查结论"],
+      "rationale": "阈值比较与状态过滤是确定性规则，判 code。无可发布结论时输出为空，总结分支仍照常发布。"
+    },
+    {
+      "node_id": "n10",
+      "label": "解析差异定位",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "置信度达到配置阈值且状态为保留的审查结论（可为空）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "resolved_findings",
+          "type": "array",
+          "description": "附带 GitLab 差异定位结果（行号与是否可行内发表）的审查结论"
+        }
+      ],
+      "native_evidence": ["Resolve GitLab Diff Position (code)", "Check Inline Position (if)", "Build Inline Comment (code)", "Build Fallback Comment (code)"],
+      "requirement_evidence": ["若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论；否则退化为在触发评论所在的讨论区中回复评论"],
+      "rationale": "将结论行号映射到差异位置是确定性解析；行内/退化两种评论文案构造折叠进本节点与后续 terminal 契约。判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "创建行内评审评论",
+      "node_type": "terminal",
+      "operation_family": "external_action_delivery",
+      "inputs": [
+        {
+          "name": "resolved_findings",
+          "type": "array",
+          "description": "附带 GitLab 差异定位结果（行号与是否可行内发表）的审查结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post Inline Review Comment (httpRequest POST discussions)"],
+      "requirement_evidence": ["若能解析到有效的 GitLab 差异位置，则在对应位置创建行内评审评论", "GitLab 合并请求中对应代码位置的行内评审评论"],
+      "rationale": "在代码位置创建行内评审评论是用户可见完成动作，分支终点无出边，判 terminal。"
+    },
+    {
+      "node_id": "n12",
+      "label": "退化为讨论区回复评论",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "resolved_findings",
+          "type": "array",
+          "description": "附带 GitLab 差异定位结果（行号与是否可行内发表）的审查结论"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post Fallback Reply (httpRequest POST notes)"],
+      "requirement_evidence": ["否则退化为在触发评论所在的讨论区中回复评论", "触发讨论区中的回复评论（含无法定位差异位置时的退化评论）"],
+      "rationale": "无法定位差异位置时的退化回复是需求声明的失败行为对应的可见完成动作，分支终点无出边，判 terminal。"
+    },
+    {
+      "node_id": "n13",
+      "label": "发布总结性回复",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "publishable_findings",
+          "type": "array",
+          "description": "置信度达到配置阈值且状态为保留的审查结论（可为空）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Build Summary Comment (code)", "Build No-Issues Comment (code)", "Post Summary Reply (httpRequest POST notes)"],
+      "requirement_evidence": ["同时发布一条总结性回复，标记本次审查已完成", "标记本次审查已完成的总结性回复"],
+      "rationale": "与结论发布并列的总结性回复是用户可见完成动作，分支终点无出边，判 terminal。无可发布结论时同一节点改发无问题说明（原生 no-issues 消息折叠进本节点契约）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发评论匹配后加载合并请求变更；触发门控折叠进 n1 契约，非触发评论不启动流程。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得差异后按文件拆分并准备评审上下文。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "每个文件上下文并行送缺陷审查。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "每个文件上下文并行送安全审查。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "每个文件上下文并行送可维护性审查。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "缺陷审查结论汇入汇总节点。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "安全审查结论汇入汇总节点。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "可维护性审查结论汇入汇总节点。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总结论交由语言模型复核。"
+    },
+    {
+      "edge_id": "e_cfg_10",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "复核归一后做阈值筛选。"
+    },
+    {
+      "edge_id": "e_cfg_11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "可发布结论逐条解析差异定位。"
+    },
+    {
+      "edge_id": "e_cfg_12",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": "resolved_position_valid == true",
+      "rationale": "能解析到有效差异位置时创建行内评审评论。"
+    },
+    {
+      "edge_id": "e_cfg_13",
+      "source": "n10",
+      "target": "n12",
+      "variable": null,
+      "condition": "resolved_position_valid == false",
+      "rationale": "无法解析有效差异位置时退化为讨论区回复。"
+    },
+    {
+      "edge_id": "e_cfg_14",
+      "source": "n9",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "与结论发布并列，同时发布总结性回复；无可发布结论时也照常发布（无问题说明）。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "mr_changes",
+      "condition": null,
+      "rationale": "差异内容是拆分与上下文准备的输入。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "file_review_context",
+      "condition": null,
+      "rationale": "缺陷审查消费逐文件上下文。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n3",
+      "target": "n5",
+      "variable": "file_review_context",
+      "condition": null,
+      "rationale": "安全审查消费逐文件上下文。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n3",
+      "target": "n6",
+      "variable": "file_review_context",
+      "condition": null,
+      "rationale": "可维护性审查消费逐文件上下文。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n4",
+      "target": "n7",
+      "variable": "bug_findings",
+      "condition": null,
+      "rationale": "缺陷结论参与汇总。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "security_findings",
+      "condition": null,
+      "rationale": "安全结论参与汇总。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "maintainability_findings",
+      "condition": null,
+      "rationale": "可维护性结论参与汇总。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "combined_findings",
+      "condition": null,
+      "rationale": "复核消费汇总结论及文件上下文。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "verified_findings",
+      "condition": null,
+      "rationale": "阈值筛选消费复核后的结论。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n9",
+      "target": "n10",
+      "variable": "publishable_findings",
+      "condition": null,
+      "rationale": "定位解析消费可发布结论。"
+    },
+    {
+      "edge_id": "e_dfg_11",
+      "source": "n9",
+      "target": "n13",
+      "variable": "publishable_findings",
+      "condition": null,
+      "rationale": "总结性回复依据是否存在可发布结论选择完成总结或无问题说明。"
+    },
+    {
+      "edge_id": "e_dfg_12",
+      "source": "n10",
+      "target": "n11",
+      "variable": "resolved_findings",
+      "condition": null,
+      "rationale": "行内评论发表结论内容与定位。"
+    },
+    {
+      "edge_id": "e_dfg_13",
+      "source": "n10",
+      "target": "n12",
+      "variable": "resolved_findings",
+      "condition": null,
+      "rationale": "退化回复引用结论内容与文件信息。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n11", "n12", "n13"],
+  "confidence": 0.85,
+  "notes": "关键取舍：1) 需求明确声明三个并行审查者，故按维度单列三个 semantic 节点；模型与结构化输出解析器为模型依赖，折叠进各审查节点。2) 原生的 Post Review Started Reply（审查开始提示回复）未在冻结需求中声明，不纳入 Gold。3) 触发短语校验折叠进触发节点契约（需求将其声明为启动条件）。4) 差异定位采用先解析后按条件分支发表行内/退化评论的结构，对应需求的输出与分支声明。5) 无可发布结论时的 no-issues 消息折叠进总结性回复节点契约。"
+}

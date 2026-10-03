@@ -1,0 +1,79 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-076",
+  "source_id": "n8n:9867",
+  "workflow_sha256": "aa3c67776af0f5f7f9fe6065b0c2960249bbe6bd3f9783a164900f1c1d0c3217",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "b0075c2d0a6d2611a99df763c535a76aabe8cc296eba10ee2bf3929806755189",
+  "requirement": {
+    "requirement_text": "一、输入\n业务人员提交一段长视频，视频可为竖屏或横屏。\n\n二、主要处理\n1. 从视频中分离音轨并进行带词级时间戳的语音转写。\n2. 由语言模型依据转写文本与时间戳，从视频中挑选 3 至 6 段最具吸引力的片段，片段数量随视频长度与内容质量而定；每段时长为 15 至 60 秒；同时为每段生成标题与描述。\n3. 按精确到秒的时间码对片段进行剪切与裁剪，避免切在词语中间；竖屏与横屏输入均可处理，尽量保留原始分辨率而不做无谓放大，仅在有需要时进行裁剪或加边。\n4. 处理过程中持续查询处理任务状态，完成后取回成片。\n\n三、最终结果\n成片被排期发布到 TikTok、Instagram Reels 和 YouTube Shorts：自次日起每个连续自然日发布一条，发布天数等于本轮生成的片段数（生成 3 条即排 3 天，生成 6 条即排 6 天）；发布时间可配置，默认为欧洲/马德里时间 20:00。",
+    "source_spans": [
+      {
+        "start": 2,
+        "end": 547,
+        "text": "This automation template turns any long video into multiple viral-ready short clips and auto-schedules them to TikTok, Instagram Reels, and YouTube Shorts. It works with both vertical and horizontal inputs and respects the original input resolution (no unnecessary upscaling), cropping or letterboxing intelligently when needed. The workflow automatically extracts between 3 and 6 clips (based on video length and the most engaging segments) and schedules one short per consecutive day—e.g., 3 clips → the next 3 days, 6 clips → the next 6 days."
+      },
+      {
+        "start": 1203,
+        "end": 1662,
+        "text": "What Problem Does This Workflow Solve?\nManual clipping is slow and inconsistent. This workflow:\nFinds Hooks Automatically:** AI picks 3–6 high-retention segments from transcript + timestamps (count scales with video length/quality).\nCuts Cleanly:** Absolute-second FFmpeg timing to avoid mid-word cuts.\nVertical & Horizontal Friendly:** Handles both orientations and respects source resolution.\nSchedules for You:** Posts one clip per day on consecutive days."
+      },
+      {
+        "start": 1664,
+        "end": 2389,
+        "text": "How It Works\nForm Upload: Submit your long video.\nAudio Extraction: FFmpeg job extracts audio for accurate ASR.\nWhisper Transcription: Word-level timestamps enable precise clipping.\nAI Clip Mining (Gemini): Detects 3–6 “viral” moments (15–60s) and generates titles/descriptions.\nCut & Crop (FFmpeg): GPU pipeline produces clean clips; preserves input resolution/orientation when possible and crops/pads appropriately for target platforms.\nStatus & Download: Polls job status and retrieves the final clips.\nAuto-Scheduling (Consecutive Days): Schedules one short per day starting tomorrow, for as many days as clips were produced (e.g., 3 clips → 3 days, 6 clips → 6 days) at a configurable time (default 20:00 Europe/Madrid)."
+      },
+      {
+        "start": 3163,
+        "end": 3675,
+        "text": "Features\nWord-Accurate Cuts:** Absolute-second timecodes with subtle pre/post-roll.\nOrientation-Aware:** Supports vertical and horizontal inputs; preserves source resolution where possible.\nPlatform-Optimized Output:** 9:16-ready delivery with smart crop/pad behavior.\nConsecutive-Day Scheduler:** 3–6 clips → 3–6 consecutive posting days, automatically.\nRetry & Polling:** Built-in waits and status checks for robust processing.\nModular:** Swap models, adjust clip count/length, or add/remove platforms quickly."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户提交的一段长视频",
+        "视频可为竖屏或横屏，处理时尽量保留其原始分辨率"
+      ],
+      "conditions": [
+        "片段数量依据视频长度与内容质量在 3 至 6 条之间确定",
+        "单个片段时长为 15 至 60 秒",
+        "竖屏与横屏输入均可处理",
+        "仅在有需要时才进行裁剪或加边，不做无谓的放大"
+      ],
+      "allowed_actions": [
+        "从视频中分离音轨并进行带词级时间戳的语音转写",
+        "由语言模型挑选高吸引力片段并生成标题与描述",
+        "按秒级时间码剪切与裁剪片段",
+        "查询处理任务状态并在完成后取回成片",
+        "按连续自然日排期发布成片"
+      ],
+      "visible_outcomes": [
+        "生成 3 至 6 条短片成片，并配有各自的标题与描述",
+        "成片自次日起按连续自然日逐条发布到 TikTok、Instagram Reels 和 YouTube Shorts",
+        "发布时间可配置，默认为欧洲/马德里时间 20:00"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-076.packet.json",
+    "packet_sha256": "ca5450c31cdd303d1945dbc97569f6549be7d8d7217fa0d0d869b771b3bba6f7",
+    "public_description_sha256": "926ede10c2301cecb54aab319b83099e83531cd93e6cb54e7fed0a7f4601d732"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-076.response.json",
+    "verification_response_sha256": "aa811d7c3288216f405013195091d1c4165d18f01a856516fab78faa70a39317",
+    "decision": "accept"
+  },
+  "formal_index": 87
+}

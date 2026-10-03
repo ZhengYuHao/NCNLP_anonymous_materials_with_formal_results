@@ -1,0 +1,344 @@
+{
+  "task_id": "N8F-010",
+  "annotator_id": "GM-B-03",
+  "status": "submitted",
+  "requirement_sha256": "d3a97c11ea945405376f92ae26526a701292b12470d1f50a7485678b5f7765c3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "监控 Drive 文件夹新建文件",
+      "node_type": "code",
+      "operation_family": "polling_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "new_file_event",
+          "type": "object",
+          "description": "指定文件夹中新建文件的事件（含文件标识）"
+        }
+      ],
+      "native_evidence": [
+        "When Contract Added"
+      ],
+      "requirement_evidence": [
+        "系统每分钟检查一次指定的 Google Drive 文件夹，当该文件夹中出现新建文件时触发"
+      ],
+      "rationale": "每分钟轮询触发为确定性调度行为，判 code；每分钟一次的轮询折叠进触发节点契约。"
+    },
+    {
+      "node_id": "n2",
+      "label": "下载合同文件",
+      "node_type": "code",
+      "operation_family": "external_io",
+      "inputs": [
+        {
+          "name": "new_file_event",
+          "type": "object",
+          "description": "指定文件夹中新建文件的事件（含文件标识）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contract_file",
+          "type": "binary",
+          "description": "下载的合同 PDF 文件内容"
+        },
+        {
+          "name": "contract_file_id",
+          "type": "string",
+          "description": "原始合同文件在 Google Drive 中的文件 ID"
+        }
+      ],
+      "native_evidence": [
+        "Download Contract File"
+      ],
+      "requirement_evidence": [
+        "从 Google Drive 下载新建的合同文件"
+      ],
+      "rationale": "外部存储下载为确定性 IO 动作，判 code；文件 ID 供后续移动原件使用。"
+    },
+    {
+      "node_id": "n3",
+      "label": "提取 PDF 全文文本",
+      "node_type": "code",
+      "operation_family": "text_extraction",
+      "inputs": [
+        {
+          "name": "contract_file",
+          "type": "binary",
+          "description": "下载的合同 PDF 文件内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contract_text",
+          "type": "string",
+          "description": "合同 PDF 的全文文本"
+        }
+      ],
+      "native_evidence": [
+        "Extract Text from PDF"
+      ],
+      "requirement_evidence": [
+        "并提取 PDF 中的全文文本"
+      ],
+      "rationale": "PDF 文本提取为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成结构化合同分析",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "contract_text",
+          "type": "string",
+          "description": "合同 PDF 的全文文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_analysis",
+          "type": "object",
+          "description": "结构化分析：合同类型、关键条款、风险评分、风险项、缺失条款、改进建议"
+        }
+      ],
+      "native_evidence": [
+        "Query OpenAI Model",
+        "Parse AI Analysis"
+      ],
+      "requirement_evidence": [
+        "将提取的合同文本提交给语言模型，生成结构化分析结果，包含合同类型、关键条款、风险评分、风险项、缺失条款和改进建议"
+      ],
+      "rationale": "合同条款与风险的理解评估需要开放文本理解，确定性规则无法无损替代，判 semantic；原生解析规整（Parse AI Analysis）作为该契约的输出规整部分并入。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成 HTML 律师报告",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "structured_analysis",
+          "type": "object",
+          "description": "结构化分析：合同类型、关键条款、风险评分、风险项、缺失条款、改进建议"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_html",
+          "type": "string",
+          "description": "排版专业的 HTML 版律师报告"
+        }
+      ],
+      "native_evidence": [
+        "Generate Attorney Insights",
+        "Prepare Attorney Report"
+      ],
+      "requirement_evidence": [
+        "使用语言模型将结构化分析结果转换为排版专业的 HTML 版律师报告"
+      ],
+      "rationale": "需求明确声明由语言模型完成转换生成，判 semantic；原生的报告数据准备（Prepare Attorney Report）并入本节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "转换为 PDF 并保存到目标文件夹",
+      "node_type": "code",
+      "operation_family": "external_io",
+      "inputs": [
+        {
+          "name": "report_html",
+          "type": "string",
+          "description": "排版专业的 HTML 版律师报告"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_link",
+          "type": "string",
+          "description": "已保存 PDF 报告的链接"
+        }
+      ],
+      "native_evidence": [
+        "Convert to PDF",
+        "Save Report to Drive"
+      ],
+      "requirement_evidence": [
+        "将 HTML 报告转换为 PDF 文件，并保存到目标 Google Drive 文件夹"
+      ],
+      "rationale": "HTML 转 PDF 与保存到 Drive 均为确定性外部动作，判 code；两者在需求中声明为同一步骤。"
+    },
+    {
+      "node_id": "n7",
+      "label": "移动原始合同至已处理文件夹",
+      "node_type": "code",
+      "operation_family": "external_io",
+      "inputs": [
+        {
+          "name": "contract_file_id",
+          "type": "string",
+          "description": "原始合同文件在 Google Drive 中的文件 ID"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Move Report File"
+      ],
+      "requirement_evidence": [
+        "原始合同文件被移动到单独的「已处理」Google Drive 文件夹"
+      ],
+      "rationale": "原件归档为需求声明的输出之一；因其后仍接 Slack 通知环节，本节点有后继执行，判 code（确定性外部 IO 动作）。终止节点为最终的通知发送。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发送 Slack 完成消息",
+      "node_type": "terminal",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "structured_analysis",
+          "type": "object",
+          "description": "结构化分析：合同类型、关键条款、风险评分、风险项、缺失条款、改进建议"
+        },
+        {
+          "name": "report_link",
+          "type": "string",
+          "description": "已保存 PDF 报告的链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Slack Notification"
+      ],
+      "requirement_evidence": [
+        "向 Slack 频道发送一条完成消息，消息中包含风险详情和报告链接"
+      ],
+      "rationale": "用户可见完成动作且无后继环节，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "发现新建文件后下载。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "下载后提取文本。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "文本提取后进行语义分析。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "结构化分析后生成 HTML 报告。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "HTML 报告后转换 PDF 并保存。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "PDF 保存后移动原始合同（需求输出顺序与原生顺序一致）。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "原件归档后发送 Slack 完成消息。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "contract_file",
+      "condition": null,
+      "rationale": "文本提取消费下载的 PDF 文件。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "contract_text",
+      "condition": null,
+      "rationale": "语义分析消费提取的合同文本。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "structured_analysis",
+      "condition": null,
+      "rationale": "报告生成消费结构化分析结果。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "report_html",
+      "condition": null,
+      "rationale": "PDF 转换消费 HTML 报告。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n2",
+      "target": "n7",
+      "variable": "contract_file_id",
+      "condition": null,
+      "rationale": "移动原件需要原始合同文件的 Drive 文件 ID。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n8",
+      "variable": "structured_analysis",
+      "condition": null,
+      "rationale": "完成消息中包含风险详情，来自结构化分析结果。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n8",
+      "variable": "report_link",
+      "condition": null,
+      "rationale": "完成消息中包含报告链接，来自 PDF 保存结果。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "需求按『PDF 保存 → 移动原件 → Slack 通知』的顺序声明输出，与原生串行链一致，建模为单链，唯一终止节点为 Slack 通知。Slack 消息的风险详情来自结构化分析、报告链接来自 PDF 保存，两条 DFG 如实表达。每分钟轮询折叠进触发节点契约。"
+}

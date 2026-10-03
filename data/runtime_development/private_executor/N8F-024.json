@@ -1,0 +1,346 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-024",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-APPEND-BOOKING",
+      "dependency_type": "googleSheets",
+      "operation": "append_booking",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "appended_row": 7
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-DUE",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-001",
+            "guest_name": "Alice Chen",
+            "guest_email": "alice@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-09-03",
+            "check_out": "2026-09-05"
+          },
+          {
+            "booking_id": "B-002",
+            "guest_name": "Bob",
+            "guest_email": "bob@example.com",
+            "property": "Sea House",
+            "check_in": "2026-08-29",
+            "check_out": "2026-09-02"
+          },
+          {
+            "booking_id": "B-003",
+            "guest_name": "Carol",
+            "guest_email": "carol@example.com",
+            "property": "Mountain Cabin",
+            "check_in": "2026-08-15",
+            "check_out": "2026-08-31"
+          },
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-NOACT",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-004",
+            "guest_name": "Dan",
+            "guest_email": "dan@example.com",
+            "property": "City Loft",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-05"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-BOOKINGS-MON",
+      "dependency_type": "googleSheets",
+      "operation": "read_bookings",
+      "request_contract": {
+        "tab": "Bookings"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "booking_id": "B-005",
+            "guest_name": "Eve",
+            "guest_email": "eve@example.com",
+            "property": "City Loft",
+            "check_in": "2026-08-31",
+            "check_out": "2026-09-07"
+          },
+          {
+            "booking_id": "B-006",
+            "guest_name": "Frank",
+            "guest_email": "frank@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-04"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-PLAYBOOK",
+      "dependency_type": "googleSheets",
+      "operation": "read_playbook",
+      "request_contract": {
+        "tab": "Playbook"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CLEANING-EMPTY",
+      "dependency_type": "googleSheets",
+      "operation": "read_cleaning_tasks",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "rows": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-CLEANING-MON",
+      "dependency_type": "googleSheets",
+      "operation": "read_cleaning_tasks",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "task_id": "CT-1",
+            "property": "City Loft",
+            "date": "2026-09-07",
+            "status": "done"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-GUEST-MSG",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_guest_message",
+      "request_contract": {},
+      "response_contract": {
+        "message": "Hi, this is your host message for the stay."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DIGEST",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_weekly_digest",
+      "request_contract": {},
+      "response_contract": {
+        "digest": "Weekly digest: 2 bookings, 1 cleaning task, occupancy 42%."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-GUESTLOG",
+      "dependency_type": "googleSheets",
+      "operation": "append_guest_log",
+      "request_contract": {
+        "tab": "GuestLog"
+      },
+      "response_contract": {
+        "appended_row": 10
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-CLEANING",
+      "dependency_type": "googleSheets",
+      "operation": "append_cleaning_task",
+      "request_contract": {
+        "tab": "CleaningTasks"
+      },
+      "response_contract": {
+        "appended_row": 4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {},
+      "response_contract": {
+        "message_id": "msg-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM",
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_contract": {},
+      "response_contract": {
+        "ok": true,
+        "message_id": 500
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-VALID-BOOKING",
+      "fixture_ids": [
+        "F-BOOKING-VALID"
+      ],
+      "mock_ids": [
+        "M-APPEND-BOOKING",
+        "M-TELEGRAM"
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID-BOOKING",
+      "fixture_ids": [
+        "F-BOOKING-INVALID"
+      ],
+      "mock_ids": [
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-BOOKING"
+      ]
+    },
+    {
+      "case_id": "C-POS-DAILY-SWEEP",
+      "fixture_ids": [
+        "F-SWEEP-DUE",
+        "F-PLAYBOOK",
+        "F-CLEANER-SET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-DUE",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-LLM-GUEST-MSG",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ]
+    },
+    {
+      "case_id": "C-BOUND-NO-CLEANER",
+      "fixture_ids": [
+        "F-SWEEP-DUE",
+        "F-PLAYBOOK",
+        "F-CLEANER-UNSET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-DUE",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-LLM-GUEST-MSG",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ]
+    },
+    {
+      "case_id": "C-BOUND-MON-NOACT",
+      "fixture_ids": [
+        "F-SWEEP-MON-NOACT",
+        "F-PLAYBOOK"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-NOACT",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-EMPTY",
+        "M-EMAIL",
+        "M-TELEGRAM"
+      ]
+    },
+    {
+      "case_id": "C-POS-MON-ACTIVE",
+      "fixture_ids": [
+        "F-SWEEP-MON-ACTIVE",
+        "F-PLAYBOOK",
+        "F-CLEANER-SET"
+      ],
+      "mock_ids": [
+        "M-READ-BOOKINGS-MON",
+        "M-READ-PLAYBOOK",
+        "M-READ-CLEANING-MON",
+        "M-LLM-GUEST-MSG",
+        "M-LLM-DIGEST",
+        "M-APPEND-GUESTLOG",
+        "M-EMAIL",
+        "M-TELEGRAM",
+        "M-APPEND-CLEANING"
+      ]
+    }
+  ]
+}

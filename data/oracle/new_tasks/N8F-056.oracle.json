@@ -1,0 +1,390 @@
+{
+  "task_id": "N8F-056",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "3ac942fe64fa7c33357ab7ea41439ae8178e6f2497cf101396403169b859ebb7",
+  "fixtures": [
+    {
+      "fixture_id": "F-ACCOUNTS",
+      "purpose": "已配置的 Instagram 账号与时段轮换配置",
+      "input_data": {
+        "accounts": [
+          {
+            "id": "acc-1",
+            "time_slot": "00-08"
+          },
+          {
+            "id": "acc-2",
+            "time_slot": "08-16"
+          },
+          {
+            "id": "acc-3",
+            "time_slot": "16-24"
+          }
+        ],
+        "trigger_time": "10:00",
+        "interval_hours": 2,
+        "at_minute": 15,
+        "max_posts_per_hashtag": 5,
+        "daily_like_cap_per_account": 12
+      }
+    },
+    {
+      "fixture_id": "F-POOL",
+      "purpose": "按话题标签抓取到的最近帖子（3条）",
+      "input_data": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "low-code"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-LIKED-P1",
+      "purpose": "已点赞记录初始状态（aaa 已点赞）",
+      "input_data": {
+        "already_liked_urls": [
+          "https://instagram.com/p/aaa"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-LIKED-ALL",
+      "purpose": "全部候选均已点赞",
+      "input_data": {
+        "already_liked_urls": [
+          "https://instagram.com/p/aaa",
+          "https://instagram.com/p/bbb",
+          "https://instagram.com/p/ccc"
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-POOL-EMPTY",
+      "purpose": "话题标签下无帖子",
+      "input_data": {
+        "posts": []
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-HASHTAG",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_hashtag",
+      "request_contract": {},
+      "response_contract": {
+        "hashtag": "#BPA"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE",
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_contract": {
+        "hashtag": "#BPA",
+        "max_posts": 5
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "low-code"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SCRAPE-EMPTY",
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_contract": {
+        "hashtag": "#BPA",
+        "max_posts": 5
+      },
+      "response_contract": {
+        "posts": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-LIKED-P1",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_liked",
+      "request_contract": {
+        "file": "instagram_posts_already_liked.csv"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "url": "https://instagram.com/p/aaa"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-LIKED-ALL",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_liked",
+      "request_contract": {
+        "file": "instagram_posts_already_liked.csv"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "url": "https://instagram.com/p/aaa"
+          },
+          {
+            "url": "https://instagram.com/p/bbb"
+          },
+          {
+            "url": "https://instagram.com/p/ccc"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-READ-LIKED-EMPTY",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_liked",
+      "request_contract": {
+        "file": "instagram_posts_already_liked.csv"
+      },
+      "response_contract": {
+        "rows": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-UPLOAD-TO-LIKE",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "upload_file",
+      "request_contract": {
+        "file_name": "instagram_posts_to_like.csv"
+      },
+      "response_contract": {
+        "file_id": "f-2001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IG-LIKE",
+      "dependency_type": "httpRequest",
+      "operation": "like_post",
+      "request_contract": {},
+      "response_contract": {
+        "ok": true,
+        "like_id": "l-3001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-APPEND-LIKED",
+      "dependency_type": "microsoftSharePoint",
+      "operation": "append_already_liked",
+      "request_contract": {
+        "file": "instagram_posts_already_liked.csv"
+      },
+      "response_contract": {
+        "ok": true,
+        "total_rows": 2
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-LIKE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-ACCOUNTS",
+        "F-POOL",
+        "F-LIKED-P1"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE",
+        "M-READ-LIKED-P1",
+        "M-UPLOAD-TO-LIKE",
+        "M-IG-LIKE",
+        "M-APPEND-LIKED"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.selected_account.id",
+          "operator": "equals",
+          "expected": "acc-2",
+          "rationale": "10:00 落入 08-16 时段，按时间段轮换选择账号"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.hashtag",
+          "operator": "equals",
+          "expected": "#BPA",
+          "rationale": "由语言模型生成贴合 AI/BPA 领域的话题标签"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.scraped_posts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "抓取数量不超过配置上限5"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.chosen_post.url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(bbb|ccc)$",
+          "rationale": "查重确认后从未点赞帖子中随机选取（aaa 已点赞被排除）"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.like_executed.post_url",
+          "operator": "matches",
+          "expected": "^https://instagram\\.com/p/(bbb|ccc)$",
+          "rationale": "点赞目标为未点赞过的帖子"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.like_executed.ok",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "自动点赞操作完成"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.csv_uploaded.file_name",
+          "operator": "equals",
+          "expected": "instagram_posts_to_like.csv",
+          "rationale": "待点赞清单上传在线存储"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.already_liked_log.total_rows",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "已点赞记录由1条增至2条"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.already_liked_log.urls",
+          "operator": "contains",
+          "expected": "https://instagram.com/p/aaa",
+          "rationale": "历史已点赞记录保留"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "evidence.daily_likes_this_run",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "单次运行点赞1条；按每2小时与3账号轮换，单账号日点赞≤12"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-ALL-LIKED",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-ACCOUNTS",
+        "F-POOL",
+        "F-LIKED-ALL"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE",
+        "M-READ-LIKED-ALL",
+        "M-IG-LIKE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-NEG-ALL-LIKED",
+          "target": "output.chosen_post",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "候选全部已点赞时无待点赞帖子"
+        },
+        {
+          "assertion_id": "A-2-NEG-ALL-LIKED",
+          "target": "output.like_executed",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "不执行重复点赞"
+        },
+        {
+          "assertion_id": "A-3-NEG-ALL-LIKED",
+          "target": "output.already_liked_log.append_url",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "已点赞记录不追加"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUND-EMPTY-POOL",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-ACCOUNTS",
+        "F-POOL-EMPTY"
+      ],
+      "mock_ids": [
+        "M-LLM-HASHTAG",
+        "M-SCRAPE-EMPTY",
+        "M-READ-LIKED-EMPTY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-BOUND-EMPTY-POOL",
+          "target": "output.scraped_posts",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "话题标签下无帖子"
+        },
+        {
+          "assertion_id": "A-2-BOUND-EMPTY-POOL",
+          "target": "output.like_executed",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "无候选帖子时不执行点赞"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；账号时段轮换由 fixture 固定 trigger_time=10:00 确定性推导；随机选取以正则允许池内任一合法结果；SharePoint/Phantombuster/IG/LLM 均固定模拟，无真实副作用。"
+}

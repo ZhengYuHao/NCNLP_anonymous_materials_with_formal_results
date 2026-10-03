@@ -1,0 +1,319 @@
+{
+  "task_id": "N8F-094",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "ceb7b933bbf5013a05008a2c2ef7f5c31083a5b0113cd16b68a187163e716c54",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "手动触发并接收 URL",
+      "node_type": "code",
+      "operation_family": "manual_trigger_and_url_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "用户手动执行时提供的有效 URL"
+        }
+      ],
+      "native_evidence": [
+        "When clicking 'Execute workflow'",
+        "Set the Input Fields"
+      ],
+      "requirement_evidence": [
+        "流程由用户手动执行并传入一个有效 URL 启动",
+        "系统接受任意有效 URL 作为输入"
+      ],
+      "rationale": "由用户手动执行并接收 URL 输入，为确定性的输入接收操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "抓取网页内容",
+      "node_type": "code",
+      "operation_family": "web_content_fetch",
+      "inputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "目标网页 URL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "page_content",
+          "type": "string",
+          "description": "通过网页抓取服务获取的网页内容"
+        }
+      ],
+      "native_evidence": [
+        "Decodo"
+      ],
+      "requirement_evidence": [
+        "通过网页抓取服务获取该网页的内容"
+      ],
+      "rationale": "通过网页抓取服务获取 URL 对应网页内容，为确定性的外部抓取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "提取结构化数据",
+      "node_type": "semantic",
+      "operation_family": "structured_data_extraction",
+      "inputs": [
+        {
+          "name": "page_content",
+          "type": "string",
+          "description": "网页内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_extracted",
+          "type": "string",
+          "description": "语言模型从网页内容中提取的原始结构化数据输出"
+        }
+      ],
+      "native_evidence": [
+        "Structured Data Extractor",
+        "Google Gemini Chat Model for Structured Data"
+      ],
+      "requirement_evidence": [
+        "随后由语言模型从抓取到的内容中提取结构化数据"
+      ],
+      "rationale": "需求声明由语言模型从网页内容中提取结构化数据，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成简洁事实性摘要",
+      "node_type": "semantic",
+      "operation_family": "content_summarization",
+      "inputs": [
+        {
+          "name": "page_content",
+          "type": "string",
+          "description": "网页内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "语言模型生成的简洁、事实性摘要"
+        }
+      ],
+      "native_evidence": [
+        "Summarize Content",
+        "Google Gemini Chat Model for Summary"
+      ],
+      "requirement_evidence": [
+        "并生成一份简洁、事实性的摘要"
+      ],
+      "rationale": "需求声明由语言模型生成简洁、事实性的摘要，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "清洗解析结构化数据",
+      "node_type": "code",
+      "operation_family": "structured_data_parsing",
+      "inputs": [
+        {
+          "name": "raw_extracted",
+          "type": "string",
+          "description": "模型输出的原始结构化数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "清洗与解析后的机器可读结构化数据记录"
+        }
+      ],
+      "native_evidence": [
+        "Extract the JSON"
+      ],
+      "requirement_evidence": [
+        "对模型输出的结构化数据进行清洗与解析"
+      ],
+      "rationale": "对模型输出进行清洗与解析为机器可读结构化数据，为确定性的解析与变换操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "合并结构化数据与摘要",
+      "node_type": "code",
+      "operation_family": "record_merging",
+      "inputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "解析后的结构化数据"
+        },
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "生成的摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_record",
+          "type": "object",
+          "description": "结构化数据与摘要合并后的最终记录"
+        }
+      ],
+      "native_evidence": [
+        "Merge"
+      ],
+      "requirement_evidence": [
+        "再将其与摘要合并"
+      ],
+      "rationale": "将结构化数据与摘要合并为最终记录，为确定性聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "写入 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "sheet_persistence",
+      "inputs": [
+        {
+          "name": "final_record",
+          "type": "object",
+          "description": "合并后的最终记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append or update row in sheet"
+      ],
+      "requirement_evidence": [
+        "最终结果写入 Google Sheets，供报表或后续自动化使用"
+      ],
+      "rationale": "将最终记录写入 Google Sheets，为流程最终的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "URL 输入后抓取网页内容。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "网页内容就绪后提取结构化数据。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "网页内容就绪后并行生成摘要。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "结构化数据输出后进入清洗解析。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析完成后与摘要合并。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后同样进入合并环节。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "合并完成后写入 Google Sheets。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "url",
+      "condition": null,
+      "rationale": "URL 送入网页抓取节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "page_content",
+      "condition": null,
+      "rationale": "网页内容送入结构化数据提取节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "page_content",
+      "condition": null,
+      "rationale": "网页内容送入摘要生成节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "raw_extracted",
+      "condition": null,
+      "rationale": "模型原始输出送入清洗解析节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n4",
+      "target": "n6",
+      "variable": "summary",
+      "condition": null,
+      "rationale": "摘要送入合并节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "structured_data",
+      "condition": null,
+      "rationale": "解析后的结构化数据送入合并节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_record",
+      "condition": null,
+      "rationale": "合并后的最终记录送入写入节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：手动触发并接收 URL（code）、抓取网页内容（code）、提取结构化数据（semantic）与生成简洁事实性摘要（semantic，并行分支）、清洗解析结构化数据（code）、合并数据与摘要（code）、写入 Google Sheets（terminal）。需求未声明的实现细节（Gemini 具体型号、输入字段 Set 节点）未纳入。混合任务满足 semantic→code 有类型 DFG 边（raw_extracted、summary）。"
+}

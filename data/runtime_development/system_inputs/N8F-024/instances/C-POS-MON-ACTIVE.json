@@ -1,0 +1,66 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-024",
+  "case_id": "C-POS-MON-ACTIVE",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-SWEEP-MON-ACTIVE": {
+        "sweep_date": "2026-09-07",
+        "host_email": "host@example.com",
+        "bookings": [
+          {
+            "booking_id": "B-005",
+            "guest_name": "Eve",
+            "guest_email": "eve@example.com",
+            "property": "City Loft",
+            "check_in": "2026-08-31",
+            "check_out": "2026-09-07"
+          },
+          {
+            "booking_id": "B-006",
+            "guest_name": "Frank",
+            "guest_email": "frank@example.com",
+            "property": "Sunny Villa",
+            "check_in": "2026-10-01",
+            "check_out": "2026-10-04"
+          }
+        ],
+        "cleaning_tasks": [
+          {
+            "task_id": "CT-1",
+            "property": "City Loft",
+            "date": "2026-09-07",
+            "status": "done"
+          }
+        ]
+      },
+      "F-PLAYBOOK": {
+        "properties": [
+          {
+            "property": "Sunny Villa",
+            "address": "1 Beach Rd",
+            "wifi": "SunnyWifi",
+            "door_code": "1234"
+          },
+          {
+            "property": "Sea House",
+            "address": "2 Harbour St",
+            "wifi": "SeaWifi",
+            "door_code": "5678"
+          },
+          {
+            "property": "Mountain Cabin",
+            "address": "3 Ridge Way",
+            "wifi": "MtnWifi",
+            "door_code": "9012"
+          }
+        ]
+      },
+      "F-CLEANER-SET": {
+        "cleaner_email": "cleaner@cleaning.example.com"
+      }
+    }
+  },
+  "input_sha256": "2FC37DB6101B1E580AAAE77F6FE80DC9490CEEF15A9AE835670327C2F683D9D0"
+}

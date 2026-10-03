@@ -1,0 +1,271 @@
+{
+  "task_id": "N8F-076",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "b0075c2d0a6d2611a99df763c535a76aabe8cc296eba10ee2bf3929806755189",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "业务人员通过表单提交长视频（竖屏或横屏）",
+      "node_type": "code",
+      "operation_family": "form_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "video",
+          "type": "object",
+          "description": "提交的长视频"
+        }
+      ],
+      "native_evidence": [
+        "Form: Upload Video (formTrigger)"
+      ],
+      "requirement_evidence": [
+        "业务人员提交一段长视频，视频可为竖屏或横屏"
+      ],
+      "rationale": "需求声明的视频提交入口，为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "从视频中分离音轨并进行带词级时间戳的语音转写",
+      "node_type": "code",
+      "operation_family": "media_process",
+      "inputs": [
+        {
+          "name": "video",
+          "type": "object",
+          "description": "长视频"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "object",
+          "description": "带词级时间戳的转写文本"
+        }
+      ],
+      "native_evidence": [
+        "FFmpeg: Extract Audio (httpRequest)",
+        "Whisper: Transcribe with Timestamps (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "从视频中分离音轨并进行带词级时间戳的语音转写"
+      ],
+      "rationale": "音轨分离与语音转写为确定性外部处理，判 code；音频任务的异步轮询（Is Audio Job Completed? 循环）折叠进契约，max_iterations<=20。"
+    },
+    {
+      "node_id": "n3",
+      "label": "语言模型依据转写文本与时间戳挑选 3 至 6 段高吸引力片段并生成标题与描述",
+      "node_type": "semantic",
+      "operation_family": "llm_selection",
+      "inputs": [
+        {
+          "name": "transcript",
+          "type": "object",
+          "description": "带词级时间戳的转写文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clip_plans",
+          "type": "array",
+          "description": "选中的片段计划（起止时间码、标题、描述）"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent - Select Viral Clips (agent)",
+        "Google Gemini Chat Model (lmChatGoogleGemini)"
+      ],
+      "requirement_evidence": [
+        "由语言模型依据转写文本与时间戳，从视频中挑选 3 至 6 段最具吸引力的片段，片段数量随视频长度与内容质量而定；每段时长为 15 至 60 秒；同时为每段生成标题与描述。"
+      ],
+      "rationale": "需求声明由语言模型挑选片段并生成标题描述，判 semantic；片段数 3-6、时长 15-60 秒为契约约束。"
+    },
+    {
+      "node_id": "n4",
+      "label": "按秒级时间码剪切与裁剪片段，保留原始分辨率",
+      "node_type": "code",
+      "operation_family": "media_edit",
+      "inputs": [
+        {
+          "name": "video",
+          "type": "object",
+          "description": "原视频"
+        },
+        {
+          "name": "clip_plans",
+          "type": "array",
+          "description": "片段计划"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cut_job",
+          "type": "object",
+          "description": "剪切处理任务引用"
+        }
+      ],
+      "native_evidence": [
+        "FFmpeg: Upload & Cut (httpRequest)",
+        "Parse Gemini Analysis (code)"
+      ],
+      "requirement_evidence": [
+        "按精确到秒的时间码对片段进行剪切与裁剪，避免切在词语中间；竖屏与横屏输入均可处理，尽量保留原始分辨率而不做无谓放大"
+      ],
+      "rationale": "按时间码剪切裁剪为确定性外部处理，判 code；竖屏/横屏适配与仅必要时裁剪加边为契约约束。"
+    },
+    {
+      "node_id": "n5",
+      "label": "持续查询处理任务状态，完成后取回成片",
+      "node_type": "code",
+      "operation_family": "job_poll",
+      "inputs": [
+        {
+          "name": "cut_job",
+          "type": "object",
+          "description": "剪切处理任务引用"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "finished_clips",
+          "type": "array",
+          "description": "取回的短片成片"
+        }
+      ],
+      "native_evidence": [
+        "Wait 10s (Short) (wait)",
+        "Check Short Job Status (httpRequest)",
+        "Is Short Job Completed? (if)",
+        "Wait 5s & Retry (Short) (wait)",
+        "Download Short (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "处理过程中持续查询处理任务状态，完成后取回成片"
+      ],
+      "rationale": "需求声明的状态查询与取回动作，为确定性外部调用，判 code；轮询循环（等待→检查→完成判断）折叠进契约，终止条件为任务完成，max_iterations<=20。"
+    },
+    {
+      "node_id": "n6",
+      "label": "将成片排期发布到 TikTok、Instagram Reels 与 YouTube Shorts",
+      "node_type": "terminal",
+      "operation_family": "external_schedule",
+      "inputs": [
+        {
+          "name": "finished_clips",
+          "type": "array",
+          "description": "短片成片"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Schedule to TikTok, Instagram, and YouTube (uploadPost, uploadVideo)"
+      ],
+      "requirement_evidence": [
+        "成片被排期发布到 TikTok、Instagram Reels 和 YouTube Shorts：自次日起每个连续自然日发布一条，发布天数等于本轮生成的片段数（生成 3 条即排 3 天，生成 6 条即排 6 天）；发布时间可配置，默认为欧洲/马德里时间 20:00。"
+      ],
+      "rationale": "需求声明的排期发布动作，为最终交付，判 terminal，无 CFG 出边；自次日起每自然日一条、天数=片段数、默认马德里 20:00 为契约约束。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交视频后分离音轨并转写"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "转写完成后挑选片段"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "片段计划就绪后执行剪切"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "提交任务后查询状态并取回"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "取回成片后排期发布"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "video",
+      "condition": null,
+      "rationale": "转写基于提交的长视频"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "transcript",
+      "condition": null,
+      "rationale": "片段挑选基于转写文本与时间戳"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "clip_plans",
+      "condition": null,
+      "rationale": "剪切基于选中的片段计划"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n1",
+      "target": "n4",
+      "variable": "video",
+      "condition": null,
+      "rationale": "剪切使用原视频素材"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "cut_job",
+      "condition": null,
+      "rationale": "状态查询基于剪切任务引用"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "finished_clips",
+      "condition": null,
+      "rationale": "排期发布使用取回的成片"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.88,
+  "notes": "线性流水线建模。原生 FFmpeg Audio Job Loop 与 Short Job Loop 的状态轮询分别折叠进 n2 与 n5 契约（需求声明了持续查询任务状态，故 n5 保留为独立节点）；发布排期规则（自次日起每自然日一条、天数=片段数、默认马德里 20:00）作为 n6 契约约束。原生 Parse Whisper Results、Parse Gemini Analysis 等整理节点为实现细节，未纳入。"
+}

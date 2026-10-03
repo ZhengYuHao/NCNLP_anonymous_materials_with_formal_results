@@ -1,0 +1,72 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-078",
+  "source_id": "n8n:18340",
+  "workflow_sha256": "6ce5f3c351e1a705137bef46ef614860e1b2f1424fbd0f721851d9f10f9bb7a0",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "516fd4125103a24ee57abc183b0846cb9808d010d21932506a758d92d533157a",
+  "requirement": {
+    "requirement_text": "一、输入\n安全告警来自三类来源：SIEM、EDR 与云安全工具，各自通过独立的回调接口接入。\n\n二、主要处理\n1. 每条告警被规范化为统一的告警结构，并写入外部告警缓冲服务暂存。\n2. 按计划周期性运行，从告警缓冲服务取回最近一个处理窗口内的全部告警。\n3. 按主机、规则标识与严重程度对告警生成指纹，并把在很短时间内发生的明显重复项预先聚为一簇。\n4. 仅把难以判定的簇交给语言模型判断：应作为重复项合并，还是保留为独立事件。\n5. 依据最终聚类结果构建统一的安全事件工单，并批量创建或更新到外部工单系统。\n\n三、最终结果\n向 Slack 频道发布一条汇总消息，说明本轮处理新建或更新的统一工单数量。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 303,
+        "text": "Quick overview\nThis workflow ingests SIEM, EDR, and cloud security alerts via webhooks, normalizes and buffers them, then runs a scheduled deduplication pass that uses Anthropic Claude only for ambiguous clusters before bulk upserting unified cases into a ticketing system and notifying a Slack channel."
+      },
+      {
+        "start": 305,
+        "end": 1163,
+        "text": "How it works\nReceives incoming alerts from three sources via separate HTTP webhooks (SIEM, EDR, and cloud security tools).\nNormalizes each alert into a shared schema and posts it to an external alert-buffer API for temporary storage.\nRuns on a schedule and fetches all alerts from the alert-buffer API for the most recent processing window.\nFingerprints alerts by host, rule ID, and severity and pre-clusters obvious duplicates based on whether they occur within a tight time window.\nSends only the ambiguous clusters to Anthropic Claude to decide whether they should be merged as duplicates or kept as separate cases.\nBuilds unified security cases from the final clusters, then bulk creates or updates those cases in an external ticketing system.\nPosts a summary message to a Slack channel with the number of unified cases created or updated for that cycle."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "来自 SIEM 的告警",
+        "来自 EDR 的告警",
+        "来自云安全工具的告警",
+        "从外部告警缓冲服务取回的最近一个处理窗口内的告警集合"
+      ],
+      "conditions": [
+        "三类来源各自独立接入",
+        "按主机、规则标识与严重程度生成指纹",
+        "在很短时间内发生的明显重复项先做预聚类",
+        "仅难以判定的簇才交由语言模型裁决"
+      ],
+      "allowed_actions": [
+        "将告警规范化为统一结构",
+        "将规范化后的告警写入外部告警缓冲服务",
+        "按计划取回最近处理窗口内的告警",
+        "对告警生成指纹并预聚类",
+        "由语言模型判定模糊簇是合并还是保持独立",
+        "依据聚类结果构建统一安全事件工单",
+        "批量创建或更新工单到外部工单系统",
+        "向 Slack 频道发布汇总消息"
+      ],
+      "visible_outcomes": [
+        "外部工单系统中生成或更新若干统一安全事件工单",
+        "Slack 频道收到本轮新建或更新的统一工单数量的汇总消息"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-078.packet.json",
+    "packet_sha256": "f245bd06e6dad99b24516126d9cfa0bc73309566ebb75e9d58d39e6069ece8e0",
+    "public_description_sha256": "df1b4cdbf39896fcefbc2a488b5f32422cc99ddc2e26bfe5ff263a98ac5d12e6"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-078.response.json",
+    "verification_response_sha256": "76d6cdbba9889576c21c6d9f9277010354f1e77008d6d08519a202a950bef920",
+    "decision": "accept"
+  },
+  "formal_index": 89
+}

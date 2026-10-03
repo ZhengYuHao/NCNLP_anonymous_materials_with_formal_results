@@ -1,0 +1,55 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-056",
+  "case_id": "C-NEG-ALL-LIKED",
+  "kind": "negative",
+  "input_data": {
+    "fixtures": {
+      "F-ACCOUNTS": {
+        "accounts": [
+          {
+            "id": "acc-1",
+            "time_slot": "00-08"
+          },
+          {
+            "id": "acc-2",
+            "time_slot": "08-16"
+          },
+          {
+            "id": "acc-3",
+            "time_slot": "16-24"
+          }
+        ],
+        "trigger_time": "10:00",
+        "interval_hours": 2,
+        "at_minute": 15,
+        "max_posts_per_hashtag": 5,
+        "daily_like_cap_per_account": 12
+      },
+      "F-POOL": {
+        "posts": [
+          {
+            "url": "https://instagram.com/p/aaa",
+            "caption": "AI tip"
+          },
+          {
+            "url": "https://instagram.com/p/bbb",
+            "caption": "BPA"
+          },
+          {
+            "url": "https://instagram.com/p/ccc",
+            "caption": "low-code"
+          }
+        ]
+      },
+      "F-LIKED-ALL": {
+        "already_liked_urls": [
+          "https://instagram.com/p/aaa",
+          "https://instagram.com/p/bbb",
+          "https://instagram.com/p/ccc"
+        ]
+      }
+    }
+  },
+  "input_sha256": "64EA2B2EAF9FDC848088EACEBB1F4486590257DDE7E919BA337B873CAA59F756"
+}

@@ -1,0 +1,344 @@
+{
+  "task_id": "N8F-050",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "4956eb4fe683081f500b56ae29951edcb96ba8bf9d03f17a7dd1c5d0c804f2b4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "轮询邮箱并接收表单提交，汇合入站线索",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "inbound_leads",
+          "type": "object[]",
+          "description": "入站线索列表"
+        }
+      ],
+      "native_evidence": [
+        "Email Trigger",
+        "Form Submission Webhook",
+        "Merge Inputs"
+      ],
+      "requirement_evidence": [
+        "轮询邮箱获取新的入站邮件；同时接收来自任意在线表单的提交；两路来源汇入同一处理流程"
+      ],
+      "rationale": "双路入站合并为同一处理流程"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验必填字段",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "inbound_leads",
+          "type": "object[]",
+          "description": "入站线索列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "valid_leads",
+          "type": "object[]",
+          "description": "通过校验的线索"
+        },
+        {
+          "name": "invalid_leads",
+          "type": "object[]",
+          "description": "未通过校验的线索"
+        }
+      ],
+      "native_evidence": [
+        "Validate Input Data",
+        "Check Validation"
+      ],
+      "requirement_evidence": [
+        "检查入站数据是否包含必填字段（邮箱或文本）"
+      ],
+      "rationale": "确定性校验必填字段并分流"
+    },
+    {
+      "node_id": "n3",
+      "label": "不合规线索转入死信队列（DLQ）",
+      "node_type": "terminal",
+      "operation_family": "safe_reject",
+      "inputs": [
+        {
+          "name": "invalid_leads",
+          "type": "object[]",
+          "description": "未通过校验的线索"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log Validation Failure",
+        "Log Failed Leads"
+      ],
+      "requirement_evidence": [
+        "不合规的条目转入死信队列（DLQ）以待复核",
+        "失败或无效的线索单独记入 DLQ 标签页用于审计"
+      ],
+      "rationale": "DLQ 为无效线索的最终处置（供人工复核）"
+    },
+    {
+      "node_id": "n4",
+      "label": "从自由文本抽取结构化线索字段",
+      "node_type": "semantic",
+      "operation_family": "extraction",
+      "inputs": [
+        {
+          "name": "valid_leads",
+          "type": "object[]",
+          "description": "通过校验的线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "extracted_lead",
+          "type": "object",
+          "description": "结构化线索字段（公司名称、规模、行业、角色、地区、问题描述、预算信号）"
+        }
+      ],
+      "native_evidence": [
+        "Extract Lead Data with AI"
+      ],
+      "requirement_evidence": [
+        "使用语言模型从自由文本中抽取结构化字段，包括公司名称、规模、行业、角色、地区、问题描述与预算信号"
+      ],
+      "rationale": "自由文本抽取需语言模型"
+    },
+    {
+      "node_id": "n5",
+      "label": "计算线索评分与等级",
+      "node_type": "code",
+      "operation_family": "scoring",
+      "inputs": [
+        {
+          "name": "extracted_lead",
+          "type": "object",
+          "description": "结构化线索字段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_lead",
+          "type": "object",
+          "description": "0-100 评分与等级（Hot/Warm/Cold/Unqualified）"
+        }
+      ],
+      "native_evidence": [
+        "Calculate Lead Score"
+      ],
+      "requirement_evidence": [
+        "依据已抽取的行业、规模、角色、问题清晰度与预算信号，按明确标准计算 0–100 的线索评分，并给出线索等级（Hot、Warm、Cold、Unqualified）"
+      ],
+      "rationale": "确定性规则评分与分级"
+    },
+    {
+      "node_id": "n6",
+      "label": "按配置在 CRM 中创建线索",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "scored_lead",
+          "type": "object",
+          "description": "0-100 评分与等级"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "crm_result",
+          "type": "object",
+          "description": "CRM 线索创建结果"
+        }
+      ],
+      "native_evidence": [
+        "Route by Territory",
+        "Create Salesforce Lead",
+        "Create HubSpot Contact"
+      ],
+      "requirement_evidence": [
+        "按配置在 CRM 中创建线索，默认创建 Salesforce 线索，也可适配为 HubSpot"
+      ],
+      "rationale": "确定性 CRM 写入（Salesforce 或 HubSpot）"
+    },
+    {
+      "node_id": "n7",
+      "label": "向 Slack 发送富文本通知（含评分与按钮）",
+      "node_type": "code",
+      "operation_family": "notify",
+      "inputs": [
+        {
+          "name": "scored_lead",
+          "type": "object",
+          "description": "0-100 评分与等级"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slack_status",
+          "type": "object",
+          "description": "Slack 消息发送结果"
+        }
+      ],
+      "native_evidence": [
+        "Post to Slack"
+      ],
+      "requirement_evidence": [
+        "向 Slack 发送一条富文本消息，概述线索评分与评分依据，并附带一个“Create intro email”按钮以便快速处理"
+      ],
+      "rationale": "Slack 通知为中间动作，其后仍有记录步骤"
+    },
+    {
+      "node_id": "n8",
+      "label": "成功线索记入 Google Sheets 用于报表",
+      "node_type": "terminal",
+      "operation_family": "record",
+      "inputs": [
+        {
+          "name": "scored_lead",
+          "type": "object",
+          "description": "0-100 评分与等级"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log to Google Sheets"
+      ],
+      "requirement_evidence": [
+        "所有成功线索记入 Google Sheets 用于报表"
+      ],
+      "rationale": "成功线索落库报表为最终可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "入站线索进入校验"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "valid == false",
+      "rationale": "校验失败转入 DLQ"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "valid == true",
+      "rationale": "校验通过进入抽取"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "抽取后计算评分"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "评分后创建 CRM 线索"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "CRM 创建后发送 Slack 通知"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "通知后记录成功线索"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "inbound_leads",
+      "condition": null,
+      "rationale": "入站线索供校验"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "invalid_leads",
+      "condition": null,
+      "rationale": "无效线索写入 DLQ"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "valid_leads",
+      "condition": null,
+      "rationale": "有效线索供抽取"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "extracted_lead",
+      "condition": null,
+      "rationale": "字段用于评分"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "scored_lead",
+      "condition": null,
+      "rationale": "评分用于 CRM 创建"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "scored_lead",
+      "condition": null,
+      "rationale": "评分与依据用于 Slack 消息"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n8",
+      "variable": "scored_lead",
+      "condition": null,
+      "rationale": "评分用于报表记录"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n3",
+    "n8"
+  ],
+  "confidence": 0.85,
+  "notes": "邮箱轮询+表单双触发→校验（不合规转 DLQ 终止）→LLM 抽取→评分→CRM→Slack→Sheets。Slack 为中间动作（后续仍有记录），Sheets 记录为最终动作；DLQ 为无效分支的终止节点。"
+}

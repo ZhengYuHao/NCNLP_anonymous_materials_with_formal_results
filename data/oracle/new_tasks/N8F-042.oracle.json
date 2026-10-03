@@ -1,0 +1,380 @@
+{
+  "task_id": "N8F-042",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "70ca8c516e6bb3ccde619606af855c798fab25e05d6b506d7cc03301a5d5eace",
+  "fixtures": [
+    {
+      "fixture_id": "F-MEETING-TRANSCRIPT",
+      "purpose": "含有效转录文本的会议数据，验证正常处理链",
+      "input_data": {
+        "meeting_id": "MT-001",
+        "title": "Sprint planning",
+        "date": "2026-09-02",
+        "participants": [
+          "alice@example.com",
+          "bob@example.com"
+        ],
+        "audio_url": null,
+        "transcript": "We discussed the API redesign. Alice will update the API docs. Bob will draft the migration plan. The team agreed to ship by end of September. Risk: the timeline is tight.",
+        "min_transcript_length": 100
+      }
+    },
+    {
+      "fixture_id": "F-MEETING-AUDIO",
+      "purpose": "仅提供音频地址的会议数据，验证先转写再处理",
+      "input_data": {
+        "meeting_id": "MT-002",
+        "title": "Design review",
+        "date": "2026-09-02",
+        "participants": [
+          "carol@example.com"
+        ],
+        "audio_url": "https://media.example.com/audio/mt-002.mp3",
+        "transcript": null,
+        "min_transcript_length": 100
+      }
+    },
+    {
+      "fixture_id": "F-MEETING-BOTH",
+      "purpose": "同时提供音频与（短）转录的会议数据，验证不重复调用转写",
+      "input_data": {
+        "meeting_id": "MT-003",
+        "title": "Architecture sync",
+        "date": "2026-09-02",
+        "participants": [
+          "dave@example.com"
+        ],
+        "audio_url": "https://media.example.com/audio/mt-003.mp3",
+        "transcript": "short but present transcript text",
+        "min_transcript_length": 100
+      }
+    },
+    {
+      "fixture_id": "F-MEETING-INVALID",
+      "purpose": "无音频且转录过短的会议数据，验证校验拒绝",
+      "input_data": {
+        "meeting_id": "MT-004",
+        "title": "Unclear",
+        "date": null,
+        "participants": [],
+        "audio_url": null,
+        "transcript": "hi",
+        "min_transcript_length": 100
+      }
+    },
+    {
+      "fixture_id": "F-MEETING-MIN",
+      "purpose": "转录文本恰好等于最低长度（100字符）的边界数据",
+      "input_data": {
+        "meeting_id": "MT-005",
+        "title": "Sync",
+        "date": "2026-09-02",
+        "participants": [
+          "eve@example.com"
+        ],
+        "audio_url": null,
+        "transcript": "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789",
+        "min_transcript_length": 100
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-WHISPER",
+      "dependency_type": "lmChatOpenAi_whisper",
+      "operation": "transcribe_audio",
+      "request_contract": {
+        "audio_url": "https://media.example.com/audio/mt-002.mp3"
+      },
+      "response_contract": {
+        "text": "Design review: Carol presented the new onboarding flow. Decision: ship v2 next month. Action: Carol will send the spec to the team."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-EXTRACT",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "extract_meeting_structure",
+      "request_contract": {
+        "input_has_transcript_and_metadata": true
+      },
+      "response_contract": {
+        "summary": "Team agreed on API redesign approach",
+        "key_topics": [
+          "API redesign",
+          "migration"
+        ],
+        "decisions": [
+          "Use REST"
+        ],
+        "risks": [
+          "Timeline risk"
+        ],
+        "action_items": [
+          {
+            "description": "Update API docs",
+            "owner": "alice@example.com",
+            "due_date": "2026-09-09"
+          },
+          {
+            "description": "Draft migration plan",
+            "owner": "bob@example.com",
+            "due_date": "2026-09-16"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ASANA-CREATE",
+      "dependency_type": "asana",
+      "operation": "create_task",
+      "request_contract": {
+        "one_task_per_action_item": true
+      },
+      "response_contract": {
+        "status": "created",
+        "task_gid": "AS-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "one_meeting_log_row": true
+      },
+      "response_contract": {
+        "status": "appended",
+        "row": 42
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-SEND",
+      "dependency_type": "email_sendgrid",
+      "operation": "send_email",
+      "request_contract": {
+        "subject_must_contain_meeting_title": true,
+        "body_must_contain_summary": true
+      },
+      "response_contract": {
+        "status": "sent",
+        "message_id": "SG-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-TRANSCRIPT",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-MEETING-TRANSCRIPT"
+      ],
+      "mock_ids": [
+        "M-LLM-EXTRACT",
+        "M-ASANA-CREATE",
+        "M-SHEETS-APPEND",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.action_items",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "固定结构化结果含 2 条行动项"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.action_items[0].owner",
+          "operator": "equals",
+          "expected": "alice@example.com",
+          "rationale": "行动项必须带负责人"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.action_items[0].due_date",
+          "operator": "equals",
+          "expected": "2026-09-09",
+          "rationale": "行动项必须带截止日期"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.asana_tasks",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "行动项拆分为独立记录后，每条在 Asana 创建对应任务"
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.asana_tasks[0].name",
+          "operator": "contains",
+          "expected": "Update API docs",
+          "rationale": "Asana 任务名称须与行动项描述对应"
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.sheets_log_row.title",
+          "operator": "contains",
+          "expected": "Sprint planning",
+          "rationale": "Google Sheets 追加一行会议日志，须含会议标题"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.email.subject",
+          "operator": "contains",
+          "expected": "Sprint planning",
+          "rationale": "会议摘要邮件须与会议对应"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.email.body",
+          "operator": "contains",
+          "expected": "Team agreed on API redesign approach",
+          "rationale": "邮件正文须含摘要内容"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.status_response.status",
+          "operator": "equals",
+          "expected": "processed",
+          "rationale": "须向调用方返回处理状态结果"
+        }
+      ]
+    },
+    {
+      "case_id": "C-POS-AUDIO-ONLY",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-MEETING-AUDIO"
+      ],
+      "mock_ids": [
+        "M-WHISPER",
+        "M-LLM-EXTRACT",
+        "M-ASANA-CREATE",
+        "M-SHEETS-APPEND",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-02-POS-AUDIO-ONLY",
+          "target": "output.transcript",
+          "operator": "equals",
+          "expected": "Design review: Carol presented the new onboarding flow. Decision: ship v2 next month. Action: Carol will send the spec to the team.",
+          "rationale": "仅提供音频时必须先转写，转录文本须为固定转写结果并合并回上下文"
+        },
+        {
+          "assertion_id": "A-POS-03-POS-AUDIO-ONLY",
+          "target": "output.asana_tasks",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "转写完成后继续正常处理，创建 2 条任务"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-MIN-LENGTH",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-MEETING-MIN"
+      ],
+      "mock_ids": [
+        "M-LLM-EXTRACT",
+        "M-ASANA-CREATE",
+        "M-SHEETS-APPEND",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.action_items",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "转录文本恰好等于最低长度 100 字符时仍满足\"达到最低可处理长度\"，应继续处理"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-BOTH-PRESENT",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-MEETING-BOTH"
+      ],
+      "mock_ids": [
+        "M-LLM-EXTRACT",
+        "M-ASANA-CREATE",
+        "M-SHEETS-APPEND",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01-BND-BOTH-PRESENT",
+          "target": "output.transcript_used",
+          "operator": "equals",
+          "expected": "short but present transcript text",
+          "rationale": "同时提供音频与转录文本时，直接使用已有转录文本"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.whisper_called",
+          "operator": "not_exists",
+          "rationale": "仅当只提供音频地址时才调用语音转写，否则不得重复调用",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-INVALID",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-MEETING-INVALID"
+      ],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.action_items",
+          "operator": "not_exists",
+          "rationale": "音频不可用且转录未达最低长度时不提取行动项",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.asana_tasks",
+          "operator": "not_exists",
+          "rationale": "不满足输入完整性校验时不创建 Asana 任务",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.sheets_log_row",
+          "operator": "not_exists",
+          "rationale": "不满足输入完整性校验时不写会议日志",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.email",
+          "operator": "not_exists",
+          "rationale": "不满足输入完整性校验时不发送邮件",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "音频转写（Whisper）、结构化提取、Asana、Sheets、邮件均为固定模拟。输入校验阈值（最低转录长度=100字符）由固定输入定义，是否继续处理、是否调用转写、任务/日志/邮件数量均可程序判定。"
+}

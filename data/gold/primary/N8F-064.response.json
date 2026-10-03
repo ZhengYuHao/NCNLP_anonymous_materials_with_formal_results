@@ -1,0 +1,309 @@
+{
+  "task_id": "N8F-064",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "dbf8cbf4f49420b715320234649c0b529f5efcbde15ee490757dd65f290cf254",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "启动并加载关注清单",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "watchlist",
+          "type": "array",
+          "description": "用户设定的关注标的清单，覆盖指数、外汇、大宗商品三类"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "watchlist",
+          "type": "array",
+          "description": "整理后的关注标的清单"
+        }
+      ],
+      "native_evidence": [
+        "Generate Daily Market Report",
+        "Environment Config",
+        "Set Market Assets"
+      ],
+      "requirement_evidence": [
+        "系统依据用户设定的关注清单，覆盖三类标的：指数（如 SPY、QQQ）、外汇（如 EUR/USD）和大宗商品（如黄金、原油）"
+      ],
+      "rationale": "需求声明依据用户设定的关注清单启动流程，为确定性入口与清单准备，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "逐一获取各标的当日行情数据",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "watchlist",
+          "type": "array",
+          "description": "关注标的清单"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "market_data",
+          "type": "array",
+          "description": "成功获取的各标的当日行情数据"
+        },
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "数据请求失败或触及硬性限制时的失败详情"
+        }
+      ],
+      "native_evidence": [
+        "split assests & Symbols",
+        "Rate Controlled Queue",
+        "API Throttle",
+        "Fetch Asset Prices"
+      ],
+      "requirement_evidence": [
+        "并逐一从 TwelveData 获取清单中各标的的当日行情数据"
+      ],
+      "rationale": "需求声明逐一从 TwelveData 获取各标的当日行情数据，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "记录失败详情并发送紧急告警",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "error_detail",
+          "type": "object",
+          "description": "失败详情"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log API Error",
+        "Append row in sheet",
+        "Alert API Faliure"
+      ],
+      "requirement_evidence": [
+        "若某次数据请求失败或触及接口的硬性限制，系统立即把失败详情记录到 Google Sheets 的“Error logs”标签页，并通过 Gmail 发送一条紧急失败告警"
+      ],
+      "rationale": "需求声明失败时记录错误日志并通过 Gmail 发送紧急告警，为失败分支的完成动作且无后继，判 terminal。"
+    },
+    {
+      "node_id": "n4",
+      "label": "规范化数据并计算趋势",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "market_data",
+          "type": "array",
+          "description": "各标的当日行情数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_data",
+          "type": "array",
+          "description": "规范化后的数据，含当日百分比变化与看涨/看跌基本趋势判断"
+        }
+      ],
+      "native_evidence": [
+        "Validate API Response",
+        "Normalize Market Data"
+      ],
+      "requirement_evidence": [
+        "成功获取的数据被规范化处理，计算出当日百分比变化以及看涨/看跌的基本趋势判断"
+      ],
+      "rationale": "需求声明规范化数据并计算百分比变化与趋势判断，为确定性计算，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成市场报告",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "normalized_data",
+          "type": "array",
+          "description": "规范化后的数据集"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "report_content",
+          "type": "object",
+          "description": "含市场综述、主要波动标的、风险情绪与可执行操作展望的结构化快照"
+        }
+      ],
+      "native_evidence": [
+        "AI Market Insights"
+      ],
+      "requirement_evidence": [
+        "规范化后的数据集被交给语言模型，由其扮演宏观策略分析师的角色，基于这些数据生成一份结构化快照"
+      ],
+      "rationale": "需求声明由语言模型扮演宏观策略分析师生成结构化快照，需开放语义分析与生成，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "提取板块内容并写入主标签页",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "report_content",
+          "type": "object",
+          "description": "结构化快照"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "archived_report",
+          "type": "object",
+          "description": "写入主 Google Sheets 标签页的完整报告"
+        }
+      ],
+      "native_evidence": [
+        "Parse AI Output",
+        "Log Daily Market Report"
+      ],
+      "requirement_evidence": [
+        "系统按这些固定板块提取内容，将完整报告写入主 Google Sheets 标签页用于历史留存"
+      ],
+      "rationale": "需求声明按固定板块提取内容并写入主标签页留存，为确定性解析与外部写入，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发送排版后的报告",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "archived_report",
+          "type": "object",
+          "description": "完整报告"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Today's market summary"
+      ],
+      "requirement_evidence": [
+        "并将最终排版好的报告文本通过 Gmail 发送出去"
+      ],
+      "rationale": "需求声明将最终排版好的报告文本通过 Gmail 发送，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "加载清单后逐一取数。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "数据请求失败或触及接口硬性限制",
+      "rationale": "取数失败时进入失败告警分支。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "数据请求成功",
+      "rationale": "取数成功时继续规范化处理。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后交由语言模型生成报告。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后按板块提取并写入主标签页。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "写入后发送排版好的报告。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "watchlist",
+      "condition": null,
+      "rationale": "关注清单传给取数节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "error_detail",
+      "condition": null,
+      "rationale": "失败详情传给告警节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "market_data",
+      "condition": null,
+      "rationale": "成功获取的行情数据传给规范化节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "normalized_data",
+      "condition": null,
+      "rationale": "规范化数据传给报告生成节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "report_content",
+      "condition": null,
+      "rationale": "结构化快照传给板块提取节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "archived_report",
+      "condition": null,
+      "rationale": "完整报告传给邮件发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n3",
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "取数失败与成功分别建模为条件分支；速率控制、节流等待等原生实现细节未在需求中声明，未纳入；板块提取与历史留存合并为写入动作节点。"
+}

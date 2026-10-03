@@ -1,0 +1,188 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-020",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g10",
+      "target_group": "g11",
+      "data_items": [
+        "选定的新选题",
+        "选中的状态为新的选题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g10",
+      "target_group": "g18",
+      "data_items": [
+        "选取的选题行标识"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-020-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "状态更新针对 g10 选取的那条状态为新的选题行（把该选题行的状态更新为就绪并附文档链接），更新步骤需消费选题行标识以定位更新对象。",
+      "confidence": 0.8,
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g11",
+      "target_group": "g12",
+      "data_items": [
+        "俄文文章草稿"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g13",
+      "data_items": [
+        "最终文章文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g15",
+      "data_items": [
+        "最终文章文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g14",
+      "data_items": [
+        "Google 文档",
+        "Google 文档及其链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g14",
+      "target_group": "g18",
+      "data_items": [
+        "Google 文档链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g15",
+      "target_group": "g16",
+      "data_items": [
+        "英文配图描述",
+        "英文配图描述（最多两组）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g16",
+      "target_group": "g17",
+      "data_items": [
+        "生成的图片",
+        "生成的配图"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g17",
+      "target_group": "g18",
+      "data_items": [
+        "图片元数据与共享链接",
+        "图片元数据（含共享链接）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "电子表格查找结果（是否已存在）",
+        "电子表格存在性检查结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g8",
+      "data_items": [
+        "已发布与已排队的标题（排除清单）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "随机女性主题分类（分类成员）",
+        "随机女性主题分类"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "新生成的俄文选题",
+        "语言模型生成的俄文选题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "去重后的选题",
+        "过滤后的新选题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "选题工作表中的选题（状态为新）",
+        "选题工作表中的选题（含状态字段）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d16"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.967741935483871,
+    "shared_edge_count": 15,
+    "adjudicated_dispute_count": 1,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-048",
+  "source_id": "n8n:10492",
+  "workflow_sha256": "ab21d9c0a6784e152a43cf60d7e9c78f06bf701a3845e69e1604b63aabf72d88",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "979f4fc6cb0ed87f42162111736c4747911e6467e12fd564302a837fb4a50f06",
+  "requirement": {
+    "requirement_text": "系统对临床试验的电子知情同意（e-consent）进行端到端管理。\n\n1）接收来自受试者门户的已签署知情同意提交。\n2）校验提交中的全部必填字段，并为记录附加具有法律效力的加密时间戳。\n3）使用语言模型依据 ICH E6 GCP 指南审核知情同意表的完整性。\n4）将记录以不可篡改的形式写入 Google Sheets，并保留完整的监管链（chain of custody）。\n5）向主要研究者（PI）与受试者分别发送确认邮件。\n6）每日定时检查即将到期或缺失的知情同意。\n7）生成每日审计汇总报告，供监管提交使用。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 297,
+        "text": "This workflow automates end-to-end e-consent management for clinical trials. It captures, validates, timestamps, and stores consent submissions with a full regulatory-compliant audit trail, notifies investigators and participants, and runs daily compliance checks for missing or expiring consents."
+      },
+      {
+        "start": 313,
+        "end": 942,
+        "text": "Capture E-Consent - Webhook receives signed consent submission from participant portal\nValidate & Timestamp - Verifies all required fields, applies cryptographic timestamp for legal validity\nClaude AI Compliance Check - Reviews consent form completeness against ICH E6 GCP guidelines\nStore with Audit Trail - Writes immutable record to Google Sheets with full chain of custody\nNotify PI & Participant - Sends confirmation emails to principal investigator and participant\nDaily Expiry Sweep - Scheduled job checks for expiring or missing consents\nGenerate Compliance Report - Produces daily audit summary for regulatory submission"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "受试者门户提交的已签署知情同意记录",
+        "每日检查所依据的知情同意到期状态与缺失状态"
+      ],
+      "conditions": [
+        "提交必须包含全部必填字段",
+        "完整性审核依据 ICH E6 GCP 指南进行",
+        "到期与缺失检查每日定时执行"
+      ],
+      "allowed_actions": [
+        "校验必填字段并附加加密时间戳",
+        "使用语言模型审核知情同意表完整性",
+        "将不可篡改的记录写入 Google Sheets",
+        "向主要研究者与受试者发送确认邮件",
+        "检查即将到期或缺失的知情同意",
+        "生成每日审计汇总报告"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中新增不可篡改的知情同意记录及其完整监管链",
+        "主要研究者与受试者各自收到确认邮件",
+        "产出可供监管提交的每日审计汇总"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-048.packet.json",
+    "packet_sha256": "bb8827803bbac06dc242b8257d554f00e32abbbe1c60f8f72d6ea0750c0cf2a9",
+    "public_description_sha256": "602a047dc7c466f8ac439d6c3018c15769e544ffc0100db1e8dcb38122c9dc25"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-048.response.json",
+    "verification_response_sha256": "d85d2d8ab168adf65a4e9a4c699ab743a2519c97ab7cddc475990510992a51b0",
+    "decision": "accept"
+  },
+  "formal_index": 59
+}

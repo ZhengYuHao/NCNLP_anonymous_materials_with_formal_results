@@ -1,0 +1,242 @@
+{
+  "task_id": "N8F-049",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "4ccd8f5d02570388a81d1e4791c5eb3759fc4b68c3ed66aa8508375f09e5c74d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收新增 GitHub issue",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "github_event",
+          "type": "object",
+          "description": "GitHub issue 事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "issue_event",
+          "type": "object",
+          "description": "被接收的新增 issue 事件数据"
+        }
+      ],
+      "native_evidence": ["Github Trigger", "If"],
+      "requirement_evidence": ["系统自动处理新增的 GitHub issue", "仅处理新增的 GitHub issue"],
+      "rationale": "需求声明自动处理新增的 GitHub issue 且仅处理新增项；触发与“是否新增”过滤折叠进本节点契约，为确定性入站动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "提取 issue 关键数据",
+      "node_type": "code",
+      "operation_family": "data_extraction",
+      "inputs": [
+        {
+          "name": "issue_event",
+          "type": "object",
+          "description": "新增 issue 事件数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "issue_data",
+          "type": "object",
+          "description": "提取出的关键数据，含标题、描述、链接与作者"
+        }
+      ],
+      "native_evidence": ["Edit Fields"],
+      "requirement_evidence": ["提取 issue 的关键数据"],
+      "rationale": "需求步骤 1 声明提取 issue 关键数据，为确定性字段提取变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "AI 结构化分类",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "issue_data",
+          "type": "object",
+          "description": "issue 关键数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "按类型与优先级分类的结构化结果"
+        }
+      ],
+      "native_evidence": ["Information Extractor", "OpenAI Chat Model"],
+      "requirement_evidence": ["将 issue 数据交由 AI 模型进行结构化分析，按类型与优先级对 issue 进行分类"],
+      "rationale": "需求步骤 2 声明由 AI 模型对 issue 做结构化分析并按类型与优先级分类，需开放文本理解与判断，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "整理分类结果为任务规格",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "classification",
+          "type": "object",
+          "description": "AI 分类结果"
+        },
+        {
+          "name": "issue_data",
+          "type": "object",
+          "description": "issue 关键数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "task_spec",
+          "type": "object",
+          "description": "可直接用于创建任务的形式，含任务标题、描述、规范化优先级、类型与优先级文本、标签及 issue 标识"
+        }
+      ],
+      "native_evidence": ["Code in JavaScript", "Merge"],
+      "requirement_evidence": ["将分类结果整理为可直接用于创建任务的形式"],
+      "rationale": "需求步骤 3 声明将分类结果整理为可直接创建任务的形式；AI 输出解析、优先级归一化与安全回退等为实现细节，折叠进本节点契约，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "在 Linear 中创建任务",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "task_spec",
+          "type": "object",
+          "description": "整理后的任务规格"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "task_ref",
+          "type": "object",
+          "description": "创建的 Linear 任务引用"
+        }
+      ],
+      "native_evidence": ["Create an issue"],
+      "requirement_evidence": ["在 Linear 中创建对应的任务"],
+      "rationale": "需求步骤 4 声明在 Linear 中创建对应任务，为确定性外部写入动作；因后续仍有评论环节，判 code 而非终止。"
+    },
+    {
+      "node_id": "n6",
+      "label": "在原 issue 下添加分类结果评论",
+      "node_type": "terminal",
+      "operation_family": "external_write_back",
+      "inputs": [
+        {
+          "name": "task_spec",
+          "type": "object",
+          "description": "含分类结果文本与 issue 标识的任务规格"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Create a comment on an issue"],
+      "requirement_evidence": ["在原 GitHub issue 下添加评论，回写分类结果"],
+      "rationale": "需求步骤 5 声明在原 GitHub issue 下添加评论回写分类结果，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "新增 issue 接收后提取关键数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "关键数据提取完成后交 AI 分类。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "分类完成后整理为任务规格。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "任务规格整理完成后创建 Linear 任务。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "任务创建后在原 issue 下回写分类结果评论。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "issue_event",
+      "condition": null,
+      "rationale": "issue 事件传给关键数据提取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "issue_data",
+      "condition": null,
+      "rationale": "关键数据传给 AI 分类节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "classification",
+      "condition": null,
+      "rationale": "分类结果传给任务规格整理节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "issue_data",
+      "condition": null,
+      "rationale": "issue 标题与描述传入任务规格整理节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "task_spec",
+      "condition": null,
+      "rationale": "任务规格传给 Linear 任务创建节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n4",
+      "target": "n6",
+      "variable": "task_spec",
+      "condition": null,
+      "rationale": "分类结果文本与 issue 标识传入评论回写节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6"],
+  "confidence": 0.94,
+  "notes": "需求为新增 GitHub issue 自动分类并转 Linear 任务的线性流程：接收新增 issue（“仅处理新增”条件折叠进入口契约）、提取关键数据、AI 按类型与优先级分类、整理为可直接创建任务的形式、在 Linear 创建任务、在原 issue 下添加评论回写分类结果。AI 输出解析与优先级安全回退、Merge 合并等为实现细节折叠进节点契约；原生的信息提取器结构化输出解析等细节未单独建模。需求未声明失败行为，故未建模失败分支。"
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-003",
+  "source_id": "n8n:2778",
+  "workflow_sha256": "45b39daf78bd61f1b707392b8f7f88b8033e504c69059bdabf87d6808568451d",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "af6ddb89e8a9cd4d63d8cb449a919dd4902c7215f96690be16a9347c5323b08f",
+  "requirement": {
+    "requirement_text": "系统按天自动生成经过充分研究的时事通讯（newsletter）。\n输入与触发：系统每天定时执行一次；监测对象为预先指定的新闻主题（例如 Bitcoin、Nvidia 等）。\n处理过程：由一组研究角色分工协作完成：\n1. 研究负责人（Research Leader）分析主题并生成内容大纲；\n2. 项目规划（Project Planner）将研究工作拆解为具体任务；\n3. 研究助理（Research Assistants）对分配到的子主题开展详细研究，通过信息检索服务实时收集资料；\n4. 编辑（Editor）汇总各项研究结果并润色形成最终稿件。\n系统在收集信息时自动生成引用信息以支持来源核验；检索时可按天、周或月的时间窗口进行筛选；成稿可选择详细版或简版两种报告形式。\n输出：完成的时事通讯通过电子邮件直接投递。",
+    "source_spans": [
+      {
+        "start": 24,
+        "end": 190,
+        "text": "This AI-powered workflow automatically generates detailed, well-researched newsletters by monitoring and analyzing specified news topics (like Bitcoin, Nvidia, etc.)."
+      },
+      {
+        "start": 191,
+        "end": 296,
+        "text": "It uses a team of AI research agents to gather, analyze, and compile information with automatic citations"
+      },
+      {
+        "start": 382,
+        "end": 621,
+        "text": "Research Leader: Analyzes topics and creates content outline\nProject Planner: Breaks down research into specific tasks\nResearch Assistants: Conduct detailed research on assigned subtopics\nEditor: Combines research and polishes final output"
+      },
+      {
+        "start": 637,
+        "end": 926,
+        "text": "Automated daily monitoring of specified news topics\nReal-time information gathering using Perplexity AI\nAuto-citation functionality for source verification\nFlexible time window filtering (day/week/month)\nOptions for detailed or simple reports\nDirect email delivery of completed newsletters"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "预先指定的待监测新闻主题",
+        "可配置的时间窗口（天 / 周 / 月）",
+        "报告形式偏好（详细版 / 简版）"
+      ],
+      "conditions": [
+        "每天自动执行一次",
+        "按所选时间窗口（天 / 周 / 月）筛选新闻信息",
+        "按所选报告形式（详细版 / 简版）成稿",
+        "收集信息时自动生成引用以支持来源核验"
+      ],
+      "allowed_actions": [
+        "分析主题并生成内容大纲",
+        "将研究工作拆解为具体任务",
+        "按子主题开展详细研究并实时检索信息",
+        "自动生成引用信息",
+        "汇总研究结果并润色定稿",
+        "通过电子邮件投递完成的时事通讯"
+      ],
+      "visible_outcomes": [
+        "带自动引用信息的时事通讯稿件（详细版或简版）",
+        "以电子邮件方式送达的时事通讯"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-003.packet.json",
+    "packet_sha256": "37d58dbe4ee87a46f6b9c31dc7607c3053fe52bbc16f4908dbe0191cd0177f3e",
+    "public_description_sha256": "b78102a895975e998f029f32dc89e49efd1810c55b4a2d8cc09df450f558a0f4"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-003.response.json",
+    "verification_response_sha256": "5a14fd2934a57874181acf58b58a15298f2f6a848784238fcd22c60a59f18645",
+    "decision": "accept"
+  },
+  "formal_index": 14
+}

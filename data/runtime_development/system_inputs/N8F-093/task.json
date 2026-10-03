@@ -1,0 +1,391 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-093",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "731c09cfb7871925b1187b84f09c1bfd427085b56351894ead46d50e5e3314f6",
+  "natural_language_requirement": "手动执行时，从 YouTube 频道的 RSS 订阅源获取最新视频，解析出该视频的标题、描述、缩略图地址与链接；下载该视频的缩略图并上传至 Posta，生成可复用的媒体素材；从 Posta 取出社交账号列表，只保留处于启用状态的账号，并按平台去重，使每个平台只保留一个账号；将最新视频信息与每个目标平台组合，交由语言模型为每个平台撰写一条定制化的推广文案；为每条文案标注其所属平台，并与对应的 Posta 社交账号合并；最后为每个选中的账号在 Posta 中创建一篇草稿帖，附上已上传的缩略图、该平台专属的文案以及视频链接。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "operation": "generate_platform_caption",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "platform": {
+            "type": "string"
+          },
+          "video_title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform",
+          "video_title"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "caption": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "caption",
+          "platform"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_latest_video",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "video": {
+            "additionalProperties": false,
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string"
+              },
+              "link": {
+                "type": "string"
+              },
+              "thumbnail_url": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "description",
+              "id",
+              "link",
+              "thumbnail_url",
+              "title"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "video"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "create_draft_post",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "type": "string"
+          },
+          "caption_platform": {
+            "type": "string"
+          },
+          "media_id": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "video_link": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_id",
+          "caption_platform",
+          "media_id",
+          "platform",
+          "video_link"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "draft_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft_id",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "list_social_accounts",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "include_inactive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "include_inactive"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "accounts": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "active": {
+                  "type": "boolean"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "platform": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "active",
+                "id",
+                "platform"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "accounts"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-posta.posta",
+      "operation": "upload_media",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "thumbnail_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "thumbnail_url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "media_id": {
+            "type": "string"
+          },
+          "reusable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "media_id",
+          "reusable"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "target_accounts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "platform": {
+                "type": "string"
+              },
+              "active": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "platform",
+              "active"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "启用状态且按平台去重后的社交账号列表",
+        "requirement_evidence": [
+          "从 Posta 取出社交账号列表，只保留处于启用状态的账号，并按平台去重，使每个平台只保留一个账号"
+        ],
+        "source_operations": [
+          "list_social_accounts"
+        ],
+        "design_sources": [
+          "n4.target_accounts"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "captions",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "platform": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "platform",
+              "caption"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "为每个目标平台生成的定制化推广文案",
+        "requirement_evidence": [
+          "将最新视频信息与每个目标平台组合，交由语言模型为每个平台撰写一条定制化的推广文案"
+        ],
+        "source_operations": [
+          "generate_platform_caption"
+        ],
+        "design_sources": [
+          "n5.captions"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "media_asset",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "media_id": {
+              "type": "string"
+            },
+            "reusable": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "media_id",
+            "reusable"
+          ],
+          "additionalProperties": false
+        },
+        "description": "上传至 Posta 后生成的可复用媒体素材",
+        "requirement_evidence": [
+          "下载该视频的缩略图并上传至 Posta，生成可复用的媒体素材"
+        ],
+        "source_operations": [
+          "upload_media"
+        ],
+        "design_sources": [
+          "n3.media_asset"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "draft_posts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "draft_id",
+              "status",
+              "account_id",
+              "platform",
+              "caption_platform",
+              "caption",
+              "media_id",
+              "video_link"
+            ],
+            "properties": {
+              "draft_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "account_id": {
+                "type": "string"
+              },
+              "platform": {
+                "type": "string"
+              },
+              "caption_platform": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              },
+              "media_id": {
+                "type": "string"
+              },
+              "video_link": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "为每个选中的账号在 Posta 中创建的草稿帖，附上已上传的缩略图、该平台专属的文案以及视频链接",
+        "requirement_evidence": [
+          "为每个选中的账号在 Posta 中创建一篇草稿帖，附上已上传的缩略图、该平台专属的文案以及视频链接"
+        ],
+        "source_operations": [
+          "create_draft_post"
+        ],
+        "design_sources": [
+          "n7"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "E00D12FA15A9C6F27853C042AB994E06D6E8394AE927F26EC9CF8F5C762E3AC8",
+  "public_interface_sha256": "77F6F9A9D62B9B3E584E83F8B62C652E5215A5BA8CCEDB653124E6AA611673FC",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

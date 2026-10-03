@@ -1,0 +1,401 @@
+{
+  "task_id": "N8F-036",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "d78112c8019072dbe0e17440d8a7a7c077e3619f6d595b461e64e8a36dfb683c",
+  "fixtures": [
+    {
+      "fixture_id": "F-webhook-leads",
+      "purpose": "Webhook 接收两条购房意向线索：L1 与既有客户记录重复，L2 为新线索",
+      "input_data": {
+        "leads": [
+          {
+            "id": "L1",
+            "name": "Alice Smith",
+            "email": "alice@x.com",
+            "budget": 500000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 3
+            }
+          },
+          {
+            "id": "L2",
+            "name": "Bob Jones",
+            "email": "bob@x.com",
+            "budget": 450000,
+            "prefs": {
+              "city": "Austin",
+              "bedrooms": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-crm-records",
+      "purpose": "既有客户记录，其中 Alice Smith 已存在",
+      "input_data": {
+        "records": [
+          {
+            "id": "C1",
+            "name": "Alice Smith",
+            "email": "alice@x.com"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-listings",
+      "purpose": "房源库，P1 匹配 L2 的偏好（Austin、2 卧室）",
+      "input_data": {
+        "listings": [
+          {
+            "id": "P1",
+            "city": "Austin",
+            "bedrooms": 2,
+            "price": 420000
+          },
+          {
+            "id": "P2",
+            "city": "Austin",
+            "bedrooms": 3,
+            "price": 520000
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-decks",
+      "purpose": "Google Drive 中匹配房源的资料文件",
+      "input_data": {
+        "decks": [
+          {
+            "listing_id": "P1",
+            "file_id": "deck_P1",
+            "url": "https://drive.example/deck_P1.pdf"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-no-match",
+      "purpose": "买家偏好无匹配房源的场景（预算 100000，无对应房源）",
+      "input_data": {
+        "lead": {
+          "id": "L3",
+          "name": "Cara Wu",
+          "email": "cara@x.com",
+          "budget": 100000,
+          "prefs": {
+            "city": "Austin",
+            "bedrooms": 5
+          }
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-llm-dedup",
+      "dependency_type": "llm",
+      "operation": "dedup_check",
+      "request_contract": {
+        "new_leads": [
+          {
+            "id": "L1"
+          },
+          {
+            "id": "L2"
+          }
+        ]
+      },
+      "response_contract": {
+        "duplicate_ids": [
+          "L1"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append-lead",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "pipeline"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 11
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-match",
+      "dependency_type": "llm",
+      "operation": "match_properties",
+      "request_contract": {
+        "lead_id": "L2"
+      },
+      "response_contract": {
+        "matches": [
+          {
+            "lead_id": "L2",
+            "listing_id": "P1",
+            "score": 0.92
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-drive-get-deck",
+      "dependency_type": "google_drive",
+      "operation": "get_file",
+      "request_contract": {
+        "file_id": "deck_P1"
+      },
+      "response_contract": {
+        "url": "https://drive.example/deck_P1.pdf"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-send",
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "bob@x.com"
+      },
+      "response_contract": {
+        "message_id": "msg_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-log",
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet": "interactions"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-score",
+      "dependency_type": "llm",
+      "operation": "score_deal",
+      "request_contract": {
+        "interactions": [
+          {
+            "lead_id": "L2",
+            "listing_id": "P1",
+            "viewed": true,
+            "days_since": 3
+          }
+        ]
+      },
+      "response_contract": {
+        "probability": 0.75,
+        "stage": "high_intent",
+        "next_actions": [
+          "Send follow-up email",
+          "Schedule viewing"
+        ],
+        "priority": "P1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-team",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#sales-team"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "3333.4444"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-match-none",
+      "dependency_type": "llm",
+      "operation": "match_properties",
+      "request_contract": {
+        "lead_id": "L3"
+      },
+      "response_contract": {
+        "matches": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-dedup",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-crm-records"
+      ],
+      "mock_ids": [
+        "M-llm-dedup",
+        "M-sheets-append-lead"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.appended_leads",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "L1 与既有客户记录重复被去除，去重后仅 L2 写入管线"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.appended_leads[0].id",
+          "operator": "equals",
+          "expected": "L2",
+          "rationale": "写入管线的唯一一条线索应为 L2；结合 A-1（总数 1）与该位置断言，追加集合被唯一确定为 {L2}，从而验证重复线索 L1 未被写入 Google Sheets"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.appended_leads[].id",
+          "operator": "contains",
+          "expected": "L2",
+          "rationale": "新线索 L2 应写入 Google Sheets 用于管线跟踪"
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-match-send",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-listings",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-match",
+        "M-drive-get-deck",
+        "M-gmail-send",
+        "M-sheets-log"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-match-send",
+          "target": "output.matches[0].listing_id",
+          "operator": "equals",
+          "expected": "P1",
+          "rationale": "L2 偏好 Austin/2 卧室，应匹配房源 P1"
+        },
+        {
+          "assertion_id": "A-2-pos-match-send",
+          "target": "output.email.to",
+          "operator": "equals",
+          "expected": "bob@x.com",
+          "rationale": "个性化房源资料应发送给买家 L2 的邮箱"
+        },
+        {
+          "assertion_id": "A-3-pos-match-send",
+          "target": "output.email.deck_url",
+          "operator": "contains",
+          "expected": "deck_P1.pdf",
+          "rationale": "邮件应包含从 Google Drive 取出的匹配房源资料文件链接"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.email.message_id",
+          "operator": "exists",
+          "rationale": "Gmail 发送成功应返回邮件标识",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-cron",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-webhook-leads",
+        "F-listings",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-score",
+        "M-slack-team"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-cron",
+          "target": "output.deal_analysis.probability",
+          "operator": "equals",
+          "expected": 0.75,
+          "rationale": "成交概率应等于固定模拟的语言模型预测值"
+        },
+        {
+          "assertion_id": "A-2-pos-cron",
+          "target": "output.deal_analysis.stage",
+          "operator": "equals",
+          "expected": "high_intent",
+          "rationale": "阶段判断应等于固定模拟输出"
+        },
+        {
+          "assertion_id": "A-3-pos-cron",
+          "target": "output.team_notification.text",
+          "operator": "contains",
+          "expected": "Send follow-up email",
+          "rationale": "销售团队通知须包含建议的后续动作"
+        },
+        {
+          "assertion_id": "A-4-pos-cron",
+          "target": "output.team_notification.text",
+          "operator": "contains",
+          "expected": "P1",
+          "rationale": "通知须包含成交优先级"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-no-match",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-no-match",
+        "F-decks"
+      ],
+      "mock_ids": [
+        "M-llm-match-none",
+        "M-gmail-send"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-no-match",
+          "target": "output.email",
+          "operator": "not_exists",
+          "rationale": "买家偏好无匹配房源时，不向买家发送房源资料邮件",
+          "expected": false
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "去重依据为语言模型将新线索与既有客户记录比对的结果（固定模拟 duplicate_ids）；房源匹配结果、成交概率与阶段判断均来自固定模拟输出，可程序化比对。"
+}

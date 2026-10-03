@@ -1,0 +1,215 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-011",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "用户提供的播放列表或视频链接"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求『自动抓取该链接对应的视频详情与字幕文本』，抓取真实消费用户提供的链接。",
+      "confidence": 0.9,
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g6",
+      "data_items": [
+        "用户提出的问题（含连续追问）",
+        "用户的问题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g8",
+      "data_items": [
+        "用户消息",
+        "用户消息（链接或提问）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g10",
+      "target_group": "g11",
+      "data_items": [
+        "需要确认的处理数量"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "校验确定播放列表需用户确认处理数量后发起询问，询问内容依赖校验结果。",
+      "confidence": 0.6,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g10",
+      "target_group": "g2",
+      "data_items": [
+        "确认后的处理数量限制"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "『若为播放列表，可一次处理其中的多个视频』，抓取按确认后的数量限制处理视频（native 证据含 Limit 节点）。",
+      "confidence": 0.6,
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g11",
+      "target_group": "g12",
+      "data_items": [
+        "需要处理的视频数量询问",
+        "数量询问消息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "视频字幕文本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "处理后的视频详情与字幕信息",
+        "视频详情与字幕等处理后信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g5",
+      "data_items": [
+        "当前处理的视频/播放列表标识"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D04",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "『使用上下文存储记住当前正在讨论的视频或播放列表』，记录的对象即抓取处理中的视频或播放列表。",
+      "confidence": 0.7,
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "内容摘要",
+        "生成的摘要"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g6",
+      "data_items": [
+        "向量库检索结果",
+        "向量数据库中的摘要与内容检索结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "上下文存储中的当前讨论内容",
+        "已保存的对话上下文（当前讨论的视频/播放列表）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g8",
+      "data_items": [
+        "上下文存储中的历史意图"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D06",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "意图理解时读取此前保存的上下文意图（native 证据含 Get Previous Context Intent → Message Intent），以支持无需再次提供链接的连续追问。",
+      "confidence": 0.75,
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g13",
+      "data_items": [
+        "生成的摘要回答"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D07",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "向用户返回的摘要内容为问答代理基于向量库与上下文生成的输出，返回步骤真实读取该结果。",
+      "confidence": 0.75,
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "问题答案",
+        "针对用户问题的答案"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g5",
+      "data_items": [
+        "提取的处理目标（当前讨论的视频或播放列表）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-011-D08",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "『使用上下文存储记住当前正在讨论的视频或播放列表』，上下文写入的对象即意图理解提取出的处理目标。",
+      "confidence": 0.8,
+      "edge_id": "d16"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "用户意图（处理新链接或回答提问）",
+        "解析出的消息意图（处理新链接或回答提问）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d17"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.6666666666666666,
+    "shared_edge_count": 10,
+    "adjudicated_dispute_count": 10,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

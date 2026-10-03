@@ -1,0 +1,662 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-012",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "5ca8bb5867261260ff9d8e866fe4b8d930f085201e2fec5ff11340354fb683f1",
+  "natural_language_requirement": "系统每天定时从多个 AI 资讯 RSS 源选题，自动生成并发布 LinkedIn 组织主页帖子。\n触发与输入：系统每天按计划触发一次，并按发布日节奏执行；设有安全闸门，在手动或测试执行时阻止实际发布。系统从 Airtable 加载最近的发布历史，并从 TechCrunch AI、The Verge AI 等多个 AI 资讯 RSS 源拉取最新文章。\n处理过程：\n1. 对 RSS 文章进行清洗、去重与均衡处理，然后将候选文章连同最近发布历史提交给语言模型，从中选出一条可发布的编辑选题；\n2. 若选中的选题达到质量阈值：由语言模型撰写 LinkedIn 帖子初稿，再由语言模型进行第二遍精简，随后自动追加 2–3 个相关话题标签；\n3. 在 Airtable 中创建一条编辑记录，保存最终文案、来源链接与元数据；\n4. 生成一张方形的编辑配图，可选使用 HTML 截图服务或图像生成能力；随后由语言模型对配图做质量检查，若不通过则重新生成。\n输出：在生产模式下，将配图注册并上传到 LinkedIn，并把帖子发布到 LinkedIn 组织主页；最后将发布结果写回 Airtable。",
+  "public_interfaces": [
+    {
+      "dependency_type": "airtable",
+      "operation": "create_editorial_record",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "table",
+          "record"
+        ],
+        "properties": {
+          "table": {
+            "type": "string"
+          },
+          "record": {
+            "type": "object",
+            "required": [
+              "final_copy",
+              "source_url",
+              "metadata"
+            ],
+            "additionalProperties": true,
+            "properties": {
+              "final_copy": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id"
+        ],
+        "properties": {
+          "record_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "airtable",
+      "operation": "list_records",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "table": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "table"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "records": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "published_at": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "published_at",
+                "title"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "records"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "airtable",
+      "operation": "update_record",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id",
+          "post_id",
+          "posted"
+        ],
+        "properties": {
+          "record_id": {
+            "type": "string"
+          },
+          "post_id": {
+            "type": "string"
+          },
+          "posted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "post_id",
+          "posted",
+          "record_id"
+        ],
+        "properties": {
+          "post_id": {
+            "type": "string"
+          },
+          "posted": {
+            "type": "boolean"
+          },
+          "record_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "image_generation",
+      "operation": "generate_square_image",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "aspect": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "aspect"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "aspect": {
+            "type": "string"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "aspect",
+          "height",
+          "image_url",
+          "width"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "linkedin",
+      "operation": "publish_org_post",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "upload_token",
+          "text"
+        ],
+        "properties": {
+          "upload_token": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "post_id"
+        ],
+        "properties": {
+          "post_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "linkedin",
+      "operation": "register_upload",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "image_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image_url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "upload_token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_token"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "add_hashtags",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "final_copy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "final_copy"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hashtags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hashtags"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "draft_post",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "article_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "article_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "draft": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "polish_post",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "draft": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "draft"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "final_copy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "final_copy"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "qa_image",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "attempt"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "passed": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "passed",
+              "reason"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "passed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "passed"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "select_editorial_signal",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "candidates": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "candidates"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "quality_threshold": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "quality_threshold"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "quality_score": {
+            "type": "number"
+          },
+          "selected_article_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "quality_score",
+          "selected_article_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "rss",
+      "operation": "read_feed",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "feeds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "feeds"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "url"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "editorial_run_result",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "selected_signal",
+            "draft_post",
+            "refined_post",
+            "final_post",
+            "generated_image",
+            "image_qa_passed",
+            "uploaded_asset",
+            "publish_result",
+            "editorial_record"
+          ],
+          "properties": {
+            "selected_signal": {
+              "type": "object",
+              "description": "选中的编辑选题及其质量评分",
+              "required": [
+                "selected_article_id",
+                "quality_score"
+              ],
+              "properties": {
+                "selected_article_id": {
+                  "type": "string",
+                  "description": "语言模型选出的编辑选题文章ID"
+                },
+                "quality_score": {
+                  "type": "number",
+                  "description": "选题质量评分"
+                }
+              }
+            },
+            "draft_post": {
+              "type": "string",
+              "description": "语言模型撰写的 LinkedIn 帖子初稿文本"
+            },
+            "refined_post": {
+              "type": "string",
+              "description": "语言模型进行第二遍精简后的帖子文本"
+            },
+            "final_post": {
+              "type": "string",
+              "description": "带 2-3 个相关话题标签的最终文案"
+            },
+            "generated_image": {
+              "type": "object",
+              "description": "生成的方形编辑配图信息",
+              "required": [
+                "aspect",
+                "height",
+                "width",
+                "image_url"
+              ],
+              "properties": {
+                "aspect": {
+                  "type": "string"
+                },
+                "height": {
+                  "type": "integer"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "image_url": {
+                  "type": "string"
+                }
+              }
+            },
+            "image_qa_passed": {
+              "type": "boolean",
+              "description": "配图是否通过质量检查"
+            },
+            "uploaded_asset": {
+              "type": "object",
+              "description": "上传到 LinkedIn 的媒体资产引用",
+              "required": [
+                "upload_token"
+              ],
+              "properties": {
+                "upload_token": {
+                  "type": "string"
+                }
+              }
+            },
+            "publish_result": {
+              "type": "object",
+              "description": "发布到 LinkedIn 组织主页的结果信息",
+              "required": [
+                "post_id"
+              ],
+              "properties": {
+                "post_id": {
+                  "type": "string"
+                }
+              }
+            },
+            "editorial_record": {
+              "type": "object",
+              "description": "在 Airtable 创建的编辑记录，含最终文案、来源链接与元数据及发布写回结果",
+              "required": [
+                "record_id",
+                "final_copy",
+                "source_url",
+                "metadata",
+                "post_id",
+                "posted"
+              ],
+              "properties": {
+                "record_id": {
+                  "type": "string"
+                },
+                "final_copy": {
+                  "type": "string",
+                  "description": "保存的最终文案"
+                },
+                "source_url": {
+                  "type": "string",
+                  "description": "来源链接"
+                },
+                "metadata": {
+                  "type": "object",
+                  "description": "元数据"
+                },
+                "post_id": {
+                  "type": "string",
+                  "description": "发布后写回的帖子ID"
+                },
+                "posted": {
+                  "type": "boolean",
+                  "description": "是否成功发布"
+                }
+              }
+            }
+          }
+        },
+        "description": "整轮编辑发布的运行结果，包括选中的编辑选题及其质量评分，LinkedIn 帖子初稿、精简稿与带话题标签的最终文案，生成的方形编辑配图及其质量检查结果，上传注册及发布结果，以及 Airtable 中创建的编辑记录，含最终文案、来源链接与元数据和发布写回结果",
+        "requirement_evidence": [
+          "将候选文章连同最近发布历史提交给语言模型，从中选出一条可发布的编辑选题",
+          "若选中的选题达到质量阈值：由语言模型撰写 LinkedIn 帖子初稿，再由语言模型进行第二遍精简，随后自动追加 2–3 个相关话题标签",
+          "在 Airtable 中创建一条编辑记录，保存最终文案、来源链接与元数据",
+          "生成一张方形的编辑配图，可选使用 HTML 截图服务或图像生成能力；随后由语言模型对配图做质量检查，若不通过则重新生成",
+          "在生产模式下，将配图注册并上传到 LinkedIn，并把帖子发布到 LinkedIn 组织主页",
+          "最后将发布结果写回 Airtable"
+        ],
+        "source_operations": [
+          "draft_post",
+          "polish_post",
+          "create_editorial_record",
+          "register_upload",
+          "publish_org_post",
+          "update_record"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "1519B67993E67DC211A8855F98A271E2A28E469B25539BD768A2EE5ADCE60A63",
+  "public_interface_sha256": "A15E0062D9695F3461124771134C8467B25B5406902F9FCB515AFC8B85E79E57",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

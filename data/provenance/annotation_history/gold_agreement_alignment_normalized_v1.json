@@ -1,0 +1,7466 @@
+{
+  "schema_version": "n8n-s1-d15-alignment-normalized-diagnostic-v1",
+  "status": "NEEDS_DFG_ADJUDICATION",
+  "interpretation_boundary": "This diagnostic preserves the original pre-adjudication report. Human-confirmed alignment groups only establish common comparison units; they do not adjudicate node types or edges.",
+  "task_count": 33,
+  "human_alignment_task_count": 31,
+  "high_confidence_automatic_alignment_task_count": 2,
+  "type_comparable_group_count": 278,
+  "mixed_type_group_count": 23,
+  "alignment_normalized_type_raw_agreement_diagnostic": 0.9640287769784173,
+  "alignment_normalized_type_kappa_diagnostic": 0.9293986184477854,
+  "aggregate": {
+    "original_node_type_cohen_kappa": 0.83487361269359,
+    "cfg": {
+      "matches": 258,
+      "primary_count": 299,
+      "double_count": 293,
+      "precision": 0.862876254180602,
+      "recall": 0.8805460750853242,
+      "f1": 0.8716216216216216
+    },
+    "dfg_endpoint": {
+      "matches": 244,
+      "primary_count": 318,
+      "double_count": 321,
+      "precision": 0.7672955974842768,
+      "recall": 0.7601246105919003,
+      "f1": 0.7636932707355244
+    },
+    "dfg_strict": {
+      "matches": 98,
+      "primary_count": 324,
+      "double_count": 323,
+      "precision": 0.30246913580246915,
+      "recall": 0.30340557275541796,
+      "f1": 0.3029366306027821
+    }
+  },
+  "thresholds": {
+    "node_type_cohen_kappa": 0.8,
+    "cfg_f1": 0.85,
+    "dfg_f1": 0.85
+  },
+  "threshold_checks": {
+    "original_node_type_cohen_kappa": true,
+    "alignment_normalized_cfg_f1": true,
+    "alignment_normalized_dfg_f1": false
+  },
+  "dfg_dispute_task_count": 33,
+  "per_task": [
+    {
+      "task_id": "N8F-002",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 4,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "f1": 0.6666666666666666
+      },
+      "dfg_endpoint": {
+        "matches": 5,
+        "primary_count": 7,
+        "double_count": 8,
+        "precision": 0.7142857142857143,
+        "recall": 0.625,
+        "f1": 0.6666666666666666
+      },
+      "dfg_strict": {
+        "matches": 5,
+        "primary_count": 7,
+        "double_count": 8,
+        "precision": 0.7142857142857143,
+        "recall": 0.625,
+        "f1": 0.6666666666666666
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "affectedproperties"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "damagereport"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "variables": [
+            "insuranceexposure"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "variables": [
+            "insuranceexposure"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g7",
+          "variables": [
+            "insuranceexposure"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 3,
+        "primary_dfg": 0,
+        "secondary_dfg": 4
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2",
+            "n3"
+          ],
+          "rationale": "主标n1把监测并汇合天气/地震/洪水预警、筛选活跃预警作为同一业务行为；第二标将其拆为定时触发(n1)、采集三类预警数据(n2)、解析并筛选有效威胁(n3)三步，均落在冻结需求“持续监测三类预警并筛选活跃威胁”的行为范围内，按一对多合并为一组。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "rationale": "主标n2为与房产数据库交叉比对识别受影响房产，其native证据同时包含Get Property Database与Map Affected Properties；第二标拆为读取房产数据库(n4)与交叉比对(n5)两步，同属“将预警信息与房产数据库交叉比对”这一行为。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为“计算保险风险敞口”，需求证据与native证据（Calculate Insurance Claims）完全一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为“使用语言模型生成受损评估报告”，native证据同为Damage Prediction Agent与Report Generation Agent。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为“生成并自动下发维护排期”，native证据同为Schedule Maintenance Teams。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为向房产所有人发送附带完整报告的即时邮件通知。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为向保险公司发送附带完整报告的即时邮件通知。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-008",
+      "alignment_source": "human_review",
+      "alignment_group_count": 12,
+      "mixed_type_groups": [
+        {
+          "group_id": "g7",
+          "primary_types": [
+            "semantic"
+          ],
+          "secondary_types": [
+            "code",
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 13,
+        "primary_count": 13,
+        "double_count": 13,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 12,
+        "primary_count": 13,
+        "double_count": 12,
+        "precision": 0.9230769230769231,
+        "recall": 1.0,
+        "f1": 0.9600000000000001
+      },
+      "dfg_strict": {
+        "matches": 6,
+        "primary_count": 13,
+        "double_count": 12,
+        "precision": 0.46153846153846156,
+        "recall": 0.5,
+        "f1": 0.48000000000000004
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "triggercomment"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "mergerequestchanges"
+          ],
+          "secondary_variables": [
+            "mrchanges"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "filediffentry"
+          ],
+          "secondary_variables": [
+            "filereviewcontext"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "primary_variables": [
+            "filediffentry"
+          ],
+          "secondary_variables": [
+            "filereviewcontext"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "primary_variables": [
+            "filediffentry"
+          ],
+          "secondary_variables": [
+            "filereviewcontext"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "primary_variables": [
+            "positionedfindings"
+          ],
+          "secondary_variables": [
+            "resolvedfindings"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "primary_variables": [
+            "positionedfindings"
+          ],
+          "secondary_variables": [
+            "resolvedfindings"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 1,
+        "primary_dfg": 0,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收/监听GitLab合并请求讨论区的触发评论，native证据同为GitLab Discussion Webhook。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为加载合并请求的变更内容，native证据同为Fetch Merge Request Changes。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为按变更文件拆分差异条目并跳过不适合行内评审的文件；第二标额外含准备评审上下文的辅助步骤，仍属同一拆分过滤行为。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为语言模型针对缺陷维度并行审查每个文件。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为语言模型针对安全维度并行审查每个文件。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为语言模型针对可维护性维度并行审查每个文件。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n7",
+            "n8"
+          ],
+          "rationale": "主标n7把“汇总三个审查者的结论”与“语言模型复核、剔除弱/重复结论并统一严重程度与置信度”合为一个节点；第二标拆为汇总三路结论(n7)与语言模型复核归一(n8)两个节点，同属冻结需求中的同一汇总复核行为，按一对多合并。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为仅保留置信度达到配置阈值的可发布审查结论。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为解析GitLab差异位置以决定行内评论或退化回复；第二标的解析节点还包含构建行内/退化评论内容的准备步骤，同属该解析定位行为。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为在可解析的GitLab差异位置创建行内评审评论。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为无法定位差异位置时退化为在触发讨论区回复评论。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n13"
+          ],
+          "rationale": "两侧均为发布标记本次审查已完成的总结性回复。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-012",
+      "alignment_source": "human_review",
+      "alignment_group_count": 15,
+      "mixed_type_groups": [
+        {
+          "group_id": "g2",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "code"
+          ]
+        },
+        {
+          "group_id": "g6",
+          "primary_types": [
+            "code",
+            "semantic",
+            "terminal"
+          ],
+          "secondary_types": [
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 13,
+        "primary_count": 16,
+        "double_count": 16,
+        "precision": 0.8125,
+        "recall": 0.8125,
+        "f1": 0.8125
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 13,
+        "double_count": 12,
+        "precision": 0.7692307692307693,
+        "recall": 0.8333333333333334,
+        "f1": 0.8
+      },
+      "dfg_strict": {
+        "matches": 6,
+        "primary_count": 13,
+        "double_count": 12,
+        "precision": 0.46153846153846156,
+        "recall": 0.5,
+        "f1": 0.48000000000000004
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g11",
+          "target_group": "g13",
+          "variables": [
+            "generatedimage"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "variables": [
+            "finalpost"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g14",
+          "variables": [
+            "finalpost"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "variables": [
+            "editorialcontext"
+          ]
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "variables": [
+            "approvedimage"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "primary_variables": [
+            "generatedimage"
+          ],
+          "secondary_variables": [
+            "editorialimage"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "primary_variables": [
+            "publishhistory"
+          ],
+          "secondary_variables": [
+            "recenthistory"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "cleanedcandidates"
+          ],
+          "secondary_variables": [
+            "candidatearticles"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "publishablesignal"
+          ],
+          "secondary_variables": [
+            "editorialsignal"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 4,
+        "secondary_cfg": 0,
+        "primary_dfg": 2,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每日定时触发，native证据同为Run Daily Editorial Check。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2",
+            "n14",
+            "n18",
+            "n20"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "第二标n2把“应用发布日节奏与安全闸门”合为一个节点；主标将其拆为应用节奏与闸门(n2)、安全闸门检查运行模式(n14)、非发布日跳过(n18)、测试或手动模式阻止发布(n20)四个节点，均属冻结需求中“按发布日节奏执行、安全闸门阻止手动/测试发布”这一行为及其分支，按多对一合并。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为从Airtable加载最近发布历史。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为从TechCrunch AI、The Verge AI等多个AI资讯RSS源拉取最新文章并汇合。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为对RSS文章进行清洗、去重与均衡处理。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6",
+            "n7",
+            "n19"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "第二标n6把“语言模型选出可发布编辑选题”连同质量阈值判断（含未达阈值分支）合为一个节点；主标拆为语言模型选题(n6)、判断是否达到质量阈值(n7)、未达阈值本轮不发布(n19)，同属冻结需求中“选出可发布选题且须达到质量阈值才继续”的行为及分支，按多对一合并。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为由语言模型撰写LinkedIn帖子初稿。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为由语言模型对帖子进行第二遍精简。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为自动追加2–3个相关话题标签。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为在Airtable创建编辑记录，保存最终文案、来源链接与元数据。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为生成方形编辑配图（可选HTML截图服务或图像生成能力）。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为由语言模型对配图做质量检查并在不通过时重新生成。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n15"
+          ],
+          "secondary_nodes": [
+            "n13"
+          ],
+          "rationale": "两侧均为在生产模式下注册并上传配图到LinkedIn。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [
+            "n16"
+          ],
+          "secondary_nodes": [
+            "n14"
+          ],
+          "rationale": "两侧均为把帖子发布到LinkedIn组织主页。"
+        },
+        {
+          "group_id": "g15",
+          "primary_nodes": [
+            "n17"
+          ],
+          "secondary_nodes": [
+            "n15"
+          ],
+          "rationale": "两侧均为将发布结果写回Airtable。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-018",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [
+        {
+          "group_id": "g5",
+          "primary_types": [
+            "semantic"
+          ],
+          "secondary_types": [
+            "code",
+            "semantic"
+          ]
+        },
+        {
+          "group_id": "g7",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 7,
+        "primary_count": 8,
+        "double_count": 7,
+        "precision": 0.875,
+        "recall": 1.0,
+        "f1": 0.9333333333333333
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 8,
+        "double_count": 7,
+        "precision": 0.125,
+        "recall": 0.14285714285714285,
+        "f1": 0.13333333333333333
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g7",
+          "variables": [
+            "publishedtitles"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "primary_variables": [
+            "publishedtitles"
+          ],
+          "secondary_variables": [
+            "postedtitles"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "newsitems"
+          ],
+          "secondary_variables": [
+            "rawarticles"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "approvedarticles"
+          ],
+          "secondary_variables": [
+            "approvedarticle"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "postcontent"
+          ],
+          "secondary_variables": [
+            "finalpost"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "primary_variables": [
+            "postcontent"
+          ],
+          "secondary_variables": [
+            "finalpost"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "publishmode"
+          ],
+          "secondary_variables": [
+            "verifiedimage"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 4,
+        "primary_dfg": 0,
+        "secondary_dfg": 3
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标n1把“定时触发”与“读取已发布标题记录用于去重”合为一个节点；第二标拆为每日定时触发(n1)与读取已发布标题记录(n2)，两者均落在主标n1的需求证据范围内，按一对多合并。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为向新闻数据源请求近期新闻（最近24–48小时、按标题检索、按发布时间排序），native证据同为API NEWS。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为筛选（排除聚合站点与公关稿源、要求有效链接与图片）、按主题分组取代表、按时间排序并限制最多10条。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为发布前校验链接存在且标题未发布过（去重），native证据同为URL checker。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n6",
+            "n7"
+          ],
+          "rationale": "主标n5把“按有无摘要分两种变体生成LinkedIn文案”与“清理文案并保留图片链接”合为一个节点；第二标拆为生成LinkedIn帖文(n6)与清理文案(n7)两步，同属文案生成与清理这一行为，按一对多合并。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为下载文章图片以验证链接可用性，并据此决定带图或纯文本发布。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n9",
+            "n10",
+            "n11"
+          ],
+          "rationale": "主标n7把“带图或纯文本发布到LinkedIn”与“发布后写入已发布标题记录”合为一个节点；第二标拆为带图发布(n9)、纯文本发布(n10)、写入已发布标题记录(n11)，同属发布与去重记录行为，按一对多合并。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-026",
+      "alignment_source": "human_review",
+      "alignment_group_count": 8,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 8,
+        "primary_count": 9,
+        "double_count": 8,
+        "precision": 0.8888888888888888,
+        "recall": 1.0,
+        "f1": 0.9411764705882353
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 9,
+        "double_count": 8,
+        "precision": 0.2222222222222222,
+        "recall": 0.25,
+        "f1": 0.23529411764705882
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "variables": [
+            "eligibleprospects"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "discoveryresults"
+          ],
+          "secondary_variables": [
+            "discoveryresult"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "scoredprofiles"
+          ],
+          "secondary_variables": [
+            "scoredprospects"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "primary_variables": [
+            "scoredprofiles"
+          ],
+          "secondary_variables": [
+            "scoredprospects"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "eligibleprospects"
+          ],
+          "secondary_variables": [
+            "newprospects"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "rankingreport"
+          ],
+          "secondary_variables": [
+            "rankedreport"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "primary_variables": [
+            "rankingreport"
+          ],
+          "secondary_variables": [
+            "rankedreport"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 3,
+        "primary_dfg": 0,
+        "secondary_dfg": 2
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标n1把“每周定时触发”与“读取城市、品类、阈值与投递目标配置”合为一个节点；第二标拆为每周定时触发(n1)与读取检索配置(n2)，同属“每周按计划运行并读取设定”这一行为，按一对多合并。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为按品类触发Google Maps商家发现检索并轮询快照进度直至结果就绪。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "rationale": "主标n3把“下载商家档案”与“按资料完整度缺口、以同类商家集合为基准打分”合为一个节点；第二标拆为下载商家档案(n4)与按完整度缺口打分(n5)，同属下载与打分行为，按一对多合并。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n6",
+            "n7"
+          ],
+          "rationale": "主标n4把“读取已记录候选商家”与“过滤最近90天内已联系过的商家”合为一个节点；第二标拆为读取已记录候选(n6)与过滤近期已联系(n7)，同属读取与过滤行为，按一对多合并。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为由语言模型从三星及以下评分的评论中抽取抱怨主题。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为生成排名报告。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为把每个候选商家逐行追加到Google Sheets。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为向指定Slack频道发送格式化摘要。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-034",
+      "alignment_source": "human_review",
+      "alignment_group_count": 9,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 7,
+        "primary_count": 9,
+        "double_count": 8,
+        "precision": 0.7777777777777778,
+        "recall": 0.875,
+        "f1": 0.823529411764706
+      },
+      "dfg_endpoint": {
+        "matches": 9,
+        "primary_count": 9,
+        "double_count": 9,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_strict": {
+        "matches": 7,
+        "primary_count": 9,
+        "double_count": 9,
+        "precision": 0.7777777777777778,
+        "recall": 0.7777777777777778,
+        "f1": 0.7777777777777778
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g3",
+          "target_group": "g6",
+          "primary_variables": [
+            "commentsanalysis"
+          ],
+          "secondary_variables": [
+            "commentanalysis"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "storyreport"
+          ],
+          "secondary_variables": [
+            "prreport"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 3,
+        "primary_dfg": 0,
+        "secondary_dfg": 2
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2",
+            "n3",
+            "n4"
+          ],
+          "rationale": "主标n1把“定时触发、按主题检索Reddit帖子、按互动表现筛选上升趋势帖子”合为一个节点；第二标拆为每周定时触发(n1)、读取主题清单(n2)、检索Reddit帖子(n3)、按互动条件筛选(n4)，均属冻结需求中“按周定期检索并筛选趋势帖子”的行为，按一对多合并。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为逐帖获取评论并按评分取排名前30条。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为由语言模型分析评论，得出整体情绪、主要叙事、受众洞察与公关启示。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为使用网页正文抽取服务获取帖子所链接文章的内容。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为由语言模型识别文章的核心故事要素、技术层面要素、叙事机会与可传播要素。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为综合评论与内容分析，生成含首发式报道机会、趋势放大型选题、优先级排序、执行路线图与策略建议的报告。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为将报告整理为文本文件并打包为压缩包；第二标n10的native证据含Set Final Report/Convert to File/Merge Binary Files/Compress files，与主标n7一致。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为上传压缩包至Google Drive。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为通过Mattermost将压缩包链接分享给团队成员。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-056",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 4,
+        "primary_count": 6,
+        "double_count": 5,
+        "precision": 0.6666666666666666,
+        "recall": 0.8,
+        "f1": 0.7272727272727272
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 6,
+        "double_count": 5,
+        "precision": 0.3333333333333333,
+        "recall": 0.4,
+        "f1": 0.3636363636363636
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "scheduleevent"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "variables": [
+            "account"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "variables": [
+            "selectedaccount"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "recentposts"
+          ],
+          "secondary_variables": [
+            "scrapedposts"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "unlikedpost"
+          ],
+          "secondary_variables": [
+            "candidatepost"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 2,
+        "secondary_cfg": 0,
+        "primary_dfg": 2,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每2小时在指定分钟定时触发，native证据同为Schedule Trigger。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为按时间段从已配置的Instagram账号中轮换选择一个账号。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为由语言模型生成一个贴合AI/BPA领域的真实话题标签。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为按话题标签抓取最近帖子且数量不超过配置上限。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5",
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "第二标n5把“从抓取结果中随机选择一条帖子”与“查重确认该帖子此前未被点赞过”合为一个节点；主标拆为随机选择(n5)与查重(n6)两个节点，同属“随机选择并查重”行为，按多对一合并。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7",
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "第二标n6把“生成待点赞清单并上传在线存储”与“启动自动点赞完成点赞”合为一个节点；主标拆为生成清单并上传(n7)与启动自动点赞(n8)两个节点，同属冻结需求中“生成待点赞清单并启动点赞”这一行为，按多对一合并。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为将已点赞帖子的链接追加到已点赞记录中以避免重复点赞。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-089",
+      "alignment_source": "human_review",
+      "alignment_group_count": 12,
+      "mixed_type_groups": [
+        {
+          "group_id": "g12",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 14,
+        "primary_count": 15,
+        "double_count": 16,
+        "precision": 0.9333333333333333,
+        "recall": 0.875,
+        "f1": 0.9032258064516129
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 16,
+        "double_count": 15,
+        "precision": 0.625,
+        "recall": 0.6666666666666666,
+        "f1": 0.6451612903225806
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 16,
+        "double_count": 15,
+        "precision": 0.0625,
+        "recall": 0.06666666666666667,
+        "f1": 0.06451612903225808
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "rawfeedback"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g12",
+          "variables": [
+            "normalizedfeedback"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "normalizedfeedback"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g7",
+          "variables": [
+            "normalizedfeedback"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g9",
+          "variables": [
+            "normalizedfeedback"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g8",
+          "variables": [
+            "triage"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g10",
+          "target_group": "g12",
+          "variables": [
+            "branchresult"
+          ]
+        },
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "variables": [
+            "branchresult"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g12",
+          "variables": [
+            "statuspayload"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g12",
+          "variables": [
+            "branchresult"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g12",
+          "variables": [
+            "branchresult"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "triageoutput"
+          ],
+          "secondary_variables": [
+            "triageresult"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g10",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g11",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g12",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g9",
+          "primary_variables": [
+            "triage"
+          ],
+          "secondary_variables": [
+            "triageoutcome"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "jiraticket"
+          ],
+          "secondary_variables": [
+            "createdissue"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 1,
+        "primary_dfg": 0,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收通过回调接口提交的UAT反馈（来源可为表单、Slack或内部工具）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为规范化反馈结构（测试人、版本、页面、反馈内容）并清洗为可供模型处理的文本。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为由语言模型分诊，输出类型、严重程度与情感、摘要与建议标题及置信度。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为校验模型输出可靠性（置信度偏低或解析出错则不可靠）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为不可靠时转人工复核并通过邮件与Slack通知。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为置信度充足时按反馈类型（严重缺陷/功能需求/体验改进/无效噪音）分流路由，native证据同为route by triage type。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为严重缺陷类型在Jira中创建问题。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为向工程团队发送Slack告警。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为功能需求类型写入Notion产品路线图。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为体验改进类型转入设计或体验跟踪；自动候选将主标n10误配到第二标n6（同步留存），经native证据（double check/if found/notion节点）核对修正为S n11。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为无效噪音类型归档并保留可追溯记录。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n6",
+            "n13",
+            "n14"
+          ],
+          "rationale": "主标n12把“在Jira、Slack、Notion、Google Sheets与邮件间同步留存”、“通知提交反馈的测试人”与“向原始回调方返回结构化状态结果”合为一个闭环节点；第二标拆为同步留存反馈记录(n6)、通知测试人(n13)、返回结构化状态结果(n14)，均属该闭环行为，按一对多合并。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-107",
+      "alignment_source": "human_review",
+      "alignment_group_count": 5,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 4,
+        "primary_count": 4,
+        "double_count": 4,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 3,
+        "primary_count": 4,
+        "double_count": 3,
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.8571428571428571
+      },
+      "dfg_strict": {
+        "matches": 0,
+        "primary_count": 4,
+        "double_count": 3,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "variables": [
+            "errormessage"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "requestdata"
+          ],
+          "secondary_variables": [
+            "scraperequest"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "primary_variables": [
+            "validatedschema"
+          ],
+          "secondary_variables": [
+            "validatedrequest"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "formattedresult"
+          ],
+          "secondary_variables": [
+            "structuredresult"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收调用方POST提交的自然语言指令与可选JSON Schema输出结构，native证据同为Receive Scrape Request。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为在交给智能体前校验输出结构：未提供或为空时回退宽松默认结构，非JSON对象、缺少type或type取值非法时不通过。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为输出结构不合法时返回包含说明信息与示例结构的错误响应，native证据同为Return Schema Error。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "第二标n3把“智能体检索网页发现来源、抓取任意URL提取结构化内容、实时会话交互动态内容”与“将智能体输出格式化为与所提供或默认结构一致”合为一个节点（其native证据同时包含Research & Extract Web Data与Format Response to Schema）；主标拆为智能体检索抓取交互(n4)与格式化输出(n5)两个节点，同属冻结需求中“研究与抓取网页数据并按结构格式化”的行为，按多对一合并。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为把结构化JSON返回给调用方：提供结构时结果符合该结构，未提供时返回结构灵活的数据对象。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-003",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [
+        {
+          "group_id": "g5",
+          "primary_types": [
+            "code",
+            "semantic"
+          ],
+          "secondary_types": [
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 0.7142857142857143,
+        "f1": 0.8333333333333333
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 5,
+        "double_count": 7,
+        "precision": 0.2,
+        "recall": 0.14285714285714285,
+        "f1": 0.16666666666666666
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "timewindow"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "variables": [
+            "reportformat"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "newstopics"
+          ],
+          "secondary_variables": [
+            "topiclist"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "outline"
+          ],
+          "secondary_variables": [
+            "contentoutline"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "retrievedsources"
+          ],
+          "secondary_variables": [
+            "researchfindings"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "newsletter"
+          ],
+          "secondary_variables": [
+            "finalnewsletter"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每日定时触发，需求证据同为\"系统每天定时执行一次\"。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "同一业务行为：加载/读取监测配置。主标仅表述主题列表，第二标额外包含时间窗口与报告形式配置，核心行为一致，范围差异在此注明。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "研究负责人分析主题并生成内容大纲，两侧需求证据一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "项目规划将研究工作拆解为具体任务，两侧需求证据一致。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5",
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "主标将\"研究助理按子主题详细研究\"（n5）与\"信息检索并生成引用\"（n6）拆为两个节点，第二标将研究、检索、自动引用与时间窗口筛选合并为单个节点，属同一业务行为簇。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "编辑汇总研究结果并按报告形式润色成稿，两侧行为一致，仅编号错位。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "通过电子邮件投递完成的时事通讯，两侧行为一致。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-009",
+      "alignment_source": "human_review",
+      "alignment_group_count": 14,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 12,
+        "primary_count": 13,
+        "double_count": 14,
+        "precision": 0.9230769230769231,
+        "recall": 0.8571428571428571,
+        "f1": 0.888888888888889
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 13,
+        "double_count": 15,
+        "precision": 0.7692307692307693,
+        "recall": 0.6666666666666666,
+        "f1": 0.7142857142857142
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 13,
+        "double_count": 15,
+        "precision": 0.15384615384615385,
+        "recall": 0.13333333333333333,
+        "f1": 0.14285714285714288
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g3",
+          "target_group": "g8",
+          "variables": [
+            "parsedprompts"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g9",
+          "variables": [
+            "imageurl"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g3",
+          "variables": [
+            "modeloutput"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g14",
+          "target_group": "g4",
+          "variables": [
+            "parsedfields"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "generatedimage"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "variables": [
+            "previewmessage"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g13",
+          "variables": [
+            "reviewdecision"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g14",
+          "variables": [
+            "regeneratedprompts"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "requestdata"
+          ],
+          "secondary_variables": [
+            "request"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "modeloutput"
+          ],
+          "secondary_variables": [
+            "prompts"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "parsedprompts"
+          ],
+          "secondary_variables": [
+            "parsedfields"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "primary_variables": [
+            "parsedprompts"
+          ],
+          "secondary_variables": [
+            "parsedfields"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g9",
+          "primary_variables": [
+            "parsedprompts"
+          ],
+          "secondary_variables": [
+            "parsedfields"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "primary_variables": [
+            "reviewdecision"
+          ],
+          "secondary_variables": [
+            "reviewfeedback"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "primary_variables": [
+            "videourl"
+          ],
+          "secondary_variables": [
+            "videoresult"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "primary_variables": [
+            "videourl"
+          ],
+          "secondary_variables": [
+            "videoresult"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 3,
+        "primary_dfg": 1,
+        "secondary_dfg": 2
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "接收表单提交的制作请求（产品图片、UGC 提示词、视频风格），两侧一致。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2",
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "主标拆为\"提取产品细节\"（n2）与\"生成 UGC 提示词\"（n3），第二标合并为\"提取产品细节并生成结构化 UGC 提示词\"，同一业务行为簇。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "解析初次模型返回为规整字段；主标 n4 与第二标 n3 的原生证据同为 Extract UGC Prompt Data。自动候选误将主标 n4 配到第二标 n12（重生成解析），已纠正。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "调用图像生成能力生成图片，两侧一致。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "将提示词预览发布到 Discord，两侧一致。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "通过第二个表单收集审核人决定，两侧一致。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "按审核决定（通过/需修改/拒绝）路由，两侧行为一致。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "依据审核人反馈重新生成提示词，两侧原生证据一致（Regenerate UGC Content Agent）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "rationale": "主标将\"提交视频生成\"与\"等待并轮询预测状态直至成功\"合并为 n10；第二标拆为提交任务（n8）与等待轮询（n9），同一业务行为簇。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "将生成的视频链接发布到 Discord，两侧一致。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n13",
+            "n14"
+          ],
+          "rationale": "主标将\"设定最终任务元数据\"与\"保存任务记录到数据表\"合并为 n12；第二标拆为 n13 与 n14。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n15"
+          ],
+          "rationale": "向 Discord 发送完成通知，两侧一致。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n16"
+          ],
+          "rationale": "审核拒绝时终止流程，两侧行为一致；第二标 n16 原生证据另含拒绝通知节点，核心行为相同。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "第二标单列为\"解析重生成的模型输出\"（Parse Regenerated AI Output），主标未将该解析行为单列节点，无主标对应项。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-014",
+      "alignment_source": "human_review",
+      "alignment_group_count": 9,
+      "mixed_type_groups": [
+        {
+          "group_id": "g6",
+          "primary_types": [
+            "semantic"
+          ],
+          "secondary_types": [
+            "code",
+            "semantic"
+          ]
+        },
+        {
+          "group_id": "g7",
+          "primary_types": [
+            "code"
+          ],
+          "secondary_types": [
+            "code",
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 11,
+        "primary_count": 13,
+        "double_count": 13,
+        "precision": 0.8461538461538461,
+        "recall": 0.8461538461538461,
+        "f1": 0.8461538461538461
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 12,
+        "double_count": 13,
+        "precision": 0.8333333333333334,
+        "recall": 0.7692307692307693,
+        "f1": 0.8
+      },
+      "dfg_strict": {
+        "matches": 4,
+        "primary_count": 12,
+        "double_count": 13,
+        "precision": 0.3333333333333333,
+        "recall": 0.3076923076923077,
+        "f1": 0.32
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "variables": [
+            "goalupdate"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g8",
+          "variables": [
+            "userintent"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "variables": [
+            "messagecontent"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g7",
+          "variables": [
+            "messagecontent"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g8",
+          "variables": [
+            "userid"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "imagerecognition"
+          ],
+          "secondary_variables": [
+            "imageanalysis"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "mealestimation"
+          ],
+          "secondary_variables": [
+            "nutritionestimate"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g9",
+          "primary_variables": [
+            "mealrecord"
+          ],
+          "secondary_variables": [
+            "replycontent"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "primary_variables": [
+            "registration"
+          ],
+          "secondary_variables": [
+            "replycontent"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g9",
+          "primary_variables": [
+            "profileupdate"
+          ],
+          "secondary_variables": [
+            "replycontent"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "dailyreport"
+          ],
+          "secondary_variables": [
+            "replycontent"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 3,
+        "primary_dfg": 0,
+        "secondary_dfg": 3
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标将\"接收消息\"与\"输入形态路由（含注册状态检查）\"合并为 n1；第二标拆为接收（n1）与路由/注册检查（n2），同一业务行为簇。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "转写语音消息，两侧原生证据一致。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "识别食物图片，两侧原生证据一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "理解餐食描述并自动估算热量、蛋白质、碳水与脂肪，两侧一致（Cal IA Agent）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "写入餐食记录到 Google Sheets（Append Meal Data），两侧一致。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n7",
+            "n8"
+          ],
+          "rationale": "主标将\"注册引导对话\"与\"保存用户档案\"（Register User）合并为 n6（其原生证据同时包含 Register Agent 与 Register User）；第二标拆为注册引导（n7）与保存档案（n8）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n9",
+            "n10"
+          ],
+          "rationale": "更新用户档案目标这一业务行为：主标以 n7 单个节点表达，第二标拆为解析目标设置/更新请求（n9）与更新档案中的目标（n10）两步，归入同组。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "生成带可视化进度条的每日营养报告，两侧原生证据基本一致。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "发送 Telegram 回复消息，两侧一致。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-020",
+      "alignment_source": "human_review",
+      "alignment_group_count": 18,
+      "mixed_type_groups": [
+        {
+          "group_id": "g18",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 19,
+        "primary_count": 19,
+        "double_count": 19,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 12,
+        "primary_count": 15,
+        "double_count": 24,
+        "precision": 0.8,
+        "recall": 0.5,
+        "f1": 0.6153846153846154
+      },
+      "dfg_strict": {
+        "matches": 8,
+        "primary_count": 15,
+        "double_count": 24,
+        "precision": 0.5333333333333333,
+        "recall": 0.3333333333333333,
+        "f1": 0.4102564102564102
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g12",
+          "target_group": "g18",
+          "variables": [
+            "finalarticle"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "variables": [
+            "excludetitles"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "variables": [
+            "filteredtopics"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "variables": [
+            "triggersource"
+          ]
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g12",
+          "variables": [
+            "selectedtopic"
+          ]
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g13",
+          "variables": [
+            "selectedtopic"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "variables": [
+            "triggersource"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g10",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g9",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g10",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g9",
+          "variables": [
+            "spreadsheetid"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "variables": [
+            "existingtitles"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g8",
+          "variables": [
+            "existingtitles"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "primary_variables": [
+            "draftarticle"
+          ],
+          "secondary_variables": [
+            "articledraft"
+          ]
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "primary_variables": [
+            "docref"
+          ],
+          "secondary_variables": [
+            "docinfo"
+          ]
+        },
+        {
+          "source_group": "g16",
+          "target_group": "g17",
+          "primary_variables": [
+            "generatedimages"
+          ],
+          "secondary_variables": [
+            "images"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "categorymembers"
+          ],
+          "secondary_variables": [
+            "categorycandidates"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 2,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "每周一 09:00 计划触发刷新选题队列，两侧一致（编号错位）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "手动触发生成当日内容，两侧一致（编号交叉错位）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n2",
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "主标在周分支（n2）与日分支（n10）各有一个\"在 Google Drive 查找指定 Sheets 文件\"节点；第二标合并为一个 n3（原生证据含两条分支的搜索节点），同一业务行为。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n3",
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "主标在两条分支各有一个\"创建电子表格、工作表与内容文件夹\"节点（n3、n11）；第二标合并为 n4，同一业务行为。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "读取已发布与已排队标题，两侧一致。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "向维基百科 API 查询随机女性主题分类，两侧一致。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "语言模型生成新的俄文选题，两侧一致。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "过滤重复选题，两侧一致。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "追加选题到选题工作表，两侧一致。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "读取选题工作表并选取一条状态为\"新\"的选题，两侧一致。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "语言模型起草俄文文章，两侧一致。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "第二轮改写以降低机械痕迹，两侧一致。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n15"
+          ],
+          "secondary_nodes": [
+            "n13"
+          ],
+          "rationale": "创建文章专属文件夹、Google 文档并写入最终文章文本，两侧一致。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [
+            "n16"
+          ],
+          "secondary_nodes": [
+            "n14"
+          ],
+          "rationale": "公开共享文档链接，两侧一致。"
+        },
+        {
+          "group_id": "g15",
+          "primary_nodes": [
+            "n17"
+          ],
+          "secondary_nodes": [
+            "n15"
+          ],
+          "rationale": "抽取最多两个配图场景并生成英文配图描述，两侧一致。"
+        },
+        {
+          "group_id": "g16",
+          "primary_nodes": [
+            "n18"
+          ],
+          "secondary_nodes": [
+            "n16"
+          ],
+          "rationale": "调用图像生成能力生成图片，两侧一致。"
+        },
+        {
+          "group_id": "g17",
+          "primary_nodes": [
+            "n19"
+          ],
+          "secondary_nodes": [
+            "n17"
+          ],
+          "rationale": "上传图片到 Google Drive 并通过链接共享，两侧一致。"
+        },
+        {
+          "group_id": "g18",
+          "primary_nodes": [
+            "n20",
+            "n21",
+            "n22"
+          ],
+          "secondary_nodes": [
+            "n18"
+          ],
+          "rationale": "主标拆为\"记录图片元数据\"（n20）、\"追加已发布条目\"（n21）、\"更新选题状态为就绪\"（n22）三个节点；第二标合并为一个记录节点 n18，同一业务行为簇。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-029",
+      "alignment_source": "human_review",
+      "alignment_group_count": 15,
+      "mixed_type_groups": [
+        {
+          "group_id": "g3",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        },
+        {
+          "group_id": "g4",
+          "primary_types": [
+            "code",
+            "semantic"
+          ],
+          "secondary_types": [
+            "semantic"
+          ]
+        },
+        {
+          "group_id": "g11",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        },
+        {
+          "group_id": "g14",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        },
+        {
+          "group_id": "g15",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 9,
+        "primary_count": 14,
+        "double_count": 13,
+        "precision": 0.6428571428571429,
+        "recall": 0.6923076923076923,
+        "f1": 0.6666666666666666
+      },
+      "dfg_endpoint": {
+        "matches": 11,
+        "primary_count": 22,
+        "double_count": 20,
+        "precision": 0.5,
+        "recall": 0.55,
+        "f1": 0.5238095238095238
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 24,
+        "double_count": 21,
+        "precision": 0.08333333333333333,
+        "recall": 0.09523809523809523,
+        "f1": 0.08888888888888889
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "variables": [
+            "checkresult"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g11",
+          "variables": [
+            "escalationreason"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g11",
+          "variables": [
+            "answer"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "variables": [
+            "sentiment"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g11",
+          "variables": [
+            "sentiment"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "variables": [
+            "sentiment"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g11",
+          "variables": [
+            "confidence"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "variables": [
+            "confidence"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g10",
+          "variables": [
+            "escalationreason"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g11",
+          "variables": [
+            "decision",
+            "escalationreason"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g4",
+          "variables": [
+            "escalationreason"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g10",
+          "variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "variables": [
+            "sessionrecord"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "precheckresult"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g4",
+          "variables": [
+            "sentiment"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "variables": [
+            "sentiment"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g4",
+          "variables": [
+            "confidencescore"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g9",
+          "variables": [
+            "confidencescore",
+            "isgreeting"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "variables": [
+            "sessionrecord"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g11",
+          "primary_variables": [
+            "normalizedmessage"
+          ],
+          "secondary_variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "normalizedmessage"
+          ],
+          "secondary_variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "primary_variables": [
+            "normalizedmessage"
+          ],
+          "secondary_variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "primary_variables": [
+            "normalizedmessage"
+          ],
+          "secondary_variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g9",
+          "primary_variables": [
+            "normalizedmessage"
+          ],
+          "secondary_variables": [
+            "message"
+          ]
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "primary_variables": [
+            "weeklymetrics"
+          ],
+          "secondary_variables": [
+            "weeklystats"
+          ]
+        },
+        {
+          "source_group": "g13",
+          "target_group": "g14",
+          "primary_variables": [
+            "published"
+          ],
+          "secondary_variables": [
+            "weeklystats"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g10",
+          "primary_variables": [
+            "escalationreason",
+            "ticketnote"
+          ],
+          "secondary_variables": [
+            "escalationnote"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "primary_variables": [
+            "retrievalevidence"
+          ],
+          "secondary_variables": [
+            "answer"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 5,
+        "secondary_cfg": 8,
+        "primary_dfg": 1,
+        "secondary_dfg": 5
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6"
+          ],
+          "rationale": "主标将五个渠道接入（邮件/在线聊天/WhatsApp/Slack/Discord）与归一化合并为 n1；第二标按渠道拆为 n1–n5 并单列归一化 n6，同一业务行为簇。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "五项前置检查（模型调用前），两侧需求证据一致。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3",
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "rationale": "前置检查未通过消息的忽略与在线聊天即时响应：主标拆为\"忽略并即时响应在线聊天\"（n3）与\"忽略路径结束\"（n4），第二标拆为\"即时响应在线聊天调用方\"（n8）与\"忽略未通过检查的消息\"（n9），两侧原生证据相互交叠，同属一个行为簇。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n5",
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n14"
+          ],
+          "rationale": "主标拆为\"记录转人工升级原因\"（n5，Escalation Reason）与\"为人工客服撰写工单说明\"（n11，Escalation Reasoning）；第二标合并为 n14（生成升级原因与人工客服说明）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "检索自有文档（向量知识库）并生成答复、会话记忆持久化，两侧一致。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "情绪分析（Sentiment Analysis），两侧原生证据一致。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "置信度评估（基于检索依据、问候致谢短路），两侧原生证据同为 Confidence Scoring。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标单列\"升级判定\"（Check Confidence Threshold / Check Sentiment 的回复-升级路由决策）；第二标未将该决策单列节点（分散隐含在置信度、情绪与升级各节点中），故无第二标对应项。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n13"
+          ],
+          "rationale": "按原始渠道回复（邮件沿用原主题加 Re:、Slack 线程内回复），两侧一致。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n15"
+          ],
+          "rationale": "创建工单（写入升级原因、人工客服说明与按情绪推导的优先级），两侧核心行为一致；第二标 n15 原生证据另含支持团队提醒节点。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n13",
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n16"
+          ],
+          "rationale": "主标拆为\"记录会话到 Google Sheets\"（n13）与\"消息处理链结束\"（n14，End Workflow）；第二标合并为 n16（原生证据含 Log Conversation/Log Escalation 与 End Workflow 两类节点）。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n15"
+          ],
+          "secondary_nodes": [
+            "n20",
+            "n21"
+          ],
+          "rationale": "主标将每周触发/配置与读取汇总周数据合并为 n15；第二标拆为\"每周维护定时触发\"（n20）与\"读取周数据并汇总统计\"（n21）。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n16"
+          ],
+          "secondary_nodes": [
+            "n22"
+          ],
+          "rationale": "向 Slack 发布每周统计数据，两侧一致。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [
+            "n17",
+            "n18"
+          ],
+          "secondary_nodes": [
+            "n23"
+          ],
+          "rationale": "主标拆为\"归档数据并清理旧会话记忆\"（n17）与\"每周任务结束\"（n18，原生证据与 n17 相同）；第二标合并为 n23。"
+        },
+        {
+          "group_id": "g15",
+          "primary_nodes": [
+            "n19",
+            "n20"
+          ],
+          "secondary_nodes": [
+            "n17",
+            "n18",
+            "n19"
+          ],
+          "rationale": "手动导入自有文档业务行为簇：主标以\"导入（先清除上次结果）\"（n19，原生证据覆盖触发、清除、加载、写入）加\"导入链结束\"（n20，Supabase Docs Insert）表达；第二标拆为触发（n17）、清除上次结果（n18）、加载并写入知识库（n19，原生证据含 Supabase Docs Insert）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-035",
+      "alignment_source": "human_review",
+      "alignment_group_count": 8,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 8,
+        "primary_count": 8,
+        "double_count": 8,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.9090909090909091,
+        "recall": 0.9090909090909091,
+        "f1": 0.9090909090909091
+      },
+      "dfg_strict": {
+        "matches": 6,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.5454545454545454,
+        "recall": 0.5454545454545454,
+        "f1": 0.5454545454545454
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g7",
+          "variables": [
+            "request"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "variables": [
+            "videorequest"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "request"
+          ],
+          "secondary_variables": [
+            "videorequest"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "searchqueries"
+          ],
+          "secondary_variables": [
+            "clips"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "primary_variables": [
+            "stockvideos"
+          ],
+          "secondary_variables": [
+            "brollvideos"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "videourl"
+          ],
+          "secondary_variables": [
+            "renderedvideo"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 2,
+        "secondary_cfg": 0,
+        "primary_dfg": 2,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "接收视频制作请求（Reddit 链接与配音/语速/时长参数），两侧一致。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "获取 Reddit 帖子及其评论，两侧一致（第二标原生证据多两个 URL 拼接节点，行为相同）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3",
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "主标拆为\"整理为结构化片段\"（n3）与\"生成库存素材检索词\"（n4）；第二标合并为\"整理片段（含素材检索词）\"，同一业务行为簇。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "从库存视频素材服务查询匹配的竖版视频，两侧一致。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "为每个片段生成配音音频（TTS），两侧一致。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "生成与音频同步的字幕，两侧需求证据一致。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "主标拆为\"上传素材与音频至渲染服务\"（n8）与\"提交渲染任务并输出竖版视频\"（n9）；第二标合并为\"提交素材与音频渲染 720×1280 竖版视频\"，同一业务行为簇。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "返回成品视频访问链接，两侧一致。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-058",
+      "alignment_source": "human_review",
+      "alignment_group_count": 3,
+      "mixed_type_groups": [
+        {
+          "group_id": "g2",
+          "primary_types": [
+            "code",
+            "semantic"
+          ],
+          "secondary_types": [
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 2,
+        "primary_count": 2,
+        "double_count": 2,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 2,
+        "primary_count": 2,
+        "double_count": 2,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_strict": {
+        "matches": 0,
+        "primary_count": 2,
+        "double_count": 2,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "searchtargets"
+          ],
+          "secondary_variables": [
+            "keywordconfig"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "rankingrecords"
+          ],
+          "secondary_variables": [
+            "rankreport"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 2,
+        "secondary_cfg": 1,
+        "primary_dfg": 2,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标将\"定时触发\"与\"读取关键词与域名配置\"合并为 n1；第二标拆为定时触发（n1）与读取关键词/监控参数（n2），同一业务行为簇。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2",
+            "n3",
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "主标拆为\"经抓取服务获取 SERP\"（n2）、\"AI 解析排名/跟踪变化/识别机会\"（n3）与\"构造排名记录\"（n4，Format SERP Results）；第二标合并为一个 n3（原生证据覆盖 SERP Scraper Agent、OpenAI Chat Model 与 Format SERP Results），同一业务行为簇。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "将关键词排名数据及其变化写入 Google Sheets，两侧一致。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-097",
+      "alignment_source": "frozen_high_confidence_automatic_alignment",
+      "alignment_group_count": 6,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_strict": {
+        "matches": 3,
+        "primary_count": 7,
+        "double_count": 6,
+        "precision": 0.42857142857142855,
+        "recall": 0.5,
+        "f1": 0.4615384615384615
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "companyurl",
+            "geo"
+          ],
+          "secondary_variables": [
+            "companyquery"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "detailedsummary"
+          ],
+          "secondary_variables": [
+            "summary"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "unifiedreport"
+          ],
+          "secondary_variables": [
+            "reportobject"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-004",
+      "alignment_source": "human_review",
+      "alignment_group_count": 11,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 9,
+        "primary_count": 10,
+        "double_count": 10,
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1": 0.9
+      },
+      "dfg_endpoint": {
+        "matches": 8,
+        "primary_count": 13,
+        "double_count": 10,
+        "precision": 0.6153846153846154,
+        "recall": 0.8,
+        "f1": 0.6956521739130435
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 13,
+        "double_count": 10,
+        "precision": 0.07692307692307693,
+        "recall": 0.1,
+        "f1": 0.08695652173913043
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "config"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "config"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "variables": [
+            "config"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g9",
+          "variables": [
+            "videoprofiles"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "variables": [
+            "sheetrows"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g6",
+          "target_group": "g10",
+          "variables": [
+            "selectedoutliers"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "variables": [
+            "selectedoutliers"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "config"
+          ],
+          "secondary_variables": [
+            "scanconfig"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "readysnapshot"
+          ],
+          "secondary_variables": [
+            "snapshotid"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "primary_variables": [
+            "scoredvideos"
+          ],
+          "secondary_variables": [
+            "outliervideos"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "historyresults"
+          ],
+          "secondary_variables": [
+            "briefedhistory"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "outliersselected"
+          ],
+          "secondary_variables": [
+            "selectedoutliers"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "videoprofiles"
+          ],
+          "secondary_variables": [
+            "extractedfeatures"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "primary_variables": [
+            "digesttext"
+          ],
+          "secondary_variables": [
+            "digestmessage"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 1,
+        "primary_dfg": 1,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每周定时触发，requirement_evidence 与 native evidence（Weekly Channel Scan）一致。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为加载竞品频道地址与扫描配置（Set Channel Config / Build Channel Input）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为发起发现式抓取并轮询快照状态直至就绪，覆盖同一组原生节点（Scrape/Check/Wait/Evaluate/Videos Ready?）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "rationale": "下载视频数据、计算日均播放量、与频道中位数基线比较标记异常这一组行为在两侧拆分边界不同：主标把下载单独成节点（n4）、计算与比较合并（n5）；第二标把下载与计算合并（n4）、比较标记单独成节点（n5）。行为整体对应，故合并为一个确认组，不判定哪种拆分正确。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为读取 Google Sheets 中的历史结果（Read Briefed Videos）。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为按冷却窗口剔除并按每轮上限选取排名靠前的异常突出视频；第二标未把 Any New Outliers? 判空单独列入 native evidence，但业务行为一致。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为从转录开头与章节标题提取钩子类型、核心承诺与主题（Read Video Structure / OpenAI Transcript Reader）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为生成跨视频简短内容简报（Write Content Brief / OpenAI Brief Writer）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为按排名整理输出记录与格式化摘要（Build Report / Split Out Idea Rows / Rank Video Ideas）。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为向 Google Sheets 追加异常视频记录（Log Outliers To Sheet）。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为向 Slack 频道发送按排名排列的格式化摘要（Post Digest To Slack）；自动候选 margin 偏低仅因标签措辞差异，requirement_evidence 指向同一行为。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-010",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 0.2857142857142857,
+        "recall": 0.2857142857142857,
+        "f1": 0.2857142857142857
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "primary_variables": [
+            "contractfile"
+          ],
+          "secondary_variables": [
+            "contractfileid"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "contractanalysis"
+          ],
+          "secondary_variables": [
+            "structuredanalysis"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g7",
+          "primary_variables": [
+            "contractanalysis"
+          ],
+          "secondary_variables": [
+            "structuredanalysis"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "attorneyreporthtml"
+          ],
+          "secondary_variables": [
+            "reporthtml"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "primary_variables": [
+            "reportpdf"
+          ],
+          "secondary_variables": [
+            "reportlink"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 1,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标把『监听 Drive 文件夹新建文件触发』与『下载新建合同文件』合并为一个节点；第二标拆为 n1（监控触发）与 n2（下载合同文件）两个节点。业务行为整体相同，故合并为一个确认组。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为提取 PDF 全文文本（Extract Text from PDF）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为语言模型生成结构化合同分析（Query OpenAI Model）；第二标额外把 Parse AI Analysis 归入该节点，行为边界一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为语言模型将结构化分析转换为排版专业的 HTML 律师报告（Generate Attorney Insights / Prepare Attorney Report）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为 HTML 报告转 PDF 并保存到目标 Drive 文件夹（Convert to PDF / Save Report to Drive）。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为将原始合同文件移动到「已处理」Drive 文件夹（Move Report File）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为向 Slack 发送含风险详情与报告链接的完成消息（Send Slack Notification）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-015",
+      "alignment_source": "human_review",
+      "alignment_group_count": 10,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 8,
+        "primary_count": 10,
+        "double_count": 9,
+        "precision": 0.8,
+        "recall": 0.8888888888888888,
+        "f1": 0.8421052631578948
+      },
+      "dfg_endpoint": {
+        "matches": 12,
+        "primary_count": 13,
+        "double_count": 14,
+        "precision": 0.9230769230769231,
+        "recall": 0.8571428571428571,
+        "f1": 0.888888888888889
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 13,
+        "double_count": 14,
+        "precision": 0.15384615384615385,
+        "recall": 0.14285714285714285,
+        "f1": 0.14814814814814817
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "scriptinput"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "variables": [
+            "forminput"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g9",
+          "variables": [
+            "videometadata"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "primary_variables": [
+            "visualstyle"
+          ],
+          "secondary_variables": [
+            "forminput"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "primary_variables": [
+            "imageservice"
+          ],
+          "secondary_variables": [
+            "forminput"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "script"
+          ],
+          "secondary_variables": [
+            "scripttext"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "primary_variables": [
+            "script"
+          ],
+          "secondary_variables": [
+            "scripttext"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g8",
+          "primary_variables": [
+            "audiowithtimestamps"
+          ],
+          "secondary_variables": [
+            "captionswithtimestamps"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "scenes"
+          ],
+          "secondary_variables": [
+            "scenesegments"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "primary_variables": [
+            "scenes"
+          ],
+          "secondary_variables": [
+            "scenesegments"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "clips"
+          ],
+          "secondary_variables": [
+            "videoclips"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "finalvideo"
+          ],
+          "secondary_variables": [
+            "finalvideourl"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "primary_variables": [
+            "videourl"
+          ],
+          "secondary_variables": [
+            "drivevideourl"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 1,
+        "primary_dfg": 0,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收表单提交（主题/文稿、时长、音色、风格、图像服务）（On form submission / Set Idea）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为使用语言模型生成标题、描述、开场钩子、完整脚本与行动号召（Script Writier / Output Parser）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为按选定音色语音合成并生成带时间戳字幕（Generate TTS / Get Captions / Create Captions）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为将脚本切分为 5–6 秒场景片段（Split into 5s Scenes / Fixer）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为按视觉风格将每个场景转换为图像生成提示词（Image Prompter V2 / Open Router）。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为调用图像生成服务生成各场景图片（HTTP - Together.ai）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为按脚本时间将图片制作成 Ken Burns 式短视频片段（Create Clips）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为拼接所有片段为完整视频并按时间戳叠加字幕（Combine Clips）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n9",
+            "n10"
+          ],
+          "rationale": "主标把『上传到 Google Drive』与『发送到 Telegram』合并为一个节点；第二标拆为 n9（上传 Drive）与 n10（发送 Telegram）。业务行为整体相同，故合并为一个确认组。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为保存视频链接到 Google Sheets。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-023",
+      "alignment_source": "human_review",
+      "alignment_group_count": 9,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 7,
+        "primary_count": 9,
+        "double_count": 8,
+        "precision": 0.7777777777777778,
+        "recall": 0.875,
+        "f1": 0.823529411764706
+      },
+      "dfg_endpoint": {
+        "matches": 7,
+        "primary_count": 10,
+        "double_count": 9,
+        "precision": 0.7,
+        "recall": 0.7777777777777778,
+        "f1": 0.7368421052631577
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 10,
+        "double_count": 9,
+        "precision": 0.1,
+        "recall": 0.1111111111111111,
+        "f1": 0.10526315789473685
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "creativeidea"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g9",
+          "variables": [
+            "adcopy"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g5",
+          "variables": [
+            "visualassets"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "variables": [
+            "visualassets"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "variables": [
+            "finalvideourl"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "telegraminput"
+          ],
+          "secondary_variables": [
+            "ideainput"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "creativeidea"
+          ],
+          "secondary_variables": [
+            "imageprompts"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "videoclips"
+          ],
+          "secondary_variables": [
+            "videosegments"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "finalad"
+          ],
+          "secondary_variables": [
+            "finalvideourl"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "publicationmetadata"
+          ],
+          "secondary_variables": [
+            "publishresults"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "storedlinks"
+          ],
+          "secondary_variables": [
+            "trackingrecord"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收 Telegram 输入（文字加商品图片）（Trigger: Receive Idea via Telegram / Telegram: Get Image File）；第二标额外把 Google Drive: Upload Image 归入该节点，行为边界一致。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧 native evidence 均为 Parse Idea Into Prompts / Generate Image Prompt，即从输入生成广告创意与图像提示词；主标标签『生成广告创意』措辞偏窄，但节点覆盖的行为与第二标一致。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为调用多种图像生成能力制作商品视觉素材（NanoBanana / Seedream / 4o Image）；第二标覆盖更多等待与取回节点的 native evidence，行为边界一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为调用语言模型生成视频脚本（AI Agent: Generate Video Script / OpenAI Chat Model1）；第二标额外含 Set Master Prompt，行为边界一致。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为调用视频生成能力制作广告视频（Generate Video with VEO3 及其等待/下载）；第二标按片段循环组织，业务行为相同。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为把多个短片段合成为成片（Merge 3 Videos / Wait: Merge Process / Check Merge Status）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为自动发布到多个社交平台（Upload Video to BLOTATO 及各平台节点）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为把元数据与结果存入 Google Sheets 与 Google Drive（Save Ad Data to Google Sheets / Upload Final Video to Google Drive / Update Status）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为通过 Telegram 发送含视频链接与文案的通知（Send Video URL via Telegram / Send a video）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-032",
+      "alignment_source": "frozen_high_confidence_automatic_alignment",
+      "alignment_group_count": 6,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 5,
+        "primary_count": 6,
+        "double_count": 5,
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091
+      },
+      "dfg_endpoint": {
+        "matches": 5,
+        "primary_count": 6,
+        "double_count": 5,
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091
+      },
+      "dfg_strict": {
+        "matches": 3,
+        "primary_count": 6,
+        "double_count": 5,
+        "precision": 0.5,
+        "recall": 0.6,
+        "f1": 0.5454545454545454
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "approvedcontent"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "transcript"
+          ],
+          "secondary_variables": [
+            "transcripttext"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "publishresult"
+          ],
+          "secondary_variables": [
+            "publishresults"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "high-confidence automatic one-to-one evidence alignment"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-038",
+      "alignment_source": "human_review",
+      "alignment_group_count": 5,
+      "mixed_type_groups": [
+        {
+          "group_id": "g2",
+          "primary_types": [
+            "code",
+            "semantic"
+          ],
+          "secondary_types": [
+            "semantic"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 4,
+        "primary_count": 5,
+        "double_count": 4,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1": 0.888888888888889
+      },
+      "dfg_endpoint": {
+        "matches": 4,
+        "primary_count": 5,
+        "double_count": 4,
+        "precision": 0.8,
+        "recall": 1.0,
+        "f1": 0.888888888888889
+      },
+      "dfg_strict": {
+        "matches": 3,
+        "primary_count": 7,
+        "double_count": 5,
+        "precision": 0.42857142857142855,
+        "recall": 0.6,
+        "f1": 0.5
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "guidemessage"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "chatinput",
+            "tablename",
+            "tableready"
+          ],
+          "secondary_variables": [
+            "tablename",
+            "userquestion"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "analysisanswer"
+          ],
+          "secondary_variables": [
+            "analysisconclusion"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收输入并记录目标表名（Chat Trigger / Manage Table Name）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2",
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "主标把『表名配置状态路由』（Need Schema?）与『自然语言问题转 SQL』拆为两个节点；第二标把表结构获取/路由（Need Schema?、Fetch Schema、Format Schema、Empty Schema）并入『结合表结构将自然语言问题转换为 SQL』一个节点。业务行为整体相同，故合并为一个确认组。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为在 PostgreSQL 上执行 SQL 查询（Execute SQL Query）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为将查询结果整理为分析结论（Unified Analytics Agent）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为将分析结论回复给使用者（Chat Trigger / Unified Analytics Agent）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-060",
+      "alignment_source": "human_review",
+      "alignment_group_count": 7,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1": 0.9090909090909091
+      },
+      "dfg_endpoint": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 6,
+        "precision": 1.0,
+        "recall": 0.8333333333333334,
+        "f1": 0.9090909090909091
+      },
+      "dfg_strict": {
+        "matches": 3,
+        "primary_count": 6,
+        "double_count": 6,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "savedresults"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "celebrityrefs",
+            "userphoto"
+          ],
+          "secondary_variables": [
+            "faceinputs"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "selfieimages"
+          ],
+          "secondary_variables": [
+            "compositeimages"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为通过网页表单收集用户人脸照片与最多 4 张名人参考图（Form Input）；第二标额外含 Config / Process & Split，行为边界一致。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为由语言模型生成真实感合照构图的优化提示词（AI Generate Prompt / GPT-4 Language Model）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为调用图像生成服务生成照片级真实的合照图像（SeedDream Generate 及等待/状态检查/重试）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为将所有生成结果自动保存到 Google Sheets（Save to Sheets）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5",
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "主标把『读取已保存的合照图像作为视频生成输入』（Start Video Generation / Read from Sheets / Filter Ready Rows）与『将合照图像两两配对』（Loop Each Video）拆为两个节点；第二标合并为『配对合照图像』一个节点，且其 native evidence 同时覆盖读取/过滤与配对。业务行为整体相同，故合并为一个确认组。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为调用视频生成服务生成平滑的行走过渡视频（Kling Generate Video 及等待/状态检查/重试）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为将生成的视频连同元数据一并保存回 Google Sheets（Save to CelebrityVideos）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-099",
+      "alignment_source": "human_review",
+      "alignment_group_count": 8,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 0.8571428571428571,
+        "f1": 0.923076923076923
+      },
+      "dfg_endpoint": {
+        "matches": 6,
+        "primary_count": 6,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 0.8571428571428571,
+        "f1": 0.923076923076923
+      },
+      "dfg_strict": {
+        "matches": 4,
+        "primary_count": 6,
+        "double_count": 7,
+        "precision": 0.6666666666666666,
+        "recall": 0.5714285714285714,
+        "f1": 0.6153846153846153
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g8",
+          "variables": [
+            "commandinput"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "primary_variables": [
+            "commandtext"
+          ],
+          "secondary_variables": [
+            "commandinput"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "analysis"
+          ],
+          "secondary_variables": [
+            "analysisresult"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收 Slack 斜杠命令 /check-linkedin（Webhook）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为校验所提供的是完整姓名（Do we have a full name ?）；第二标额外把 GPT 4.1-mini 分类模型归入该节点，行为边界一致。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为检索并定位对应的 LinkedIn 个人主页（Find Linkedin Profile / Get Linkedin Profile URL）；第二标额外含 Extract firstName and lastName，行为边界一致。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为抓取最近发布的 20 条帖子并结构化（Scrap what this person posted recently / Structure recent posts）。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为由语言模型分析发帖频率与节奏模式、主要主题与关注领域，并提炼近期亮点（Summer McBriefing）。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为生成格式化 HTML 报告（HTML）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为通过邮件将报告发送到用户邮箱（Send report via Email）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "第二标单独把『校验未通过时在 Slack 提示未提供完整姓名』（Tell on slack that no full name was found）建成节点；主标未将该失败提示行为建模为独立节点。依据冻结需求中『仅提供名时不通过校验』，该行为确实存在但主标侧无对应节点，故作为仅有第二标一侧的确认组。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-007",
+      "alignment_source": "human_review",
+      "alignment_group_count": 11,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 8,
+        "primary_count": 10,
+        "double_count": 10,
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8000000000000002
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.9090909090909091,
+        "recall": 0.9090909090909091,
+        "f1": 0.9090909090909091
+      },
+      "dfg_strict": {
+        "matches": 0,
+        "primary_count": 11,
+        "double_count": 11,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "trigger"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "thresholdparams"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "topicsconfig"
+          ],
+          "secondary_variables": [
+            "topiclist"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "snapshotid"
+          ],
+          "secondary_variables": [
+            "snapshotposts"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "postswithengagement"
+          ],
+          "secondary_variables": [
+            "scoredposts"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "qualifiedgroups"
+          ],
+          "secondary_variables": [
+            "selectedgroups"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "selectedtags"
+          ],
+          "secondary_variables": [
+            "candidategroups"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "tagprofiles"
+          ],
+          "secondary_variables": [
+            "enrichedgroups"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g10",
+          "primary_variables": [
+            "rankedlist"
+          ],
+          "secondary_variables": [
+            "rankedgroups"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g11",
+          "primary_variables": [
+            "rankedlist"
+          ],
+          "secondary_variables": [
+            "rankedgroups"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "rankedlist"
+          ],
+          "secondary_variables": [
+            "rankedgroups"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "primary_variables": [
+            "brief"
+          ],
+          "secondary_variables": [
+            "strategybrief"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 3,
+        "secondary_cfg": 1,
+        "primary_dfg": 3,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每周定时触发行为，冻结需求证据一致（系统每周定时运行一次）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为从统一配置加载话题列表与阈值参数（取样帖数、最低播放量、提升幅度、冷却期）；第二标把构建搜索输入也并入该节点，同属配置加载行为。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3",
+            "n4"
+          ],
+          "rationale": "主标把发起 TikTok 发现式抓取与轮询快照就绪合为一个节点；第二标拆为发起抓取（n3）与轮询直至就绪/超时（n4）两个节点，对应同一业务行为的两种拆分粒度。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "第二标将下载帖子与计算每篇帖子互动率合并为一个节点；主标拆为下载（n4）与计算互动率（n5）两个节点。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6",
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "第二标将按话题标签与配乐聚合并筛选达标分组（超过中位数、达到提升幅度、帖子数量足够）合为一个节点；主标拆为聚合（n6）与筛选（n7）。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "第二标将读取已记录标签与按冷却期剔除合并为一个节点；主标拆为读取已报送记录（n8）与剔除冷却期内标签/配乐（n9）。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为使用语言模型从最佳帖子文案中提取内容形式、切入角度与主题。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为对最终列表排序。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为生成简短策略简报。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为将每个入选标签或配乐作为一行追加写入 Google Sheets；主标把拆分行并入该组，第二标亦含拆分行节点。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为向配置的 Slack 频道发送含指标数据与最佳帖子链接的格式化排名摘要。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-011",
+      "alignment_source": "human_review",
+      "alignment_group_count": 13,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 4,
+        "primary_count": 12,
+        "double_count": 7,
+        "precision": 0.3333333333333333,
+        "recall": 0.5714285714285714,
+        "f1": 0.4210526315789474
+      },
+      "dfg_endpoint": {
+        "matches": 4,
+        "primary_count": 11,
+        "double_count": 10,
+        "precision": 0.36363636363636365,
+        "recall": 0.4,
+        "f1": 0.380952380952381
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 11,
+        "double_count": 10,
+        "precision": 0.18181818181818182,
+        "recall": 0.2,
+        "f1": 0.1904761904761905
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g8",
+          "variables": [
+            "usermessage"
+          ]
+        },
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "variables": [
+            "clarificationmessage"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g10",
+          "variables": [
+            "contenttarget"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g11",
+          "variables": [
+            "contenttarget"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g2",
+          "variables": [
+            "contenttarget"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g5",
+          "variables": [
+            "contenttarget"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "variables": [
+            "contenttarget"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "usermessage"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "transcripttexts"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "variables": [
+            "videometadata"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g13",
+          "variables": [
+            "contentsummary"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "variables": [
+            "indexedcontent"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "variables": [
+            "currentcontext"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "videotranscripts"
+          ],
+          "secondary_variables": [
+            "transcripttexts"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "summaries"
+          ],
+          "secondary_variables": [
+            "contentsummary"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 0,
+        "primary_dfg": 0,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为对话入口接收用户消息（用户提供链接或提问）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为抓取链接对应的视频详情与字幕文本，支持播放列表一次处理多个视频；第二标把播放列表/视频判别开关并入该节点，同属内容获取行为。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为由语言模型阅读字幕、理解内容并生成摘要。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为将处理后的信息与摘要写入向量数据库以支持对话检索。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为使用上下文存储记住当前讨论的视频或播放列表。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为基于向量检索与上下文回答用户关于视频/播放列表内容的问题，支持连续追问。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为在对话中向用户返回问题答案。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的理解用户消息并提取处理目标行为，在第二标中没有独立对应节点（第二标未单独建模意图理解）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的路由（处理新链接或回答提问）行为，第二标未单独建模；第二标的播放列表/视频判别已并入其抓取节点，不属于本行为。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的校验播放列表处理数量行为，第二标无对应节点。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的询问用户要处理的视频数量行为，第二标无对应节点。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的向用户返回数量询问行为，第二标无对应节点。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "第二标的向用户返回摘要行为，主标未单独建模（主标的摘要生成节点 n7 不含独立返回步骤，返回答案节点 n12 针对问答而非摘要）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-016",
+      "alignment_source": "human_review",
+      "alignment_group_count": 8,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 7,
+        "primary_count": 7,
+        "double_count": 7,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 5,
+        "primary_count": 7,
+        "double_count": 9,
+        "precision": 0.7142857142857143,
+        "recall": 0.5555555555555556,
+        "f1": 0.6250000000000001
+      },
+      "dfg_strict": {
+        "matches": 2,
+        "primary_count": 7,
+        "double_count": 9,
+        "precision": 0.2857142857142857,
+        "recall": 0.2222222222222222,
+        "f1": 0.25
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "scheduleevent"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "variables": [
+            "postresult"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "variables": [
+            "selectedpost"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g7",
+          "variables": [
+            "selectedpost"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g8",
+          "variables": [
+            "selectedpost"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "variables": [
+            "commenttext"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "validpost"
+          ],
+          "secondary_variables": [
+            "selectedpost"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "commentreply"
+          ],
+          "secondary_variables": [
+            "commenttext"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "commentlist"
+          ],
+          "secondary_variables": [
+            "commenttaskfile"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每 2 小时在指定分钟定时触发。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为由语言模型生成真实的 AI/BPA 类话题标签。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为通过抓取服务获取话题标签下最近的帖子（最多取设定条数）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "第二标把随机选取一条帖子与校验未在已评论记录中（避免重复评论）合并为一个节点（含 Check if in List 与 If）；主标拆为随机选择（n4）与校验（n5）两个节点。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为由语言模型以设定语言撰写不超过 150 字符的评论回复。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为生成待评论帖子清单文件并上传到 SharePoint。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为发起自动评论动作，将该回复发布到所选帖子下；第二标节点同时承载发布速率节流信息，与主标 n8 的发布行为一致。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为发布后把帖子链接写入已评论记录以避免重复评论。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-024",
+      "alignment_source": "human_review",
+      "alignment_group_count": 21,
+      "mixed_type_groups": [
+        {
+          "group_id": "g3",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        },
+        {
+          "group_id": "g14",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        },
+        {
+          "group_id": "g19",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 13,
+        "primary_count": 17,
+        "double_count": 18,
+        "precision": 0.7647058823529411,
+        "recall": 0.7222222222222222,
+        "f1": 0.7428571428571428
+      },
+      "dfg_endpoint": {
+        "matches": 8,
+        "primary_count": 17,
+        "double_count": 13,
+        "precision": 0.47058823529411764,
+        "recall": 0.6153846153846154,
+        "f1": 0.5333333333333333
+      },
+      "dfg_strict": {
+        "matches": 6,
+        "primary_count": 17,
+        "double_count": 13,
+        "precision": 0.35294117647058826,
+        "recall": 0.46153846153846156,
+        "f1": 0.4000000000000001
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "variables": [
+            "loggedmessage"
+          ]
+        },
+        {
+          "source_group": "g11",
+          "target_group": "g12",
+          "variables": [
+            "sentmessage"
+          ]
+        },
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "variables": [
+            "confirmedmessage"
+          ]
+        },
+        {
+          "source_group": "g16",
+          "target_group": "g17",
+          "variables": [
+            "digestschedule"
+          ]
+        },
+        {
+          "source_group": "g18",
+          "target_group": "g19",
+          "variables": [
+            "digestreport"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "variables": [
+            "invalidbooking"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "variables": [
+            "normalizedbooking"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "variables": [
+            "bookingrecord"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "variables": [
+            "sweepevent"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "variables": [
+            "bookingrequest"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "variables": [
+            "normalizedbooking"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g13",
+          "variables": [
+            "duetrips"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g11",
+          "variables": [
+            "guestmessage"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g12",
+          "variables": [
+            "guestmessage"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "primary_variables": [
+            "validbooking"
+          ],
+          "secondary_variables": [
+            "validatedbooking"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "duebooking"
+          ],
+          "secondary_variables": [
+            "duetrips"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 6,
+        "primary_dfg": 0,
+        "secondary_dfg": 3
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为接收外部预订来源提交的预订请求。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为校验必填字段与日期先后顺序。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3",
+            "n4"
+          ],
+          "rationale": "主标把无效预订告警合并为一个节点（Telegram 告警 + 邮件发送被跳过的预订内容）；第二标按渠道拆为 Telegram 告警（n3）与邮件通知房东（n4）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为规范化预订数据并生成预订编号。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为把预订追加到 Google Sheets 的预订工作表。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为在 Telegram 通知房东预订已确认。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "rationale": "主标把每日扫描触发（含定时与手动两种方式）合为一个节点；第二标拆为每日定时触发（n8）与房东手动触发（n9）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n10",
+            "n11"
+          ],
+          "rationale": "主标把读取预订记录并识别到期行程（入住/退房/评价请求）合为一个节点；第二标拆为读取预订记录（n10）与识别到期行程（n11）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n12"
+          ],
+          "rationale": "两侧均为由语言模型助理从手册工作表查房源信息并生成客人消息。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [
+            "n13"
+          ],
+          "rationale": "两侧均为把每条生成的消息记录到客人日志工作表。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n14"
+          ],
+          "rationale": "两侧均为通过邮件把消息发送给客人。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n15"
+          ],
+          "rationale": "两侧均为在 Telegram 发布消息已发送的确认。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n16"
+          ],
+          "rationale": "两侧均为对退房当天的预订在清洁任务工作表创建清洁任务。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n17",
+            "n18",
+            "n19"
+          ],
+          "rationale": "主标把已设置清洁人员邮箱分支合并为一个节点；第二标拆为判断是否已设置（n17）、邮件通知清洁人员（n18）与 Telegram 提醒房东（n19）。"
+        },
+        {
+          "group_id": "g15",
+          "primary_nodes": [
+            "n15"
+          ],
+          "secondary_nodes": [
+            "n20"
+          ],
+          "rationale": "两侧均为提醒房东未设置清洁人员邮箱。"
+        },
+        {
+          "group_id": "g16",
+          "primary_nodes": [
+            "n16"
+          ],
+          "secondary_nodes": [
+            "n21"
+          ],
+          "rationale": "两侧均为每周一定时触发周报流程。"
+        },
+        {
+          "group_id": "g17",
+          "primary_nodes": [
+            "n17"
+          ],
+          "secondary_nodes": [
+            "n22",
+            "n23"
+          ],
+          "rationale": "主标把读取预订与清洁任务并计算本周统计合为一个节点；第二标拆为读取预订与清洁任务（n22）与计算本周统计（n23）。"
+        },
+        {
+          "group_id": "g18",
+          "primary_nodes": [
+            "n18"
+          ],
+          "secondary_nodes": [
+            "n25"
+          ],
+          "rationale": "两侧均为由语言模型撰写简明的房东周报。"
+        },
+        {
+          "group_id": "g19",
+          "primary_nodes": [
+            "n19"
+          ],
+          "secondary_nodes": [
+            "n26",
+            "n27"
+          ],
+          "rationale": "主标把周报的邮件与 Telegram 发送合并为一个节点；第二标拆为邮件发送周报（n26）与 Telegram 发送周报（n27）。"
+        },
+        {
+          "group_id": "g20",
+          "primary_nodes": [
+            "n20"
+          ],
+          "secondary_nodes": [
+            "n28"
+          ],
+          "rationale": "两侧均为本周无活动时向房东发送一切正常消息。"
+        },
+        {
+          "group_id": "g21",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n24"
+          ],
+          "rationale": "第二标的判断本周是否有活动行为，主标未单独建模（主标仅在有/无活动两条发送路径上分别建节点）。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-033",
+      "alignment_source": "human_review",
+      "alignment_group_count": 6,
+      "mixed_type_groups": [
+        {
+          "group_id": "g6",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 5,
+        "primary_count": 5,
+        "double_count": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 6,
+        "primary_count": 7,
+        "double_count": 6,
+        "precision": 0.8571428571428571,
+        "recall": 1.0,
+        "f1": 0.923076923076923
+      },
+      "dfg_strict": {
+        "matches": 4,
+        "primary_count": 7,
+        "double_count": 6,
+        "precision": 0.5714285714285714,
+        "recall": 0.6666666666666666,
+        "f1": 0.6153846153846153
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g2",
+          "target_group": "g6",
+          "variables": [
+            "reelmetadata"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g2",
+          "target_group": "g5",
+          "primary_variables": [
+            "reelmetadata"
+          ],
+          "secondary_variables": [
+            "reeldescription"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "transcript"
+          ],
+          "secondary_variables": [
+            "transcripttext"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 2,
+        "primary_dfg": 1,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标把接收 Telegram 消息与提取 Reel 链接合为一个节点；第二标拆为接收 Telegram 消息（n1）与提取 Instagram Reel 链接（n2）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3",
+            "n4"
+          ],
+          "rationale": "主标把下载 Reel 并获取元数据合为一个节点；第二标拆为抓取 Reel 元数据（n3）与下载 Reel 视频（n4）。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为通过转换服务将视频转换为音频（导入、提交转换、轮询状态、下载 MP3）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为将语音转写为文本。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为结合转写文本与 Reel 描述，由语言模型产出内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6",
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "主标的整理结果记录（n6）与写入 Google Sheets（n7）引用同一原生节点、共同表达把全部结果保存到 Google Sheets 的同一业务行为；第二标将其建模为一个节点。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-046",
+      "alignment_source": "human_review",
+      "alignment_group_count": 10,
+      "mixed_type_groups": [],
+      "cfg": {
+        "matches": 8,
+        "primary_count": 12,
+        "double_count": 8,
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1": 0.8
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 10,
+        "double_count": 10,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_strict": {
+        "matches": 4,
+        "primary_count": 10,
+        "double_count": 10,
+        "precision": 0.4,
+        "recall": 0.4,
+        "f1": 0.4000000000000001
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "primary_variables": [
+            "leads"
+          ],
+          "secondary_variables": [
+            "localresults"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "primary_variables": [
+            "dedupedleads"
+          ],
+          "secondary_variables": [
+            "uniqueleads"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g8",
+          "primary_variables": [
+            "dedupedleads"
+          ],
+          "secondary_variables": [
+            "uniqueleads"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "primary_variables": [
+            "dedupedleads"
+          ],
+          "secondary_variables": [
+            "uniqueleads"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g8",
+          "primary_variables": [
+            "enrichedlead"
+          ],
+          "secondary_variables": [
+            "contactemail"
+          ]
+        },
+        {
+          "source_group": "g7",
+          "target_group": "g9",
+          "primary_variables": [
+            "enrichedlead"
+          ],
+          "secondary_variables": [
+            "contactemail"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 0,
+        "secondary_cfg": 2,
+        "primary_dfg": 0,
+        "secondary_dfg": 1
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为每天 07:00 定时触发。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为从 Google Sheets 的 States 标签页读取配置并仅保留标记为 Active 的行；主标另含 Set Configuration Values，同属配置读取行为。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为将每个生效州按已配置关键词展开为搜索词并按关键词 in 州组合。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "两侧均为逐搜索词调用 Google Maps 商家搜索服务；主标另含拆分返回结果，第二标将拆分并入其线索清洗节点 n6。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n5"
+          ],
+          "rationale": "两侧均为搜索服务返回错误时把错误记录到 Errors 标签页。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n6",
+            "n7"
+          ],
+          "rationale": "主标把线索规范化、过滤与去重合并为一个节点；第二标拆为拆分结果并规范化线索（n6）与过滤不完整线索并去重（n7）。n6 中的拆分部分与主标 n4 的拆分行为重叠，因第二标将拆分与规范化合并建模，按主导的线索清洗行为归入本组。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n8",
+            "n9"
+          ],
+          "rationale": "主标把筛选含网站线索、抓取联系页面并提取第一个有效邮箱合并为一个节点；第二标拆为判断线索是否包含网站（n8）与抓取联系页面并提取邮箱（n9）。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n10"
+          ],
+          "rationale": "两侧均为使用语言模型为每条线索生成简洁的 B2B 开发信。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n11"
+          ],
+          "rationale": "两侧均为将线索明细、联系邮箱与开发信追加写入 Leads 标签页。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10"
+          ],
+          "secondary_nodes": [],
+          "rationale": "主标的全部搜索词处理完毕节点表达循环结束的流程状态，冻结需求未将其声明为独立业务行为，第二标亦无对应节点。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-082",
+      "alignment_source": "human_review",
+      "alignment_group_count": 16,
+      "mixed_type_groups": [
+        {
+          "group_id": "g3",
+          "primary_types": [
+            "terminal"
+          ],
+          "secondary_types": [
+            "code",
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 13,
+        "primary_count": 13,
+        "double_count": 17,
+        "precision": 1.0,
+        "recall": 0.7647058823529411,
+        "f1": 0.8666666666666666
+      },
+      "dfg_endpoint": {
+        "matches": 10,
+        "primary_count": 16,
+        "double_count": 19,
+        "precision": 0.625,
+        "recall": 0.5263157894736842,
+        "f1": 0.5714285714285714
+      },
+      "dfg_strict": {
+        "matches": 4,
+        "primary_count": 16,
+        "double_count": 19,
+        "precision": 0.25,
+        "recall": 0.21052631578947367,
+        "f1": 0.22857142857142856
+      },
+      "primary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g6",
+          "variables": [
+            "normalizedrequest"
+          ]
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g11",
+          "variables": [
+            "updatedrecord"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g4",
+          "variables": [
+            "normalizedrequest"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g6",
+          "variables": [
+            "classification"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g9",
+          "variables": [
+            "classification"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g7",
+          "variables": [
+            "scoredtriage"
+          ]
+        }
+      ],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g4",
+          "variables": [
+            "normalizedrequest"
+          ]
+        },
+        {
+          "source_group": "g1",
+          "target_group": "g5",
+          "variables": [
+            "normalizedrequest"
+          ]
+        },
+        {
+          "source_group": "g10",
+          "target_group": "g16",
+          "variables": [
+            "approvaloutcome"
+          ]
+        },
+        {
+          "source_group": "g15",
+          "target_group": "g8",
+          "variables": [
+            "approvaldecision"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g11",
+          "variables": [
+            "triagerecord"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g7",
+          "variables": [
+            "triagerecord"
+          ]
+        },
+        {
+          "source_group": "g6",
+          "target_group": "g9",
+          "variables": [
+            "triagerecord"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g10",
+          "variables": [
+            "pendingrecord"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g16",
+          "variables": [
+            "approvaloutcome"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g12",
+          "target_group": "g13",
+          "primary_variables": [
+            "openrecords"
+          ],
+          "secondary_variables": [
+            "openrequests"
+          ]
+        },
+        {
+          "source_group": "g2",
+          "target_group": "g3",
+          "primary_variables": [
+            "validationresult"
+          ],
+          "secondary_variables": [
+            "missingfields"
+          ]
+        },
+        {
+          "source_group": "g4",
+          "target_group": "g5",
+          "primary_variables": [
+            "classification"
+          ],
+          "secondary_variables": [
+            "triageanalysis"
+          ]
+        },
+        {
+          "source_group": "g5",
+          "target_group": "g6",
+          "primary_variables": [
+            "scoredtriage"
+          ],
+          "secondary_variables": [
+            "triagescores"
+          ]
+        },
+        {
+          "source_group": "g8",
+          "target_group": "g9",
+          "primary_variables": [
+            "approvalresult"
+          ],
+          "secondary_variables": [
+            "pendingrecord"
+          ]
+        },
+        {
+          "source_group": "g9",
+          "target_group": "g10",
+          "primary_variables": [
+            "assignment"
+          ],
+          "secondary_variables": [
+            "ownerassignment"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 6,
+        "primary_dfg": 1,
+        "secondary_dfg": 2
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1",
+            "n2"
+          ],
+          "rationale": "主标把接收项目需求申请（回调或手动）并规范化字段合为一个节点；第二标拆为接收申请（n1）与规范化传入字段（n2）。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为检查需求简述必填项是否齐备。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "rationale": "主标把返回 400 响应（含缺失字段与澄清问题）合并为一个节点；第二标拆为准备缺失字段与澄清问题（n4）与返回 400 响应（n5）。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4"
+          ],
+          "secondary_nodes": [
+            "n6"
+          ],
+          "rationale": "两侧均为由语言模型生成分诊摘要、判定申请类型并抽取风险、依赖、待决策事项与建议负责人类型。"
+        },
+        {
+          "group_id": "g5",
+          "primary_nodes": [
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n7"
+          ],
+          "rationale": "两侧均为依据申请元信息与语言模型输出做确定性风险与紧急度打分并决定分诊去向。"
+        },
+        {
+          "group_id": "g6",
+          "primary_nodes": [
+            "n6"
+          ],
+          "secondary_nodes": [
+            "n8"
+          ],
+          "rationale": "两侧均为在 Airtable 中创建分诊记录并写入申请信息、摘要、评分与去向。"
+        },
+        {
+          "group_id": "g7",
+          "primary_nodes": [
+            "n7"
+          ],
+          "secondary_nodes": [
+            "n9"
+          ],
+          "rationale": "两侧均为判断评分是否超过审批阈值。"
+        },
+        {
+          "group_id": "g8",
+          "primary_nodes": [
+            "n8"
+          ],
+          "secondary_nodes": [
+            "n10",
+            "n11",
+            "n17"
+          ],
+          "rationale": "主标把准备审批消息、可选发送 Slack 与记录审批结论合并为一个节点；第二标拆为准备审批消息（n10）、发送审批消息到 Slack（n11）与记录审批结论（n17，其查找待审批记录部分为该记录行为的配套读取）。"
+        },
+        {
+          "group_id": "g9",
+          "primary_nodes": [
+            "n9"
+          ],
+          "secondary_nodes": [
+            "n13",
+            "n18",
+            "n19",
+            "n22"
+          ],
+          "rationale": "主标把指派负责人或将申请标记为已拒绝合并为一个节点（含批准判断）；第二标拆为判断是否批准（n18）、两个分支中的指派负责人（n13、n19）与标记已拒绝并更新 Airtable（n22，其更新部分与主标 n11 的更新行为重叠，按其主导的标记拒绝行为归入本组）。"
+        },
+        {
+          "group_id": "g10",
+          "primary_nodes": [
+            "n10",
+            "n11"
+          ],
+          "secondary_nodes": [
+            "n14",
+            "n20"
+          ],
+          "rationale": "主标拆为构建结构化交付交接内容（n10）与更新 Airtable 记录（n11）；第二标拆为构建交接内容并更新 Airtable（n14）与更新 Airtable 交接内容（n20），两组均表达构建交接并把负责人、状态、下一步动作与审批结果更新回 Airtable 的同一行为链。"
+        },
+        {
+          "group_id": "g11",
+          "primary_nodes": [
+            "n12"
+          ],
+          "secondary_nodes": [
+            "n12",
+            "n15"
+          ],
+          "rationale": "两侧均为向调用方返回分诊结果；第二标按分支拆为待审批响应（n12）与最终响应（n15），主标以一个节点覆盖。"
+        },
+        {
+          "group_id": "g12",
+          "primary_nodes": [
+            "n13"
+          ],
+          "secondary_nodes": [
+            "n23",
+            "n24"
+          ],
+          "rationale": "主标把按周计划触发并加载未结分诊记录合并为一个节点；第二标拆为每周定时触发（n23）与加载未结分诊记录（n24）。"
+        },
+        {
+          "group_id": "g13",
+          "primary_nodes": [
+            "n14"
+          ],
+          "secondary_nodes": [
+            "n25"
+          ],
+          "rationale": "两侧均为按周生成未结分诊记录的运营汇总。"
+        },
+        {
+          "group_id": "g14",
+          "primary_nodes": [
+            "n15"
+          ],
+          "secondary_nodes": [
+            "n26"
+          ],
+          "rationale": "两侧均为可选地通过 Gmail 发送运营汇总邮件。"
+        },
+        {
+          "group_id": "g15",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n16"
+          ],
+          "rationale": "第二标的接收审批决策回调节点（审批分支的独立入口），主标未单独建模，冻结需求亦未声明回调接口。"
+        },
+        {
+          "group_id": "g16",
+          "primary_nodes": [],
+          "secondary_nodes": [
+            "n21"
+          ],
+          "rationale": "第二标的向审批回调调用方返回审批处理结果节点，主标未单独建模；其针对的是审批回调交互而非冻结需求中声明的向调用方返回分诊结果。"
+        }
+      ]
+    },
+    {
+      "task_id": "N8F-101",
+      "alignment_source": "human_review",
+      "alignment_group_count": 4,
+      "mixed_type_groups": [
+        {
+          "group_id": "g4",
+          "primary_types": [
+            "code",
+            "terminal"
+          ],
+          "secondary_types": [
+            "terminal"
+          ]
+        }
+      ],
+      "cfg": {
+        "matches": 3,
+        "primary_count": 3,
+        "double_count": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "dfg_endpoint": {
+        "matches": 3,
+        "primary_count": 3,
+        "double_count": 4,
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1": 0.8571428571428571
+      },
+      "dfg_strict": {
+        "matches": 1,
+        "primary_count": 3,
+        "double_count": 4,
+        "precision": 0.3333333333333333,
+        "recall": 0.25,
+        "f1": 0.28571428571428575
+      },
+      "primary_only_dfg_endpoints": [],
+      "secondary_only_dfg_endpoints": [
+        {
+          "source_group": "g1",
+          "target_group": "g2",
+          "variables": [
+            "userquestion"
+          ]
+        }
+      ],
+      "shared_endpoint_variable_disagreements": [
+        {
+          "source_group": "g1",
+          "target_group": "g3",
+          "primary_variables": [
+            "question"
+          ],
+          "secondary_variables": [
+            "userquestion"
+          ]
+        },
+        {
+          "source_group": "g3",
+          "target_group": "g4",
+          "primary_variables": [
+            "answerdata"
+          ],
+          "secondary_variables": [
+            "answer"
+          ]
+        }
+      ],
+      "collapsed_internal_edges": {
+        "primary_cfg": 1,
+        "secondary_cfg": 0,
+        "primary_dfg": 1,
+        "secondary_dfg": 0
+      },
+      "alignment_groups": [
+        {
+          "group_id": "g1",
+          "primary_nodes": [
+            "n1"
+          ],
+          "secondary_nodes": [
+            "n1"
+          ],
+          "rationale": "两侧均为对话入口接收用户以自然语言提出的表格问题。"
+        },
+        {
+          "group_id": "g2",
+          "primary_nodes": [
+            "n2"
+          ],
+          "secondary_nodes": [
+            "n2"
+          ],
+          "rationale": "两侧均为读取 Google Sheets 中的实时数据行。"
+        },
+        {
+          "group_id": "g3",
+          "primary_nodes": [
+            "n3"
+          ],
+          "secondary_nodes": [
+            "n3"
+          ],
+          "rationale": "两侧均为由智能体基于真实数据计算并给出答案、不凭记忆猜测，并借助对话记忆保留上下文以支持追问。"
+        },
+        {
+          "group_id": "g4",
+          "primary_nodes": [
+            "n4",
+            "n5"
+          ],
+          "secondary_nodes": [
+            "n4"
+          ],
+          "rationale": "主标的组织对话回复消息（n4）与在对话中返回答案（n5）引用同一原生节点、共同表达答案连同实际数字在对话中返回的同一业务行为；第二标将其建模为一个节点。"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,482 @@
+{
+  "task_id": "N8F-008",
+  "author_id": "OA-08",
+  "status": "submitted",
+  "requirement_sha256": "0d8092e139b1fcb82853a17bb96fae354b6e8640d231b9b4bf84f52b9ed049cf",
+  "fixtures": [
+    {
+      "fixture_id": "F-TRIGGER-COMMENT",
+      "purpose": "用户在 GitLab 合并请求讨论区发布的触发评论及其配置阈值",
+      "input_data": {
+        "event": "note",
+        "project_id": 143,
+        "merge_request_iid": 42,
+        "discussion_id": "d_1a2b",
+        "note_id": 9000,
+        "body": "/review",
+        "confidence_threshold": 0.7
+      }
+    },
+    {
+      "fixture_id": "F-MR-CHANGES",
+      "purpose": "合并请求变更差异：两个适合行内评审的文件与一个不适合（压缩 JS）的文件",
+      "input_data": {
+        "changes": [
+          {
+            "old_path": "app.py",
+            "new_path": "app.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -8,5 +8,6 @@\n def main():\n+    user = get_user()\n     print(user.name)"
+          },
+          {
+            "old_path": "utils.py",
+            "new_path": "utils.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -20,3 +20,4 @@\n-def query(sql):\n+def query(sql):\n+    return sql"
+          },
+          {
+            "old_path": "dist/bundle.min.js",
+            "new_path": "dist/bundle.min.js",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "var a=1;function b(){return a;}"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-MR-CHANGES-NO-POS",
+      "purpose": "无法解析到有效 GitLab 差异位置的变更（position_resolvable=false）",
+      "input_data": {
+        "changes": [
+          {
+            "old_path": "moved.txt",
+            "new_path": "moved.txt",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -1,1 +1,2 @@\n-old line\n+new line",
+            "position_resolvable": false
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GITLAB-CHANGES",
+      "dependency_type": "gitlab",
+      "operation": "get_merge_request_changes",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 42
+      },
+      "response_contract": {
+        "changes": [
+          {
+            "old_path": "app.py",
+            "new_path": "app.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -8,5 +8,6 @@\n def main():\n+    user = get_user()\n     print(user.name)"
+          },
+          {
+            "old_path": "utils.py",
+            "new_path": "utils.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -20,3 +20,4 @@\n-def query(sql):\n+def query(sql):\n+    return sql"
+          },
+          {
+            "old_path": "dist/bundle.min.js",
+            "new_path": "dist/bundle.min.js",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "var a=1;function b(){return a;}"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-CHANGES-NOPOS",
+      "dependency_type": "gitlab",
+      "operation": "get_merge_request_changes",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 43
+      },
+      "response_contract": {
+        "changes": [
+          {
+            "old_path": "moved.txt",
+            "new_path": "moved.txt",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -1,1 +1,2 @@\n-old line\n+new line",
+            "position_resolvable": false
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-BUGS",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_bugs",
+      "request_contract": {
+        "file": "app.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "B1",
+            "path": "app.py",
+            "line": 10,
+            "severity": "high",
+            "confidence": 0.9,
+            "message": "Potential null dereference"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-SECURITY",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_security",
+      "request_contract": {
+        "file": "utils.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "S1",
+            "path": "utils.py",
+            "line": 5,
+            "severity": "critical",
+            "confidence": 0.8,
+            "message": "SQL injection risk"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-MAINT",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_maintainability",
+      "request_contract": {
+        "file": "app.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "M1",
+            "path": "app.py",
+            "line": 20,
+            "severity": "low",
+            "confidence": 0.3,
+            "message": "Function too long"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-VERIFIER",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "verify_findings",
+      "request_contract": {},
+      "response_contract": {
+        "findings": [
+          {
+            "path": "app.py",
+            "line": 10,
+            "severity": "high",
+            "confidence": 0.9,
+            "message": "Potential null dereference"
+          },
+          {
+            "path": "utils.py",
+            "line": 5,
+            "severity": "critical",
+            "confidence": 0.8,
+            "message": "SQL injection risk"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-BUGS",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_bugs",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "B1",
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "medium",
+            "confidence": 0.8,
+            "message": "Duplicate logic detected"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-SECURITY",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_security",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "S1",
+            "path": "moved.txt",
+            "line": 2,
+            "severity": "medium",
+            "confidence": 0.85,
+            "message": "Sensitive path exposure"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-MAINT",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_maintainability",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "M1",
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "low",
+            "confidence": 0.4,
+            "message": "Unclear rename"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-VERIFIER-FB",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "verify_findings",
+      "request_contract": {},
+      "response_contract": {
+        "findings": [
+          {
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "medium",
+            "confidence": 0.85,
+            "message": "Sensitive path exposure"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-INLINE",
+      "dependency_type": "gitlab",
+      "operation": "create_inline_review_comment",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 42
+      },
+      "response_contract": {
+        "note_id": 9101
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-REPLY",
+      "dependency_type": "gitlab",
+      "operation": "create_discussion_reply",
+      "request_contract": {
+        "discussion_id": "d_1a2b"
+      },
+      "response_contract": {
+        "note_id": 9102
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-SUMMARY",
+      "dependency_type": "gitlab",
+      "operation": "create_summary_reply",
+      "request_contract": {
+        "discussion_id": "d_1a2b"
+      },
+      "response_contract": {
+        "note_id": 9103,
+        "body": "review completed"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-INLINE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-TRIGGER-COMMENT",
+        "F-MR-CHANGES"
+      ],
+      "mock_ids": [
+        "M-GITLAB-CHANGES",
+        "M-LLM-REVIEWER-BUGS",
+        "M-LLM-REVIEWER-SECURITY",
+        "M-LLM-REVIEWER-MAINT",
+        "M-LLM-VERIFIER",
+        "M-GITLAB-INLINE",
+        "M-GITLAB-SUMMARY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-INLINE-1",
+          "target": "output.inline_comments",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "弱结论(置信度0.3)被复核剔除，仅置信度≥0.7的两条结论发布"
+        },
+        {
+          "assertion_id": "A-INLINE-2",
+          "target": "output.inline_comments[0].path",
+          "operator": "equals",
+          "expected": "app.py",
+          "rationale": "行内评论定位于对应变更文件"
+        },
+        {
+          "assertion_id": "A-INLINE-3",
+          "target": "output.inline_comments[1].path",
+          "operator": "equals",
+          "expected": "utils.py",
+          "rationale": "第二个文件同样创建行内评论"
+        },
+        {
+          "assertion_id": "A-INLINE-4",
+          "target": "output.skipped_files",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "跳过不适合行内评审的文件"
+        },
+        {
+          "assertion_id": "A-INLINE-5",
+          "target": "output.skipped_files[0]",
+          "operator": "equals",
+          "expected": "dist/bundle.min.js",
+          "rationale": "压缩 JS 文件被跳过"
+        },
+        {
+          "assertion_id": "A-INLINE-6",
+          "target": "output.discussion_reply",
+          "operator": "not_exists",
+          "expected": null,
+          "rationale": "能解析差异位置时不得走讨论区退化分支"
+        },
+        {
+          "assertion_id": "A-INLINE-7",
+          "target": "output.summary_reply",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "发布标记审查完成的总结性回复"
+        },
+        {
+          "assertion_id": "A-INLINE-8",
+          "target": "output.summary_reply.body",
+          "operator": "contains",
+          "expected": "review completed",
+          "rationale": "总结性回复标记审查已完成"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-FALLBACK",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-TRIGGER-COMMENT",
+        "F-MR-CHANGES-NO-POS"
+      ],
+      "mock_ids": [
+        "M-GITLAB-CHANGES-NOPOS",
+        "M-LLM-REVIEWER-FB-BUGS",
+        "M-LLM-REVIEWER-FB-SECURITY",
+        "M-LLM-REVIEWER-FB-MAINT",
+        "M-LLM-VERIFIER-FB",
+        "M-GITLAB-REPLY",
+        "M-GITLAB-SUMMARY"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FB-1",
+          "target": "output.inline_comments",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无法解析差异位置时不创建行内评论"
+        },
+        {
+          "assertion_id": "A-FB-2",
+          "target": "output.discussion_reply",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "退化为在触发评论所在讨论区回复"
+        },
+        {
+          "assertion_id": "A-FB-3",
+          "target": "output.discussion_reply.discussion_id",
+          "operator": "equals",
+          "expected": "d_1a2b",
+          "rationale": "回复落在触发评论所在讨论区"
+        },
+        {
+          "assertion_id": "A-FB-4",
+          "target": "output.discussion_reply.body",
+          "operator": "contains",
+          "expected": "Sensitive path exposure",
+          "rationale": "退化回复仍包含通过复核的结论"
+        },
+        {
+          "assertion_id": "A-FB-5",
+          "target": "output.summary_reply",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "退化路径同样发布总结性回复"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "仅依据冻结需求与业务契约设计；输出证据按 output.* JSON 路径表达。随机/并行审查由固定模拟保证确定性；confidence_threshold=0.7 来自触发评论输入配置；模拟的 GitLab/LLM 均无真实副作用。"
+}

@@ -1,0 +1,447 @@
+{
+  "task_id": "N8F-023",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "808e718e48678b6f68703580e1d25498e2a6728aff033e47fa725b51b2a37c57",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Telegram 输入",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "telegram_message",
+          "type": "object",
+          "description": "Telegram 消息，含文字与商品图片"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "telegram_input",
+          "type": "object",
+          "description": "解析后的输入：文字描述与商品图片"
+        }
+      ],
+      "native_evidence": [
+        "Trigger: Receive Idea via Telegram",
+        "Telegram: Get Image File"
+      ],
+      "requirement_evidence": [
+        "从 Telegram 输入（文字加商品图片）生成广告创意"
+      ],
+      "rationale": "需求声明流程由 Telegram 的文字加商品图片输入启动，为入口的确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成广告创意",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "telegram_input",
+          "type": "object",
+          "description": "Telegram 文字与商品图片"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "生成的广告创意，含视觉与文案方向"
+        },
+        {
+          "name": "ad_copy",
+          "type": "string",
+          "description": "广告创意中的文案，随 Telegram 通知附上"
+        }
+      ],
+      "native_evidence": [
+        "Generate Image Prompt",
+        "Parse Idea Into Prompts"
+      ],
+      "requirement_evidence": [
+        "从 Telegram 输入（文字加商品图片）生成广告创意"
+      ],
+      "rationale": "需求声明根据 Telegram 输入生成广告创意，需开放语义理解与内容生成，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "制作商品视觉素材",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "广告创意中的视觉方向"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "visual_assets",
+          "type": "array",
+          "description": "多种图像生成能力产出的商品视觉素材"
+        }
+      ],
+      "native_evidence": [
+        "NanoBanana: Create Image",
+        "Seedream: Generate image from texte",
+        "Generate 4o Image（GPT IMAG 1）"
+      ],
+      "requirement_evidence": [
+        "使用多种图像生成能力制作商品视觉素材"
+      ],
+      "rationale": "需求声明调用多种图像生成能力制作商品视觉素材，为确定性外部 API 调用，判 code；多种供应商的并行调用作为该节点内部行为。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成视频脚本",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "creative_idea",
+          "type": "object",
+          "description": "广告创意"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_script",
+          "type": "string",
+          "description": "语言模型生成的广告视频脚本"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent: Generate Video Script",
+        "OpenAI Chat Model1"
+      ],
+      "requirement_evidence": [
+        "基于由语言模型生成的脚本"
+      ],
+      "rationale": "需求声明广告视频脚本由语言模型生成，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "制作广告视频",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "video_script",
+          "type": "string",
+          "description": "生成的视频脚本"
+        },
+        {
+          "name": "visual_assets",
+          "type": "array",
+          "description": "商品视觉素材"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_clips",
+          "type": "array",
+          "description": "视频生成能力产出的短片段"
+        }
+      ],
+      "native_evidence": [
+        "Generate Video with VEO3",
+        "Format Prompt",
+        "Wait for VEO3 Rendering",
+        "Download Video from VEO3"
+      ],
+      "requirement_evidence": [
+        "使用视频生成能力制作电影感的广告视频"
+      ],
+      "rationale": "需求声明使用视频生成能力基于脚本与素材制作广告视频，为确定性外部 API 调用（含异步等待），判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "合并短片段为成片",
+      "node_type": "code",
+      "operation_family": "external_media_generation",
+      "inputs": [
+        {
+          "name": "video_clips",
+          "type": "array",
+          "description": "多个广告短片段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_ad",
+          "type": "object",
+          "description": "合并后的一支成片广告"
+        }
+      ],
+      "native_evidence": [
+        "Merge 3 Videos",
+        "Wait: Merge Process",
+        "Check Merge Status"
+      ],
+      "requirement_evidence": [
+        "把多个短片段合成为一支成片广告"
+      ],
+      "rationale": "需求声明将多个短片段合成为一支成片，为确定性外部媒体合并动作，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "发布到多个平台",
+      "node_type": "code",
+      "operation_family": "external_publish",
+      "inputs": [
+        {
+          "name": "final_ad",
+          "type": "object",
+          "description": "成片广告"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publication_metadata",
+          "type": "object",
+          "description": "各平台发布状态与链接等元数据"
+        }
+      ],
+      "native_evidence": [
+        "Upload Video to BLOTATO",
+        "Tiktok",
+        "Instagram",
+        "Linkedin",
+        "Twitter (X)",
+        "Threads",
+        "Facebook",
+        "Pinterest",
+        "Bluesky",
+        "Youtube"
+      ],
+      "requirement_evidence": [
+        "自动发布到多个平台（TikTok、Instagram、LinkedIn、X、Threads、Facebook、Pinterest、Bluesky、YouTube）"
+      ],
+      "rationale": "需求声明将成片自动发布到多个指定平台，为确定性外部发布动作，判 code；各平台发布作为该节点内部并行行为。"
+    },
+    {
+      "node_id": "n8",
+      "label": "存储元数据与结果",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "publication_metadata",
+          "type": "object",
+          "description": "发布元数据与结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stored_links",
+          "type": "object",
+          "description": "存入 Google Sheets 与 Google Drive 的结果及视频链接"
+        }
+      ],
+      "native_evidence": [
+        "Save Ad Data to Google Sheets",
+        "Upload Final Video to Google Drive",
+        "Update Status to \"DONE\""
+      ],
+      "requirement_evidence": [
+        "把元数据与结果存入 Google Sheets 与 Google Drive 以便跟踪"
+      ],
+      "rationale": "需求声明将元数据与结果存入 Google Sheets 与 Google Drive，为确定性外部写入动作，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送 Telegram 通知",
+      "node_type": "terminal",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "stored_links",
+          "type": "object",
+          "description": "存储的视频链接与结果"
+        },
+        {
+          "name": "ad_copy",
+          "type": "string",
+          "description": "随通知附上的文案"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Video URL via Telegram",
+        "Send a video"
+      ],
+      "requirement_evidence": [
+        "最后通过 Telegram 发送通知，附上视频链接与文案"
+      ],
+      "rationale": "需求声明流程最后通过 Telegram 发送附视频链接与文案的通知，为确定性外部通知动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收 Telegram 输入后生成广告创意。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "创意就绪后制作商品视觉素材。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "创意就绪后生成视频脚本，与视觉素材制作为并行加工链。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "视觉素材就绪后供视频制作使用。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "脚本就绪后供视频制作使用。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "短片段生成后合并为成片。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "成片就绪后发布到多个平台。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后存储元数据与结果。"
+    },
+    {
+      "edge_id": "cfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "存储完成后发送 Telegram 通知。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "telegram_input",
+      "condition": null,
+      "rationale": "Telegram 文字与商品图片传给创意生成节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "creative_idea",
+      "condition": null,
+      "rationale": "广告创意（视觉方向）传给视觉素材制作节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "creative_idea",
+      "condition": null,
+      "rationale": "广告创意传给视频脚本生成节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": "visual_assets",
+      "condition": null,
+      "rationale": "商品视觉素材传给视频制作节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "video_script",
+      "condition": null,
+      "rationale": "视频脚本传给视频制作节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "video_clips",
+      "condition": null,
+      "rationale": "短片段传给合并节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n6",
+      "target": "n7",
+      "variable": "final_ad",
+      "condition": null,
+      "rationale": "成片广告传给发布节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "publication_metadata",
+      "condition": null,
+      "rationale": "发布元数据传给存储节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n8",
+      "target": "n9",
+      "variable": "stored_links",
+      "condition": null,
+      "rationale": "存储的视频链接传给通知节点。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n2",
+      "target": "n9",
+      "variable": "ad_copy",
+      "condition": null,
+      "rationale": "创意中的文案传给通知节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求与业务契约建模：Telegram 输入为入口；广告创意与视频脚本生成判 semantic，视觉素材制作、视频制作、片段合并、多平台发布、存储、通知均判确定性 code。脚本生成与视觉素材制作为创意生成后的并行加工链，在视频制作节点汇合。原生中的中间 Sheets/Drive 状态存储、品牌信息读取与提示词格式化等为需求未声明的实现细节，未纳入。"
+}

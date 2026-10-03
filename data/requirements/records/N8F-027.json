@@ -1,0 +1,152 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-027",
+  "source_id": "n8n:14355",
+  "workflow_sha256": "8de5f5a7e048be3ee921eafc5b8c4705cceacb1d9583bf0d6e6f463b7463cda1",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_after_full_description_reconsideration",
+  "requirement_sha256": "85bfaf7aa4dc571771b0c085792051e4299f299d3860d9ce3d4b3ecef4fe7b77",
+  "requirement": {
+    "requirement_text": "按设定时间间隔运行，自动执行线索培育：从 Google Sheets 读取线索数据，并按状态或日期筛选出需要跟进的线索。\n\n数据准备：对进入处理的线索，规范化邮箱、姓名、公司等字段，并以受控批次的方式分批处理。\n\n线索评分与分流：由语言模型评估线索质量并给出评分与优先级；随后根据跟进阶段或线索状态对线索进行分流。\n\n首次触达：由语言模型生成一封个性化的冷邮件；保存该邮件内容；通过 Gmail 发送该邮件；并在 Google Sheets 中更新该线索的跟进信息。\n\n跟进与闭环：由语言模型生成跟进邮件并发送；在 Google Sheets 中更新跟进信息；随后等待一段时间再检查线索是否回复；若线索未回复，则在 Google Sheets 中将该线索标记为已关闭。\n\n整个流程自动更新线索记录并跟踪线索进展。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 344,
+        "text": "This workflow automates lead nurturing by pulling data from Google Sheets, analyzing leads with AI, and sending personalized outreach emails. It runs on a schedule, processes leads in batches, and routes them based on their status and step. AI generates both first-touch and follow-up emails while updating the CRM automatically."
+      },
+      {
+        "start": 480,
+        "end": 534,
+        "text": "Schedule Trigger – Runs the workflow at set intervals."
+      },
+      {
+        "start": 539,
+        "end": 598,
+        "text": "Get row(s) in sheet – Fetches lead data from Google Sheets."
+      },
+      {
+        "start": 603,
+        "end": 663,
+        "text": "If – Filters leads that need action based on status or date."
+      },
+      {
+        "start": 703,
+        "end": 772,
+        "text": "Code in JavaScript – Normalizes fields like email, name, and company."
+      },
+      {
+        "start": 777,
+        "end": 833,
+        "text": "Loop Over Items – Processes leads in controlled batches."
+      },
+      {
+        "start": 871,
+        "end": 944,
+        "text": "AI-Lead-Analysis – Evaluates lead quality and assigns score and priority."
+      },
+      {
+        "start": 1015,
+        "end": 1070,
+        "text": "Switch – Routes leads based on outreach step or status."
+      },
+      {
+        "start": 1106,
+        "end": 1158,
+        "text": "First AI mail – Generates a personalized cold email."
+      },
+      {
+        "start": 1163,
+        "end": 1207,
+        "text": "Save Message – Stores the generated message."
+      },
+      {
+        "start": 1212,
+        "end": 1255,
+        "text": "Send a message – Sends the email via Gmail."
+      },
+      {
+        "start": 1260,
+        "end": 1316,
+        "text": "Update row in sheet – Updates CRM with outreach details."
+      },
+      {
+        "start": 1360,
+        "end": 1410,
+        "text": "AI-Follow-up – Creates a follow-up email using AI."
+      },
+      {
+        "start": 1473,
+        "end": 1517,
+        "text": "Send a message1 – Sends the follow-up email."
+      },
+      {
+        "start": 1522,
+        "end": 1577,
+        "text": "Update row in sheet1 – Updates CRM with follow-up info."
+      },
+      {
+        "start": 1582,
+        "end": 1625,
+        "text": "Wait – Delays before checking for response."
+      },
+      {
+        "start": 1630,
+        "end": 1670,
+        "text": "If1 – Checks if the lead replied or not."
+      },
+      {
+        "start": 1675,
+        "end": 1734,
+        "text": "Update row in sheet2 – Marks lead as closed if no response."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "按设定时间间隔触发",
+        "Google Sheets 中的线索数据",
+        "线索的状态、日期与跟进阶段"
+      ],
+      "conditions": [
+        "按状态或日期筛选需要跟进的线索",
+        "线索以受控批次方式分批处理",
+        "根据评分与优先级、跟进阶段或线索状态进行分流",
+        "发送跟进邮件后等待一段时间再检查是否回复",
+        "线索未回复时标记为已关闭"
+      ],
+      "allowed_actions": [
+        "读取并筛选线索",
+        "规范化邮箱、姓名、公司等字段",
+        "调用语言模型评估线索质量并给出评分与优先级",
+        "调用语言模型生成首次触达冷邮件与跟进邮件",
+        "保存生成的邮件内容",
+        "通过 Gmail 发送邮件",
+        "在 Google Sheets 中更新跟进信息并标记线索状态"
+      ],
+      "visible_outcomes": [
+        "线索收到个性化的首次触达邮件与跟进邮件",
+        "Google Sheets 中记录并更新跟进信息",
+        "未回复的线索在记录中被标记为已关闭"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-027.packet.json",
+    "packet_sha256": "5c681f711ec45111c5109ab0d7040d496e4aebdd8c2b32f7f9ae3472a510afe8",
+    "public_description_sha256": "5ffe2adf7653b43e10bcc5b9fa1f5566da7b43e34dc790c9488ab09d28093b3f"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-027.response.json",
+    "reconsideration_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/reconsiderations/full_description_01/RV-03/responses/N8F-027.response.json",
+    "reconsideration_response_sha256": "dde2eee054c413afd4f28127ac36318c005879daf2e191ecdccbf3ba2f9227da",
+    "decision": "accept"
+  },
+  "formal_index": 38
+}

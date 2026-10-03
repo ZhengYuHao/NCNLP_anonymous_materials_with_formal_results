@@ -1,0 +1,96 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-060",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "用户人脸照片",
+        "名人参考图（最多 4 张）",
+        "用户人脸照片与名人参考图"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "真实感合照构图的优化提示词",
+        "优化后的合照构图提示词"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "生成的合照图像及生成结果",
+        "生成的合照图像结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g5",
+      "data_items": [
+        "生成的合照图像"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-060-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求『将生成的合照图像两两配对』，配对步骤真实读取 g3 生成的合照图像；g4 保存为存储环节，图像数据定义在 g3。",
+      "confidence": 0.7,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "已保存的合照结果行记录（含就绪状态）",
+        "已保存的合照图像记录（含就绪状态）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "配对后的合照图像（名人 1 → 名人 2）",
+        "配对好的合照图像（名人 1 → 名人 2）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "生成的行走过渡视频",
+        "视频元数据",
+        "生成的行走过渡视频及元数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.923076923076923,
+    "shared_edge_count": 6,
+    "adjudicated_dispute_count": 1,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

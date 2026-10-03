@@ -1,0 +1,326 @@
+{
+  "task_id": "N8F-085",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "cd1dd53f5dafe1f88e2009c33345a1240d2dc1a5f522836c1a640726d2e127e2",
+  "fixtures": [
+    {
+      "fixture_id": "F-YT-DEFAULT-CHANNELS",
+      "purpose": "正常用例：未指定频道标识时使用默认频道列表，为每个频道生成 RSS 订阅源、筛选窗口内新视频并发送 Telegram 与邮件通知",
+      "input_data": {
+        "channel_ids": [],
+        "default_channel_ids": [
+          "UC_alpha",
+          "UC_beta"
+        ],
+        "window_days": 3,
+        "today": "2026-09-02",
+        "notification_mode": "individual"
+      }
+    },
+    {
+      "fixture_id": "F-YT-CUSTOM-CHANNEL",
+      "purpose": "正常用例：指定自定义频道标识时只监控该频道，不为默认频道生成订阅源",
+      "input_data": {
+        "channel_ids": [
+          "UC_custom_gamma"
+        ],
+        "default_channel_ids": [
+          "UC_alpha",
+          "UC_beta"
+        ],
+        "window_days": 3,
+        "today": "2026-09-02",
+        "notification_mode": "individual"
+      }
+    },
+    {
+      "fixture_id": "F-YT-WINDOW-FILTER",
+      "purpose": "边界用例：RSS 返回的视频包含窗口内与窗口外两种发布时间，只应处理最近 3 天窗口内发布的视频",
+      "input_data": {
+        "channel_ids": [
+          "UC_alpha"
+        ],
+        "default_channel_ids": [],
+        "window_days": 3,
+        "today": "2026-09-02",
+        "rss_items": [
+          {
+            "video_id": "vid_in_window",
+            "published_at": "2026-09-01T10:00:00Z"
+          },
+          {
+            "video_id": "vid_outdated",
+            "published_at": "2026-08-25T10:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-YT-DIGEST-MODE",
+      "purpose": "正常用例：通知模式为摘要时，把窗口内全部新视频合并为一封摘要邮件发送",
+      "input_data": {
+        "channel_ids": [
+          "UC_alpha"
+        ],
+        "default_channel_ids": [],
+        "window_days": 3,
+        "today": "2026-09-02",
+        "notification_mode": "digest"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-YT-RSS-ALPHA",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_channel_feed",
+      "request_contract": {
+        "channel_id": "UC_alpha"
+      },
+      "response_contract": {
+        "items": [
+          {
+            "video_id": "vid_in_window",
+            "title": "New AI features explained",
+            "published_at": "2026-09-01T10:00:00Z"
+          },
+          {
+            "video_id": "vid_outdated",
+            "title": "Old video",
+            "published_at": "2026-08-25T10:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-DETAILS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "get_video_details",
+      "request_contract": {
+        "video_id": "vid_in_window"
+      },
+      "response_contract": {
+        "title": "New AI features explained",
+        "description": "A deep dive into the latest AI features.",
+        "thumbnail_url": "https://i.ytimg.com/vi/vid_in_window/hqdefault.jpg",
+        "link": "https://www.youtube.com/watch?v=vid_in_window"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-TG-NOTIFY",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "send_video_notification",
+      "request_contract": {
+        "video_id": "vid_in_window",
+        "thumbnail_url": "https://i.ytimg.com/vi/vid_in_window/hqdefault.jpg"
+      },
+      "response_contract": {
+        "message_id": 77001,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-EMAIL-INDIVIDUAL",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_individual_email",
+      "request_contract": {
+        "video_id": "vid_in_window",
+        "html_has_thumbnail": true,
+        "link": "https://www.youtube.com/watch?v=vid_in_window"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "yt-email-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-YT-EMAIL-DIGEST",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_digest_email",
+      "request_contract": {
+        "video_count": 1
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "yt-email-0002"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-DEFAULT-CHANNELS",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-YT-DEFAULT-CHANNELS"
+      ],
+      "mock_ids": [
+        "M-YT-RSS-ALPHA",
+        "M-YT-DETAILS",
+        "M-YT-TG-NOTIFY",
+        "M-YT-EMAIL-INDIVIDUAL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-DEF-1",
+          "target": "exec_log.rssFeedRead.read_channel_feed.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "未指定频道时必须为默认频道列表中的每个频道生成 RSS 订阅源"
+        },
+        {
+          "assertion_id": "A-DEF-2",
+          "target": "exec_log.httpRequest.get_video_details.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "对窗口内新视频必须通过 YouTube 接口获取详细信息"
+        },
+        {
+          "assertion_id": "A-DEF-3",
+          "target": "exec_log.telegram.send_video_notification.request.thumbnail_url",
+          "operator": "contains",
+          "expected": "vid_in_window",
+          "rationale": "Telegram 通知必须附带视频缩略图与链接"
+        },
+        {
+          "assertion_id": "A-DEF-4",
+          "target": "exec_log.gmail.send_individual_email.request.html_has_thumbnail",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "邮件正文必须包含视频缩略图"
+        },
+        {
+          "assertion_id": "A-DEF-5",
+          "target": "exec_log.gmail.send_individual_email.request.link",
+          "operator": "equals",
+          "expected": "https://www.youtube.com/watch?v=vid_in_window",
+          "rationale": "邮件必须包含视频直达链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-CUSTOM-CHANNEL-ONLY",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-YT-CUSTOM-CHANNEL"
+      ],
+      "mock_ids": [
+        "M-YT-RSS-ALPHA",
+        "M-YT-DETAILS",
+        "M-YT-TG-NOTIFY",
+        "M-YT-EMAIL-INDIVIDUAL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-CUS-1",
+          "target": "exec_log.rssFeedRead.read_channel_feed.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "指定自定义频道时只为该频道生成 RSS 订阅源"
+        },
+        {
+          "assertion_id": "A-CUS-2",
+          "target": "exec_log.rssFeedRead.read_channel_feed.request.channel_id",
+          "operator": "equals",
+          "expected": "UC_custom_gamma",
+          "rationale": "RSS 订阅源必须对应自定义指定的频道标识"
+        }
+      ]
+    },
+    {
+      "case_id": "C-WINDOW-FILTERED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-YT-WINDOW-FILTER"
+      ],
+      "mock_ids": [
+        "M-YT-RSS-ALPHA",
+        "M-YT-DETAILS",
+        "M-YT-TG-NOTIFY",
+        "M-YT-EMAIL-INDIVIDUAL"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-WIN-1",
+          "target": "output.filtered_videos.length",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "只有最近 3 天窗口内发布的视频应被保留处理"
+        },
+        {
+          "assertion_id": "A-WIN-2",
+          "target": "output.filtered_videos[0].video_id",
+          "operator": "equals",
+          "expected": "vid_in_window",
+          "rationale": "窗口内视频必须被选中处理"
+        },
+        {
+          "assertion_id": "A-WIN-3",
+          "target": "exec_log.telegram.send_video_notification.request.video_id",
+          "operator": "equals",
+          "expected": "vid_in_window",
+          "rationale": "通知只应针对窗口内视频，窗口外视频不得触发通知"
+        },
+        {
+          "assertion_id": "A-WIN-4",
+          "target": "exec_log.httpRequest.get_video_details.request.video_id",
+          "operator": "not_equals",
+          "expected": "vid_outdated",
+          "rationale": "窗口外视频不得请求详细信息"
+        }
+      ]
+    },
+    {
+      "case_id": "C-DIGEST-EMAIL",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-YT-DIGEST-MODE"
+      ],
+      "mock_ids": [
+        "M-YT-RSS-ALPHA",
+        "M-YT-DETAILS",
+        "M-YT-TG-NOTIFY",
+        "M-YT-EMAIL-DIGEST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-DIG-1",
+          "target": "exec_log.gmail.send_digest_email.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "摘要模式下应把全部新视频合并为一封摘要邮件"
+        },
+        {
+          "assertion_id": "A-DIG-2",
+          "target": "exec_log.gmail.send_individual_email.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "摘要模式下不得为每个视频单独发送邮件"
+        },
+        {
+          "assertion_id": "A-DIG-3",
+          "target": "exec_log.gmail.send_digest_email.request.video_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "摘要邮件必须包含窗口内全部新视频"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖自定义频道与默认频道列表、RSS 订阅源生成、3 天时间窗口过滤、YouTube 详情获取、Telegram 通知（缩略图+链接）以及逐个邮件/摘要邮件两种通知模式。外部依赖（RSS 读取、YouTube API、Telegram、Gmail）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为调用次数、请求字段相等、输出字段相等、包含与存在性检查。"
+}

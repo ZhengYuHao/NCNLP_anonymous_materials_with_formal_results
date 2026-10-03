@@ -1,0 +1,318 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-008",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-GITLAB-CHANGES",
+      "dependency_type": "gitlab",
+      "operation": "get_merge_request_changes",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 42
+      },
+      "response_contract": {
+        "changes": [
+          {
+            "old_path": "app.py",
+            "new_path": "app.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -8,5 +8,6 @@\n def main():\n+    user = get_user()\n     print(user.name)"
+          },
+          {
+            "old_path": "utils.py",
+            "new_path": "utils.py",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -20,3 +20,4 @@\n-def query(sql):\n+def query(sql):\n+    return sql"
+          },
+          {
+            "old_path": "dist/bundle.min.js",
+            "new_path": "dist/bundle.min.js",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "var a=1;function b(){return a;}"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-CHANGES-NOPOS",
+      "dependency_type": "gitlab",
+      "operation": "get_merge_request_changes",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 43
+      },
+      "response_contract": {
+        "changes": [
+          {
+            "old_path": "moved.txt",
+            "new_path": "moved.txt",
+            "new_file": false,
+            "deleted_file": false,
+            "diff": "@@ -1,1 +1,2 @@\n-old line\n+new line",
+            "position_resolvable": false
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-BUGS",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_bugs",
+      "request_contract": {
+        "file": "app.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "B1",
+            "path": "app.py",
+            "line": 10,
+            "severity": "high",
+            "confidence": 0.9,
+            "message": "Potential null dereference"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-SECURITY",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_security",
+      "request_contract": {
+        "file": "utils.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "S1",
+            "path": "utils.py",
+            "line": 5,
+            "severity": "critical",
+            "confidence": 0.8,
+            "message": "SQL injection risk"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-MAINT",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_maintainability",
+      "request_contract": {
+        "file": "app.py"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "M1",
+            "path": "app.py",
+            "line": 20,
+            "severity": "low",
+            "confidence": 0.3,
+            "message": "Function too long"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-VERIFIER",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "verify_findings",
+      "request_contract": {},
+      "response_contract": {
+        "findings": [
+          {
+            "path": "app.py",
+            "line": 10,
+            "severity": "high",
+            "confidence": 0.9,
+            "message": "Potential null dereference"
+          },
+          {
+            "path": "utils.py",
+            "line": 5,
+            "severity": "critical",
+            "confidence": 0.8,
+            "message": "SQL injection risk"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-BUGS",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_bugs",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "B1",
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "medium",
+            "confidence": 0.8,
+            "message": "Duplicate logic detected"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-SECURITY",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_security",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "S1",
+            "path": "moved.txt",
+            "line": 2,
+            "severity": "medium",
+            "confidence": 0.85,
+            "message": "Sensitive path exposure"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REVIEWER-FB-MAINT",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "review_maintainability",
+      "request_contract": {
+        "file": "moved.txt"
+      },
+      "response_contract": {
+        "findings": [
+          {
+            "id": "M1",
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "low",
+            "confidence": 0.4,
+            "message": "Unclear rename"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-VERIFIER-FB",
+      "dependency_type": "lmChatAzureOpenAi",
+      "operation": "verify_findings",
+      "request_contract": {},
+      "response_contract": {
+        "findings": [
+          {
+            "path": "moved.txt",
+            "line": 1,
+            "severity": "medium",
+            "confidence": 0.85,
+            "message": "Sensitive path exposure"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-INLINE",
+      "dependency_type": "gitlab",
+      "operation": "create_inline_review_comment",
+      "request_contract": {
+        "project_id": 143,
+        "merge_request_iid": 42
+      },
+      "response_contract": {
+        "note_id": 9101
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-REPLY",
+      "dependency_type": "gitlab",
+      "operation": "create_discussion_reply",
+      "request_contract": {
+        "discussion_id": "d_1a2b"
+      },
+      "response_contract": {
+        "note_id": 9102
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GITLAB-SUMMARY",
+      "dependency_type": "gitlab",
+      "operation": "create_summary_reply",
+      "request_contract": {
+        "discussion_id": "d_1a2b"
+      },
+      "response_contract": {
+        "note_id": 9103,
+        "body": "review completed"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-INLINE",
+      "fixture_ids": [
+        "F-TRIGGER-COMMENT",
+        "F-MR-CHANGES"
+      ],
+      "mock_ids": [
+        "M-GITLAB-CHANGES",
+        "M-LLM-REVIEWER-BUGS",
+        "M-LLM-REVIEWER-SECURITY",
+        "M-LLM-REVIEWER-MAINT",
+        "M-LLM-VERIFIER",
+        "M-GITLAB-INLINE",
+        "M-GITLAB-SUMMARY"
+      ]
+    },
+    {
+      "case_id": "C-NEG-FALLBACK",
+      "fixture_ids": [
+        "F-TRIGGER-COMMENT",
+        "F-MR-CHANGES-NO-POS"
+      ],
+      "mock_ids": [
+        "M-GITLAB-CHANGES-NOPOS",
+        "M-LLM-REVIEWER-FB-BUGS",
+        "M-LLM-REVIEWER-FB-SECURITY",
+        "M-LLM-REVIEWER-FB-MAINT",
+        "M-LLM-VERIFIER-FB",
+        "M-GITLAB-REPLY",
+        "M-GITLAB-SUMMARY"
+      ]
+    }
+  ]
+}

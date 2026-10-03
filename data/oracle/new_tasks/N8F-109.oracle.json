@@ -1,0 +1,220 @@
+{
+  "task_id": "N8F-109",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "a1f853f4b619a03041ae38ce5d5b33ef74150af3c5cf9be6c5d7a906d8b6452e",
+  "fixtures": [
+    {
+      "fixture_id": "F-DA-FULL-PIPELINE",
+      "purpose": "正常用例：两个数据集按 Channel 合并，按 Clicks/Spend 筛选，按表现分为 Great/Poor，按团队负责人汇总，并生成指出最好与最差成员的分析",
+      "input_data": {
+        "dataset_a": [
+          {"channel": "Search", "clicks": 1500, "spend": 1800, "leader": "Alice"},
+          {"channel": "Social", "clicks": 900, "spend": 1200, "leader": "Bob"},
+          {"channel": "Email", "clicks": 300, "spend": 400, "leader": "Alice"},
+          {"channel": "Display", "clicks": 50, "spend": 3000, "leader": "Carol"}
+        ],
+        "dataset_b": [
+          {"channel": "Search", "revenue": 8000},
+          {"channel": "Social", "revenue": 4500},
+          {"channel": "Email", "revenue": 1500},
+          {"channel": "Display", "revenue": 300}
+        ],
+        "filter_rule": {
+          "min_clicks": 100,
+          "max_spend": 2500
+        },
+        "classification_rule": {
+          "great_if_clicks_gte": 1000
+        }
+      }
+    },
+    {
+      "fixture_id": "F-DA-BOUNDARY",
+      "purpose": "边界用例：验证筛选边界，clicks 恰好等于最小阈值时保留，低于阈值时被过滤",
+      "input_data": {
+        "dataset_a": [
+          {"channel": "Search", "clicks": 100, "spend": 1000, "leader": "Alice"},
+          {"channel": "Social", "clicks": 99, "spend": 500, "leader": "Bob"}
+        ],
+        "dataset_b": [
+          {"channel": "Search", "revenue": 2000},
+          {"channel": "Social", "revenue": 1000}
+        ],
+        "filter_rule": {
+          "min_clicks": 100,
+          "max_spend": 2500
+        },
+        "classification_rule": {
+          "great_if_clicks_gte": 1000
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DA-READ-A",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_dataset_a",
+      "request_contract": {
+        "sheet": "campaigns"
+      },
+      "response_contract": {
+        "rows": [
+          {"channel": "Search", "clicks": 1500, "spend": 1800, "leader": "Alice"},
+          {"channel": "Social", "clicks": 900, "spend": 1200, "leader": "Bob"},
+          {"channel": "Email", "clicks": 300, "spend": 400, "leader": "Alice"},
+          {"channel": "Display", "clicks": 50, "spend": 3000, "leader": "Carol"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DA-READ-B",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_dataset_b",
+      "request_contract": {
+        "sheet": "performance"
+      },
+      "response_contract": {
+        "rows": [
+          {"channel": "Search", "revenue": 8000},
+          {"channel": "Social", "revenue": 4500},
+          {"channel": "Email", "revenue": 1500},
+          {"channel": "Display", "revenue": 300}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DA-LLM-ANALYSIS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_written_analysis",
+      "request_contract": {
+        "summary_present": true
+      },
+      "response_contract": {
+        "analysis": "Best performer: Alice (Search, 1500 clicks). Worst performer: Bob (Social, 900 clicks)."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-FULL-PIPELINE",
+      "kind": "positive",
+      "fixture_ids": ["F-DA-FULL-PIPELINE"],
+      "mock_ids": ["M-DA-READ-A", "M-DA-READ-B", "M-DA-LLM-ANALYSIS"],
+      "assertions": [
+        {
+          "assertion_id": "A-DA-1",
+          "target": "exec_log.googleSheets.read_dataset_a.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须先读取第一个数据集"
+        },
+        {
+          "assertion_id": "A-DA-2",
+          "target": "exec_log.googleSheets.read_dataset_b.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须先读取第二个数据集"
+        },
+        {
+          "assertion_id": "A-DA-3",
+          "target": "output.merged.length",
+          "operator": "equals",
+          "expected": 4,
+          "rationale": "两个数据集必须按共同列 Channel 合并，合并后保留全部 4 个频道"
+        },
+        {
+          "assertion_id": "A-DA-4",
+          "target": "output.merged[0].revenue",
+          "operator": "equals",
+          "expected": 8000,
+          "rationale": "合并结果必须带出第二个数据集的收入字段（Search=8000）"
+        },
+        {
+          "assertion_id": "A-DA-5",
+          "target": "output.filtered.length",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "按 Clicks>=100 且 Spend<=2500 筛选后，Display（clicks=50 或 spend=3000 均不满足）应被过滤"
+        },
+        {
+          "assertion_id": "A-DA-6",
+          "target": "output.classified.great.length",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "clicks>=1000 归为 Great，只有 Search 满足"
+        },
+        {
+          "assertion_id": "A-DA-7",
+          "target": "output.classified.poor.length",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "Social 与 Email 应归为 Poor"
+        },
+        {
+          "assertion_id": "A-DA-8",
+          "target": "output.summary_by_leader.keys",
+          "operator": "contains",
+          "expected": "Alice",
+          "rationale": "汇总必须按团队负责人分组，Alice 应出现在分组中"
+        },
+        {
+          "assertion_id": "A-DA-9",
+          "target": "exec_log.lmChatOpenAi.generate_written_analysis.request.summary_present",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "语言模型必须基于汇总后的结果生成分析"
+        },
+        {
+          "assertion_id": "A-DA-10",
+          "target": "output.analysis",
+          "operator": "contains",
+          "expected": "Alice",
+          "rationale": "书面分析必须指出表现最好的成员"
+        },
+        {
+          "assertion_id": "A-DA-11",
+          "target": "output.analysis",
+          "operator": "contains",
+          "expected": "Bob",
+          "rationale": "书面分析必须指出表现最差的成员"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-FILTER",
+      "kind": "boundary",
+      "fixture_ids": ["F-DA-BOUNDARY"],
+      "mock_ids": ["M-DA-READ-A", "M-DA-READ-B", "M-DA-LLM-ANALYSIS"],
+      "assertions": [
+        {
+          "assertion_id": "A-BD-1",
+          "target": "output.filtered.length",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "clicks 恰好等于最小阈值 100 的 Search 行必须保留，clicks=99 的 Social 行必须被过滤"
+        },
+        {
+          "assertion_id": "A-BD-2",
+          "target": "output.filtered[0].channel",
+          "operator": "equals",
+          "expected": "Search",
+          "rationale": "边界处保留的行必须为满足 Clicks>=100 的 Search"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "原文未给出具体筛选取值与 Great/Poor 判定阈值，本 oracle 以固定输入形式给出可判定的 filter_rule（min_clicks=100、max_spend=2500）与 classification_rule（clicks>=1000 为 Great），所有断言据此计算。覆盖双数据集按 Channel 合并、指标筛选、Great/Poor 分类、按负责人汇总与 LLM 书面分析（指出最好/最差成员）。外部依赖（Sheets 双表读取、LLM 分析）全部固定模拟，deterministic 与 side_effects_disabled 均为 true。"
+}

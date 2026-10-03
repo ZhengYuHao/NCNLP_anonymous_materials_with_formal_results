@@ -1,0 +1,226 @@
+{
+  "pilot_id": "N8C-006",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "1b7d36a355f2add7005add2bb7b20f81584596b28d7b97e2927ac2ffe141122e",
+  "fixtures": [
+    {
+      "fixture_id": "F-RSS-NEW-AND-POSTED",
+      "purpose": "RSS 返回 1 篇新文章 + 1 篇已发布文章，验证智能过滤只处理新文章",
+      "input_data": {
+        "feeds": ["The Verge", "TechCrunch", "Ars Technica"],
+        "items": [
+          {"id": "verge-1", "feed": "The Verge", "title": "New chip announcement", "link": "https://theverge.com/1", "pub_date": "2026-08-26T00:10:00Z", "already_posted": false},
+          {"id": "tc-2", "feed": "TechCrunch", "title": "Startup funding round", "link": "https://techcrunch.com/2", "pub_date": "2026-08-26T00:05:00Z", "already_posted": true}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-RSS-ALL-DUPLICATE",
+      "purpose": "RSS 返回的全部文章均已在 Sheets 中，验证无新文章时不处理",
+      "input_data": {
+        "feeds": ["The Verge", "TechCrunch", "Ars Technica"],
+        "items": [
+          {"id": "tc-2", "feed": "TechCrunch", "title": "Startup funding round", "link": "https://techcrunch.com/2", "pub_date": "2026-08-26T00:05:00Z", "already_posted": true},
+          {"id": "ars-9", "feed": "Ars Technica", "title": "Security deep dive", "link": "https://arstechnica.com/9", "pub_date": "2026-08-26T00:02:00Z", "already_posted": true}
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-APPROVAL-APPROVE",
+      "purpose": "人工审批结果：批准",
+      "input_data": {"decision": "approved", "approver": "human-01"}
+    },
+    {
+      "fixture_id": "F-APPROVAL-REJECT",
+      "purpose": "人工审批结果：拒绝",
+      "input_data": {"decision": "rejected", "reason": "content does not meet standards"}
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-RSS-READ",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_feeds",
+      "request_contract": {"feeds": "The Verge, TechCrunch, Ars Technica"},
+      "response_contract": {
+        "items": [
+          {"id": "verge-1", "feed": "The Verge", "title": "New chip announcement", "link": "https://theverge.com/1", "pub_date": "2026-08-26T00:10:00Z"},
+          {"id": "tc-2", "feed": "TechCrunch", "title": "Startup funding round", "link": "https://techcrunch.com/2", "pub_date": "2026-08-26T00:05:00Z"}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-RSS-READ-ALL-DUP",
+      "dependency_type": "n8n-nodes-base.rssFeedRead",
+      "operation": "read_feeds",
+      "request_contract": {"feeds": "The Verge, TechCrunch, Ars Technica"},
+      "response_contract": {
+        "items": [
+          {"id": "tc-2", "feed": "TechCrunch", "title": "Startup funding round", "link": "https://techcrunch.com/2", "pub_date": "2026-08-26T00:05:00Z"},
+          {"id": "ars-9", "feed": "Ars Technica", "title": "Security deep dive", "link": "https://arstechnica.com/9", "pub_date": "2026-08-26T00:02:00Z"}
+        ],
+        "fetched": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-WRITER",
+      "dependency_type": "language_model",
+      "operation": "transform_to_medium_article",
+      "request_contract": {"rss_item": "new article"},
+      "response_contract": {"article_md": "# New chip announcement\n\nEngaging Medium-style body..."},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-IMGPROMPT",
+      "dependency_type": "language_model",
+      "operation": "generate_cover_image_prompt",
+      "request_contract": {"article": "article content"},
+      "response_contract": {"prompt": "professional marketing cover: futuristic chip on circuit board, blue tones"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IMG-GEN",
+      "dependency_type": "image_generation",
+      "operation": "generate_cover_image",
+      "request_contract": {"prompt": "cover image prompt"},
+      "response_contract": {"image_url": "https://images.example.com/cover-verge-1.png", "width": 1200, "height": 630},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDOCS-CREATE",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "create_review_doc",
+      "request_contract": {"title": "article title", "content": "formatted article"},
+      "response_contract": {"doc_id": "DOC-001", "url": "https://docs.google.com/document/d/DOC-001/edit"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-PREVIEW",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_preview_for_approval",
+      "request_contract": {"channel": "#content-review", "article_id": "verge-1", "preview": "article preview"},
+      "response_contract": {"ts": "1700000000.000001", "ok": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-APPROVE",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "wait_for_explicit_approval",
+      "request_contract": {"thread_ts": "preview ts"},
+      "response_contract": {"approved": true, "decided_by": "human-01"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-REJECT",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "wait_for_explicit_approval",
+      "request_contract": {"thread_ts": "preview ts"},
+      "response_contract": {"approved": false, "reason": "content does not meet standards"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MEDIUM-PUBLISH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "publish_to_medium",
+      "request_contract": {"title": "article title", "content_md": "article markdown", "cover_image": "image url"},
+      "response_contract": {"post_id": "medium-1", "url": "https://medium.com/@publisher/medium-1", "published": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_formatted_content",
+      "request_contract": {"to": "subscriber-list", "subject": "article title", "body": "formatted content"},
+      "response_contract": {"message_id": "gm-1", "sent": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GDRIVE-ARCHIVE",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "archive_article",
+      "request_contract": {"filename": "*.md", "content": "article + image + doc"},
+      "response_contract": {"file_id": "ARC-001", "web_view_link": "https://drive.google.com/file/d/ARC-001/view"},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GSHEETS-TRACK",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_tracker_prevent_duplicates",
+      "request_contract": {"sheet": "Tracker", "article_id": "verge-1", "status": "published"},
+      "response_contract": {"updated": true, "row_number": 1},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-REJECT-NOTIFY",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_clean_rejection_notification",
+      "request_contract": {"channel": "#content-review", "article_id": "verge-1"},
+      "response_contract": {"ts": "1700000001.000002", "ok": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-APPROVED",
+      "kind": "positive",
+      "fixture_ids": ["F-RSS-NEW-AND-POSTED", "F-APPROVAL-APPROVE"],
+      "mock_ids": ["M-RSS-READ", "M-LLM-WRITER", "M-LLM-IMGPROMPT", "M-IMG-GEN", "M-GDOCS-CREATE", "M-SLACK-PREVIEW", "M-SLACK-APPROVE", "M-MEDIUM-PUBLISH", "M-GMAIL-SEND", "M-GDRIVE-ARCHIVE", "M-GSHEETS-TRACK"],
+      "assertions": [
+        {"assertion_id": "A-ONLY-NEW-PREVIEWED", "target": "mock.M-SLACK-PREVIEW.call_count", "operator": "equals", "expected": 1, "rationale": "需求条件'智能过滤仅处理新且未发布文章'；fixture 中 1 新 1 已发布"},
+        {"assertion_id": "A-PREVIEW-ARTICLE", "target": "mock.M-SLACK-PREVIEW.requests[0].article_id", "operator": "equals", "expected": "verge-1", "rationale": "预览对象为新文章（文章 id 来自 fixture/mock）"},
+        {"assertion_id": "A-DOC-CREATED", "target": "mock.M-GDOCS-CREATE.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明创建 Google Doc 供审阅"},
+        {"assertion_id": "A-COVER-GENERATED", "target": "mock.M-IMG-GEN.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明生成营销风封面图"},
+        {"assertion_id": "A-PUBLISHED", "target": "mock.M-MEDIUM-PUBLISH.call_count", "operator": "equals", "expected": 1, "rationale": "需求条件'获得显式批准后自动发布到 Medium'"},
+        {"assertion_id": "A-EMAIL-SENT", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明批准后经 Gmail 发送格式化内容"},
+        {"assertion_id": "A-ARCHIVED", "target": "mock.M-GDRIVE-ARCHIVE.call_count", "operator": "equals", "expected": 1, "rationale": "需求声明全部内容归档至 Google Drive"},
+        {"assertion_id": "A-TRACKED", "target": "mock.M-GSHEETS-TRACK.requests[0].article_id", "operator": "equals", "expected": "verge-1", "rationale": "需求声明更新 Google Sheets 防止重复发布"}
+      ]
+    },
+    {
+      "case_id": "C-NEG-REJECTED",
+      "kind": "negative",
+      "fixture_ids": ["F-RSS-NEW-AND-POSTED", "F-APPROVAL-REJECT"],
+      "mock_ids": ["M-RSS-READ", "M-LLM-WRITER", "M-LLM-IMGPROMPT", "M-IMG-GEN", "M-GDOCS-CREATE", "M-SLACK-PREVIEW", "M-SLACK-REJECT", "M-MEDIUM-PUBLISH", "M-GMAIL-SEND", "M-GDRIVE-ARCHIVE", "M-SLACK-REJECT-NOTIFY"],
+      "assertions": [
+        {"assertion_id": "A-REJECT-NOTIFIED", "target": "mock.M-SLACK-REJECT-NOTIFY.call_count", "operator": "equals", "expected": 1, "rationale": "需求失败行为'内容被拒绝时发送干净的拒绝通知'"},
+        {"assertion_id": "A-NO-PUBLISH", "target": "mock.M-MEDIUM-PUBLISH.call_count", "operator": "equals", "expected": 0, "rationale": "需求失败行为'拒绝时不发布内容'"},
+        {"assertion_id": "A-NO-EMAIL", "target": "mock.M-GMAIL-SEND.call_count", "operator": "equals", "expected": 0, "rationale": "拒绝时不发送 Gmail（仅批准路径发送）"},
+        {"assertion_id": "A-NO-ARCHIVE", "target": "mock.M-GDRIVE-ARCHIVE.call_count", "operator": "equals", "expected": 0, "rationale": "拒绝时不归档（归档属批准后动作）"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-ALL-DUPLICATE",
+      "kind": "boundary",
+      "fixture_ids": ["F-RSS-ALL-DUPLICATE"],
+      "mock_ids": ["M-RSS-READ-ALL-DUP", "M-SLACK-PREVIEW", "M-MEDIUM-PUBLISH", "M-GSHEETS-TRACK"],
+      "assertions": [
+        {"assertion_id": "A-NO-PREVIEW-DUP", "target": "mock.M-SLACK-PREVIEW.call_count", "operator": "equals", "expected": 0, "rationale": "全部为已发布文章时不发任何审批预览（智能过滤）"},
+        {"assertion_id": "A-NO-PUBLISH-DUP", "target": "mock.M-MEDIUM-PUBLISH.call_count", "operator": "equals", "expected": 0, "rationale": "无新文章不触发任何发布"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "核验记录（2026-08-26 需求对齐审查）：\n- 保留：全部断言。A-ONLY-NEW-PREVIEWED/A-NO-PREVIEW-DUP/A-NO-PUBLISH-DUP（需求'智能过滤仅处理新未发布文章'）、A-PUBLISHED/A-NO-PUBLISH/A-REJECT-NOTIFIED（需求'显式批准后才发布/拒绝不发布'）、A-DOC-CREATED/A-COVER-GENERATED/A-EMAIL-SENT/A-ARCHIVED/A-TRACKED（需求批准后动作清单）。\n- 修改：M-SLACK-PREVIEW 与 M-SLACK-REJECT-NOTIFY 的 request_contract 补充 article_id 字段，使 A-PREVIEW-ARTICLE 的目标路径与契约一致（字段为 mock 契约声明，非需求新规）。\n- 删除：无。"
+}

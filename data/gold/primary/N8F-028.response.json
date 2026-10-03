@@ -1,0 +1,457 @@
+{
+  "task_id": "N8F-028",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "205c715ae0d09f101e0f7417aaddf964ebd44400957f03880ecd0f44fc468ba7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每 24 小时定时触发",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Daily Trigger (Every 24h) (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "每 24 小时运行一次"
+      ],
+      "rationale": "需求声明的定时触发，判 code，作为流程入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "从 HubSpot 拉取最近线索及其关键活动与生命周期属性",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "leads",
+          "type": "array",
+          "description": "最近线索及关键活动与生命周期属性，最多 20 条"
+        }
+      ],
+      "native_evidence": [
+        "HubSpot: Fetch Recent Leads + Activity Fields (hubspot, getAll)"
+      ],
+      "requirement_evidence": [
+        "从 HubSpot 拉取最近的线索及其关键活动与生命周期属性（用于判断跟进时机），单次最多取 20 条"
+      ],
+      "rationale": "需求声明的外部读取动作（含 20 条上限约束），判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "仅保留因时机不当被暂停的线索",
+      "node_type": "code",
+      "operation_family": "filter",
+      "inputs": [
+        {
+          "name": "leads",
+          "type": "array",
+          "description": "最近线索列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qualified_leads",
+          "type": "array",
+          "description": "此前因时机不当被暂停的线索"
+        }
+      ],
+      "native_evidence": [
+        "Filter: Lead Status = BAD_TIMING (if)"
+      ],
+      "requirement_evidence": [
+        "仅保留此前因时机不当被暂停的线索，避免打扰进行中的机会"
+      ],
+      "rationale": "按状态过滤为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "逐条或分批处理符合条件的线索",
+      "node_type": "code",
+      "operation_family": "batch_loop",
+      "inputs": [
+        {
+          "name": "qualified_leads",
+          "type": "array",
+          "description": "符合条件的线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_batch",
+          "type": "array",
+          "description": "当前正在处理的线索批次"
+        }
+      ],
+      "native_evidence": [
+        "Batch Leads (Split In Batches) (splitInBatches)"
+      ],
+      "requirement_evidence": [
+        "符合条件的线索以逐条或分批的方式处理"
+      ],
+      "rationale": "需求声明的分批处理，为迭代控制节点；循环终止条件为线索全部处理完，max_iterations<=20（线索上限 20 条）。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型生成简短友好的再接触跟进邮件正文",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "current_batch",
+          "type": "array",
+          "description": "当前线索批次（含线索上下文）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_body",
+          "type": "string",
+          "description": "生成的跟进邮件正文"
+        },
+        {
+          "name": "error",
+          "type": "object",
+          "description": "生成失败时的错误信息"
+        }
+      ],
+      "native_evidence": [
+        "AI: Generate Re-Engagement Follow-Up Email Body (agent)",
+        "Execute Re-Engagement Follow-Up Email Body with Azure OpenAI (lmChatAzureOpenAi)"
+      ],
+      "requirement_evidence": [
+        "由语言模型基于线索上下文生成一封简短、友好的再接触跟进邮件正文，不使用客户关系管理系统的内部标签，不带推销口吻"
+      ],
+      "rationale": "需求声明由语言模型生成邮件正文，判 semantic；失败时输出错误信息走告警分支。"
+    },
+    {
+      "node_id": "n6",
+      "label": "整理生成结果为主题、正文、收件人邮箱与负责人信息",
+      "node_type": "code",
+      "operation_family": "normalize",
+      "inputs": [
+        {
+          "name": "email_body",
+          "type": "string",
+          "description": "生成的邮件正文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_fields",
+          "type": "object",
+          "description": "主题、正文、收件人邮箱与负责人信息等可用字段"
+        }
+      ],
+      "native_evidence": [
+        "Parse AI JSON (code)"
+      ],
+      "requirement_evidence": [
+        "随后把生成结果整理为可用字段：主题、正文、收件人邮箱与负责人信息"
+      ],
+      "rationale": "字段整理为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "在 Gmail 中创建草稿供人工审阅",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "email_fields",
+          "type": "object",
+          "description": "整理后的邮件字段"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Gmail: Create Follow-Up Draft Email (gmail)"
+      ],
+      "requirement_evidence": [
+        "在 Gmail 中创建一封草稿供人工审阅"
+      ],
+      "rationale": "需求声明的草稿创建动作（不自动发送），判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "在 Slack 通知负责人草稿已就绪",
+      "node_type": "code",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "email_fields",
+          "type": "object",
+          "description": "含负责人信息的邮件字段"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Slack: Notify Owner to Re-Engage Lead (slack)"
+      ],
+      "requirement_evidence": [
+        "在 Slack 中通知该线索的负责人：草稿已就绪、该线索值得重新跟进"
+      ],
+      "rationale": "需求声明的通知动作，判 code；通知后继续处理下一批。"
+    },
+    {
+      "node_id": "n9",
+      "label": "构建错误上下文",
+      "node_type": "code",
+      "operation_family": "transform",
+      "inputs": [
+        {
+          "name": "current_batch",
+          "type": "array",
+          "description": "当前线索（含姓名与邮箱）"
+        },
+        {
+          "name": "error",
+          "type": "object",
+          "description": "语言模型生成错误信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "error_context",
+          "type": "object",
+          "description": "含线索姓名、邮箱与错误信息的告警内容"
+        }
+      ],
+      "native_evidence": [
+        "Build AI Error Payload (code)"
+      ],
+      "requirement_evidence": [
+        "若语言模型生成失败，则在 Slack 中发送告警，附上该线索的姓名、邮箱与生成错误信息"
+      ],
+      "rationale": "错误上下文组装为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "在 Slack 发送生成失败告警",
+      "node_type": "code",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "error_context",
+          "type": "object",
+          "description": "告警内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Slack: Alert AI Draft Failure (slack)"
+      ],
+      "requirement_evidence": [
+        "在 Slack 中发送告警，附上该线索的姓名、邮箱与生成错误信息，以便仍能转为人工跟进"
+      ],
+      "rationale": "需求声明的失败告警动作，判 code；告警后继续处理下一批。"
+    },
+    {
+      "node_id": "n11",
+      "label": "全部线索处理完成",
+      "node_type": "terminal",
+      "operation_family": "flow_end",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Batch Leads (Split In Batches) (splitInBatches)"
+      ],
+      "requirement_evidence": [
+        "符合条件的线索以逐条或分批的方式处理"
+      ],
+      "rationale": "分批循环全部处理完毕后的流程终点，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后拉取线索"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "拉取后按状态过滤"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "过滤后进入分批处理"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "current_batch != null",
+      "rationale": "每批线索交由语言模型生成邮件"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "generation_succeeded == true",
+      "rationale": "生成成功则整理字段"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n5",
+      "target": "n9",
+      "variable": null,
+      "condition": "generation_succeeded == false",
+      "rationale": "生成失败则构建错误上下文"
+    },
+    {
+      "edge_id": "cfg_e7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "整理后创建 Gmail 草稿"
+    },
+    {
+      "edge_id": "cfg_e8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "草稿创建后通知负责人"
+    },
+    {
+      "edge_id": "cfg_e9",
+      "source": "n8",
+      "target": "n4",
+      "variable": null,
+      "condition": "has_more_batches == true",
+      "rationale": "仍有批次则继续处理，循环终止条件为全部处理完（max_iterations<=20）"
+    },
+    {
+      "edge_id": "cfg_e10",
+      "source": "n8",
+      "target": "n11",
+      "variable": null,
+      "condition": "has_more_batches == false",
+      "rationale": "无更多批次则流程结束"
+    },
+    {
+      "edge_id": "cfg_e11",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "构建上下文后发送告警"
+    },
+    {
+      "edge_id": "cfg_e12",
+      "source": "n10",
+      "target": "n4",
+      "variable": null,
+      "condition": "has_more_batches == true",
+      "rationale": "告警后继续处理下一批（max_iterations<=20）"
+    },
+    {
+      "edge_id": "cfg_e13",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": "has_more_batches == false",
+      "rationale": "无更多批次则流程结束"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "leads",
+      "condition": null,
+      "rationale": "过滤基于拉取的线索"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "qualified_leads",
+      "condition": null,
+      "rationale": "分批基于过滤后的线索"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "current_batch",
+      "condition": null,
+      "rationale": "邮件生成基于当前批次线索"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "email_body",
+      "condition": null,
+      "rationale": "字段整理基于生成的正文"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "email_fields",
+      "condition": null,
+      "rationale": "草稿创建使用整理后的字段"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n6",
+      "target": "n8",
+      "variable": "email_fields",
+      "condition": null,
+      "rationale": "通知需负责人信息"
+    },
+    {
+      "edge_id": "dfg_d7",
+      "source": "n4",
+      "target": "n9",
+      "variable": "current_batch",
+      "condition": null,
+      "rationale": "错误上下文需线索姓名与邮箱"
+    },
+    {
+      "edge_id": "dfg_d8",
+      "source": "n5",
+      "target": "n9",
+      "variable": "error",
+      "condition": null,
+      "rationale": "错误上下文包含生成错误信息"
+    },
+    {
+      "edge_id": "dfg_d9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "error_context",
+      "condition": null,
+      "rationale": "告警使用组装好的上下文"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n11"
+  ],
+  "confidence": 0.9,
+  "notes": "分批循环（n4）折叠 splitInBatches 迭代，成功路径（生成→整理→草稿→通知）与失败路径（构建上下文→告警）均回环至下一批，终止条件 has_more_batches==false，max_iterations<=20（线索上限 20 条）。原生无独立发送环节（只建草稿），与需求一致；草稿创建、Slack 通知与告警均为需求声明的动作。"
+}

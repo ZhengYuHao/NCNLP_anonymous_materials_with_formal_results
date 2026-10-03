@@ -1,0 +1,497 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-028",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "205c715ae0d09f101e0f7417aaddf964ebd44400957f03880ecd0f44fc468ba7",
+  "natural_language_requirement": "每 24 小时运行一次，自动推进此前因时机不当而被暂停的线索的再接触。\n\n每次运行时，从 HubSpot 拉取最近的线索及其关键活动与生命周期属性（用于判断跟进时机），单次最多取 20 条；仅保留此前因时机不当被暂停的线索，避免打扰进行中的机会。\n\n符合条件的线索以逐条或分批的方式处理。对每个线索，由语言模型基于线索上下文生成一封简短、友好的再接触跟进邮件正文，不使用客户关系管理系统的内部标签，不带推销口吻；随后把生成结果整理为可用字段：主题、正文、收件人邮箱与负责人信息。\n\n流程不自动发送邮件，而是在 Gmail 中创建一封草稿供人工审阅，并在 Slack 中通知该线索的负责人：草稿已就绪、该线索值得重新跟进。\n\n若语言模型生成失败，则在 Slack 中发送告警，附上该线索的姓名、邮箱与生成错误信息，以便仍能转为人工跟进。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gmail",
+      "operation": "create_draft",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "to_email",
+          "subject",
+          "body"
+        ],
+        "properties": {
+          "to_email": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "created",
+          "draft_id"
+        ],
+        "properties": {
+          "created": {
+            "type": "boolean"
+          },
+          "draft_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "hubspot",
+      "operation": "search_leads",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "max_results": {
+            "type": "integer"
+          },
+          "properties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "max_results",
+          "properties"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "results": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "email": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "last_activity": {
+                  "type": "string"
+                },
+                "lifecycle_stage": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "owner_id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "email",
+                "id",
+                "last_activity",
+                "lifecycle_stage",
+                "name",
+                "owner_id",
+                "status"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "generate_followup_email",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "fail": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "fail"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "lead_status": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lead_status"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "body": {
+                "type": "string"
+              },
+              "owner_id": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "to_email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "body",
+              "owner_id",
+              "subject",
+              "to_email"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "error": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "error"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_error_alert",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "lead_id",
+          "lead_name",
+          "lead_email",
+          "error_message"
+        ],
+        "properties": {
+          "lead_id": {
+            "type": "string"
+          },
+          "lead_name": {
+            "type": "string"
+          },
+          "lead_email": {
+            "type": "string"
+          },
+          "error_message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_owner_notification",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "owner_id",
+          "lead_id"
+        ],
+        "properties": {
+          "owner_id": {
+            "type": "string"
+          },
+          "lead_id": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "qualified_leads",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "owner_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "last_activity": {
+                "type": "string"
+              },
+              "lifecycle_stage": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "email",
+              "owner_id",
+              "status",
+              "last_activity",
+              "lifecycle_stage"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "此前因时机不当被暂停的线索",
+        "requirement_evidence": [
+          "仅保留此前因时机不当被暂停的线索，避免打扰进行中的机会"
+        ],
+        "source_operations": [
+          "search_leads"
+        ],
+        "design_sources": [
+          "n3.qualified_leads"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "email_fields",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subject": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              },
+              "to_email": {
+                "type": "string"
+              },
+              "owner_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "subject",
+              "body",
+              "to_email",
+              "owner_id"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "整理生成结果为主题、正文、收件人邮箱与负责人信息",
+        "requirement_evidence": [
+          "随后把生成结果整理为可用字段：主题、正文、收件人邮箱与负责人信息"
+        ],
+        "source_operations": [
+          "create_draft"
+        ],
+        "design_sources": [
+          "n6.email_fields"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "gmail_draft_creations",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "draft_id": {
+                "type": "string"
+              },
+              "created": {
+                "type": "boolean"
+              },
+              "to_email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "draft_id",
+              "created",
+              "to_email"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "在 Gmail 中创建的草稿供人工审阅",
+        "requirement_evidence": [
+          "在 Gmail 中创建一封草稿供人工审阅"
+        ],
+        "source_operations": [
+          "create_draft"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_owner_notifications",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "owner_id",
+              "lead_id",
+              "ok",
+              "ts"
+            ],
+            "properties": {
+              "owner_id": {
+                "type": "string"
+              },
+              "lead_id": {
+                "type": "string"
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "ts": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "在 Slack 中通知该线索的负责人草稿已就绪、该线索值得重新跟进",
+        "requirement_evidence": [
+          "在 Slack 中通知该线索的负责人：草稿已就绪、该线索值得重新跟进"
+        ],
+        "source_operations": [
+          "post_owner_notification"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_error_alerts",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lead_id": {
+                "type": "string"
+              },
+              "lead_name": {
+                "type": "string"
+              },
+              "lead_email": {
+                "type": "string"
+              },
+              "error_message": {
+                "type": "string"
+              },
+              "ok": {
+                "type": "boolean"
+              },
+              "ts": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "lead_id",
+              "lead_name",
+              "lead_email",
+              "error_message",
+              "ok",
+              "ts"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "在 Slack 中发送生成失败告警，附上该线索的姓名、邮箱与生成错误信息",
+        "requirement_evidence": [
+          "在 Slack 中发送告警，附上该线索的姓名、邮箱与生成错误信息，以便仍能转为人工跟进"
+        ],
+        "source_operations": [
+          "post_error_alert"
+        ],
+        "design_sources": [
+          "n9.error_context"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "7FD3354CDE84D15B23B936797812D494D45274CE573B4CC444FFE1C6D7EF09B8",
+  "public_interface_sha256": "FDF97FB42D9AB70633F64DD3F06152349040AC04FEE43042AE27D099C13AA45D",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

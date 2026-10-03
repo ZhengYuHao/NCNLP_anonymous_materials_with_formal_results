@@ -1,0 +1,66 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-106",
+  "source_id": "n8n:5338",
+  "workflow_sha256": "5a0ee73fb26ecd8b48a00fd65954a7d47c209ff786f3a12e65c4a1e076880d76",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "17e07482fe3e9e3a56e1fc702b22f3b2da1e111bc9a7b8b0c053231556eeaefa",
+  "requirement": {
+    "requirement_text": "自动化生产可直接发布到社交平台的短视频。流程首先使用语言模型生成一个创意点子，再基于该创意创建详细的视频提示词，随后通过视频生成能力生成视频片段，通过音效生成能力生成配套音效，再通过视频合成能力将各片段与音效拼接合成为最终视频。最终视频产出后，流程将本次的元数据与视频链接记录到 Google Sheets，用于追踪创意与产出；将最终视频上传至 Blotato；并自动发布到 TikTok、YouTube、Instagram 及其他平台。",
+    "source_spans": [
+      {
+        "start": 427,
+        "end": 807,
+        "text": "Creating engaging videos requires:\nGenerating creative ideas  \nWriting detailed scene prompts  \nProducing realistic video clips and sound effects  \nEditing and stitching the final video  \nPublishing across multiple platforms  \n\nThis workflow automates the entire process, saving hours of manual work and ensuring consistent, AI-driven content output ready for social distribution."
+      },
+      {
+        "start": 881,
+        "end": 1263,
+        "text": "Generates a creative idea using OpenAI and LangChain  \nCreates detailed video prompts with Seedance AI  \nGenerates video clips via Wavespeed AI  \nGenerates sound effects with Fal AI  \nStitches the final video using Fal AI’s ffmpeg API  \nLogs metadata and video links to Google Sheets  \nUploads the video to Blotato  \nAuto-publishes to TikTok, YouTube, Instagram, and other platforms"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "无外部业务输入，创意点子由流程自身生成（原文未描述任何外部输入）"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "使用语言模型生成创意点子",
+        "基于创意创建详细的视频提示词",
+        "通过视频生成能力生成视频片段",
+        "通过音效生成能力生成配套音效",
+        "通过视频合成能力将片段与音效拼接合成为最终视频",
+        "将元数据与视频链接记录到 Google Sheets",
+        "将最终视频上传至 Blotato",
+        "自动发布到 TikTok、YouTube、Instagram 及其他平台"
+      ],
+      "visible_outcomes": [
+        "生成一段可直接发布的最终短视频",
+        "视频被发布到 TikTok、YouTube、Instagram 及其他平台",
+        "Google Sheets 中新增一条包含元数据与视频链接的记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/packets/N8F-106.packet.json",
+    "packet_sha256": "8a1c095416cf16169123d998fc4a600b16c16a841dde118cbdcf51d3afe62f86",
+    "public_description_sha256": "fe2c61d31d69e1bf9fc8e161051f518077a5f3089f26a4dca96bc329790147d0"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/responses/N8F-106.response.json",
+    "verification_response_sha256": "165749fcf371e1b104c4c9c21cc9308382818c9c026d4107e887333fa7b937dd",
+    "decision": "accept"
+  },
+  "formal_index": 117
+}

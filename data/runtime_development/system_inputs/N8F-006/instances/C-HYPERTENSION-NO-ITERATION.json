@@ -1,0 +1,14 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-006",
+  "case_id": "C-HYPERTENSION-NO-ITERATION",
+  "kind": "boundary",
+  "input_data": {
+    "form": {
+      "disease": "hypertension",
+      "age": 40,
+      "gender": "male"
+    }
+  },
+  "input_sha256": "ACE2418EBF13ECA8550F869BE4A5DDB9506BD37CF878BC2BAB7BF78B1B48992B"
+}

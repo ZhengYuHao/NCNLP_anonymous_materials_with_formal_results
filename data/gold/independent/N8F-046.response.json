@@ -1,0 +1,501 @@
+{
+  "task_id": "N8F-046",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "24f7a2f31482da327d5a0675a9620f3e1e4c1851355eef433237aee98fb5d3fe",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日 07:00 定时触发",
+      "node_type": "code",
+      "operation_family": "定时触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "daily_tick",
+          "type": "event",
+          "description": "每日 07:00 触发信号"
+        }
+      ],
+      "native_evidence": [
+        "When Daily at 7AM (scheduleTrigger)"
+      ],
+      "requirement_evidence": [
+        "每天 07:00 触发一次执行"
+      ],
+      "rationale": "每日计划触发为确定性事件源，属代码处理。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取 States 配置并保留 Active 行",
+      "node_type": "code",
+      "operation_family": "外部读取与过滤",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "active_states",
+          "type": "list",
+          "description": "标记为 Active 的州配置行"
+        }
+      ],
+      "native_evidence": [
+        "Read States from Sheets (googleSheets)",
+        "Filter for Active States (filter)"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 的'States'标签页读取配置，仅保留标记为 Active 的行"
+      ],
+      "rationale": "读取与按 Active 标记过滤均为确定性操作，属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "展开搜索词",
+      "node_type": "code",
+      "operation_family": "展开变换",
+      "inputs": [
+        {
+          "name": "active_states",
+          "type": "list",
+          "description": "标记为 Active 的州配置行"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_queries",
+          "type": "list",
+          "description": "按'关键词 in 州'组合的搜索词"
+        }
+      ],
+      "native_evidence": [
+        "Expand State Keywords (code)",
+        "Build Search Query (set)"
+      ],
+      "requirement_evidence": [
+        "将每个生效的州按已配置关键词展开为多个搜索词，并按'关键词 in 州'的形式组合"
+      ],
+      "rationale": "按配置组合搜索词为确定性变换，属代码处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "调用商家搜索服务",
+      "node_type": "code",
+      "operation_family": "外部数据采集",
+      "inputs": [
+        {
+          "name": "search_queries",
+          "type": "list",
+          "description": "按'关键词 in 州'组合的搜索词"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "local_results",
+          "type": "list",
+          "description": "返回的本地商家结果"
+        },
+        {
+          "name": "search_error",
+          "type": "object",
+          "description": "搜索服务返回的错误信息"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over Search Queries (splitInBatches)",
+        "FETCH SerpAPI Search Results (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "对每个搜索词调用 Google Maps 商家搜索服务"
+      ],
+      "rationale": "逐搜索词调用的循环折叠进本节点契约（按配置的州×关键词数量迭代，全部搜索词处理完即终止）；错误结果与正常结果分別输出供分支。属代码处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "记录错误到 Errors 标签页",
+      "node_type": "terminal",
+      "operation_family": "记录写入",
+      "inputs": [
+        {
+          "name": "search_error",
+          "type": "object",
+          "description": "搜索服务返回的错误信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Log Errors in Sheets (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "若搜索服务返回错误，将错误记录到 Google Sheets 的'Errors'标签页"
+      ],
+      "rationale": "错误记录是需求声明的可见产出（失败行为），其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "拆分结果并规范化线索",
+      "node_type": "code",
+      "operation_family": "数据变换",
+      "inputs": [
+        {
+          "name": "local_results",
+          "type": "list",
+          "description": "返回的本地商家结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_leads",
+          "type": "list",
+          "description": "规范化后的线索列表"
+        }
+      ],
+      "native_evidence": [
+        "Split Local Results (splitOut)",
+        "Set Lead Information (set)"
+      ],
+      "requirement_evidence": [
+        "将返回的本地商家结果拆分为单条线索",
+        "对每条线索规范化名称、电话、网站、地址、州、关键词"
+      ],
+      "rationale": "拆分与字段规范化为确定性变换，属代码处理。"
+    },
+    {
+      "node_id": "n7",
+      "label": "过滤不完整线索并去重",
+      "node_type": "code",
+      "operation_family": "过滤与去重",
+      "inputs": [
+        {
+          "name": "normalized_leads",
+          "type": "list",
+          "description": "规范化后的线索列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unique_leads",
+          "type": "list",
+          "description": "过滤去重后的有效线索"
+        }
+      ],
+      "native_evidence": [
+        "Filter Valid Leads (filter)",
+        "Deduplicate by Key (removeDuplicates)"
+      ],
+      "requirement_evidence": [
+        "过滤信息不完整的条目",
+        "按'名称+电话'的去重键去除重复线索"
+      ],
+      "rationale": "按声明规则过滤与按键去重均为确定性操作，属代码处理。"
+    },
+    {
+      "node_id": "n8",
+      "label": "判断线索是否包含网站",
+      "node_type": "code",
+      "operation_family": "条件分支",
+      "inputs": [
+        {
+          "name": "unique_leads",
+          "type": "list",
+          "description": "过滤去重后的有效线索"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Filter Leads with Website (filter)"
+      ],
+      "requirement_evidence": [
+        "若线索包含网站，则抓取该网站的联系页面，并从页面中提取第一个有效邮箱地址"
+      ],
+      "rationale": "按是否含网站字段做确定性分支，属代码处理。"
+    },
+    {
+      "node_id": "n9",
+      "label": "抓取联系页面并提取邮箱",
+      "node_type": "code",
+      "operation_family": "外部抓取与抽取",
+      "inputs": [
+        {
+          "name": "unique_leads",
+          "type": "list",
+          "description": "过滤去重后的有效线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "contact_email",
+          "type": "string",
+          "description": "从联系页面提取的第一个有效邮箱地址"
+        }
+      ],
+      "native_evidence": [
+        "GET Contact Page (httpRequest)",
+        "Parse Contact Email (code)"
+      ],
+      "requirement_evidence": [
+        "抓取该网站的联系页面，并从页面中提取第一个有效邮箱地址"
+      ],
+      "rationale": "页面抓取与按确定性规则提取第一个有效邮箱，属代码处理。"
+    },
+    {
+      "node_id": "n10",
+      "label": "生成 B2B 开发信",
+      "node_type": "semantic",
+      "operation_family": "语言模型生成",
+      "inputs": [
+        {
+          "name": "unique_leads",
+          "type": "list",
+          "description": "过滤去重后的有效线索"
+        },
+        {
+          "name": "contact_email",
+          "type": "string",
+          "description": "从联系页面提取的第一个有效邮箱地址"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "outreach_email",
+          "type": "string",
+          "description": "语言模型生成的简洁 B2B 开发信"
+        }
+      ],
+      "native_evidence": [
+        "AI Generate Email (openAi)"
+      ],
+      "requirement_evidence": [
+        "使用语言模型为每条线索生成一封简洁的 B2B 开发信"
+      ],
+      "rationale": "开发信为开放式文本生成，属语义处理。"
+    },
+    {
+      "node_id": "n11",
+      "label": "追加写入 Leads 标签页",
+      "node_type": "terminal",
+      "operation_family": "外部写入",
+      "inputs": [
+        {
+          "name": "unique_leads",
+          "type": "list",
+          "description": "过滤去重后的有效线索"
+        },
+        {
+          "name": "contact_email",
+          "type": "string",
+          "description": "从联系页面提取的第一个有效邮箱地址"
+        },
+        {
+          "name": "outreach_email",
+          "type": "string",
+          "description": "语言模型生成的简洁 B2B 开发信"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append to Leads Sheet (googleSheets)"
+      ],
+      "requirement_evidence": [
+        "将线索明细、提取到的联系邮箱与生成的开发信追加写入 Google Sheets 的'Leads'标签页"
+      ],
+      "rationale": "Leads 标签页追加是需求声明的最终可见产出，其后无动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "触发后读取配置"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置后展开搜索词"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "搜索词就绪后调用搜索服务"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "搜索服务返回错误",
+      "rationale": "错误时记录到 Errors 标签页"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": "搜索返回本地商家结果",
+      "rationale": "正常返回时拆分处理"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "规范化后过滤去重"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "去重后按网站字段分支"
+    },
+    {
+      "edge_id": "e08",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": "线索包含网站",
+      "rationale": "有网站则抓取联系页面提取邮箱"
+    },
+    {
+      "edge_id": "e09",
+      "source": "n8",
+      "target": "n10",
+      "variable": null,
+      "condition": "线索不包含网站",
+      "rationale": "无网站则直接进入开发信生成"
+    },
+    {
+      "edge_id": "e10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "提取邮箱后生成开发信"
+    },
+    {
+      "edge_id": "e11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "开发信生成后写入 Leads"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n2",
+      "target": "n3",
+      "variable": "active_states",
+      "condition": null,
+      "rationale": "展开基于 Active 州配置"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n3",
+      "target": "n4",
+      "variable": "search_queries",
+      "condition": null,
+      "rationale": "逐搜索词调用搜索服务"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n4",
+      "target": "n6",
+      "variable": "local_results",
+      "condition": null,
+      "rationale": "拆分处理本地商家结果"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n4",
+      "target": "n5",
+      "variable": "search_error",
+      "condition": null,
+      "rationale": "记录的是搜索服务错误"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n6",
+      "target": "n7",
+      "variable": "normalized_leads",
+      "condition": null,
+      "rationale": "过滤去重作用于规范化线索"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n7",
+      "target": "n8",
+      "variable": "unique_leads",
+      "condition": null,
+      "rationale": "分支判断基于有效线索"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n7",
+      "target": "n9",
+      "variable": "unique_leads",
+      "condition": null,
+      "rationale": "联系页面抓取针对有效线索的网站"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n7",
+      "target": "n10",
+      "variable": "unique_leads",
+      "condition": null,
+      "rationale": "开发信针对每条有效线索"
+    },
+    {
+      "edge_id": "d09",
+      "source": "n9",
+      "target": "n10",
+      "variable": "contact_email",
+      "condition": null,
+      "rationale": "开发信结合提取到的联系邮箱"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n9",
+      "target": "n11",
+      "variable": "contact_email",
+      "condition": null,
+      "rationale": "写入的联系邮箱即提取结果"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n7",
+      "target": "n11",
+      "variable": "unique_leads",
+      "condition": null,
+      "rationale": "写入的线索明细即有效线索"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n10",
+      "target": "n11",
+      "variable": "outreach_email",
+      "condition": null,
+      "rationale": "写入的开发信即生成结果"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5",
+    "n11"
+  ],
+  "confidence": 0.8,
+  "notes": "逐搜索词调用循环折叠进搜索节点契约（按配置的州×关键词数量迭代，全部处理完即终止）。原生图中的全局错误触发泳道（On Error Trigger）、1 秒/3 秒限速等待未在冻结需求中声明，未纳入 Gold；错误记录仅针对需求声明的'搜索服务返回错误'场景。无网站线索不产生联系邮箱，开发信仍基于线索明细生成。"
+}

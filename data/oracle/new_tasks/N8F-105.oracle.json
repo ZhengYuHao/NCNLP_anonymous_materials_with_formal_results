@@ -1,0 +1,198 @@
+{
+  "task_id": "N8F-105",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "cc1568b94f2a03963283bff7fac129b1b831380f6c5bbbe13a5c714a3ef4afea",
+  "fixtures": [
+    {
+      "fixture_id": "F-TG-IMAGE",
+      "purpose": "正常用例：图片消息，验证下载图片并走视觉分析路径后发送报告邮件",
+      "input_data": {
+        "message_type": "photo",
+        "message": {
+          "message_id": 10,
+          "photo": [
+            {
+              "file_id": "photo-file-10",
+              "width": 1024,
+              "height": 768
+            }
+          ]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-TG-TEXT",
+      "purpose": "正常用例：文本消息，验证以文本为提示词走图像生成路径后发送报告邮件",
+      "input_data": {
+        "message_type": "text",
+        "message": {
+          "message_id": 11,
+          "text": "a sunset over the ocean with palm trees"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-TG-DOWNLOAD-IMAGE",
+      "dependency_type": "n8n-nodes-base.telegram",
+      "operation": "download_file",
+      "request_contract": {
+        "file_id": "photo-file-10"
+      },
+      "response_contract": {
+        "file_url": "https://mock-telegram.example/files/photo-file-10.jpg",
+        "mime_type": "image/jpeg"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VISION-ANALYZE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "analyze_image",
+      "request_contract": {
+        "image_url": "https://mock-telegram.example/files/photo-file-10.jpg"
+      },
+      "response_contract": {
+        "analysis": "The image shows a red vintage car parked in front of a brick wall during sunset."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SD3-GENERATE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "generate_image_sd3",
+      "request_contract": {
+        "prompt": "a sunset over the ocean with palm trees",
+        "model": "stabilityai/stable-diffusion-3"
+      },
+      "response_contract": {
+        "image_url": "https://mock-sd3.example/generated/sunset-ocean-001.png"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-REPORT-IMAGE",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_report_email",
+      "request_contract": {
+        "to": "user@example.com",
+        "subject": "Image analysis report",
+        "body": "Image analysis result: The image shows a red vintage car parked in front of a brick wall during sunset."
+      },
+      "response_contract": {
+        "message_id": "gm-report-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-REPORT-GEN",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_report_email",
+      "request_contract": {
+        "to": "user@example.com",
+        "subject": "Generated image report",
+        "body": "Generated image: https://mock-sd3.example/generated/sunset-ocean-001.png"
+      },
+      "response_contract": {
+        "message_id": "gm-report-2",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-IMAGE-ANALYSIS-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-IMAGE"],
+      "mock_ids": ["M-TG-DOWNLOAD-IMAGE", "M-VISION-ANALYZE", "M-GMAIL-REPORT-IMAGE"],
+      "assertions": [
+        {
+          "assertion_id": "A-IMG-1",
+          "target": "exec_log.mock_calls.M-TG-DOWNLOAD-IMAGE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图片消息必须先下载图片"
+        },
+        {
+          "assertion_id": "A-IMG-2",
+          "target": "exec_log.mock_calls.M-VISION-ANALYZE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "图片必须交由视觉理解能力分析"
+        },
+        {
+          "assertion_id": "A-IMG-3",
+          "target": "exec_log.mock_calls.M-VISION-ANALYZE.request_contract.image_url",
+          "operator": "equals",
+          "expected": "https://mock-telegram.example/files/photo-file-10.jpg",
+          "rationale": "视觉分析必须基于下载的图片文件"
+        },
+        {
+          "assertion_id": "A-IMG-4",
+          "target": "exec_log.mock_calls.M-GMAIL-REPORT-IMAGE.request_contract.body",
+          "operator": "contains",
+          "expected": "red vintage car",
+          "rationale": "报告邮件正文必须包含视觉分析结果内容"
+        },
+        {
+          "assertion_id": "A-IMG-5",
+          "target": "exec_log.mock_calls.M-SD3-GENERATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "图片消息不得触发图像生成路径"
+        }
+      ]
+    },
+    {
+      "case_id": "C-TEXT-GENERATION-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-TG-TEXT"],
+      "mock_ids": ["M-SD3-GENERATE", "M-GMAIL-REPORT-GEN"],
+      "assertions": [
+        {
+          "assertion_id": "A-GEN-1",
+          "target": "exec_log.mock_calls.M-SD3-GENERATE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "文本消息必须以该文本为提示词调用图像生成能力"
+        },
+        {
+          "assertion_id": "A-GEN-2",
+          "target": "exec_log.mock_calls.M-SD3-GENERATE.request_contract.prompt",
+          "operator": "equals",
+          "expected": "a sunset over the ocean with palm trees",
+          "rationale": "图像生成提示词必须是用户消息文本原文"
+        },
+        {
+          "assertion_id": "A-GEN-3",
+          "target": "exec_log.mock_calls.M-GMAIL-REPORT-GEN.request_contract.body",
+          "operator": "contains",
+          "expected": "https://mock-sd3.example/generated/sunset-ocean-001.png",
+          "rationale": "报告邮件必须包含生成的图片链接"
+        },
+        {
+          "assertion_id": "A-GEN-4",
+          "target": "exec_log.mock_calls.M-VISION-ANALYZE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "文本消息不得触发图像分析路径"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖两条分派路径：图片消息（下载→视觉分析→报告邮件含分析结果）与文本消息（以文本为提示词→Stable Diffusion 3 生成→报告邮件含图片链接）。Telegram 下载、视觉模型、SD3 与 Gmail 全部固定模拟；断言验证路径分派的互斥性（图片不触发生成、文本不触发分析）、提示词原文传递与邮件正文内容包含。"
+}

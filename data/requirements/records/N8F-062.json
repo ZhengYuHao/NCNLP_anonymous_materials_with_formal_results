@@ -1,0 +1,99 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-062",
+  "source_id": "n8n:16459",
+  "workflow_sha256": "c5a83363604793df87fdeedcd054157e28de81f5862aa84cfa3b6794a8a89414",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "d84cb171fbc7b41193178c534f0b6f810ac735afd0b4252578facc12af3a3d97",
+  "requirement": {
+    "requirement_text": "系统在每个工作日早上 7 点按计划自动运行。运行时，系统从 Google Sheets 的五个标签页（现金流、收入、薪酬、订阅、费用）中读取最新数据行，将这些数据合并后计算关键指标，包括各项合计、百分比变化、现金可支撑时长（cash runway）以及状态标签。随后，系统把指标汇总交给语言模型，生成一份按 Telegram 展示格式排版的高管财务简报。该简报一方面被保存为 Notion 数据库中的一个页面，另一方面作为消息发送到指定的 Telegram 会话。系统还会检查收入是否下降超过 10%；若超过，则额外向 Telegram 发送一条紧急告警消息。若执行过程中任一环节失败，系统向 Slack 频道发送一条错误告警。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 266,
+        "text": "This workflow runs every weekday at 7 AM to pull financial data from Google Sheets, calculate KPIs, generate an executive briefing with OpenAI (GPT-4o-mini), save the report to Notion, and send it to Telegram, with a Slack alert on any workflow error."
+      },
+      {
+        "start": 281,
+        "end": 324,
+        "text": "Runs on a weekday schedule trigger at 7 AM."
+      },
+      {
+        "start": 325,
+        "end": 435,
+        "text": "Fetches the latest rows from five Google Sheets tabs: CashFlow, Revenue, Payroll, Subscriptions, and Expenses."
+      },
+      {
+        "start": 436,
+        "end": 545,
+        "text": "Combines the sheet data and calculates key KPIs (totals, percentage changes, cash runway, and status labels)."
+      },
+      {
+        "start": 546,
+        "end": 654,
+        "text": "Sends the KPI summary to OpenAI (GPT-4o-mini) to generate a Telegram-formatted executive financial briefing."
+      },
+      {
+        "start": 655,
+        "end": 760,
+        "text": "Saves the AI-generated briefing to a Notion database page and sends the same briefing to a Telegram chat."
+      },
+      {
+        "start": 761,
+        "end": 870,
+        "text": "Checks whether revenue is down more than 10% and, if so, sends a separate critical alert message to Telegram."
+      },
+      {
+        "start": 871,
+        "end": 947,
+        "text": "If any node fails during execution, posts an error alert to a Slack channel."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 五个标签页（CashFlow、Revenue、Payroll、Subscriptions、Expenses）中的最新数据行"
+      ],
+      "conditions": [
+        "每工作日 07:00 按计划触发",
+        "收入下降幅度超过 10% 时触发额外的紧急告警"
+      ],
+      "allowed_actions": [
+        "从 Google Sheets 五个标签页读取最新数据行",
+        "合并数据并计算合计、百分比变化、现金可支撑时长与状态标签",
+        "调用语言模型按 Telegram 展示格式生成高管财务简报",
+        "将简报保存为 Notion 数据库页面",
+        "将同一份简报发送到指定 Telegram 会话",
+        "收入下降超过 10% 时向 Telegram 发送紧急告警消息"
+      ],
+      "visible_outcomes": [
+        "Notion 数据库中新增一个包含该简报的页面",
+        "指定 Telegram 会话收到该简报消息",
+        "收入下降超过 10% 时 Telegram 额外收到一条紧急告警消息",
+        "执行失败时 Slack 频道收到错误告警"
+      ],
+      "failure_behavior": [
+        "执行过程中任一环节失败时，向 Slack 频道发送错误告警"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-062.packet.json",
+    "packet_sha256": "8e11b42af305df73f3780908b515b393e6ae825ec8e293f666b48282d06bd26f",
+    "public_description_sha256": "74ecb4cdd89db117f3953ec67a9ca36b6bd6413d2d98f4378f6f541b0ca59a94"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-062.response.json",
+    "verification_response_sha256": "f2b076c05527bc649f72ea9c8a1fdc759123d8db700e52598aa1094081cf902e",
+    "decision": "accept"
+  },
+  "formal_index": 73
+}

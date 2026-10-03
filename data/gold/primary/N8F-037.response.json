@@ -1,0 +1,305 @@
+{
+  "task_id": "N8F-037",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "6a162c99d379991ec2db1d3db3dbd6ee23a56afce8212d2c50d972dd5dc5e4d0",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收登记申请并规范化提取关键字段",
+      "node_type": "code",
+      "operation_family": "receive_and_normalize",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "normalized_application",
+          "type": "object",
+          "description": "规范化并提取关键字段后的登记申请"
+        }
+      ],
+      "native_evidence": ["Receive Consent Registration Event", "Extract & Normalize Registration Payload"],
+      "requirement_evidence": [
+        "系统通过外部请求入口接收同意管理器（Consent Manager）登记申请，先对申请内容进行规范化并提取关键字段"
+      ],
+      "rationale": "请求入口接收与规范化提取是确定性动作，判为 code，作为入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "写入初始受理记录",
+      "node_type": "code",
+      "operation_family": "initial_log",
+      "inputs": [
+        {
+          "name": "normalized_application",
+          "type": "object",
+          "description": "规范化后的登记申请"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "initial_logged",
+          "type": "boolean",
+          "description": "初始受理记录已写入登记表标志"
+        }
+      ],
+      "native_evidence": ["Write Initial Registration Entry to Sheet"],
+      "requirement_evidence": [
+        "每次处理均在登记表中留痕：先写入初始受理记录，最终以申请人联系邮箱作为标识，更新该记录的最终资格状态。"
+      ],
+      "rationale": "向登记表写入初始受理记录是确定性外部写入动作，判为 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "校验必填字段",
+      "node_type": "code",
+      "operation_family": "validation",
+      "inputs": [
+        {
+          "name": "normalized_application",
+          "type": "object",
+          "description": "规范化后的登记申请"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validation_result",
+          "type": "object",
+          "description": "必填字段校验结果，含 complete 布尔标志"
+        }
+      ],
+      "native_evidence": ["Validate Registration Payload Structure"],
+      "requirement_evidence": [
+        "再校验必填字段是否齐备：字段缺失或格式不完整的申请记入审计记录表，用于后续跟进与重新提交；字段齐备的申请进入资格评估"
+      ],
+      "rationale": "必填字段校验是确定性规则判断，判为 code；按校验结果分支。"
+    },
+    {
+      "node_id": "n4",
+      "label": "记入审计记录表",
+      "node_type": "terminal",
+      "operation_family": "audit_log",
+      "inputs": [
+        {
+          "name": "normalized_application",
+          "type": "object",
+          "description": "字段缺失或格式不完整的申请，记入审计记录表"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Log Invalid Registration Requests to Sheet"],
+      "requirement_evidence": [
+        "字段缺失或格式不完整的申请记入审计记录表，用于后续跟进与重新提交"
+      ],
+      "rationale": "将不完整申请记入审计记录表是该路径的完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型资格评估",
+      "node_type": "semantic",
+      "operation_family": "eligibility_assessment",
+      "inputs": [
+        {
+          "name": "normalized_application",
+          "type": "object",
+          "description": "必填字段齐备的登记申请"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "assessment_result",
+          "type": "object",
+          "description": "结构化评估结论，含是否合格、风险等级、判定理由、缺失材料清单与建议的后续步骤"
+        }
+      ],
+      "native_evidence": ["AI Eligibility Evaluator (DPDP Compliance)", "Configure GPT-4o — Eligibility Evaluation Model", "Parse AI Eligibility JSON Output"],
+      "requirement_evidence": [
+        "资格评估由语言模型依据 DPDP 的资格标准，从财务能力、技术能力、运营准备度与材料提交情况四个方面进行，其中材料缺失不作为拒绝条件；评估结论以结构化形式给出是否合格、风险等级、判定理由、缺失材料清单与建议的后续步骤"
+      ],
+      "rationale": "依据 DPDP 标准从四方面评估资格并输出结构化结论，需语言模型语义判断，判为 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "更新登记表最终资格状态",
+      "node_type": "code",
+      "operation_family": "status_update",
+      "inputs": [
+        {
+          "name": "assessment_result",
+          "type": "object",
+          "description": "资格评估结论"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "status_updated",
+          "type": "boolean",
+          "description": "登记表最终资格状态已更新标志"
+        }
+      ],
+      "native_evidence": ["Prepare Status Update Fields", "Update Registration Status in Sheet"],
+      "requirement_evidence": [
+        "最终以申请人联系邮箱作为标识，更新该记录的最终资格状态"
+      ],
+      "rationale": "以申请人联系邮箱为标识更新登记表状态，是确定性外部写入动作，判为 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "Gmail 通知合规团队",
+      "node_type": "terminal",
+      "operation_family": "notify_compliance",
+      "inputs": [
+        {
+          "name": "assessment_result",
+          "type": "object",
+          "description": "评估结论，用于通知内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Merge Registration + Eligibility Summary", "Send Approval Email to Compliance Team"],
+      "requirement_evidence": [
+        "评估合格的申请进入批准流程，系统通过 Gmail 通知合规团队该申请人已通过资格评估、可进入核验"
+      ],
+      "rationale": "向合规团队发送资格通过通知是该分支的用户可见完成动作，判为 terminal。"
+    },
+    {
+      "node_id": "n8",
+      "label": "Gmail 发送拒绝邮件",
+      "node_type": "terminal",
+      "operation_family": "send_rejection",
+      "inputs": [
+        {
+          "name": "assessment_result",
+          "type": "object",
+          "description": "评估结论，含存在的问题与缺失材料，用于拒绝邮件"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send Rejection Email to Applicant"],
+      "requirement_evidence": [
+        "评估不合格的申请，系统通过 Gmail 向申请人发送拒绝邮件，列出存在的问题与重新提交要求"
+      ],
+      "rationale": "向申请人发送拒绝邮件是该分支的用户可见完成动作，判为 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收规范化后写入初始受理记录。"
+    },
+    {
+      "edge_id": "cfg2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "留痕后校验必填字段。"
+    },
+    {
+      "edge_id": "cfg3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "validation_result.complete == false",
+      "rationale": "字段缺失或格式不完整的申请记入审计记录表。"
+    },
+    {
+      "edge_id": "cfg4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": "validation_result.complete == true",
+      "rationale": "字段齐备的申请进入资格评估。"
+    },
+    {
+      "edge_id": "cfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "评估完成后更新最终资格状态。"
+    },
+    {
+      "edge_id": "cfg6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "assessment_result.qualified == true",
+      "rationale": "评估合格时通知合规团队。"
+    },
+    {
+      "edge_id": "cfg7",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "assessment_result.qualified == false",
+      "rationale": "评估不合格时向申请人发送拒绝邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "normalized_application",
+      "condition": null,
+      "rationale": "规范化申请传给初始受理记录节点。"
+    },
+    {
+      "edge_id": "dfg2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "normalized_application",
+      "condition": null,
+      "rationale": "规范化申请传给必填字段校验节点。"
+    },
+    {
+      "edge_id": "dfg3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "normalized_application",
+      "condition": null,
+      "rationale": "不完整申请记入审计记录表。"
+    },
+    {
+      "edge_id": "dfg4",
+      "source": "n1",
+      "target": "n5",
+      "variable": "normalized_application",
+      "condition": null,
+      "rationale": "齐备申请传给资格评估节点。"
+    },
+    {
+      "edge_id": "dfg5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "assessment_result",
+      "condition": null,
+      "rationale": "评估结论传给状态更新节点。"
+    },
+    {
+      "edge_id": "dfg6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "assessment_result",
+      "condition": null,
+      "rationale": "评估结论用于合规团队通知。"
+    },
+    {
+      "edge_id": "dfg7",
+      "source": "n5",
+      "target": "n8",
+      "variable": "assessment_result",
+      "condition": null,
+      "rationale": "评估结论用于拒绝邮件（问题与重新提交要求）。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n4", "n7", "n8"],
+  "confidence": 0.95,
+  "notes": "按需求建模：接收规范化→初始受理记录→必填校验（缺失记审计→终止；齐备→资格评估）→评估（semantic）→更新最终资格状态→按合格与否分支（通知合规团队/拒绝邮件）。材料缺失不作为拒绝条件的要求体现在评估节点契约中；原生图中 Sticky Note 与 Merge Registration + Eligibility Summary 的邮件组装细节并入通知节点。"
+}

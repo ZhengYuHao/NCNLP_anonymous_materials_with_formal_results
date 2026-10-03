@@ -1,0 +1,573 @@
+{
+  "task_id": "N8F-089",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "a86a4b6953eaf3853ada863c21c7e4611e536ca25381d88dcd11cf127a25ed14",
+  "fixtures": [
+    {
+      "fixture_id": "F-FB-CRITICAL",
+      "purpose": "正常用例：严重缺陷反馈且置信度充足，验证 Jira 创建与工程团队 Slack 告警",
+      "input_data": {
+        "webhook_payload": {
+          "tester": "Tom",
+          "build": "v2.1.0",
+          "page": "/checkout",
+          "message": "Clicking Pay now crashes the page with a 500 error every time.",
+          "source": "form"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FB-FEATURE",
+      "purpose": "正常用例：功能需求且置信度充足，验证写入 Notion 产品路线图",
+      "input_data": {
+        "webhook_payload": {
+          "tester": "Emma",
+          "build": "v2.1.0",
+          "page": "/settings",
+          "message": "Please add an export to CSV option on the settings page.",
+          "source": "slack"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FB-NOISE",
+      "purpose": "正常用例：无效噪音且置信度充足，验证归档并保留可追溯记录",
+      "input_data": {
+        "webhook_payload": {
+          "tester": "Ivan",
+          "build": "v2.1.0",
+          "page": "/home",
+          "message": "This app is great! Love the new colors.",
+          "source": "internal_tool"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FB-LOW-CONFIDENCE",
+      "purpose": "负例：置信度偏低，验证转人工复核并通过邮件与 Slack 通知",
+      "input_data": {
+        "webhook_payload": {
+          "tester": "Uma",
+          "build": "v2.1.0",
+          "page": "/profile",
+          "message": "Something seems off with the profile page but I cannot reproduce it.",
+          "source": "form"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-FB-PARSE-ERROR",
+      "purpose": "负例：模型输出解析出错，验证转人工复核",
+      "input_data": {
+        "webhook_payload": {
+          "tester": "Leo",
+          "build": "v2.1.0",
+          "page": "/search",
+          "message": "Search returns duplicated results after filtering.",
+          "source": "slack"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-CRITICAL",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "triage_feedback",
+      "request_contract": {
+        "tester": "Tom",
+        "build": "v2.1.0",
+        "page": "/checkout",
+        "message": "Clicking Pay now crashes the page with a 500 error every time."
+      },
+      "response_contract": {
+        "type": "critical_bug",
+        "severity": "high",
+        "sentiment": "negative",
+        "summary": "Checkout payment action triggers HTTP 500 crash",
+        "suggested_title": "[Critical] Checkout crashes with 500 on Pay now",
+        "confidence": 0.9
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-FEATURE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "triage_feedback",
+      "request_contract": {
+        "tester": "Emma",
+        "build": "v2.1.0",
+        "page": "/settings",
+        "message": "Please add an export to CSV option on the settings page."
+      },
+      "response_contract": {
+        "type": "feature_request",
+        "severity": "low",
+        "sentiment": "neutral",
+        "summary": "Settings page lacks CSV export capability",
+        "suggested_title": "Add CSV export to settings",
+        "confidence": 0.85
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-NOISE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "triage_feedback",
+      "request_contract": {
+        "tester": "Ivan",
+        "build": "v2.1.0",
+        "page": "/home",
+        "message": "This app is great! Love the new colors."
+      },
+      "response_contract": {
+        "type": "noise",
+        "severity": "none",
+        "sentiment": "positive",
+        "summary": "Praise about the new color scheme",
+        "suggested_title": "Noise - general praise",
+        "confidence": 0.95
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-LOW-CONFIDENCE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "triage_feedback",
+      "request_contract": {
+        "tester": "Uma",
+        "build": "v2.1.0",
+        "page": "/profile",
+        "message": "Something seems off with the profile page but I cannot reproduce it."
+      },
+      "response_contract": {
+        "type": "critical_bug",
+        "severity": "medium",
+        "sentiment": "negative",
+        "summary": "Possible profile page issue, unreproducible",
+        "suggested_title": "Unreproducible profile page issue",
+        "confidence": 0.4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PARSE-ERROR",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "triage_feedback",
+      "request_contract": {
+        "tester": "Leo",
+        "build": "v2.1.0",
+        "page": "/search",
+        "message": "Search returns duplicated results after filtering."
+      },
+      "response_contract": {
+        "raw_output": "not valid json at all {{{ broken",
+        "parse_error": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-JIRA-CREATE",
+      "dependency_type": "n8n-nodes-base.jira",
+      "operation": "create_issue",
+      "request_contract": {
+        "project": "UAT",
+        "issue_type": "Bug",
+        "title": "[Critical] Checkout crashes with 500 on Pay now",
+        "description": "Checkout payment action triggers HTTP 500 crash"
+      },
+      "response_contract": {
+        "key": "UAT-101",
+        "url": "https://mock-jira.example/browse/UAT-101"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-ENG-ALERT",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_engineering_alert",
+      "request_contract": {
+        "channel": "#eng-alerts",
+        "text": "UAT-101 - Checkout crashes with 500 on Pay now"
+      },
+      "response_contract": {
+        "ts": "slack-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NOTION-ROADMAP",
+      "dependency_type": "n8n-nodes-base.notion",
+      "operation": "add_to_roadmap",
+      "request_contract": {
+        "database": "Product Roadmap",
+        "title": "Add CSV export to settings",
+        "summary": "Settings page lacks CSV export capability"
+      },
+      "response_contract": {
+        "id": "notion-page-1",
+        "url": "https://mock-notion.example/notion-page-1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ARCHIVE-NOISE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "archive_noise",
+      "request_contract": {
+        "sheet_name": "NoiseArchive",
+        "row": {
+          "tester": "Ivan",
+          "page": "/home",
+          "message": "This app is great! Love the new colors."
+        }
+      },
+      "response_contract": {
+        "row_number": 12,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-HUMAN-REVIEW",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_human_review_email",
+      "request_contract": {
+        "to": "reviewer@example.com",
+        "subject": "Manual review needed"
+      },
+      "response_contract": {
+        "message_id": "gm-human-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-HUMAN-REVIEW",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_human_review_slack",
+      "request_contract": {
+        "channel": "#human-review",
+        "text": "Manual review needed"
+      },
+      "response_contract": {
+        "ts": "slack-human-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NOTIFY-TESTER",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "notify_tester",
+      "request_contract": {
+        "tester": "Tom",
+        "text": "Your feedback was triaged as critical_bug"
+      },
+      "response_contract": {
+        "ts": "slack-notify-1",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "log_feedback",
+      "request_contract": {
+        "sheet_name": "FeedbackLog",
+        "row": {
+          "tester": "Tom",
+          "type": "critical_bug"
+        }
+      },
+      "response_contract": {
+        "row_number": 5,
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WEBHOOK-RESPONSE",
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "respond_status",
+      "request_contract": {
+        "status": "processed"
+      },
+      "response_contract": {
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-CRITICAL-BUG-ROUTE",
+      "kind": "positive",
+      "fixture_ids": ["F-FB-CRITICAL"],
+      "mock_ids": [
+        "M-LLM-CRITICAL",
+        "M-JIRA-CREATE",
+        "M-SLACK-ENG-ALERT",
+        "M-NOTIFY-TESTER",
+        "M-SHEETS-LOG",
+        "M-WEBHOOK-RESPONSE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-CRIT-1",
+          "target": "exec_log.mock_calls.M-LLM-CRITICAL.request_contract.message",
+          "operator": "equals",
+          "expected": "Clicking Pay now crashes the page with a 500 error every time.",
+          "rationale": "送入模型的必须是规范化清洗后的反馈内容原文"
+        },
+        {
+          "assertion_id": "A-CRIT-2",
+          "target": "result.type",
+          "operator": "equals",
+          "expected": "critical_bug",
+          "rationale": "模型判定类型必须为严重缺陷"
+        },
+        {
+          "assertion_id": "A-CRIT-3",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "严重缺陷必须创建 Jira 问题"
+        },
+        {
+          "assertion_id": "A-CRIT-4",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.request_contract.title",
+          "operator": "equals",
+          "expected": "[Critical] Checkout crashes with 500 on Pay now",
+          "rationale": "Jira 问题标题必须使用模型建议标题"
+        },
+        {
+          "assertion_id": "A-CRIT-5",
+          "target": "exec_log.mock_calls.M-SLACK-ENG-ALERT.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "严重缺陷必须向工程团队发送 Slack 告警"
+        },
+        {
+          "assertion_id": "A-CRIT-6",
+          "target": "exec_log.mock_calls.M-NOTIFY-TESTER.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须通知提交反馈的测试人处理结果"
+        },
+        {
+          "assertion_id": "A-CRIT-7",
+          "target": "exec_log.mock_calls.M-WEBHOOK-RESPONSE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "必须向原始回调方返回结构化状态结果"
+        },
+        {
+          "assertion_id": "A-CRIT-8",
+          "target": "exec_log.mock_calls.M-SHEETS-LOG.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "反馈记录必须在 Google Sheets 中同步留存"
+        }
+      ]
+    },
+    {
+      "case_id": "C-FEATURE-REQUEST-ROUTE",
+      "kind": "positive",
+      "fixture_ids": ["F-FB-FEATURE"],
+      "mock_ids": [
+        "M-LLM-FEATURE",
+        "M-NOTION-ROADMAP",
+        "M-NOTIFY-TESTER",
+        "M-SHEETS-LOG",
+        "M-WEBHOOK-RESPONSE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-FEAT-1",
+          "target": "result.type",
+          "operator": "equals",
+          "expected": "feature_request",
+          "rationale": "模型判定类型必须为功能需求"
+        },
+        {
+          "assertion_id": "A-FEAT-2",
+          "target": "exec_log.mock_calls.M-NOTION-ROADMAP.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "功能需求必须写入 Notion 产品路线图"
+        },
+        {
+          "assertion_id": "A-FEAT-3",
+          "target": "exec_log.mock_calls.M-NOTION-ROADMAP.request_contract.title",
+          "operator": "equals",
+          "expected": "Add CSV export to settings",
+          "rationale": "Notion 条目标题必须使用模型建议标题"
+        },
+        {
+          "assertion_id": "A-FEAT-4",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "功能需求不得创建 Jira 问题"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NOISE-ROUTE",
+      "kind": "positive",
+      "fixture_ids": ["F-FB-NOISE"],
+      "mock_ids": [
+        "M-LLM-NOISE",
+        "M-ARCHIVE-NOISE",
+        "M-NOTIFY-TESTER",
+        "M-SHEETS-LOG",
+        "M-WEBHOOK-RESPONSE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NOISE-1",
+          "target": "result.type",
+          "operator": "equals",
+          "expected": "noise",
+          "rationale": "模型判定类型必须为无效噪音"
+        },
+        {
+          "assertion_id": "A-NOISE-2",
+          "target": "exec_log.mock_calls.M-ARCHIVE-NOISE.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "无效噪音必须归档但保留可追溯记录"
+        },
+        {
+          "assertion_id": "A-NOISE-3",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "无效噪音不得创建 Jira 问题"
+        },
+        {
+          "assertion_id": "A-NOISE-4",
+          "target": "exec_log.mock_calls.M-NOTION-ROADMAP.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "无效噪音不得写入 Notion 路线图"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LOW-CONFIDENCE-HUMAN-REVIEW",
+      "kind": "negative",
+      "fixture_ids": ["F-FB-LOW-CONFIDENCE"],
+      "mock_ids": [
+        "M-LLM-LOW-CONFIDENCE",
+        "M-GMAIL-HUMAN-REVIEW",
+        "M-SLACK-HUMAN-REVIEW",
+        "M-SHEETS-LOG",
+        "M-WEBHOOK-RESPONSE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-LOWC-1",
+          "target": "result.confidence",
+          "operator": "equals",
+          "expected": 0.4,
+          "rationale": "模型输出的置信度必须为 0.4"
+        },
+        {
+          "assertion_id": "A-LOWC-2",
+          "target": "exec_log.mock_calls.M-GMAIL-HUMAN-REVIEW.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "置信度偏低（低于固定阈值 0.7）时反馈必须转人工复核并发送邮件通知"
+        },
+        {
+          "assertion_id": "A-LOWC-3",
+          "target": "exec_log.mock_calls.M-SLACK-HUMAN-REVIEW.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "置信度偏低时同时必须通过 Slack 通知人工复核"
+        },
+        {
+          "assertion_id": "A-LOWC-4",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "转人工复核的反馈不得自动创建 Jira 问题"
+        },
+        {
+          "assertion_id": "A-LOWC-5",
+          "target": "exec_log.mock_calls.M-NOTION-ROADMAP.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "转人工复核的反馈不得自动写入 Notion"
+        }
+      ]
+    },
+    {
+      "case_id": "C-PARSE-ERROR-HUMAN-REVIEW",
+      "kind": "negative",
+      "fixture_ids": ["F-FB-PARSE-ERROR"],
+      "mock_ids": [
+        "M-LLM-PARSE-ERROR",
+        "M-GMAIL-HUMAN-REVIEW",
+        "M-SLACK-HUMAN-REVIEW",
+        "M-SHEETS-LOG",
+        "M-WEBHOOK-RESPONSE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PARS-1",
+          "target": "exec_log.mock_calls.M-LLM-PARSE-ERROR.response_contract.parse_error",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "模型返回不可解析的内容，解析环节必须报错"
+        },
+        {
+          "assertion_id": "A-PARS-2",
+          "target": "exec_log.mock_calls.M-GMAIL-HUMAN-REVIEW.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "解析出错时反馈必须转人工复核并发送邮件通知"
+        },
+        {
+          "assertion_id": "A-PARS-3",
+          "target": "exec_log.mock_calls.M-SLACK-HUMAN-REVIEW.count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "解析出错时同时必须通过 Slack 通知人工复核"
+        },
+        {
+          "assertion_id": "A-PARS-4",
+          "target": "exec_log.mock_calls.M-JIRA-CREATE.count",
+          "operator": "equals",
+          "expected": 0,
+          "rationale": "解析出错的反馈不得自动路由到任何下游动作"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖四类路由（严重缺陷→Jira+工程 Slack 告警、功能需求→Notion、无效噪音→归档）与两个人工复核场景（置信度 0.4 低于固定阈值 0.7、模型输出解析出错）。LLM 分诊、Jira、Slack、Notion、Gmail、Google Sheets 全部固定模拟；断言验证类型字段、下游目的地调用次数、建议标题传递与错误分支不触发自动路由，全部可计算。"
+}

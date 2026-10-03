@@ -1,0 +1,209 @@
+{
+  "task_id": "N8F-073",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "a683e5e67c6adf6af3678717cb1c94cfdb91183935cd42c8ede8e8a9ec9351db",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_event",
+          "type": "object",
+          "description": "每周一 08:00 的定时触发信号"
+        }
+      ],
+      "native_evidence": ["Weekly Monday 08:00"],
+      "requirement_evidence": ["系统每周一 08:00 运行"],
+      "rationale": "需求声明的每周一 08:00 定时运行入口，为确定性触发动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "逐源读取文章条目",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "feed_articles",
+          "type": "array",
+          "description": "按配置的 RSS 订阅源清单收集到的全部文章条目"
+        }
+      ],
+      "native_evidence": ["Define Feed Sources", "Read RSS Feed"],
+      "requirement_evidence": ["系统按配置的 RSS 订阅源清单逐条读取，收集每个订阅源中的文章条目"],
+      "rationale": "需求声明按配置的订阅源清单逐条读取并收集文章条目，为确定性外部读取动作，判 code；按订阅源逐条读取的循环折叠进本节点契约。"
+    },
+    {
+      "node_id": "n3",
+      "label": "合并去重过滤排序并截断",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "feed_articles",
+          "type": "array",
+          "description": "全部订阅源的文章条目"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "shortlist",
+          "type": "array",
+          "description": "入选文章清单：去重、最近 7 天内、按时间由新到旧、最多 15 篇"
+        }
+      ],
+      "native_evidence": ["Merge, Filter & Rank Articles"],
+      "requirement_evidence": ["随后，系统合并所有文章、去除重复项、只保留最近 7 天内发布的条目、按时间由新到旧排序，并将清单限制为 15 篇"],
+      "rationale": "需求声明的合并、去重、7 天时间窗过滤、按时间排序与截断为 15 篇，为确定性数据处理变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成主题化 HTML 精选摘要",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "shortlist",
+          "type": "array",
+          "description": "入选文章清单"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "digest_html",
+          "type": "string",
+          "description": "将文章归入 2-4 个主题、含每篇摘要与链接的 HTML 精选摘要片段"
+        }
+      ],
+      "native_evidence": ["Curate & Summarize Digest"],
+      "requirement_evidence": ["入选的文章被交给语言模型，由其将这些文章归入 2 至 4 个主题，并生成一份包含摘要与链接的 HTML 格式精选摘要"],
+      "rationale": "需求声明由语言模型将入选文章归入 2-4 个主题并生成含摘要与链接的 HTML 精选摘要，需开放文本理解与生成，判 semantic。"
+    },
+    {
+      "node_id": "n5",
+      "label": "组装邮件模板",
+      "node_type": "code",
+      "operation_family": "data_formatting",
+      "inputs": [
+        {
+          "name": "digest_html",
+          "type": "string",
+          "description": "语言模型生成的 HTML 精选摘要片段"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_message",
+          "type": "object",
+          "description": "嵌入带样式模板的完整邮件，含收件人、带日期主题与 HTML 正文"
+        }
+      ],
+      "native_evidence": ["Build Email HTML"],
+      "requirement_evidence": ["系统把这段生成的 HTML 片段嵌入带样式的邮件模板中，并设定收件人与摘要日期"],
+      "rationale": "需求声明将 HTML 片段嵌入带样式邮件模板并设定收件人与摘要日期，为确定性组装变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "通过 Gmail 发送摘要邮件",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "email_message",
+          "type": "object",
+          "description": "组装完成的 HTML 邮件"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Send Digest Email"],
+      "requirement_evidence": ["最后，系统通过 Gmail 发出这封 HTML 邮件，邮件主题带有日期"],
+      "rationale": "需求声明的通过 Gmail 发送带日期主题的 HTML 邮件动作，为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后逐源读取文章。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章条目收集完成后合并处理。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "入选清单确定后交语言模型生成摘要。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后组装邮件模板。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件组装完成后发送。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "feed_articles",
+      "condition": null,
+      "rationale": "收集到的文章条目传给合并处理节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "shortlist",
+      "condition": null,
+      "rationale": "入选文章清单传给语言模型生成摘要。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "digest_html",
+      "condition": null,
+      "rationale": "生成的 HTML 摘要片段传给邮件组装节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "email_message",
+      "condition": null,
+      "rationale": "组装完成的邮件传给发送节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6"],
+  "confidence": 0.95,
+  "notes": "需求为每周一 08:00 定时运行的 RSS 精选摘要邮件：按配置的订阅源清单逐条读取收集文章条目、合并去重（仅保留最近 7 天内）按时间由新到旧排序并截断为 15 篇、语言模型将入选文章归入 2-4 个主题并生成含摘要与链接的 HTML 精选摘要、将 HTML 片段嵌入带样式模板并设定收件人与摘要日期、通过 Gmail 发送带日期主题的 HTML 邮件。按订阅源逐条读取的循环折叠进读取节点契约。需求未声明失败行为，未建模失败分支；原生的空文章兜底文案等实现细节未单独建模。"
+}

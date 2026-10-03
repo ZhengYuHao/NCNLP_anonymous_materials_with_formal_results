@@ -1,0 +1,144 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-075",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-SHEETS-HISTORY",
+      "dependency_type": "googleSheets",
+      "operation": "read_past_topics",
+      "request_contract": {
+        "sheet": "topics"
+      },
+      "response_contract": {
+        "topics": [
+          "How to improve sleep quality",
+          "10 minute morning routine",
+          "Beginner guide to meditation"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TOPIC",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_quiz_topic",
+      "request_contract": {
+        "past_topics": "array"
+      },
+      "response_contract": {
+        "topic": "5 daily habits for better focus",
+        "script": "Here is a quiz: which habit helps most?",
+        "image_prompt": "focused person at a desk"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CREATOMATE-RENDER",
+      "dependency_type": "httpRequest",
+      "operation": "render_video_from_template",
+      "request_contract": {
+        "template_id": "reels-template",
+        "script": "string",
+        "image_prompt": "string"
+      },
+      "response_contract": {
+        "render_id": "cm-fixed-001",
+        "video_url": "https://creatomate.example.com/video/cm-fixed-001.mp4"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-REVIEW",
+      "dependency_type": "slack",
+      "operation": "post_for_approval",
+      "request_contract": {
+        "video_url": "string",
+        "topic": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed-003",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-IG-POST",
+      "dependency_type": "facebookGraphApi",
+      "operation": "upload_reel",
+      "request_contract": {
+        "video_url": "string",
+        "caption": "string"
+      },
+      "response_contract": {
+        "media_id": "ig-fixed-001",
+        "permalink": "https://instagram.com/reel/ig-fixed-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-SAVE",
+      "dependency_type": "googleSheets",
+      "operation": "append_topic",
+      "request_contract": {
+        "topic": "string"
+      },
+      "response_contract": {
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-NOTIFY",
+      "dependency_type": "slack",
+      "operation": "post_publish_success",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "message_ts": "ts-fixed-004",
+        "status": "posted"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-POS-APPROVED-PUBLISH",
+      "fixture_ids": [
+        "F-HISTORY-AND-TOPIC"
+      ],
+      "mock_ids": [
+        "M-SHEETS-HISTORY",
+        "M-LLM-TOPIC",
+        "M-CREATOMATE-RENDER",
+        "M-SLACK-REVIEW",
+        "M-IG-POST",
+        "M-SHEETS-SAVE",
+        "M-SLACK-NOTIFY"
+      ]
+    },
+    {
+      "case_id": "C-NEG-REJECTED-NO-PUBLISH",
+      "fixture_ids": [
+        "F-REJECTED-TOPIC"
+      ],
+      "mock_ids": [
+        "M-SHEETS-HISTORY",
+        "M-LLM-TOPIC",
+        "M-CREATOMATE-RENDER",
+        "M-SLACK-REVIEW",
+        "M-IG-POST",
+        "M-SHEETS-SAVE",
+        "M-SLACK-NOTIFY"
+      ]
+    }
+  ]
+}

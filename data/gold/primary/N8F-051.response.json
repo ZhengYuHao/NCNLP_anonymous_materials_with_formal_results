@@ -1,0 +1,428 @@
+{
+  "task_id": "N8F-051",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "ed57b38d4e63ce6edf9b06f3a88b93e0135cc486f920566f4197b2fff5908258",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收学生聊天消息并提取字段",
+      "node_type": "code",
+      "operation_family": "input_extraction",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "student_message",
+          "type": "object",
+          "description": "提取出的会话 ID、学生姓名与消息正文"
+        }
+      ],
+      "native_evidence": [
+        "Chat Message Received",
+        "Extract Session & Message"
+      ],
+      "requirement_evidence": [
+        "接收学生聊天消息，提取会话 ID、学生姓名与消息正文"
+      ],
+      "rationale": "需求声明接收学生聊天消息并提取会话 ID、学生姓名与消息正文，为确定性字段解析，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "维护对话历史与轮次计数",
+      "node_type": "code",
+      "operation_family": "state_management",
+      "inputs": [
+        {
+          "name": "student_message",
+          "type": "object",
+          "description": "当前学生消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "conversation_history",
+          "type": "object",
+          "description": "按会话维护的对话历史与轮次计数"
+        }
+      ],
+      "native_evidence": [
+        "Build Conversation Context"
+      ],
+      "requirement_evidence": [
+        "按会话维护并更新对话历史与轮次计数，以在多轮消息之间保持上下文"
+      ],
+      "rationale": "需求声明按会话维护并更新对话历史与轮次计数，为确定性的状态管理逻辑，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "读取知识库并整理为提示文本",
+      "node_type": "code",
+      "operation_family": "knowledge_base_load",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "knowledge_base_text",
+          "type": "string",
+          "description": "从 Google Sheets 问答条目整理出的可直接用于生成回复的文本"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Knowledge Base",
+        "Format Knowledge Base for Prompt"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 知识库中读取问答条目，整理为可直接用于生成回复的文本"
+      ],
+      "rationale": "需求声明从 Google Sheets 知识库读取问答条目并整理为文本，为外部读取与确定性格式化，判为代码节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型生成受限格式回复",
+      "node_type": "semantic",
+      "operation_family": "ai_generation",
+      "inputs": [
+        {
+          "name": "conversation_history",
+          "type": "object",
+          "description": "会话上下文与轮次计数"
+        },
+        {
+          "name": "knowledge_base_text",
+          "type": "string",
+          "description": "知识库提示文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "llm_reply",
+          "type": "object",
+          "description": "受限格式的回复，可携带未解决或情绪困扰标记"
+        }
+      ],
+      "native_evidence": [
+        "Merge Context and KB",
+        "Generate AI Reply via GPT-4o-mini"
+      ],
+      "requirement_evidence": [
+        "将学生消息、对话历史与知识库内容交给语言模型，生成受限格式的回复，该回复可标记“未解决”或“情绪困扰”情况"
+      ],
+      "rationale": "需求声明由语言模型基于学生消息、对话历史与知识库生成受限格式回复，需开放文本生成与语义判断，判为语义节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "检查未解决或困扰标记并分流",
+      "node_type": "code",
+      "operation_family": "condition_branch",
+      "inputs": [
+        {
+          "name": "llm_reply",
+          "type": "object",
+          "description": "语言模型生成的回复及其标记"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "escalation_context",
+          "type": "object",
+          "description": "用于升级上报的完整对话上下文（含会话与消息）"
+        },
+        {
+          "name": "conversation_record",
+          "type": "object",
+          "description": "本轮对话记录（供日志与 FAQ Gaps 写入）"
+        }
+      ],
+      "native_evidence": [
+        "Parse Reply and Check Escalation Flags",
+        "Should Escalate to Human?"
+      ],
+      "requirement_evidence": [
+        "检查模型回复中是否存在“未解决”或“情绪困扰”标记；当学生表现出困扰，或问题在两轮之后仍未解决时，将完整上下文升级上报到 Slack 频道"
+      ],
+      "rationale": "需求声明检查回复中的未解决/困扰标记并据此分流，为确定性条件判断，判为代码节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "升级上报完整上下文到 Slack",
+      "node_type": "code",
+      "operation_family": "external_notification",
+      "inputs": [
+        {
+          "name": "escalation_context",
+          "type": "object",
+          "description": "待上报的完整对话上下文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Alert Counsellor on Slack"
+      ],
+      "requirement_evidence": [
+        "当学生表现出困扰，或问题在两轮之后仍未解决时，将完整上下文升级上报到 Slack 频道"
+      ],
+      "rationale": "需求声明满足升级条件时向 Slack 频道上报完整上下文，为外部通知动作，判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "追加对话日志并记录未解决问题",
+      "node_type": "code",
+      "operation_family": "logging",
+      "inputs": [
+        {
+          "name": "conversation_record",
+          "type": "object",
+          "description": "本轮对话记录（未解决时同时写入 FAQ Gaps）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Prepare Session State for Save",
+        "Was Query Unresolved?",
+        "Log Unresolved Query to FAQ Gaps Sheet",
+        "Append Conversation to Log Sheet"
+      ],
+      "requirement_evidence": [
+        "将每轮对话追加写入 Google Sheets 的对话日志，并将未解决的问题单独记入“FAQ Gaps”表，用于知识库补充"
+      ],
+      "rationale": "需求声明每轮对话追加写入对话日志、未解决问题单独记入 FAQ Gaps 表，为确定性外部写入动作，判为代码节点；写记录完成后由独立的聊天流程完成节点（n11）收尾。"
+    },
+    {
+      "node_id": "n8",
+      "label": "每周一 09:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger_time",
+          "type": "datetime",
+          "description": "每周一 09:00 的触发时间"
+        }
+      ],
+      "native_evidence": [
+        "Weekly Report Cron — Every Monday 9 AM"
+      ],
+      "requirement_evidence": [
+        "每周一 09:00，读取 Google Sheets 中的对话日志，计算本周指标，并通过 Gmail 向管理员发送 HTML 格式的报告邮件"
+      ],
+      "rationale": "需求声明每周一 09:00 触发周报流程，为定时调度入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "读取对话日志并计算周指标",
+      "node_type": "code",
+      "operation_family": "metrics_computation",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "weekly_metrics",
+          "type": "object",
+          "description": "本周对话指标汇总"
+        }
+      ],
+      "native_evidence": [
+        "Read All Conversation Logs",
+        "Calculate Weekly Metrics"
+      ],
+      "requirement_evidence": [
+        "读取 Google Sheets 中的对话日志，计算本周指标"
+      ],
+      "rationale": "需求声明读取对话日志并计算本周指标，为外部读取与确定性计算，判为代码节点。"
+    },
+    {
+      "node_id": "n10",
+      "label": "通过 Gmail 发送 HTML 周报",
+      "node_type": "terminal",
+      "operation_family": "email_report",
+      "inputs": [
+        {
+          "name": "weekly_metrics",
+          "type": "object",
+          "description": "本周指标，用于生成 HTML 报告"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Weekly Report to Admin"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 向管理员发送 HTML 格式的报告邮件"
+      ],
+      "rationale": "需求声明通过 Gmail 向管理员发送 HTML 格式周报，为周报流最终的用户可见完成动作（最终发送），无后续环节，判为终止节点。"
+    },
+    {
+      "node_id": "n11",
+      "label": "聊天流程完成",
+      "node_type": "terminal",
+      "operation_family": "completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "NO_DIRECT_NATIVE_NODE: requirement-only terminal abstraction; see notes"
+      ],
+      "requirement_evidence": [
+        "将每轮对话追加写入 Google Sheets 的对话日志，并将未解决的问题单独记入“FAQ Gaps”表，用于知识库补充"
+      ],
+      "rationale": "对话日志与 FAQ Gaps 记录写入完成后，聊天流声明的行为全部结束，作为该分支的终止出口（依据冻结需求抽象得到，原生图无对应结束节点）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到并提取消息后维护对话历史。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "上下文就绪后读取知识库条目。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "对话历史直接提供给语言模型生成回复。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "知识库文本与上下文汇合后生成回复。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复生成后检查未解决/困扰标记。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "学生表现出困扰，或问题在两轮之后仍未解决",
+      "rationale": "满足升级条件时上报 Slack。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": "未触发升级条件",
+      "rationale": "正常回复时直接记录对话日志。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "升级上报后同样追加记录对话日志（未解决同时记入 FAQ Gaps）。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周一触发后读取日志并计算指标。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "指标计算完成后发送周报邮件。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n7",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "对话日志与 FAQ Gaps 记录完成后聊天流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "student_message",
+      "condition": null,
+      "rationale": "提取的学生消息供会话历史维护使用。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n4",
+      "variable": "conversation_history",
+      "condition": null,
+      "rationale": "对话历史供语言模型生成回复（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "knowledge_base_text",
+      "condition": null,
+      "rationale": "知识库文本供语言模型生成回复（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "llm_reply",
+      "condition": null,
+      "rationale": "模型回复及其标记供分流检查（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "escalation_context",
+      "condition": null,
+      "rationale": "完整对话上下文供 Slack 升级上报。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "conversation_record",
+      "condition": null,
+      "rationale": "本轮对话记录供日志与 FAQ Gaps 写入。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n9",
+      "target": "n10",
+      "variable": "weekly_metrics",
+      "condition": null,
+      "rationale": "周指标供 HTML 报告邮件生成。"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n8"
+  ],
+  "terminal_nodes": [
+    "n10",
+    "n11"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模两条独立流程：聊天流程（接收消息→维护会话→读知识库→LLM 生成受限回复→检查标记→条件升级 Slack→记录日志/FAQ Gaps→流程完成）与周报流程（每周一 09:00 触发→读取日志计算指标→Gmail 发送 HTML 周报）。升级上报与日志记录汇合于 n7；n7 为代码写入节点，聊天流的终止出口由 n11（依据冻结需求抽象得到）承担；原生图中合并/状态准备等细节为实现细节，未单独建模；聊天回复经聊天通道返回学生，需求未将其声明为独立节点。"
+}

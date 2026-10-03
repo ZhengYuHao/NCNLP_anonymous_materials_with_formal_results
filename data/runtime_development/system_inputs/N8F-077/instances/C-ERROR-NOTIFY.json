@@ -1,0 +1,14 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-077",
+  "case_id": "C-ERROR-NOTIFY",
+  "kind": "safe_rejection",
+  "input_data": {
+    "slack_thread_ts": "1700000001.000200",
+    "channel": "C123457",
+    "question": "How many stores in Texas?",
+    "target_table": "stores",
+    "warehouse_id": "wh-main"
+  },
+  "input_sha256": "0FBCFE8458C479E8885C0BC314AEF90304FF091A04F5DADD603BDC8451EC056D"
+}

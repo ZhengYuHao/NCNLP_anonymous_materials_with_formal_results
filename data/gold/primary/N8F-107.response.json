@@ -1,0 +1,270 @@
+{
+  "task_id": "N8F-107",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "140a964cf62073f331a34c55c77f43f960ee3f146cfdb1f61fbd02fc98037fc3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 POST 请求与可选输出结构",
+      "node_type": "code",
+      "operation_family": "webhook_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "POST 请求中的自然语言指令与可选的 JSON Schema 输出结构"
+        }
+      ],
+      "native_evidence": [
+        "Receive Scrape Request"
+      ],
+      "requirement_evidence": [
+        "调用方通过 POST 请求提交一条自然语言指令，并可附带一个可选的 JSON Schema，用于描述期望的输出结构"
+      ],
+      "rationale": "需求声明通过 POST 请求接收自然语言指令与可选输出结构，为确定性事件接收入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验输出结构",
+      "node_type": "code",
+      "operation_family": "schema_validation",
+      "inputs": [
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "指令与可选输出结构"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_schema",
+          "type": "object",
+          "description": "校验后的输出结构（未提供或为空时回退到宽松默认结构）"
+        },
+        {
+          "name": "error_message",
+          "type": "string",
+          "description": "结构不合法时的说明信息（含示例结构）"
+        }
+      ],
+      "native_evidence": [
+        "Validate Output Schema",
+        "Return Schema Error"
+      ],
+      "requirement_evidence": [
+        "服务在把数据交给智能体之前先校验该输出结构：若调用方未提供输出结构或该结构为空，则回退到一个宽松的默认结构；若提供了输出结构，但其不是 JSON 对象（例如是字符串、数组或基本类型），或缺少 type 属性，或 type 属性的取值不是对象、数组、字符串、数字、布尔之一，则返回一条包含说明信息与示例结构的错误响应"
+      ],
+      "rationale": "需求声明在交给智能体之前校验输出结构（缺省回退、非法报错），为确定性规则判断，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "返回结构错误响应",
+      "node_type": "terminal",
+      "operation_family": "error_response",
+      "inputs": [
+        {
+          "name": "error_message",
+          "type": "string",
+          "description": "错误说明与示例结构"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Return Schema Error"
+      ],
+      "requirement_evidence": [
+        "则返回一条包含说明信息与示例结构的错误响应"
+      ],
+      "rationale": "需求声明结构不合法时返回含说明与示例的错误响应，为错误分支最终的用户可见完成动作（安全拒绝响应），无后续环节，判为终止节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "智能体检索、抓取并交互网页数据",
+      "node_type": "semantic",
+      "operation_family": "ai_web_research",
+      "inputs": [
+        {
+          "name": "request_data",
+          "type": "object",
+          "description": "自然语言指令"
+        },
+        {
+          "name": "validated_schema",
+          "type": "object",
+          "description": "校验后的输出结构（约束最终输出）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_result",
+          "type": "object",
+          "description": "智能体研究抓取得到的原始结果"
+        }
+      ],
+      "native_evidence": [
+        "Research & Extract Web Data"
+      ],
+      "requirement_evidence": [
+        "智能体依据自然语言指令研究并抓取网页数据：检索网页，发现相关页面与信息来源；抓取任意 URL，提取干净的结构化内容；在实时会话中与已抓取的页面交互，点击按钮、填写表单、浏览动态内容，并提取静态抓取无法获取的数据，整个过程无需人工管理会话。智能体可自主决定使用哪些能力"
+      ],
+      "rationale": "需求声明由智能体依据自然语言指令自主研究、抓取并与网页动态交互，需开放语义理解、规划与工具选择，判为语义节点；检索/抓取/交互三种能力折叠进节点契约，由智能体自主决定使用。"
+    },
+    {
+      "node_id": "n5",
+      "label": "将输出格式化为与结构一致的结果",
+      "node_type": "semantic",
+      "operation_family": "structured_formatting",
+      "inputs": [
+        {
+          "name": "raw_result",
+          "type": "object",
+          "description": "智能体原始输出"
+        },
+        {
+          "name": "validated_schema",
+          "type": "object",
+          "description": "所提供结构或默认结构"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "formatted_result",
+          "type": "object",
+          "description": "与所提供结构或默认结构一致的 JSON 结果"
+        }
+      ],
+      "native_evidence": [
+        "Format Response to Schema"
+      ],
+      "requirement_evidence": [
+        "服务将智能体的输出格式化为与所提供结构或默认结构一致的结果"
+      ],
+      "rationale": "需求声明将智能体输出格式化为符合结构的结果，需开放文本理解与结构化改写，判为语义节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "返回结构化 JSON 给调用方",
+      "node_type": "terminal",
+      "operation_family": "response_delivery",
+      "inputs": [
+        {
+          "name": "formatted_result",
+          "type": "object",
+          "description": "符合结构的 JSON 结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Return Structured Results"
+      ],
+      "requirement_evidence": [
+        "把结构化 JSON 返回给调用方；若调用方提供了结构，返回结果符合该结构；若未提供，则返回结构灵活的数据对象"
+      ],
+      "rationale": "需求声明将结构化 JSON 返回给调用方，为主流程最终的用户可见完成动作（响应返回），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到请求后校验输出结构。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "输出结构不合法（非 JSON 对象、缺 type 或 type 取值非法）",
+      "rationale": "结构不合法时返回错误响应，不进入研究与抓取环节。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "校验通过或回退默认结构",
+      "rationale": "校验通过后交由智能体研究抓取。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后格式化输出。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "格式化完成后返回结果。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "request_data",
+      "condition": null,
+      "rationale": "指令与可选结构供校验。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "error_message",
+      "condition": null,
+      "rationale": "错误说明与示例结构供错误响应。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "validated_schema",
+      "condition": null,
+      "rationale": "校验后的结构供智能体约束输出（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "raw_result",
+      "condition": null,
+      "rationale": "智能体原始输出供格式化（semantic→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n2",
+      "target": "n5",
+      "variable": "validated_schema",
+      "condition": null,
+      "rationale": "所提供或默认结构供格式化对齐（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "formatted_result",
+      "condition": null,
+      "rationale": "格式化结果供返回调用方（semantic→terminal 数据边）。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n3",
+    "n6"
+  ],
+  "confidence": 0.92,
+  "notes": "按冻结需求建模：POST 接收指令与可选结构→结构校验（未提供/为空回退宽松默认结构，非法则返回含说明与示例的错误响应并终止）→智能体检索/抓取/交互网页（能力折叠进契约，自主决定使用）→将输出格式化为与结构一致的结果→返回结构化 JSON。两个终止节点分别对应错误响应分支与正常返回分支。智能体的网页交互（点击、填表、浏览动态内容）与人工会话管理等实现细节折叠进 n4 契约。"
+}

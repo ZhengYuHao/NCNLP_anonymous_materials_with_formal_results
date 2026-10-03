@@ -1,0 +1,353 @@
+{
+  "task_id": "N8F-068",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "adf87990f265948866cfe06cdb46d65753798883bb6a8dd24108cb0d03f28f81",
+  "fixtures": [
+    {
+      "fixture_id": "F-email-pdf",
+      "purpose": "收到的新邮件：含 1 个 PDF 附件与 1 个 JPG 附件，JPG 应被剔除",
+      "input_data": {
+        "from": "pr@company.com",
+        "subject": "Press release: new product",
+        "body": "Please find the press release attached.",
+        "attachments": [
+          {
+            "name": "release.pdf",
+            "mime": "application/pdf"
+          },
+          {
+            "name": "photo.jpg",
+            "mime": "image/jpeg"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-email-word",
+      "purpose": "收到的新邮件：含 1 个 Word 附件",
+      "input_data": {
+        "from": "pr@company.com",
+        "subject": "Press release: partnership",
+        "body": "Please find the press release attached.",
+        "attachments": [
+          {
+            "name": "release.docx",
+            "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-email-inline",
+      "purpose": "收到的新邮件：无附件，仅内联正文",
+      "input_data": {
+        "from": "pr@company.com",
+        "subject": "Press release: launch",
+        "body": "Inline press release text about new product launch on September 1.",
+        "attachments": []
+      }
+    },
+    {
+      "fixture_id": "F-email-all-jpg",
+      "purpose": "边界用例：附件全部为 JPG，筛选后无剩余附件，应处理邮件正文",
+      "input_data": {
+        "from": "pr@company.com",
+        "subject": "Press release: event",
+        "body": "inline text about the upcoming event.",
+        "attachments": [
+          {
+            "name": "img1.jpg",
+            "mime": "image/jpeg"
+          },
+          {
+            "name": "img2.jpg",
+            "mime": "image/jpeg"
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-pdf-extract",
+      "dependency_type": "pdf_extractor",
+      "operation": "extract_document",
+      "request_contract": {
+        "filename": "release.pdf"
+      },
+      "response_contract": {
+        "content": "PDF text: Company X launches new product on September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-word-extract",
+      "dependency_type": "word_extractor",
+      "operation": "extract_text",
+      "request_contract": {
+        "filename": "release.docx"
+      },
+      "response_contract": {
+        "content": "DOCX text: Company X announces partnership with Company Y."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "PDF text: Company X launches new product on September 1."
+      },
+      "response_contract": {
+        "article": "# Company X Launches New Product\n\nCompany X today announced the launch of its new product. The product will be available from September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite-word",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "DOCX text: Company X announces partnership with Company Y."
+      },
+      "response_contract": {
+        "article": "# Company X Announces Partnership\n\nCompany X has announced a strategic partnership with Company Y."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-rewrite-inline",
+      "dependency_type": "llm",
+      "operation": "rewrite_article",
+      "request_contract": {
+        "source_content": "Inline press release text about new product launch on September 1."
+      },
+      "response_contract": {
+        "article": "# Product Launch\n\nInline press release text about new product launch on September 1."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-assess",
+      "dependency_type": "llm",
+      "operation": "self_assess",
+      "request_contract": {
+        "source_content": "PDF text: Company X launches new product on September 1."
+      },
+      "response_contract": {
+        "score": 0.9,
+        "feedback": "Accurate transformation, good structure.",
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-assess-other",
+      "dependency_type": "llm",
+      "operation": "self_assess",
+      "request_contract": {
+        "source_content_not_pdf": true
+      },
+      "response_contract": {
+        "score": 0.85,
+        "feedback": "Accurate transformation.",
+        "issues": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-gmail-reply",
+      "dependency_type": "gmail",
+      "operation": "send_reply",
+      "request_contract": {
+        "to": "pr@company.com"
+      },
+      "response_contract": {
+        "message_id": "reply_001",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-pdf",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-email-pdf"
+      ],
+      "mock_ids": [
+        "M-pdf-extract",
+        "M-llm-rewrite",
+        "M-llm-assess",
+        "M-gmail-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.filtered_attachments",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "JPG 附件被剔除后，仅保留 PDF 附件"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.filtered_attachments[0].name",
+          "operator": "equals",
+          "expected": "release.pdf",
+          "rationale": "保留的附件应为 release.pdf"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.source_content",
+          "operator": "contains",
+          "expected": "Company X launches new product",
+          "rationale": "PDF 路径应提取 PDF 文档内容作为处理源"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.article",
+          "operator": "contains",
+          "expected": "Company X",
+          "rationale": "语言模型应将新闻稿改写为结构完整的文章"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.reply.original_input",
+          "operator": "exists",
+          "rationale": "回复邮件须包含原始输入部分",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.reply.article",
+          "operator": "exists",
+          "rationale": "回复邮件须包含生成的文章部分",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.reply.self_assessment.score",
+          "operator": "equals",
+          "expected": 0.9,
+          "rationale": "回复邮件须包含独立评估环节生成的自评（分数为固定模拟值）"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.reply.message_id",
+          "operator": "exists",
+          "rationale": "应向原发件人成功发送回复邮件",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-word",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-email-word"
+      ],
+      "mock_ids": [
+        "M-word-extract",
+        "M-llm-rewrite-word",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-word",
+          "target": "output.filtered_attachments",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "Word 附件应被保留"
+        },
+        {
+          "assertion_id": "A-2-pos-word",
+          "target": "output.source_content",
+          "operator": "contains",
+          "expected": "DOCX text",
+          "rationale": "Word 路径应提取 Word 文本内容作为处理源"
+        },
+        {
+          "assertion_id": "A-3-pos-word",
+          "target": "output.article",
+          "operator": "exists",
+          "rationale": "Word 路径同样应生成改写后的文章",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-pos-inline",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-email-inline"
+      ],
+      "mock_ids": [
+        "M-llm-rewrite-inline",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-pos-inline",
+          "target": "output.source_content",
+          "operator": "contains",
+          "expected": "Inline press release text",
+          "rationale": "无剩余附件时应直接处理邮件正文中的内联消息内容"
+        },
+        {
+          "assertion_id": "A-2-pos-inline",
+          "target": "output.article",
+          "operator": "exists",
+          "rationale": "内联路径同样应生成改写后的文章",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-all-filtered",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-email-all-jpg"
+      ],
+      "mock_ids": [
+        "M-llm-rewrite-inline",
+        "M-llm-assess-other",
+        "M-gmail-reply"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-all-filtered",
+          "target": "output.filtered_attachments",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "全部附件为 JPG 时均被剔除"
+        },
+        {
+          "assertion_id": "A-2-bnd-all-filtered",
+          "target": "output.source_content",
+          "operator": "contains",
+          "expected": "inline text",
+          "rationale": "筛选后无剩余附件时，退回处理邮件正文内容"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "附件筛选规则：仅保留 Word 与 PDF 格式；筛选后无剩余附件→处理正文；存在 PDF→提取 PDF；存在 Word→提取 Word（同一邮件内 PDF 与 Word 并存的情况冻结需求未定义，本批用例不覆盖）。回复邮件必须包含原始输入、生成文章与自评三部分。"
+}

@@ -1,0 +1,525 @@
+{
+  "task_id": "N8F-014",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "913ca08f54c52f5e3248f9ef8bcbe0f6f4136e2a1d30a8116484a38558566c8d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收并路由 Telegram 消息",
+      "node_type": "code",
+      "operation_family": "input_receipt_and_routing",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "用户通过 Telegram 发送的消息内容"
+        },
+        {
+          "name": "message_type",
+          "type": "string",
+          "description": "消息类型：text / voice / image / register"
+        }
+      ],
+      "native_evidence": [
+        "Telegram Trigger",
+        "Input Message Router1",
+        "If",
+        "get_message (register)"
+      ],
+      "requirement_evidence": [
+        "用户通过 Telegram 以文本、语音或图片方式发送的消息",
+        "用户注册：提供简单的注册引导"
+      ],
+      "rationale": "接收 Telegram 消息并按消息类型（文本/语音/图片/注册）执行确定性路由，判定为 code 节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "转写语音消息",
+      "node_type": "semantic",
+      "operation_family": "speech_transcription",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "语音消息的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "语音转写得到的文本"
+        }
+      ],
+      "native_evidence": [
+        "Download Voice Message",
+        "Fix mime",
+        "Analyze voice message"
+      ],
+      "requirement_evidence": [
+        "语音消息经转写后处理"
+      ],
+      "rationale": "需求声明语音消息需先转写再处理，转写依赖语言模型理解语音内容，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "识别食物图片",
+      "node_type": "semantic",
+      "operation_family": "image_recognition",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "图片消息的内容"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_recognition",
+          "type": "string",
+          "description": "图片中食物的识别分析结果"
+        }
+      ],
+      "native_evidence": [
+        "Download IMAGE",
+        "Fix mime5",
+        "Analyze image"
+      ],
+      "requirement_evidence": [
+        "食物图片由 AI 进行识别分析"
+      ],
+      "rationale": "需求声明食物图片由 AI 识别分析，需要开放视觉理解能力，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "理解餐食并估算营养素",
+      "node_type": "semantic",
+      "operation_family": "meal_understanding",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "用户文本消息"
+        },
+        {
+          "name": "transcribed_text",
+          "type": "string",
+          "description": "语音转写文本"
+        },
+        {
+          "name": "image_recognition",
+          "type": "string",
+          "description": "图片识别结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meal_estimation",
+          "type": "object",
+          "description": "估算的热量、蛋白质、碳水化合物和脂肪数据"
+        },
+        {
+          "name": "user_intent",
+          "type": "string",
+          "description": "用户意图：log_meal / update_goal / report"
+        },
+        {
+          "name": "goal_update",
+          "type": "object",
+          "description": "用户设置或更新的每日热量与蛋白质目标"
+        }
+      ],
+      "native_evidence": [
+        "Cal IA Agent",
+        "Google Gemini Chat Model",
+        "Simple Memory",
+        "get_message (text)",
+        "get_message (Media  message)",
+        "get_message (Audio/Video message)"
+      ],
+      "requirement_evidence": [
+        "识别或理解用户描述的餐食后，自动估算热量、蛋白质、碳水化合物和脂肪，并写入餐食记录",
+        "用户可设置并更新每日热量目标和蛋白质目标",
+        "用户输入“report” → AI 返回带进度条的每日营养汇总"
+      ],
+      "rationale": "理解餐食描述并估算营养素、识别用户意图（记录餐食/更新目标/生成报告），需要开放文本理解，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "写入餐食记录到 Google Sheets",
+      "node_type": "code",
+      "operation_family": "meal_record_persistence",
+      "inputs": [
+        {
+          "name": "meal_estimation",
+          "type": "object",
+          "description": "估算的热量与营养素数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "meal_record",
+          "type": "object",
+          "description": "写入 Google Sheets 的餐食记录结果"
+        }
+      ],
+      "native_evidence": [
+        "Append Meal Data"
+      ],
+      "requirement_evidence": [
+        "并写入餐食记录",
+        "以 Google Sheets 作为数据库，分别维护用户档案（含目标）与餐食记录"
+      ],
+      "rationale": "将餐食记录追加写入 Google Sheets，为确定性的外部存储操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "引导用户注册",
+      "node_type": "semantic",
+      "operation_family": "user_registration",
+      "inputs": [
+        {
+          "name": "message_content",
+          "type": "string",
+          "description": "注册请求消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "registration",
+          "type": "object",
+          "description": "注册结果与用户档案信息"
+        }
+      ],
+      "native_evidence": [
+        "Register Agent",
+        "Register User",
+        "Google Gemini Chat Model1",
+        "Simple Memory1",
+        "get_message (register)"
+      ],
+      "requirement_evidence": [
+        "用户注册：提供简单的注册引导，不存储个人健康数据（不需要体重或身高）"
+      ],
+      "rationale": "注册引导需要理解用户输入并给出引导，判定为 semantic 节点；注册本身按需求不存储个人健康数据。"
+    },
+    {
+      "node_id": "n7",
+      "label": "更新用户档案目标",
+      "node_type": "code",
+      "operation_family": "profile_update",
+      "inputs": [
+        {
+          "name": "goal_update",
+          "type": "object",
+          "description": "设置或更新的热量与蛋白质目标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile_update",
+          "type": "object",
+          "description": "Google Sheets 中更新后的用户档案"
+        }
+      ],
+      "native_evidence": [
+        "Update Profile Data",
+        "Get Profile Data"
+      ],
+      "requirement_evidence": [
+        "用户说“update my protein goal” → AI 更新 Google Sheets 中的用户档案"
+      ],
+      "rationale": "将用户目标写入 Google Sheets 用户档案，为确定性的外部存储操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "生成带进度条的每日营养报告",
+      "node_type": "code",
+      "operation_family": "daily_report_generation",
+      "inputs": [
+        {
+          "name": "user_intent",
+          "type": "string",
+          "description": "报告请求意图标记"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "daily_report",
+          "type": "string",
+          "description": "带可视化进度条的每日营养汇总消息"
+        }
+      ],
+      "native_evidence": [
+        "Get Report",
+        "Get Meals Info",
+        "Get User Info",
+        "Get Data",
+        "Unify data",
+        "Get chart message",
+        "Merge",
+        "Get report"
+      ],
+      "requirement_evidence": [
+        "日报：向用户推送个性化的每日进度消息，并带有可视化的进度条"
+      ],
+      "rationale": "汇总餐食与目标数据并生成带进度条的报告消息，为确定性的数据聚合与格式化操作，判定为 code 节点（需求未声明报告文本由语言模型生成）。"
+    },
+    {
+      "node_id": "n9",
+      "label": "发送回复消息",
+      "node_type": "terminal",
+      "operation_family": "message_delivery",
+      "inputs": [
+        {
+          "name": "meal_record",
+          "type": "object",
+          "description": "餐食记录结果"
+        },
+        {
+          "name": "registration",
+          "type": "object",
+          "description": "注册结果"
+        },
+        {
+          "name": "profile_update",
+          "type": "object",
+          "description": "档案更新结果"
+        },
+        {
+          "name": "daily_report",
+          "type": "string",
+          "description": "每日营养报告消息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a text message",
+        "Send a text message1",
+        "Send back message",
+        "MarkdownV2",
+        "MarkdownV"
+      ],
+      "requirement_evidence": [
+        "AI 返回带进度条的每日营养汇总",
+        "AI 更新 Google Sheets 中的用户档案"
+      ],
+      "rationale": "向用户发送回复是用户可见的完成动作，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": "message_type == voice",
+      "rationale": "语音消息进入转写分支。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": "message_type == image",
+      "rationale": "图片消息进入识别分支。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n1",
+      "target": "n4",
+      "variable": null,
+      "condition": "message_type == text",
+      "rationale": "文本消息直接进入 AI 助手处理。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "语音转写后进入 AI 助手处理。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "图片识别后进入 AI 助手处理。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "user_intent == log_meal",
+      "rationale": "意图为记录餐食时写入餐食记录。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n4",
+      "target": "n7",
+      "variable": null,
+      "condition": "user_intent == update_goal",
+      "rationale": "意图为更新目标时更新用户档案。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n4",
+      "target": "n8",
+      "variable": null,
+      "condition": "user_intent == report",
+      "rationale": "意图为生成报告时生成每日营养报告。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n1",
+      "target": "n6",
+      "variable": null,
+      "condition": "message_type == register",
+      "rationale": "注册请求进入注册引导分支。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n5",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "餐食记录写入完成后发送回复。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n6",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "注册完成后发送回复。"
+    },
+    {
+      "edge_id": "c12",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "档案更新完成后发送回复。"
+    },
+    {
+      "edge_id": "c13",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成完成后发送报告消息。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "语音消息内容送入转写节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "图片消息内容送入识别节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n1",
+      "target": "n4",
+      "variable": "message_content",
+      "condition": null,
+      "rationale": "文本消息内容送入 AI 助手。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "transcribed_text",
+      "condition": null,
+      "rationale": "转写文本送入 AI 助手。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n4",
+      "variable": "image_recognition",
+      "condition": null,
+      "rationale": "图片识别结果送入 AI 助手。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "meal_estimation",
+      "condition": null,
+      "rationale": "估算的营养数据送入餐食记录写入节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n4",
+      "target": "n7",
+      "variable": "goal_update",
+      "condition": null,
+      "rationale": "目标数据送入档案更新节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n4",
+      "target": "n8",
+      "variable": "user_intent",
+      "condition": null,
+      "rationale": "报告意图标记送入报告生成节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n5",
+      "target": "n9",
+      "variable": "meal_record",
+      "condition": null,
+      "rationale": "餐食记录结果送入发送节点。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n6",
+      "target": "n9",
+      "variable": "registration",
+      "condition": null,
+      "rationale": "注册结果送入发送节点。"
+    },
+    {
+      "edge_id": "d11",
+      "source": "n7",
+      "target": "n9",
+      "variable": "profile_update",
+      "condition": null,
+      "rationale": "档案更新结果送入发送节点。"
+    },
+    {
+      "edge_id": "d12",
+      "source": "n8",
+      "target": "n9",
+      "variable": "daily_report",
+      "condition": null,
+      "rationale": "每日报告消息送入发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.85,
+  "notes": "多模态输入按需求建模：语音转写（semantic）、图片识别（semantic）、餐食理解与营养估算（semantic）；注册引导（semantic）；餐食记录写入、档案目标更新、报告生成（code）；最终发送回复（terminal）。原生中的 mime 修复、Typing、Merge 等实现细节未纳入。混合任务满足 semantic→code 的有类型 DFG 边（meal_estimation、goal_update、user_intent）。"
+}

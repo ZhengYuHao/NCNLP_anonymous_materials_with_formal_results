@@ -1,0 +1,134 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-054",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-DRIVE-METADATA",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "get_document_metadata",
+      "request_contract": {
+        "doc_ids": [
+          "doc-a1",
+          "doc-b2",
+          "doc-c3"
+        ]
+      },
+      "response_contract": {
+        "documents": [
+          {
+            "doc_id": "doc-a1",
+            "last_modified": "2026-08-29T10:00:00Z",
+            "modified_by": "alice@example.com",
+            "version": "v3"
+          },
+          {
+            "doc_id": "doc-b2",
+            "last_modified": "2026-08-28T15:30:00Z",
+            "modified_by": "bob@example.com",
+            "version": "v7"
+          },
+          {
+            "doc_id": "doc-c3",
+            "last_modified": "2026-07-10T08:00:00Z",
+            "modified_by": "carol@example.com",
+            "version": "v1"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DOCS-CONTENT-A1",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "get_document_content",
+      "request_contract": {
+        "doc_id": "doc-a1"
+      },
+      "response_contract": {
+        "plain_text": "Q3 roadmap focuses on the new compiler and evaluation harness."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DOCS-CONTENT-B2",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "get_document_content",
+      "request_contract": {
+        "doc_id": "doc-b2"
+      },
+      "response_contract": {
+        "plain_text": "Weekly engineering sync reviewed agent evaluation results."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_contract": {
+        "combined_content": "combined_updated_docs"
+      },
+      "response_contract": {
+        "executive_summary": "Two documents were updated this week.",
+        "key_updates": {
+          "doc-a1": "Roadmap finalized with new compiler milestone.",
+          "doc-b2": "Meeting covered evaluation results."
+        },
+        "important_changes": [
+          "Compiler milestone added to Q3 roadmap"
+        ],
+        "action_items": [
+          "Review compiler evaluation harness"
+        ],
+        "next_week_focus": "Finalize experiment results section"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_weekly_email",
+      "request_contract": {
+        "to": [
+          "team@example.com"
+        ],
+        "subject": "Weekly Digest 2026-08-26 to 2026-09-02"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-054",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-TWO-UPDATED-DOCS",
+      "fixture_ids": [
+        "F-DOCS-THREE"
+      ],
+      "mock_ids": [
+        "M-DRIVE-METADATA",
+        "M-DOCS-CONTENT-A1",
+        "M-DOCS-CONTENT-B2",
+        "M-LLM-SUMMARY",
+        "M-GMAIL-SEND"
+      ]
+    },
+    {
+      "case_id": "C-NO-UPDATES-NO-EMAIL",
+      "fixture_ids": [
+        "F-DOCS-NO-UPDATES"
+      ],
+      "mock_ids": [
+        "M-DRIVE-METADATA"
+      ]
+    }
+  ]
+}

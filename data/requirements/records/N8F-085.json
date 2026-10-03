@@ -1,0 +1,78 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-085",
+  "source_id": "n8n:3003",
+  "workflow_sha256": "c54c3be37c4e283fc4ffbdf5f694ffb12a04ddd54d92646790ef4b452242a2ab",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "cd1dd53f5dafe1f88e2009c33345a1240d2dc1a5f522836c1a640726d2e127e2",
+  "requirement": {
+    "requirement_text": "一、输入\n可指定自定义的 YouTube 频道标识；未指定时使用默认频道列表。\n\n二、主要处理\n1. 为每个 YouTube 频道自动生成对应的 RSS 订阅源，并监控频道的新视频上传。\n2. 只保留最近 3 天窗口内发布的新视频（该窗口可按需要调整）。\n3. 通过 YouTube 接口获取视频的详细信息。\n4. 生成适配各种邮件客户端的 HTML 邮件内容，其中包含视频缩略图、标题、简介与直达链接。\n\n三、最终结果\n1. 通过 Telegram 发送新视频通知，附带视频缩略图与链接。\n2. 通过邮件发送通知，形式可为每个新视频单独一封邮件，也可把全部新视频合并为一封摘要邮件。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 208,
+        "text": "This workflow creates an automated system for monitoring and receiving notifications about new videos from your favorite YouTube channels through RSS feeds, with customizable email and Telegram notifications."
+      },
+      {
+        "start": 210,
+        "end": 484,
+        "text": "🌟 Key Features\n📡 RSS Feed Management\nAccepts custom YouTube channel IDs or uses default channels\nAutomatically creates RSS feeds for each YouTube channel\nMonitors channels for new video uploads\nLabels and filters recent videos within a 3-day window (change this as required)"
+      },
+      {
+        "start": 487,
+        "end": 726,
+        "text": "📨 Multi-Channel Notification System\nSends Telegram notifications with video thumbnails and links\nDelivers customized email notifications in two formats:\n  Individual emails for each new video\n  Single digest email containing all new videos"
+      },
+      {
+        "start": 729,
+        "end": 994,
+        "text": "⚙️ Content Processing\nFetches detailed video information using YouTube API\nCreates responsive HTML email templates with video previews\nIncludes video thumbnails, titles, descriptions, and direct links\nMaintains professional formatting across different email clients"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "自定义指定的 YouTube 频道标识，未指定时使用默认频道列表",
+        "各频道对应的 RSS 订阅源中的新视频",
+        "通过 YouTube 接口获取的视频详细信息"
+      ],
+      "conditions": [
+        "只处理最近 3 天窗口内发布的新视频，该窗口可按需调整",
+        "邮件通知可逐个视频发送，也可合并为单封摘要邮件"
+      ],
+      "allowed_actions": [
+        "为每个频道生成 RSS 订阅源并监控新视频",
+        "按时间窗口筛选近期视频",
+        "通过 YouTube 接口获取视频详细信息",
+        "生成含缩略图、标题、简介与直达链接的 HTML 邮件内容",
+        "通过 Telegram 发送带缩略图与链接的通知",
+        "通过邮件发送逐个视频通知或合并摘要通知"
+      ],
+      "visible_outcomes": [
+        "用户在 Telegram 中收到新视频通知，含缩略图与链接",
+        "用户在邮件中收到新视频通知，形式为逐个视频邮件或单封摘要邮件",
+        "邮件正文包含视频缩略图、标题、简介与直达链接，并在不同邮件客户端保持格式一致"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-085.packet.json",
+    "packet_sha256": "cfb49b8aaccbfc547b218fefc720af8e802bb87c436bea89b2509297f33c3efb",
+    "public_description_sha256": "7d7f1152cb310c2b6f2ef81c80e778064e2f8f43145f797074ee2cf86f591bbc"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-085.response.json",
+    "verification_response_sha256": "46157c08bc6a9d18ddef9400ee78ee88ce36bf36ad63974840ec7cc233a0c5c0",
+    "decision": "accept"
+  },
+  "formal_index": 96
+}

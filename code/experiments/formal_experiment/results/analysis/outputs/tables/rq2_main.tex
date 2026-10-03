@@ -1,0 +1,18 @@
+% RQ2 main table (recomputed from results/rq2 records)
+\begin{table}[!htbp]
+\centering
+\caption{RQ2: reliability on the 80 mixed workflows (recomputed).}
+\label{tab:rq2-main}
+\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lllrl@{}}
+\toprule
+System & Pass/total & CCR [95\% CI] & $\Delta$CCR [95\% CI] & Corrected $p$ & Single-run acc. \\
+\midrule
+Direct LLM & 42/80 & 52.50\% [41.70, 63.08] & -37.50 [-48.75, -26.25] & $<$0.001 & 76.75\% \\
+DSPy & 54/80 & 67.50\% [56.64, 76.76] & -22.50 [-32.50, -12.50] & $<$0.001 & 84.25\% \\
+LMQL & 50/80 & 62.50\% [51.55, 72.31] & -27.50 [-37.50, -17.50] & $<$0.001 & 81.75\% \\
+PAL & 58/80 & 72.50\% [61.86, 81.08] & -17.50 [-26.25, -10.00] & $<$0.001 & 86.75\% \\
+NCNLP & 72/80 & 90.00\% [81.49, 94.85] & Reference & Reference & 92.00\% \\
+\bottomrule
+\end{tabular*}
+\end{table}

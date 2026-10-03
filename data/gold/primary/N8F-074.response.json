@@ -1,0 +1,215 @@
+{
+  "task_id": "N8F-074",
+  "annotator_id": "GM-A-02",
+  "status": "submitted",
+  "requirement_sha256": "9eefc9c3e6a2bc171b3c5ee0ec763ca160feab7bd1a566260b7e12671613e404",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收用户对话消息",
+      "node_type": "code",
+      "operation_family": "trigger_ingest",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户发来的消息文本"
+        }
+      ],
+      "native_evidence": [
+        "When chat message received"
+      ],
+      "requirement_evidence": [
+        "系统提供一个对话式入口，接收业务用户发来的消息"
+      ],
+      "rationale": "对话式入口接收消息"
+    },
+    {
+      "node_id": "n2",
+      "label": "音乐制作助手对话收集四项生成参数",
+      "node_type": "semantic",
+      "operation_family": "conversation",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户发来的消息文本"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "song_params",
+          "type": "object",
+          "description": "歌曲标题、风格、歌词、负面标签"
+        }
+      ],
+      "native_evidence": [
+        "Music Producer Agent",
+        "Google Gemini Chat Model",
+        "Songwriter",
+        "Search songs"
+      ],
+      "requirement_evidence": [
+        "由语言模型驱动的音乐制作助手以对话方式与用户交互，逐步收集生成歌曲所需的全部参数，共四项：歌曲标题、音乐风格（流派）、歌词（可由助手调用写词能力生成，也可通过检索能力在线搜索获得）、以及需要规避的风格或元素（负面标签）"
+      ],
+      "rationale": "对话式参数收集需语言模型；歌词生成/检索为助手能力"
+    },
+    {
+      "node_id": "n3",
+      "label": "提交参数生成音轨并等待回调获取歌曲数据",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "song_params",
+          "type": "object",
+          "description": "歌曲标题、风格、歌词、负面标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "songs",
+          "type": "object[]",
+          "description": "生成的歌曲数据"
+        }
+      ],
+      "native_evidence": [
+        "Create song",
+        "Wait",
+        "Get response",
+        "Get songs"
+      ],
+      "requirement_evidence": [
+        "这些数据被提交给音乐生成服务，由其生成实际的音轨；该生成过程为异步执行，通过回调通知完成。系统等待该回调，并在收到后获取生成的歌曲数据"
+      ],
+      "rationale": "异步生成与等待回调折叠进契约，终止条件为回调完成，max_iterations<=20"
+    },
+    {
+      "node_id": "n4",
+      "label": "逐首下载歌曲音频文件",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "songs",
+          "type": "object[]",
+          "description": "生成的歌曲数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio_files",
+          "type": "object[]",
+          "description": "下载的音频文件"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over Items",
+        "Get single song"
+      ],
+      "requirement_evidence": [
+        "对于返回的每一首歌曲，系统下载其音频文件"
+      ],
+      "rationale": "逐首下载折叠为循环，max_iterations<=20"
+    },
+    {
+      "node_id": "n5",
+      "label": "以带时间戳文件名上传到指定 Google Drive 文件夹",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "audio_files",
+          "type": "object[]",
+          "description": "下载的音频文件"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Upload song"
+      ],
+      "requirement_evidence": [
+        "并以带时间戳的文件名上传到指定的 Google Drive 文件夹中"
+      ],
+      "rationale": "上传 Drive 为最终可见动作"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到消息后开始对话收集"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "参数齐备后提交生成"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取歌曲后逐首下载"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "下载完成后上传 Drive"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "消息供助手对话"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "song_params",
+      "condition": null,
+      "rationale": "参数用于生成音轨"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "songs",
+      "condition": null,
+      "rationale": "歌曲数据用于下载"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "audio_files",
+      "condition": null,
+      "rationale": "音频文件用于上传"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.9,
+  "notes": "对话入口→LLM 助手收集四项参数（歌词可生成/搜索）→提交生成服务并等待回调（折叠轮询）→逐首下载（循环折叠）→时间戳命名上传 Drive 为终止。"
+}

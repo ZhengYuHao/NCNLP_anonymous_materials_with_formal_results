@@ -1,0 +1,11 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-107",
+  "case_id": "C-BOUNDARY-EMPTY-SCHEMA",
+  "kind": "boundary",
+  "input_data": {
+    "prompt": "Find pricing pages of CRM software",
+    "output_schema": {}
+  },
+  "input_sha256": "AE14429D706F235973F094F48A778CF9976EF6A9039A8AF71F5339BFEE7CF9FB"
+}

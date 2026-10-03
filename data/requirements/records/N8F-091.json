@@ -1,0 +1,100 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-091",
+  "source_id": "n8n:12189",
+  "workflow_sha256": "e84ecc0cfd7c4562259075248fb0910302c4a80f053c5a0527b0d7a5cdea435a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "bfc5a0174f2f47a03aab3322797672e7237acc7f2fac5a1468eef5caa756abe4",
+  "requirement": {
+    "requirement_text": "从 Google Sheets 读取 B2B 潜在客户线索，并筛选出尚未处理过的联系人（\"Research Status\"列为空的线索）进行处理。对每条待处理线索：先在 Google Sheets 中将该线索的处理状态更新为 \"Pending\"；再使用域名或邮箱在企业信息库 Sona 中检索，按智能匹配规则选出最佳匹配企业，并获取该企业的行业、技术栈、收入、员工规模与社交资料等企业信息。随后由语言模型分析这些企业数据，产出 3-5 条痛点、2-3 条增长机会、3-4 条个性化切入点、建议的沟通语气与行动号召，以及可用于邮件开头的一句话洞察，并给出 High/Medium/Low 的契合度评分。接着生成一封个性化开发邮件：主题行不超过 8 个词且以引发好奇的方式撰写；正文控制在 120-150 词，语气专业而口语化，以体现已做过调研的个性化切入点开头，只引用一个具体痛点，聚焦可衡量的结果而非产品功能，并以自然的行动号召收尾。最后将全部结果写回 Google Sheets（痛点、关键洞察、邮件主题、邮件正文、一键 Gmail 撰写链接、生成日期、发送状态），并将该线索的处理状态置为 \"Completed\"，间隔 2 秒后处理下一条线索。若在企业信息库中未找到精确匹配，则回退使用检索结果中的第一条。",
+    "source_spans": [
+      {
+        "start": 76,
+        "end": 353,
+        "text": "Automatically research B2B leads and generate personalized outreach emails by reading prospects from Google Sheets, enriching with company data from Sona Enrich, analyzing insights with AI, and creating custom emails — so you can scale personalized outreach to target accounts."
+      },
+      {
+        "start": 2818,
+        "end": 3151,
+        "text": "Each processed lead gets:\nPain points** (3-5 identified challenges)\nGrowth opportunities** (2-3 actionable insights)\nPersonalization hooks** (3-4 talking points)\nEmail subject line** (max 8 words, curiosity-driven)\nEmail body** (120-150 words, consultative tone)\nGmail compose link** (one-click to send)\nFit score** (High/Medium/Low)"
+      },
+      {
+        "start": 3210,
+        "end": 3365,
+        "text": "Step 1: Data Input & Filtering\nReads all leads from Google Sheets and filters out already-processed leads (those with a value in \"Research Status\" column)."
+      },
+      {
+        "start": 3367,
+        "end": 3594,
+        "text": "Step 2: Company Data Enrichment\nUpdates status to \"Pending\" in Google Sheets\nSearches Sona database using domain or email\n5-tier smart matching algorithm finds best company match\nRetrieves firmographic data and technology stack"
+      },
+      {
+        "start": 3596,
+        "end": 3889,
+        "text": "Step 3: AI Company Research\nGPT-4.1-mini analyzes company data to generate:\nSpecific pain points based on industry, size, tech stack\nGrowth opportunities and market positioning\nPersonalization hooks from company description\nRecommended outreach tone and CTA\nOne-liner insight for email opening"
+      },
+      {
+        "start": 3891,
+        "end": 4224,
+        "text": "Step 4: Personalized Email Generation\nAI crafts cold email following best practices:\nCuriosity-driven subject line (max 8 words)\nOpens with personalization hook showing research\nReferences ONE specific pain point\nFocuses on tangible outcomes (not product features)\nNatural CTA without being pushy\nProfessional but conversational tone"
+      },
+      {
+        "start": 4226,
+        "end": 4443,
+        "text": "Step 5: Data Output & Loop\nFormats all data for Google Sheets\nCreates Gmail compose link with pre-filled content\nUpdates sheet with complete results\nSets status to \"Completed\"\nWaits 2 seconds, then processes next lead"
+      },
+      {
+        "start": 6096,
+        "end": 6147,
+        "text": "Fallback uses first search result if no exact match"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中的潜在客户线索（域名、公司名、联系人、邮箱、行业等）",
+        "每条线索在 Google Sheets 中的处理状态（Research Status 列）"
+      ],
+      "conditions": [
+        "仅处理 Research Status 列为空、即尚未处理过的线索",
+        "企业信息库无精确匹配时，回退使用检索结果中的第一条"
+      ],
+      "allowed_actions": [
+        "将待处理线索的状态更新为 Pending",
+        "使用域名或邮箱在企业信息库中检索并匹配企业，获取行业、技术栈、收入、员工规模与社交资料",
+        "使用语言模型分析企业数据，产出 3-5 条痛点、2-3 条增长机会、3-4 条个性化切入点、建议的沟通语气与行动号召、一句话洞察，以及 High/Medium/Low 契合度评分",
+        "生成个性化开发邮件（主题行不超过 8 个词，正文 120-150 词）",
+        "生成预填内容的一键 Gmail 撰写链接",
+        "将结果与状态写回 Google Sheets 并将状态置为 Completed"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中每条已处理线索填入痛点、关键洞察、邮件主题、邮件正文、Gmail 撰写链接、生成日期与发送状态",
+        "处理中的线索状态显示为 Pending，处理完成后显示为 Completed",
+        "每条线索附带 High/Medium/Low 的契合度评分"
+      ],
+      "failure_behavior": [
+        "企业信息库未找到精确匹配时，回退使用检索结果中的第一条"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-091.packet.json",
+    "packet_sha256": "c44c3197ac15d18bf62f8e505ff3e793b2ff7abc5991e7d286b7e96105d67041",
+    "public_description_sha256": "2a3092da2f68280ffdd9e365ab3352b68a51aaa0cad097c46b46272a98aa8b62"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-091.response.json",
+    "verification_response_sha256": "bbf829b30751045917e8fd84bd1aa502e94311bccc742e05fd93fe61699d0b66",
+    "decision": "accept"
+  },
+  "formal_index": 102
+}

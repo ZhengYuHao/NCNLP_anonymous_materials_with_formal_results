@@ -1,0 +1,351 @@
+{
+  "task_id": "N8F-054",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "49660e8eb2926b788de6369d213136397bb07777176b29e8dfd1c87ba7ab1352",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周一 09:00 定时触发",
+      "node_type": "code",
+      "operation_family": "scheduled_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Weekly Monday 9AM Trigger"
+      ],
+      "requirement_evidence": [
+        "系统每周自动汇总指定 Google Docs 的更新情况",
+        "每周一 09:00 触发执行"
+      ],
+      "rationale": "按计划每周一 09:00 触发执行，为确定性定时触发操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "确定监控文档清单与统计区间",
+      "node_type": "code",
+      "operation_family": "monitor_config_preparation",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "monitor_config",
+          "type": "object",
+          "description": "受监控的 Google Docs 清单（文档 ID、名称、分类）及 7 天更新统计区间"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Docs List"
+      ],
+      "requirement_evidence": [
+        "确定受监控的 Google Docs 清单，包含文档 ID、名称与分类（例如项目、会议、更新），并设定 7 天的更新统计区间"
+      ],
+      "rationale": "确定受监控文档清单并设定 7 天统计区间，为确定性配置准备操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "获取文档内容与元数据",
+      "node_type": "code",
+      "operation_family": "document_fetch",
+      "inputs": [
+        {
+          "name": "monitor_config",
+          "type": "object",
+          "description": "受监控文档清单与统计区间"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "doc_content",
+          "type": "object",
+          "description": "受监控文档的正文内容"
+        },
+        {
+          "name": "doc_metadata",
+          "type": "object",
+          "description": "文档的元数据（最后修改时间、修改人、版本）"
+        }
+      ],
+      "native_evidence": [
+        "Get Doc Content",
+        "Get Doc Metadata"
+      ],
+      "requirement_evidence": [
+        "获取这些文档的内容与元数据（最后修改时间、修改人、版本）"
+      ],
+      "rationale": "获取文档正文与元数据，为确定性的外部读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "提取清洗文本并筛选更新文档",
+      "node_type": "code",
+      "operation_family": "text_extraction_and_filter",
+      "inputs": [
+        {
+          "name": "doc_content",
+          "type": "object",
+          "description": "文档正文内容"
+        },
+        {
+          "name": "doc_metadata",
+          "type": "object",
+          "description": "文档元数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "updated_docs",
+          "type": "object",
+          "description": "过去一周内更新过的文档，含清洗规范化后的纯文本及字数、修改人、最后更新日期等关键信息"
+        }
+      ],
+      "native_evidence": [
+        "Process Doc Data"
+      ],
+      "requirement_evidence": [
+        "仅保留过去一周内更新过的文档",
+        "提取文档的纯文本内容，进行清洗与规范化，并收集字数、修改人、最后更新日期等关键信息"
+      ],
+      "rationale": "提取纯文本、清洗规范化、收集关键信息并按 7 天区间筛选更新文档，为确定性变换与条件过滤操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "汇总更新文档为合并内容",
+      "node_type": "code",
+      "operation_family": "content_aggregation",
+      "inputs": [
+        {
+          "name": "updated_docs",
+          "type": "object",
+          "description": "过去一周内更新过的文档及关键信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "merged_content",
+          "type": "object",
+          "description": "所有更新文档汇总后的合并内容，作为周报生成素材"
+        }
+      ],
+      "native_evidence": [
+        "Aggregate Updated Docs"
+      ],
+      "requirement_evidence": [
+        "将所有更新过的文档汇总为一份合并内容，作为生成周报的素材"
+      ],
+      "rationale": "将更新文档汇总为合并内容，为确定性聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "生成商务风格周报摘要",
+      "node_type": "semantic",
+      "operation_family": "weekly_summary_generation",
+      "inputs": [
+        {
+          "name": "merged_content",
+          "type": "object",
+          "description": "更新文档的合并内容素材"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weekly_summary",
+          "type": "string",
+          "description": "含执行摘要、按文档的关键更新、重要变更、行动事项与下周重点的周报摘要"
+        }
+      ],
+      "native_evidence": [
+        "Generate AI Summary"
+      ],
+      "requirement_evidence": [
+        "使用语言模型生成商务风格的周报摘要，内容包含：执行摘要、按文档划分的关键更新、重要变更、行动事项以及下周重点"
+      ],
+      "rationale": "需求声明使用语言模型生成商务风格周报摘要，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "整理纯文本与 HTML 邮件正文",
+      "node_type": "code",
+      "operation_family": "email_content_formatting",
+      "inputs": [
+        {
+          "name": "weekly_summary",
+          "type": "string",
+          "description": "生成的周报摘要"
+        },
+        {
+          "name": "updated_docs",
+          "type": "object",
+          "description": "更新文档清单及其最后修改信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_bodies",
+          "type": "object",
+          "description": "纯文本与 HTML 两种格式的邮件正文及附件清单信息"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Email Content"
+      ],
+      "requirement_evidence": [
+        "将生成结果整理为纯文本与 HTML 两种格式的邮件正文，并附上更新文档清单及其最后修改信息"
+      ],
+      "rationale": "将周报整理为纯文本与 HTML 两种正文并附更新文档清单，为确定性格式化操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "通过 Gmail 发送周报邮件",
+      "node_type": "terminal",
+      "operation_family": "email_delivery",
+      "inputs": [
+        {
+          "name": "email_bodies",
+          "type": "object",
+          "description": "两种格式的邮件正文"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Summary Email"
+      ],
+      "requirement_evidence": [
+        "通过 Gmail 将周报发送给已配置的团队邮箱，邮件主题中包含本次统计的日期区间"
+      ],
+      "rationale": "通过 Gmail 将周报发送给团队邮箱，为流程最终的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后确定监控清单与统计区间。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "清单确定后获取文档内容与元数据。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "获取完成后提取清洗文本并筛选更新文档。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "筛选完成后汇总更新文档内容。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总素材就绪后生成周报摘要。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "周报生成后整理邮件正文。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "正文整理完成后发送周报邮件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "monitor_config",
+      "condition": null,
+      "rationale": "监控清单与统计区间送入文档获取节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "doc_content",
+      "condition": null,
+      "rationale": "文档正文送入提取清洗节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "doc_metadata",
+      "condition": null,
+      "rationale": "文档元数据送入提取清洗节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "updated_docs",
+      "condition": null,
+      "rationale": "筛选后的更新文档送入汇总节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "merged_content",
+      "condition": null,
+      "rationale": "合并内容素材送入周报生成节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "weekly_summary",
+      "condition": null,
+      "rationale": "周报摘要送入邮件正文整理节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n4",
+      "target": "n7",
+      "variable": "updated_docs",
+      "condition": null,
+      "rationale": "更新文档清单及其最后修改信息送入邮件正文整理节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n7",
+      "target": "n8",
+      "variable": "email_bodies",
+      "condition": null,
+      "rationale": "整理后的邮件正文送入发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：定时触发（code）、确定监控清单与统计区间（code）、获取文档内容与元数据（code）、提取清洗文本并筛选更新文档（code）、汇总合并内容（code）、生成商务风格周报摘要（semantic）、整理纯文本与 HTML 邮件正文（code）、Gmail 发送（terminal）。混合任务满足 semantic→code 有类型 DFG 边（weekly_summary）。"
+}

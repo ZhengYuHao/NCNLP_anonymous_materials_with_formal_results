@@ -1,0 +1,309 @@
+{
+  "task_id": "N8F-013",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "d03143cde3f221518292eccff8138749c1dca4c12491874d4e7267246a72a273",
+  "fixtures": [
+    {
+      "fixture_id": "F-MAIL-MATCH",
+      "purpose": "正常用例：携带正常垃圾评分（3）的入站邮件，知识库中存在匹配问答，应走自动回答路径",
+      "input_data": {
+        "webhook_payload": {
+          "sender": "customer@example.com",
+          "subject": "Password reset question",
+          "body": "How do I reset my password for the admin console?",
+          "spam_score": 3
+        }
+      }
+    },
+    {
+      "fixture_id": "F-MAIL-NOMATCH",
+      "purpose": "正常用例：携带正常垃圾评分（1）的入站邮件，模型匹配置信度低于 85%，应走人工升级路径",
+      "input_data": {
+        "webhook_payload": {
+          "sender": "customer2@example.com",
+          "subject": "Billing invoice inquiry",
+          "body": "Can you explain my last invoice line items in detail?",
+          "spam_score": 1
+        }
+      }
+    },
+    {
+      "fixture_id": "F-MAIL-SPAM-HIGH",
+      "purpose": "异常用例：垃圾评分 15 大于阈值 10，应直接丢弃且不进行任何后续处理",
+      "input_data": {
+        "webhook_payload": {
+          "sender": "spammer@example.com",
+          "subject": "Buy cheap watches",
+          "body": "Limited time offer!!!",
+          "spam_score": 15
+        }
+      }
+    },
+    {
+      "fixture_id": "F-MAIL-SPAM-BOUNDARY",
+      "purpose": "边界用例：垃圾评分恰好等于 10，需求仅规定大于 10 才丢弃，因此等于 10 时应继续处理",
+      "input_data": {
+        "webhook_payload": {
+          "sender": "customer3@example.com",
+          "subject": "Feature request",
+          "body": "Please add dark mode support to the app.",
+          "spam_score": 10
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-NOTION-LIST",
+      "dependency_type": "n8n-nodes-base.notion",
+      "operation": "query_qa_database",
+      "request_contract": {
+        "database": "support_qa"
+      },
+      "response_contract": {
+        "entries": [
+          {
+            "id": "qa-101",
+            "question": "How do I reset my password?",
+            "answer": "Go to Account Settings > Security and click Reset Password."
+          },
+          {
+            "id": "qa-102",
+            "question": "How do I change my notification preferences?",
+            "answer": "Open Settings > Notifications and toggle each channel."
+          },
+          {
+            "id": "qa-103",
+            "question": "How do I export my data?",
+            "answer": "Use Settings > Data Export and choose the format."
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-MATCH-HIT",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "select_matching_qa",
+      "request_contract": {
+        "sender": "customer@example.com",
+        "body": "How do I reset my password for the admin console?"
+      },
+      "response_contract": {
+        "match_id": "qa-101",
+        "confidence": 0.92
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-MATCH-MISS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "select_matching_qa",
+      "request_contract": {
+        "sender": "customer2@example.com",
+        "body": "Can you explain my last invoice line items in detail?"
+      },
+      "response_contract": {
+        "match_id": "NO_MATCH",
+        "confidence": 0.4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DRAFT-REPLY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "draft_structured_reply",
+      "request_contract": {
+        "matched_answer": "Go to Account Settings > Security and click Reset Password."
+      },
+      "response_contract": {
+        "reply_subject": "Re: Password reset question",
+        "reply_body": "Dear customer,\n\nYou can reset your password by going to Account Settings > Security and clicking Reset Password.\n\nBest regards,\nSupport Team"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-DRAFT-ACK",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "operation": "draft_acknowledgement",
+      "request_contract": {
+        "sender": "customer2@example.com",
+        "body": "Can you explain my last invoice line items in detail?"
+      },
+      "response_contract": {
+        "ack_subject": "We have received your request",
+        "ack_body": "Dear customer,\n\nWe have received your request and a team member will get back to you shortly.\n\nBest regards,\nSupport Team"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-EMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.emailSend",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "customer@example.com",
+        "subject": "Re: Password reset question",
+        "body": "Dear customer,\n\nYou can reset your password by going to Account Settings > Security and clicking Reset Password.\n\nBest regards,\nSupport Team"
+      },
+      "response_contract": {
+        "accepted": true,
+        "message_id": "mail-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-MATCH-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-MAIL-MATCH"
+      ],
+      "mock_ids": [
+        "M-NOTION-LIST",
+        "M-LLM-MATCH-HIT",
+        "M-LLM-DRAFT-REPLY",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-MATCH-1",
+          "target": "exec_log.notion.query_qa_database.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "需求要求先从 Notion 数据库读取全部问答条目，知识库查询必须发生一次"
+        },
+        {
+          "assertion_id": "A-MATCH-2",
+          "target": "exec_log.lmChatOpenRouter.select_matching_qa.request.body",
+          "operator": "contains",
+          "expected": "How do I reset my password",
+          "rationale": "匹配请求必须携带邮件正文内容，否则无法选择最匹配的问答条目"
+        },
+        {
+          "assertion_id": "A-MATCH-3",
+          "target": "exec_log.emailSend.send_email.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "匹配成功时只应向客户发送一封自动回复，不应触发内部团队转发"
+        },
+        {
+          "assertion_id": "A-MATCH-4",
+          "target": "exec_log.emailSend.send_email.request.subject",
+          "operator": "equals",
+          "expected": "Re: Password reset question",
+          "rationale": "自动回复必须基于匹配到的 Notion 答案起草，回复主题应来自草稿且为邮件回复格式"
+        },
+        {
+          "assertion_id": "A-MATCH-5",
+          "target": "exec_log.emailSend.send_email.request.body",
+          "operator": "contains",
+          "expected": "Account Settings > Security",
+          "rationale": "回复正文必须包含匹配到的 Notion 答案内容，证明回复依据知识库作答而非凭空生成"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NOMATCH-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-MAIL-NOMATCH"
+      ],
+      "mock_ids": [
+        "M-NOTION-LIST",
+        "M-LLM-MATCH-MISS",
+        "M-LLM-DRAFT-ACK",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NOMATCH-1",
+          "target": "exec_log.lmChatOpenRouter.select_matching_qa.response.confidence",
+          "operator": "equals",
+          "expected": 0.4,
+          "rationale": "固定模拟的匹配置信度为 40%，低于 85% 阈值，必须触发无匹配分支"
+        },
+        {
+          "assertion_id": "A-NOMATCH-2",
+          "target": "exec_log.emailSend.send_email.calls",
+          "operator": "equals",
+          "expected": 2,
+          "rationale": "无匹配时必须发送两封邮件：一封将原始请求发给内部团队，一封将受理确认发给客户"
+        },
+        {
+          "assertion_id": "A-NOMATCH-3",
+          "target": "exec_log.emailSend.send_email.requests[0].body",
+          "operator": "contains",
+          "expected": "Can you explain my last invoice line items",
+          "rationale": "发给内部团队的邮件必须包含客户原始请求正文，使人工可据此跟进；路径按统一 trace 契约由 request[0] 修正为 requests[0]"
+        },
+        {
+          "assertion_id": "A-NOMATCH-4",
+          "target": "exec_log.emailSend.send_email.requests[1].to",
+          "operator": "equals",
+          "expected": "customer2@example.com",
+          "rationale": "受理确认邮件必须发送给客户本人；路径按统一 trace 契约由 request[1] 修正为 requests[1]"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SPAM-DROP",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-MAIL-SPAM-HIGH"
+      ],
+      "mock_ids": [],
+      "assertions": [
+        {
+          "assertion_id": "A-SPAM-1",
+          "target": "exec_log.mock_calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "垃圾评分 15 大于 10 时邮件必须被丢弃，Notion、模型、邮件发送均不应被调用"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SPAM-BOUNDARY",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-MAIL-SPAM-BOUNDARY"
+      ],
+      "mock_ids": [
+        "M-NOTION-LIST",
+        "M-LLM-MATCH-HIT",
+        "M-LLM-DRAFT-REPLY",
+        "M-EMAIL-SEND"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BOUND-1",
+          "target": "exec_log.notion.query_qa_database.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "垃圾评分恰好等于 10 时不符合大于 10 的丢弃条件，邮件必须继续处理并加载知识库"
+        },
+        {
+          "assertion_id": "A-BOUND-2",
+          "target": "exec_log.emailSend.send_email.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "边界值 10 不应被误判为垃圾邮件，应正常走匹配后的自动回复路径"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖匹配成功、无匹配升级、垃圾评分超高丢弃与阈值边界（评分等于 10 不丢弃）四类场景。外部依赖（Notion 查询、OpenRouter 匹配与起草、SMTP 发送）全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为可计算的调用次数、请求字段包含与发送对象相等检查。"
+}

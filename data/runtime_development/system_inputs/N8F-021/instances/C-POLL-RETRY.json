@@ -1,0 +1,17 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-021",
+  "case_id": "C-POLL-RETRY",
+  "kind": "boundary",
+  "input_data": {
+    "form": {
+      "own_product_url": "https://www.amazon.com/dp/B0OWN001",
+      "competitor_urls": [
+        "https://www.amazon.com/dp/B0CMP001",
+        "https://www.amazon.com/dp/B0CMP002",
+        "https://www.amazon.com/dp/B0CMP003"
+      ]
+    }
+  },
+  "input_sha256": "64FA16E704EEFF0EEDA084B442720BB04E11202A9F19A6D6D6A2840A56135ABA"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-045",
+  "case_id": "C-REMINDER-OVULATION",
+  "kind": "positive",
+  "input_data": {
+    "today": "2026-08-15",
+    "subscriber": {
+      "email": "alice@example.com",
+      "last_period_start": "2026-08-01",
+      "cycle_length_days": 28,
+      "active": true,
+      "last_sent": {}
+    }
+  },
+  "input_sha256": "39899FE1259246AE254D2099D9C2D0BB091CF2C9676E89D5D73153B698780267"
+}

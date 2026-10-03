@@ -1,0 +1,67 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-095",
+  "source_id": "n8n:16159",
+  "workflow_sha256": "fbb1caf1868c2f6e5f3cfbedaf95ef756adc2eed9aabd24c7b514b21d476fc8b",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "fa6134b3ff29eede29187b914a84d956494ca03cff7ae614f0a7803a96446175",
+  "requirement": {
+    "requirement_text": "对外提供一个 POST 接口。收到请求后，先对入参（子版块、排序方式、点子数量上限、帖子数量上限）做规范化处理；再按指定的子版块从 Reddit 抓取帖子，并将其整理为带有来源元数据的唯一帖子条目；逐条遍历每个帖子，获取该帖子的热门评论，并将帖子正文与评论上下文合并为一份富文本内容；将这份富文本内容交由语言模型处理，产出结构化的 MVP 商业创意或“否决（kill）”结论；随后将模型输出与原始 Reddit 来源数据合并，规范化字段、施加约束规则，并由多个分项得分计算出综合评分；最后按综合评分排序，取不超过请求数量上限的、未被否决的优质创意，连同被否决的条目一并通过接口响应返回。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 236,
+        "text": "Quick Overview\nThis workflow exposes a webhook that fetches Reddit posts and top comments, uses OpenRouter LLM models to generate structured MVP business ideas, scores and filters them, and returns the ranked results as a JSON response."
+      },
+      {
+        "start": 238,
+        "end": 1071,
+        "text": "How it works\nReceives a POST webhook request and normalizes inputs like subreddits, sort order, idea limit, and post limit.\nFetches posts from the specified subreddits via the Reddit API and reshapes them into unique post items with source metadata.\nIterates through each post, fetches the top comments from Reddit, and builds an enriched text payload combining the post and comment context.\nSends the enriched content to an OpenRouter chat model through a LangChain LLM chain to produce a structured JSON idea or a “kill” verdict.\nMerges the AI output back with the original Reddit source data, normalizes fields, applies guardrails, and computes a composite score from multiple sub-scores.\nSorts and selects the top-scoring non-killed ideas up to the requested limit and returns the ideas plus killed items in the webhook response."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "POST 请求，入参包含子版块、排序方式、点子数量上限与帖子数量上限",
+        "Reddit 指定子版块的帖子及其热门评论"
+      ],
+      "conditions": [
+        "只有未被否决的创意进入排序与筛选",
+        "返回的创意数量不超过请求中的点子数量上限"
+      ],
+      "allowed_actions": [
+        "从指定子版块抓取帖子并整理为带来源元数据的唯一条目",
+        "获取每个帖子的热门评论并与帖子正文合并为富文本内容",
+        "调用语言模型生成结构化的 MVP 商业创意或否决结论",
+        "将模型输出与原始帖子数据合并、规范化字段并施加约束规则",
+        "由多个分项得分计算综合评分",
+        "按综合评分排序并选取最优创意"
+      ],
+      "visible_outcomes": [
+        "接口返回按综合评分排序的优质 MVP 创意列表",
+        "接口同时返回被否决（kill）的条目"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-095.packet.json",
+    "packet_sha256": "7a90ca201defb326803c725a4be5f0aa32b7d690046c373f64570a9aafdeeec5",
+    "public_description_sha256": "3bdf138ddbc6013c702963bc4048c9347a414b48fe39ff4c36150b3714d49ee6"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-095.response.json",
+    "verification_response_sha256": "f780f44a74712e4234ee0b2e66c0da32968cdda69d05767eafbfcb0d569f82bd",
+    "decision": "accept"
+  },
+  "formal_index": 106
+}

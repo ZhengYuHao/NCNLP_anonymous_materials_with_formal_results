@@ -1,0 +1,257 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-028",
+  "case_id": "C-pos-main",
+  "kind": "positive",
+  "input_data": {
+    "fixtures": {
+      "F-leads": {
+        "leads": [
+          {
+            "id": "lead1",
+            "name": "Alice Chen",
+            "email": "alice@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead2",
+            "name": "Bob Li",
+            "email": "bob@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead3",
+            "name": "Carol Wu",
+            "email": "carol@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead4",
+            "name": "Dan Xu",
+            "email": "dan@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "lead5",
+            "name": "Eva Sun",
+            "email": "eva@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active1",
+            "name": "Frank Ma",
+            "email": "frank@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active2",
+            "name": "Grace Lin",
+            "email": "grace@example.com",
+            "status": "active",
+            "lifecycle_stage": "opportunity",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active3",
+            "name": "Henry Gao",
+            "email": "henry@example.com",
+            "status": "active",
+            "lifecycle_stage": "customer",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active4",
+            "name": "Ivy Zhang",
+            "email": "ivy@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active5",
+            "name": "Jack Zhou",
+            "email": "jack@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active6",
+            "name": "Kate Hu",
+            "email": "kate@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active7",
+            "name": "Leo Pan",
+            "email": "leo@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active8",
+            "name": "Mia Tang",
+            "email": "mia@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active9",
+            "name": "Nick Ren",
+            "email": "nick@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active10",
+            "name": "Olive Ye",
+            "email": "olive@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active11",
+            "name": "Paul Qiao",
+            "email": "paul@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active12",
+            "name": "Quinn Bao",
+            "email": "quinn@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active13",
+            "name": "Rita He",
+            "email": "rita@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active14",
+            "name": "Sam Jiao",
+            "email": "sam@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "active15",
+            "name": "Tina Kong",
+            "email": "tina@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-09-01"
+          },
+          {
+            "id": "late1",
+            "name": "Uma Guo",
+            "email": "uma@example.com",
+            "status": "bad_timing",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late2",
+            "name": "Vera Lei",
+            "email": "vera@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late3",
+            "name": "Will Feng",
+            "email": "will@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_c",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late4",
+            "name": "Xena Shao",
+            "email": "xena@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_a",
+            "last_activity": "2026-08-25"
+          },
+          {
+            "id": "late5",
+            "name": "Yuki Luo",
+            "email": "yuki@example.com",
+            "status": "active",
+            "lifecycle_stage": "lead",
+            "owner_id": "owner_b",
+            "last_activity": "2026-08-25"
+          }
+        ]
+      },
+      "F-owners": {
+        "owner_a": {
+          "owner_id": "owner_a",
+          "name": "Alpha Manager",
+          "email": "alpha@corp.com"
+        },
+        "owner_b": {
+          "owner_id": "owner_b",
+          "name": "Beta Manager",
+          "email": "beta@corp.com"
+        },
+        "owner_c": {
+          "owner_id": "owner_c",
+          "name": "Gamma Manager",
+          "email": "gamma@corp.com"
+        }
+      }
+    }
+  },
+  "input_sha256": "07CE73A0F0BCBE489FEECDB4D85DC4CD4E2E098C05A36954567417CDB8F4448D"
+}

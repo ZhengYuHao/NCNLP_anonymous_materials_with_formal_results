@@ -1,0 +1,76 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-100",
+  "source_id": "n8n:12034",
+  "workflow_sha256": "a0b544c181243d118b7506bd20327939976635e4bf042478be87e71a11f3f1f4",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "87f0a5e946678e7938e4451f78e1089082865c983dffd2e3d42936b95f799fe9",
+  "requirement": {
+    "requirement_text": "每月自动完成工资核算与税务合规处理：获取收入与工资数据，执行工资计算，由语言模型应用用户配置的税款代扣规则，汇总税务信息，并使用语言模型进行合规校验；生成结构化的报表文档并将其转换为 PDF；将记录保存到 Google Sheets 作为审计留痕，将文件归档到 Google Drive，并将税务摘要发送给税务代理人。代扣规则、合规阈值与税务代理人由用户配置，面向 HR 部门与工资处理团队。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 743,
+        "text": "How It Works\nAutomates monthly payroll processing and tax compliance by calculating employee payroll, applying accurate withholdings, generating comprehensive tax summaries, and producing compliance-ready documentation. The system fetches revenue and payroll data, performs detailed payroll calculations, applies AI-driven tax withholding rules, aggregates tax summary information, and verifies compliance using GPT-4 tax analysis. It generates structured HTML documents, converts them to PDF format, stores records in Google Sheets for audit trails, archives files to Google Drive, and sends summaries to tax agents. Designed for HR departments and payroll processing teams seeking automated, accurate, and fully compliant payroll management."
+      },
+      {
+        "start": 745,
+        "end": 1051,
+        "text": "Setup Steps\nConnect payroll data source and configure revenue fetch parameters.\nSet up OpenAI GPT-4 API for tax withholding logic and compliance analysis.\nConfigure Google Sheets for audit storage and Google Drive for long-term archiving.\nDefine tax withholding rules, compliance thresholds, and tax agent."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "收入数据与工资数据",
+        "用户配置的代扣规则与合规阈值",
+        "税务代理人信息"
+      ],
+      "conditions": [
+        "应用用户配置的代扣规则与合规阈值"
+      ],
+      "allowed_actions": [
+        "获取收入与工资数据",
+        "执行工资计算，并由语言模型应用用户配置的税款代扣规则",
+        "汇总税务信息",
+        "使用语言模型进行合规校验",
+        "生成结构化报表文档并转换为 PDF",
+        "将记录保存到 Google Sheets 作为审计留痕",
+        "将文件归档到 Google Drive",
+        "向税务代理人发送税务摘要"
+      ],
+      "visible_outcomes": [
+        "员工工资与税款代扣的计算结果",
+        "综合税务摘要",
+        "PDF 格式的合规文档",
+        "Google Sheets 中的审计记录",
+        "Google Drive 中的归档文件",
+        "发送给税务代理人的摘要"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/packets/N8F-100.packet.json",
+    "packet_sha256": "8f30c9c073f5c69f932aa591679eb139ee9320398c4c4b8ce44dfef9b2ae15ab",
+    "public_description_sha256": "b0eda37bf52c6cc62c02b60dfbc8f3f258a2747917efe9054ce01bef58f90319"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_07/responses/N8F-100.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-100.revision.json",
+    "revision_record_sha256": "ee1e4e723727c1d0e9152a58c28912b728576a28386332c3b1254af2d73eefd1",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-08/responses/N8F-100.response.json",
+    "final_confirmation_sha256": "02779115b8d0478602de2b36ac555479a45d6870e08f5c7045db6c918794bc42",
+    "decision": "accept"
+  },
+  "formal_index": 111
+}

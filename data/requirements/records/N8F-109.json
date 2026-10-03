@@ -1,0 +1,68 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-109",
+  "source_id": "n8n:6753",
+  "workflow_sha256": "0d8599309455c370a559408056724314ecbc3300dcd3b174fd2503d6762d8f02",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "a1f853f4b619a03041ae38ce5d5b33ef74150af3c5cf9be6c5d7a906d8b6452e",
+  "requirement": {
+    "requirement_text": "在 Google Sheets 中完成一次针对效果数据的入门级数据整理与分析。\n处理过程包括：将两个数据集按共同的列（Channel）进行合并；按效果指标（Clicks、Spend）筛选数据行；再按表现将数据行分为 Great 与 Poor 两类；按团队负责人对结果进行汇总；最后由语言模型驱动的智能体生成一段书面分析，指出表现最好与最差的成员。",
+    "source_spans": [
+      {
+        "start": 1,
+        "end": 132,
+        "text": "This beginner-friendly n8n workflow teaches essential data manipulation techniques using Google Sheets and AI. You'll learn how to:"
+      },
+      {
+        "start": 134,
+        "end": 429,
+        "text": "✅ Merge two datasets by a shared column (Channel)\n🔍 Filter rows based on performance metrics (Clicks, Spend)\n🔀 Branch logic into \"Great\" vs. \"Poor\" outcomes\n📊 Summarize results by team leader\n🤖 Use an OpenAI-powered agent to generate a written analysis highlighting the best and worst performers"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中的两个待合并数据集，按共同列 Channel 关联",
+        "数据集中的效果指标字段 Clicks 与 Spend",
+        "用于汇总的团队负责人分组信息"
+      ],
+      "conditions": [
+        "两个数据集按共同列 Channel 进行合并",
+        "筛选依据为效果指标 Clicks 与 Spend（原文未给出具体筛选取值）",
+        "按表现把数据行分为 Great 与 Poor 两类（原文未给出判定阈值）"
+      ],
+      "allowed_actions": [
+        "按共同列 Channel 合并两个数据集",
+        "按效果指标 Clicks、Spend 筛选数据行",
+        "按表现将数据行归入 Great 或 Poor",
+        "按团队负责人汇总结果",
+        "由语言模型驱动的智能体生成书面分析，指出表现最好与最差的成员"
+      ],
+      "visible_outcomes": [
+        "按团队负责人汇总后的结果",
+        "一段由语言模型生成的书面分析，指出表现最好与最差的成员"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/packets/N8F-109.packet.json",
+    "packet_sha256": "ee4c9d30e90a6978bb7cdade09c2583fac4be61c26f70e893b7c4a1bac9e5979",
+    "public_description_sha256": "fd28c50ec56c66b2d54bb94b5425e133d3784320d17cab70617595a400c8eb08"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_08/responses/N8F-109.response.json",
+    "verification_response_sha256": "17f55d7ded6022ee282cedc798fc15772b0803915c01d09f067fc9bcdbca1504",
+    "decision": "accept"
+  },
+  "formal_index": 120
+}

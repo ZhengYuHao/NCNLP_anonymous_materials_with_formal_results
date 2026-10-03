@@ -1,0 +1,164 @@
+{
+  "task_id": "N8F-107",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "140a964cf62073f331a34c55c77f43f960ee3f146cfdb1f61fbd02fc98037fc3",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收抓取请求",
+      "node_type": "code",
+      "operation_family": "trigger_webhook",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "scrape_request",
+          "type": "object",
+          "description": "POST 请求内容（自然语言指令，必填；可选的 JSON Schema 输出结构）"
+        }
+      ],
+      "native_evidence": ["Receive Scrape Request (webhook POST, responseMode=responseNode)"],
+      "requirement_evidence": ["调用方通过 POST 请求提交一条自然语言指令，并可附带一个可选的 JSON Schema，用于描述期望的输出结构"],
+      "rationale": "以 webhook 接收调用方请求为入口，确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "校验输出结构",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "scrape_request",
+          "type": "object",
+          "description": "POST 请求内容（自然语言指令与可选 JSON Schema）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "validated_request",
+          "type": "object",
+          "description": "校验通过后的请求（自然语言指令与有效输出结构；未提供结构时为宽松默认结构）"
+        }
+      ],
+      "native_evidence": ["Validate Output Schema (code)"],
+      "requirement_evidence": ["服务在把数据交给智能体之前先校验该输出结构：若调用方未提供输出结构或该结构为空，则回退到一个宽松的默认结构", "若提供了输出结构，但其不是 JSON 对象（例如是字符串、数组或基本类型），或缺少 type 属性，或 type 属性的取值不是对象、数组、字符串、数字、布尔之一，则返回一条包含说明信息与示例结构的错误响应", "校验请求中携带的输出结构"],
+      "rationale": "结构存在性检查、类型检查与默认结构回退均为确定性规则，判 code。校验在交给智能体之前完成（需求声明的时序条件）；默认结构回退折叠进校验通过路径。"
+    },
+    {
+      "node_id": "n3",
+      "label": "研究并抓取网页数据",
+      "node_type": "semantic",
+      "operation_family": "llm_agent_research",
+      "inputs": [
+        {
+          "name": "validated_request",
+          "type": "object",
+          "description": "校验通过后的请求（自然语言指令与有效输出结构）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "与所提供结构或默认结构一致的格式化研究结果"
+        }
+      ],
+      "native_evidence": ["Research & Extract Web Data (langchain.agent)", "Primary Chat Model (lmChatOpenRouter)", "Fallback Chat Model (lmChatOpenRouter)", "Parser Chat Model (lmChatOpenRouter)", "Format Response to Schema (outputParserStructured)", "/search with Firecrawl (firecrawlTool)", "/scrape with Firecrawl (firecrawlTool)", "Interact context with Firecrawl (firecrawlTool)", "Execute interaction with Firecrawl (firecrawlTool)", "Stop interaction with Firecrawl (firecrawlTool)"],
+      "requirement_evidence": ["校验通过后，智能体依据自然语言指令研究并抓取网页数据：检索网页，发现相关页面与信息来源；抓取任意 URL，提取干净的结构化内容；在实时会话中与已抓取的页面交互，点击按钮、填写表单、浏览动态内容，并提取静态抓取无法获取的数据", "智能体可自主决定使用哪些能力", "最后，服务将智能体的输出格式化为与所提供结构或默认结构一致的结果"],
+      "rationale": "智能体自主决定检索、抓取与交互策略需开放推理与文本理解，判 semantic。Firecrawl 各工具（search/scrape/interact）为智能体的工具依赖，模型与结构化输出解析器为模型依赖，均折叠进本节点契约；按结构格式化输出作为本节点的输出契约（原生为 agent 的 ai_outputParser 依赖）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "返回结构错误响应",
+      "node_type": "terminal",
+      "operation_family": "external_action_or_io",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": ["Return Schema Error (respondToWebhook)"],
+      "requirement_evidence": ["则返回一条包含说明信息与示例结构的错误响应", "输出结构不合法（不是 JSON 对象、缺少 type 属性或 type 取值非法）时，返回一条包含说明信息与示例结构的错误响应，不进入网页研究与抓取环节", "输出结构不合法时，调用方收到包含说明信息与示例结构的错误响应"],
+      "rationale": "输出结构不合法时的错误响应是需求声明的安全拒绝行为（含说明信息与示例结构），为本分支终点，不进入研究与抓取，无 CFG 出边，判 terminal。"
+    },
+    {
+      "node_id": "n5",
+      "label": "返回结构化结果",
+      "node_type": "terminal",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "structured_result",
+          "type": "object",
+          "description": "与所提供结构或默认结构一致的结构化 JSON 结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Return Structured Results (respondToWebhook)"],
+      "requirement_evidence": ["并把结构化 JSON 返回给调用方；若调用方提供了结构，返回结果符合该结构；若未提供，则返回结构灵活的数据对象", "把结构化 JSON 结果返回给调用方", "调用方收到符合所提供结构的 JSON 结果"],
+      "rationale": "把结构化 JSON 返回调用方是需求声明的最终可见结果，为本链路终点，无 CFG 出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "请求接收后先校验输出结构（需求声明的校验时序）。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "output_schema_valid == true",
+      "rationale": "校验通过（含回退默认结构）后交由智能体研究抓取。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": "output_schema_valid == false",
+      "rationale": "结构不合法时返回错误响应，不进入研究与抓取环节。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "格式化后的结构化结果返回给调用方。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "scrape_request",
+      "condition": null,
+      "rationale": "校验消费请求中的自然语言指令与可选输出结构。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "validated_request",
+      "condition": null,
+      "rationale": "智能体消费自然语言指令与有效输出结构（code 到 semantic 的有类型数据边）。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n3",
+      "target": "n5",
+      "variable": "structured_result",
+      "condition": null,
+      "rationale": "返回调用方消费格式化后的结构化结果。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n4", "n5"],
+  "confidence": 0.9,
+  "notes": "关键取舍：1) 智能体的 Firecrawl 工具（search/scrape/interact 系列）按工具依赖折叠进智能体节点，不逐个单列（需求以完整网页浏览能力声明该行为集合）。2) 按结构格式化输出（原生 ai_outputParser + Parser Chat Model）折叠进智能体节点输出契约，未单列节点。3) 校验失败分支为需求声明的安全拒绝行为，单列 terminal，且确认不进入研究与抓取环节。"
+}

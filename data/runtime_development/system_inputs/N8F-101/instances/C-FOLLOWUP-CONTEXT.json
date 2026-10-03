@@ -1,0 +1,35 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-101",
+  "case_id": "C-FOLLOWUP-CONTEXT",
+  "kind": "positive",
+  "input_data": {
+    "chat_session_id": "chat-0001",
+    "question": "And the month before that?",
+    "history": [
+      {
+        "role": "user",
+        "content": "Which month was best?"
+      },
+      {
+        "role": "assistant",
+        "content": "June 2026 had the highest revenue of 1500."
+      }
+    ],
+    "sheet_data": [
+      {
+        "Month": "2026-04",
+        "Revenue": 800
+      },
+      {
+        "Month": "2026-05",
+        "Revenue": 1000
+      },
+      {
+        "Month": "2026-06",
+        "Revenue": 1500
+      }
+    ]
+  },
+  "input_sha256": "4CAC7902B89357B204D07A54FC8E36CDB202F1B605EAAA8F1C365FCB91A852E2"
+}

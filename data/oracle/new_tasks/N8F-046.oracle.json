@@ -1,0 +1,347 @@
+{
+  "task_id": "N8F-046",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "24f7a2f31482da327d5a0675a9620f3e1e4c1851355eef433237aee98fb5d3fe",
+  "fixtures": [
+    {
+      "fixture_id": "F-STATES-ACTIVE-ONLY",
+      "purpose": "正常用例：States 标签页含 TX(Active) 与 CA(Inactive) 两行，关键词配置含 2 个，验证仅处理 Active 州并按关键词展开搜索词",
+      "input_data": {
+        "states_sheet": [
+          {
+            "state": "TX",
+            "status": "Active"
+          },
+          {
+            "state": "CA",
+            "status": "Inactive"
+          }
+        ],
+        "keywords": ["auto transport", "car shipping"]
+      }
+    },
+    {
+      "fixture_id": "F-SERPAPI-DUP-AND-INCOMPLETE",
+      "purpose": "正常用例：搜索服务返回 4 条本地商家结果，其中 1 条字段不完整、2 条重复（同名称同电话），验证过滤与去重",
+      "input_data": {
+        "serpapi_response": {
+          "local_results": [
+            {
+              "name": "Lone Star Transport",
+              "phone": "+1-512-555-0101",
+              "website": "https://lonestar.example.com",
+              "address": "Austin, TX",
+              "state": "TX"
+            },
+            {
+              "name": "Lone Star Transport",
+              "phone": "+1-512-555-0101",
+              "website": "https://lonestar.example.com/contact",
+              "address": "Austin, TX",
+              "state": "TX"
+            },
+            {
+              "name": "Hill Country Movers",
+              "phone": "",
+              "website": "https://hcm.example.com",
+              "address": "San Antonio, TX",
+              "state": "TX"
+            },
+            {
+              "name": "Rio Grande Auto Shipping",
+              "phone": "+1-210-555-0142",
+              "website": "https://rio.example.com",
+              "address": "El Paso, TX",
+              "state": "TX"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "fixture_id": "F-SERPAPI-ERROR",
+      "purpose": "正常用例（错误路径）：搜索服务对某搜索词返回错误，验证错误被记录到 Errors 标签页",
+      "input_data": {
+        "serpapi_error": {
+          "query": "car shipping in TX",
+          "error": "rate_limit_exceeded"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-LEAD-WITHOUT-WEBSITE",
+      "purpose": "边界用例：某条线索没有网站字段，验证跳过联系页面抓取与邮箱提取但仍生成开发信并写入 Leads",
+      "input_data": {
+        "lead": {
+          "name": "Corner Garage",
+          "phone": "+1-713-555-0177",
+          "website": null,
+          "address": "Houston, TX",
+          "state": "TX",
+          "keyword": "auto transport"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-SERPAPI-TX-1",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "google_maps_search",
+      "request_contract": {
+        "query": "auto transport in TX"
+      },
+      "response_contract": {
+        "local_results": [
+          {
+            "name": "Lone Star Transport",
+            "phone": "+1-512-555-0101",
+            "website": "https://lonestar.example.com",
+            "address": "Austin, TX",
+            "state": "TX"
+          },
+          {
+            "name": "Rio Grande Auto Shipping",
+            "phone": "+1-210-555-0142",
+            "website": "https://rio.example.com",
+            "address": "El Paso, TX",
+            "state": "TX"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SERPAPI-TX-2",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "google_maps_search",
+      "request_contract": {
+        "query": "car shipping in TX"
+      },
+      "response_contract": {
+        "local_results": [
+          {
+            "name": "Hill Country Movers",
+            "phone": "+1-830-555-0166",
+            "website": "https://hcm.example.com",
+            "address": "San Antonio, TX",
+            "state": "TX"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-HTTP-CONTACT-FETCH",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_contact_page",
+      "request_contract": {
+        "url": "https://lonestar.example.com/contact"
+      },
+      "response_contract": {
+        "html": "<html><body><a href=\"mailto:hello@lonestar.example.com\">Email</a><p>sales@lonestar.example.com</p></body></html>"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-OUTREACH",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_outreach_email",
+      "request_contract": {
+        "lead": "normalized_lead"
+      },
+      "response_contract": {
+        "email_text": "Hi, we help auto transporters find more customers. Would you like a demo?"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-LEAD",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_lead",
+      "request_contract": {
+        "sheet": "Leads",
+        "lead": "normalized_lead_with_email"
+      },
+      "response_contract": {
+        "row_number": 21,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND-ERROR",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_error",
+      "request_contract": {
+        "sheet": "Errors",
+        "query": "car shipping in TX",
+        "error": "rate_limit_exceeded"
+      },
+      "response_contract": {
+        "row_number": 3,
+        "updated": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-ACTIVE-STATES-EXPANSION",
+      "kind": "positive",
+      "fixture_ids": ["F-STATES-ACTIVE-ONLY"],
+      "mock_ids": ["M-SERPAPI-TX-1", "M-SERPAPI-TX-2"],
+      "assertions": [
+        {
+          "assertion_id": "A-AS-1",
+          "target": "exec_log.states_processed",
+          "operator": "equals",
+          "expected": ["TX"],
+          "rationale": "需求要求仅保留标记为 Active 的行，CA 为 Inactive 不得被处理"
+        },
+        {
+          "assertion_id": "A-AS-2",
+          "target": "exec_log.search_queries",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "1 个生效州配合 2 个关键词必须展开为 2 个搜索词"
+        },
+        {
+          "assertion_id": "A-AS-3",
+          "target": "exec_log.search_queries[0]",
+          "operator": "equals",
+          "expected": "auto transport in TX",
+          "rationale": "搜索词必须按“关键词 in 州”的形式组合"
+        },
+        {
+          "assertion_id": "A-AS-4",
+          "target": "exec_log.search_queries[1]",
+          "operator": "equals",
+          "expected": "car shipping in TX",
+          "rationale": "第二个搜索词同样必须按“关键词 in 州”组合"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NORMALIZE-FILTER-DEDUP",
+      "kind": "positive",
+      "fixture_ids": ["F-SERPAPI-DUP-AND-INCOMPLETE"],
+      "mock_ids": ["M-HTTP-CONTACT-FETCH", "M-LLM-OUTREACH", "M-SHEETS-APPEND-LEAD"],
+      "assertions": [
+        {
+          "assertion_id": "A-NF-1",
+          "target": "final_leads",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "4 条原始结果经过去重（同名称同电话合并 1 条）与过滤（电话为空的条目剔除）后应剩 2 条"
+        },
+        {
+          "assertion_id": "A-NF-2",
+          "target": "final_leads[0].name",
+          "operator": "equals",
+          "expected": "Lone Star Transport",
+          "rationale": "去重后重复线索只保留一条，且保留规范化后的名称"
+        },
+        {
+          "assertion_id": "A-NF-3",
+          "target": "final_leads[0].phone",
+          "operator": "equals",
+          "expected": "+1-512-555-0101",
+          "rationale": "线索必须包含规范化后的电话字段"
+        },
+        {
+          "assertion_id": "A-NF-4",
+          "target": "exec_log.incomplete_filtered_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "电话为空的信息不完整条目必须被过滤，过滤计数必须为 1"
+        },
+        {
+          "assertion_id": "A-NF-5",
+          "target": "exec_log.dedupe_removed_count",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "按名称+电话去重必须移除 1 条重复线索"
+        },
+        {
+          "assertion_id": "A-NF-6",
+          "target": "final_leads[0].email",
+          "operator": "equals",
+          "expected": "hello@lonestar.example.com",
+          "rationale": "含网站的线索必须从联系页面提取第一个有效邮箱地址"
+        }
+      ]
+    },
+    {
+      "case_id": "C-SERPAPI-ERROR-LOGGED",
+      "kind": "positive",
+      "fixture_ids": ["F-SERPAPI-ERROR"],
+      "mock_ids": ["M-SHEETS-APPEND-ERROR"],
+      "assertions": [
+        {
+          "assertion_id": "A-SE-1",
+          "target": "exec_log.sheets.append_error.sheet",
+          "operator": "equals",
+          "expected": "Errors",
+          "rationale": "需求要求搜索服务错误记录到 Errors 标签页"
+        },
+        {
+          "assertion_id": "A-SE-2",
+          "target": "exec_log.sheets.append_error.error",
+          "operator": "equals",
+          "expected": "rate_limit_exceeded",
+          "rationale": "错误记录必须保留搜索服务返回的错误信息"
+        },
+        {
+          "assertion_id": "A-SE-3",
+          "target": "exec_log.sheets.append_error.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "错误记录必须成功写入 Google Sheets"
+        }
+      ]
+    },
+    {
+      "case_id": "C-LEAD-WITHOUT-WEBSITE",
+      "kind": "boundary",
+      "fixture_ids": ["F-LEAD-WITHOUT-WEBSITE"],
+      "mock_ids": ["M-LLM-OUTREACH", "M-SHEETS-APPEND-LEAD"],
+      "assertions": [
+        {
+          "assertion_id": "A-LW-1",
+          "target": "exec_log.contact_page_fetched",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "需求要求仅当线索包含网站时才抓取联系页面，无网站线索不得触发抓取"
+        },
+        {
+          "assertion_id": "A-LW-2",
+          "target": "exec_log.lead.email",
+          "operator": "equals",
+          "expected": "",
+          "rationale": "无网站线索无法提取邮箱，邮箱字段必须为空而非报错"
+        },
+        {
+          "assertion_id": "A-LW-3",
+          "target": "exec_log.sheets.append_lead.updated",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "无网站线索仍需生成开发信并追加写入 Leads 标签页"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 Active 州过滤与关键词展开、线索规范化/过滤/去重、有网站线索提取邮箱、无网站线索跳过抓取、SerpAPI 错误写入 Errors 标签页。SerpAPI 搜索、联系页面抓取、OpenAI 开发信生成、Sheets 读写全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数组长度、文本相等、字段相等与调用次数等可计算条件。"
+}

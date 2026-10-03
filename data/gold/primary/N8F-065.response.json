@@ -1,0 +1,359 @@
+{
+  "task_id": "N8F-065",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "efc2ae969276737075e2a8ea81403a1a78b85eae4dfa3f07dd3a82195586a6f7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收文章变更事件",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "post_event",
+          "type": "object",
+          "description": "文章被创建或更新时的事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_event",
+          "type": "object",
+          "description": "文章变更事件数据"
+        }
+      ],
+      "native_evidence": ["Webhook"],
+      "requirement_evidence": ["当 WordPress 中的一篇文章被创建或更新时，系统被触发启动"],
+      "rationale": "需求声明文章被创建或更新时触发系统，为确定性入站动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取文章原始内容",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "post_event",
+          "type": "object",
+          "description": "文章变更事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_post",
+          "type": "object",
+          "description": "从 WordPress 接口获取的原始文章数据，含标准字段与 ACF 自定义字段"
+        }
+      ],
+      "native_evidence": ["Get Post Data"],
+      "requirement_evidence": ["系统从 WordPress 接口获取该文章的原始内容数据"],
+      "rationale": "需求声明从 WordPress 接口获取文章原始内容数据，为确定性外部读取动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "判定原文语种",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "raw_post",
+          "type": "object",
+          "description": "原始文章数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "detected_lang",
+          "type": "string",
+          "description": "判定出的原文语种代码（ISO 639-1）"
+        }
+      ],
+      "native_evidence": ["Prepare Text Snippet", "OpenAI Language Detect"],
+      "requirement_evidence": ["随后由语言模型分析其中一段文本，判定原文的准确语种"],
+      "rationale": "需求声明由语言模型分析文本片段判定原文语种，需开放文本理解，判 semantic；用于分析的文本片段截取折叠进本节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "路由目标语言并检查缺失译文",
+      "node_type": "code",
+      "operation_family": "routing",
+      "inputs": [
+        {
+          "name": "detected_lang",
+          "type": "string",
+          "description": "原文语种"
+        },
+        {
+          "name": "raw_post",
+          "type": "object",
+          "description": "原始文章数据，含已有译文信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "target_langs",
+          "type": "array",
+          "description": "尚缺译文的目标语言列表"
+        }
+      ],
+      "native_evidence": ["Smart Router & Targets", "Needs Translations?"],
+      "requirement_evidence": ["据此只把内容路由并翻译到尚缺译文的目标语言，以避免重复翻译"],
+      "rationale": "需求声明仅路由并翻译到尚缺译文的目标语言以避免重复翻译；依据原文语种排除已存在译文的目标语言为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "提取待翻译文本",
+      "node_type": "code",
+      "operation_family": "data_extraction",
+      "inputs": [
+        {
+          "name": "raw_post",
+          "type": "object",
+          "description": "原始文章数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "strings_to_translate",
+          "type": "array",
+          "description": "从标准字段与 ACF 字段递归提取出的待翻译字符串列表"
+        }
+      ],
+      "native_evidence": ["Extract Content"],
+      "requirement_evidence": ["系统从文章的标准字段和自定义字段（ACF 字段）中提取待翻译文本"],
+      "rationale": "需求声明从标准字段与 ACF 自定义字段提取待翻译文本，为确定性递归提取变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "批量翻译文本",
+      "node_type": "code",
+      "operation_family": "machine_translation",
+      "inputs": [
+        {
+          "name": "strings_to_translate",
+          "type": "array",
+          "description": "待翻译字符串列表"
+        },
+        {
+          "name": "target_langs",
+          "type": "array",
+          "description": "目标语言列表"
+        },
+        {
+          "name": "detected_lang",
+          "type": "string",
+          "description": "源语言代码"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "translated_strings",
+          "type": "array",
+          "description": "各目标语言的翻译结果"
+        }
+      ],
+      "native_evidence": ["Split by Target Lang", "DeepL Translate"],
+      "requirement_evidence": ["批量提交给机器翻译服务完成翻译，翻译过程中保留原有的 HTML 格式"],
+      "rationale": "需求声明批量调用机器翻译服务完成翻译并保留 HTML 格式，为确定性外部转换动作，判 code；按目标语言拆分并逐语言翻译的循环折叠进本节点契约。"
+    },
+    {
+      "node_id": "n7",
+      "label": "按原文结构重建译文内容",
+      "node_type": "code",
+      "operation_family": "data_reconstruction",
+      "inputs": [
+        {
+          "name": "raw_post",
+          "type": "object",
+          "description": "原文数据，作为重建结构基准"
+        },
+        {
+          "name": "translated_strings",
+          "type": "array",
+          "description": "翻译结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "translated_posts",
+          "type": "array",
+          "description": "按原文数据结构重建后的各目标语言译文内容"
+        }
+      ],
+      "native_evidence": ["RECONSTRUCT JSON"],
+      "requirement_evidence": ["翻译完成后，系统按原文的数据结构重建内容"],
+      "rationale": "需求声明按原文数据结构重建译文内容，为确定性重建变换，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "写回 WordPress 翻译草稿",
+      "node_type": "terminal",
+      "operation_family": "external_write_back",
+      "inputs": [
+        {
+          "name": "translated_posts",
+          "type": "array",
+          "description": "重建后的译文内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Create Translated Post"],
+      "requirement_evidence": ["并将译文作为一篇与原文章建立关联的新翻译草稿写回 WordPress"],
+      "rationale": "需求声明将译文作为与原文章关联的新翻译草稿写回 WordPress，为流程终点的用户可见完成动作，判 terminal 且无出边；多语言草稿逐个写回折叠进本节点契约。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "变更事件接收后获取文章原始数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始数据获取后判定原文语种。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "语种判定后路由目标语言。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "target_langs 非空",
+      "rationale": "存在尚缺译文的目标语言时才提取并翻译；无缺失译文时流程结束（避免重复翻译）。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "文本提取完成后批量翻译。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "翻译完成后按原文结构重建。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "重建完成后写回翻译草稿。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "post_event",
+      "condition": null,
+      "rationale": "变更事件传给文章数据获取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "raw_post",
+      "condition": null,
+      "rationale": "原始文章数据传给语种判定节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "raw_post",
+      "condition": null,
+      "rationale": "已有译文信息传入目标语言路由节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "detected_lang",
+      "condition": null,
+      "rationale": "判定的原文语种传给路由节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n2",
+      "target": "n5",
+      "variable": "raw_post",
+      "condition": null,
+      "rationale": "原始文章数据传给待翻译文本提取节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "strings_to_translate",
+      "condition": null,
+      "rationale": "待翻译字符串传给批量翻译节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n4",
+      "target": "n6",
+      "variable": "target_langs",
+      "condition": null,
+      "rationale": "目标语言列表传给批量翻译节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n3",
+      "target": "n6",
+      "variable": "detected_lang",
+      "condition": null,
+      "rationale": "源语言代码传给批量翻译节点。"
+    },
+    {
+      "edge_id": "dfg-9",
+      "source": "n2",
+      "target": "n7",
+      "variable": "raw_post",
+      "condition": null,
+      "rationale": "原文数据传入重建节点作为结构基准。"
+    },
+    {
+      "edge_id": "dfg-10",
+      "source": "n6",
+      "target": "n7",
+      "variable": "translated_strings",
+      "condition": null,
+      "rationale": "翻译结果传给重建节点。"
+    },
+    {
+      "edge_id": "dfg-11",
+      "source": "n7",
+      "target": "n8",
+      "variable": "translated_posts",
+      "condition": null,
+      "rationale": "重建后的译文内容传给写回节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n8"],
+  "confidence": 0.93,
+  "notes": "需求为 WordPress 文章创建/更新时自动翻译：获取文章原始数据、语言模型判定原文语种、路由并仅翻译到尚缺译文的目标语言（避免重复翻译）、从标准字段与 ACF 字段提取待翻译文本、批量调用机器翻译并保留 HTML 格式、按原文结构重建并写回与原文章关联的新翻译草稿。“仅翻译缺失语言”以条件边（target_langs 非空）表达；按目标语言拆分的循环折叠进批量翻译节点契约，多语言草稿逐个写回折叠进写回节点契约。原生的修正文章语言标志分支、Merge 合并等未在需求声明的实现细节未单独建模。需求未声明失败行为，未建模失败分支。"
+}

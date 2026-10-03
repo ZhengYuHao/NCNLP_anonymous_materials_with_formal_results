@@ -1,0 +1,318 @@
+{
+  "task_id": "N8F-106",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "17e07482fe3e9e3a56e1fc702b22f3b2da1e111bc9a7b8b0c053231556eeaefa",
+  "fixtures": [
+    {
+      "fixture_id": "F-TRIGGER",
+      "purpose": "定时触发与固定配置（发布平台集合与记录目标），创意点子由流程自身生成",
+      "input_data": {
+        "trigger": "schedule",
+        "run_at": "2026-09-02T10:00:00Z",
+        "config": {
+          "target_platforms": [
+            "tiktok",
+            "youtube",
+            "instagram"
+          ],
+          "sheet_id": "SHEET-VIDEOS",
+          "video_style": "cinematic"
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-LLM-IDEA",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_creative_idea",
+      "request_contract": {
+        "no_external_input": true
+      },
+      "response_contract": {
+        "idea": "A day in the life of a robot barista in a Tokyo cafe"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PROMPTS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_video_prompts",
+      "request_contract": {
+        "input_is_idea": true
+      },
+      "response_contract": {
+        "prompts": [
+          {
+            "scene": 1,
+            "prompt": "Close-up of robot arm pouring latte art"
+          },
+          {
+            "scene": 2,
+            "prompt": "Wide shot of robot barista serving customers"
+          }
+        ],
+        "style": "cinematic"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VIDEO-GEN-TWO",
+      "dependency_type": "httpRequest",
+      "operation": "generate_video_clips",
+      "request_contract": {
+        "one_clip_per_prompt": true
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "clip_id": "CLIP-1",
+            "url": "https://media.example.com/clips/CLIP-1.mp4"
+          },
+          {
+            "clip_id": "CLIP-2",
+            "url": "https://media.example.com/clips/CLIP-2.mp4"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-VIDEO-GEN-ONE",
+      "dependency_type": "httpRequest",
+      "operation": "generate_video_clips",
+      "request_contract": {
+        "one_clip_per_prompt": true
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "clip_id": "CLIP-1",
+            "url": "https://media.example.com/clips/CLIP-1.mp4"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SFX-GEN",
+      "dependency_type": "httpRequest",
+      "operation": "generate_sound_effects",
+      "request_contract": {
+        "input_has_idea_and_prompts": true
+      },
+      "response_contract": {
+        "sfx_url": "https://media.example.com/sfx/coffee-machine.mp3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-STITCH",
+      "dependency_type": "httpRequest",
+      "operation": "stitch_final_video",
+      "request_contract": {
+        "input_has_clips_and_sfx": true
+      },
+      "response_contract": {
+        "final_video_url": "https://media.example.com/final/robot-barista.mp4",
+        "duration_seconds": 42,
+        "resolution": "1080p"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-APPEND",
+      "dependency_type": "googleSheets",
+      "operation": "append_row",
+      "request_contract": {
+        "sheet_id": "SHEET-VIDEOS",
+        "row_has_metadata_and_video_link": true
+      },
+      "response_contract": {
+        "status": "appended",
+        "row": 12
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-BLOTATO",
+      "dependency_type": "blotato",
+      "operation": "upload_video",
+      "request_contract": {
+        "file_is_final_video": true
+      },
+      "response_contract": {
+        "status": "uploaded",
+        "url": "https://blotato.example.com/videos/1001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SOCIAL-PUBLISH",
+      "dependency_type": "httpRequest",
+      "operation": "publish_video",
+      "request_contract": {
+        "platforms": [
+          "tiktok",
+          "youtube",
+          "instagram"
+        ]
+      },
+      "response_contract": {
+        "published": {
+          "tiktok": "published",
+          "youtube": "published",
+          "instagram": "published"
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FULL-PIPELINE",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-TRIGGER"
+      ],
+      "mock_ids": [
+        "M-LLM-IDEA",
+        "M-LLM-PROMPTS",
+        "M-VIDEO-GEN-TWO",
+        "M-SFX-GEN",
+        "M-STITCH",
+        "M-SHEETS-APPEND",
+        "M-BLOTATO",
+        "M-SOCIAL-PUBLISH"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.idea",
+          "operator": "exists",
+          "rationale": "须先生成创意点子",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.prompts",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "基于创意创建详细的视频提示词（固定 2 个场景）"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.clips",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "按提示词生成 2 段视频片段"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.sfx",
+          "operator": "exists",
+          "rationale": "必须生成配套音效",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.final_video.url",
+          "operator": "exists",
+          "rationale": "片段与音效必须拼接合成为最终视频",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.sheets_row.video_url",
+          "operator": "contains",
+          "expected": "robot-barista.mp4",
+          "rationale": "元数据与视频链接必须记录到 Google Sheets"
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.blotato_upload.status",
+          "operator": "equals",
+          "expected": "uploaded",
+          "rationale": "最终视频必须上传至 Blotato"
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "tiktok",
+          "rationale": "自动发布到 TikTok"
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "youtube",
+          "rationale": "自动发布到 YouTube"
+        },
+        {
+          "assertion_id": "A-POS-10",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "instagram",
+          "rationale": "自动发布到 Instagram"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-SINGLE-CLIP",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-TRIGGER"
+      ],
+      "mock_ids": [
+        "M-LLM-IDEA",
+        "M-LLM-PROMPTS",
+        "M-VIDEO-GEN-ONE",
+        "M-SFX-GEN",
+        "M-STITCH",
+        "M-SHEETS-APPEND",
+        "M-BLOTATO",
+        "M-SOCIAL-PUBLISH"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.clips",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "仅生成 1 段片段时也可合成最终视频"
+        },
+        {
+          "assertion_id": "A-BND-02",
+          "target": "output.final_video",
+          "operator": "exists",
+          "rationale": "单片段仍须完成合成",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-BND-03",
+          "target": "output.published",
+          "operator": "contains",
+          "expected": "youtube",
+          "rationale": "单片段视频同样发布到各平台"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "需求无外部业务输入，创意由流程自身生成；LLM 创意/提示词、片段生成、音效、合成、Sheets、Blotato、多平台发布均为固定模拟。提示词数、片段数、记录内容与发布平台集合（固定配置 3 个平台）均可程序判定。需求未规定任何失败行为（failure_behavior 为空），故不设置生成失败类用例，仅保留正常流水线与单片段边界场景。"
+}

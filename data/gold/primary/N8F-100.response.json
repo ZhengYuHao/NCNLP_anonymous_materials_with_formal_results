@@ -1,0 +1,418 @@
+{
+  "task_id": "N8F-100",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "87f0a5e946678e7938e4451f78e1089082865c983dffd2e3d42936b95f799fe9",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每月定时触发工资核算与税务合规处理",
+      "node_type": "code",
+      "operation_family": "schedule_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Monthly Trigger (scheduleTrigger, 每月 9:00)"
+      ],
+      "requirement_evidence": [
+        "每月自动完成工资核算与税务合规处理"
+      ],
+      "rationale": "需求声明的每月定时触发入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取收入与工资数据",
+      "node_type": "code",
+      "operation_family": "external_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "payroll_data",
+          "type": "array",
+          "description": "收入与工资数据"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Revenue Data (httpRequest)"
+      ],
+      "requirement_evidence": [
+        "获取收入与工资数据"
+      ],
+      "rationale": "需求声明的数据获取，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "执行工资计算",
+      "node_type": "code",
+      "operation_family": "calculation",
+      "inputs": [
+        {
+          "name": "payroll_data",
+          "type": "array",
+          "description": "收入与工资数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "payroll_results",
+          "type": "array",
+          "description": "工资计算结果"
+        }
+      ],
+      "native_evidence": [
+        "Calculate Payroll (set)"
+      ],
+      "requirement_evidence": [
+        "执行工资计算"
+      ],
+      "rationale": "工资计算为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型应用用户配置的税款代扣规则",
+      "node_type": "semantic",
+      "operation_family": "llm_application",
+      "inputs": [
+        {
+          "name": "payroll_results",
+          "type": "array",
+          "description": "工资计算结果"
+        },
+        {
+          "name": "withholding_rules",
+          "type": "object",
+          "description": "用户配置的税款代扣规则"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "withholding_results",
+          "type": "array",
+          "description": "应用代扣规则后的税款结果"
+        }
+      ],
+      "native_evidence": [
+        "Apply Tax Withholding (set)"
+      ],
+      "requirement_evidence": [
+        "由语言模型应用用户配置的税款代扣规则"
+      ],
+      "rationale": "需求声明由语言模型应用代扣规则，判 semantic；代扣规则为用户配置的契约输入（原生 set 节点为确定性实现，不据此改判）。"
+    },
+    {
+      "node_id": "n5",
+      "label": "汇总税务信息",
+      "node_type": "code",
+      "operation_family": "aggregation",
+      "inputs": [
+        {
+          "name": "withholding_results",
+          "type": "array",
+          "description": "税款代扣结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tax_summary",
+          "type": "object",
+          "description": "汇总后的综合税务摘要"
+        }
+      ],
+      "native_evidence": [
+        "Aggregate Tax Summary (summarize)"
+      ],
+      "requirement_evidence": [
+        "汇总税务信息"
+      ],
+      "rationale": "税务信息汇总为确定性聚合，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "语言模型进行合规校验",
+      "node_type": "semantic",
+      "operation_family": "llm_evaluation",
+      "inputs": [
+        {
+          "name": "tax_summary",
+          "type": "object",
+          "description": "综合税务摘要"
+        },
+        {
+          "name": "compliance_thresholds",
+          "type": "object",
+          "description": "用户配置的合规阈值"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "compliance_report",
+          "type": "object",
+          "description": "合规校验结果"
+        }
+      ],
+      "native_evidence": [
+        "AI Tax Compliance Analyst (agent)",
+        "OpenAI GPT-4 (lmChatOpenAi)"
+      ],
+      "requirement_evidence": [
+        "并使用语言模型进行合规校验"
+      ],
+      "rationale": "需求声明由语言模型进行合规校验，判 semantic；合规阈值为用户配置的契约输入。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成结构化的报表文档并转换为 PDF",
+      "node_type": "code",
+      "operation_family": "document_generation",
+      "inputs": [
+        {
+          "name": "tax_summary",
+          "type": "object",
+          "description": "综合税务摘要"
+        },
+        {
+          "name": "compliance_report",
+          "type": "object",
+          "description": "合规校验结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pdf_document",
+          "type": "object",
+          "description": "PDF 格式的合规文档"
+        }
+      ],
+      "native_evidence": [
+        "Generate Summary Document (html)",
+        "Convert to PDF (convertToFile, html)"
+      ],
+      "requirement_evidence": [
+        "生成结构化的报表文档并将其转换为 PDF"
+      ],
+      "rationale": "报表生成与 PDF 转换为确定性文档处理，判 code；两动作合并为同一文档产出契约。"
+    },
+    {
+      "node_id": "n8",
+      "label": "将记录保存到 Google Sheets 作为审计留痕",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "tax_summary",
+          "type": "object",
+          "description": "税务记录"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Store in Compliance Sheet (googleSheets, appendOrUpdate)"
+      ],
+      "requirement_evidence": [
+        "将记录保存到 Google Sheets 作为审计留痕"
+      ],
+      "rationale": "需求声明的审计留痕写入，为最终交付之一，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n9",
+      "label": "将文件归档到 Google Drive",
+      "node_type": "terminal",
+      "operation_family": "external_archive",
+      "inputs": [
+        {
+          "name": "pdf_document",
+          "type": "object",
+          "description": "PDF 合规文档"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Archive to Drive (googleDrive)"
+      ],
+      "requirement_evidence": [
+        "将文件归档到 Google Drive"
+      ],
+      "rationale": "需求声明的归档动作，为最终交付之一，判 terminal，无 CFG 出边。"
+    },
+    {
+      "node_id": "n10",
+      "label": "将税务摘要发送给税务代理人",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "tax_summary",
+          "type": "object",
+          "description": "税务摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send to Tax Agent (gmail)"
+      ],
+      "requirement_evidence": [
+        "并将税务摘要发送给税务代理人"
+      ],
+      "rationale": "需求声明的税务摘要发送，为最终交付之一，判 terminal，无 CFG 出边；税务代理人为用户配置的契约输入。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每月触发后获取数据"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "取得数据后执行工资计算"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "计算后应用代扣规则"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "代扣后汇总税务信息"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总后进行合规校验"
+    },
+    {
+      "edge_id": "cfg_e6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "校验后生成报表文档并转 PDF"
+    },
+    {
+      "edge_id": "cfg_e7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "PDF 生成后保存审计留痕"
+    },
+    {
+      "edge_id": "cfg_e8",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "PDF 生成后归档到 Drive"
+    },
+    {
+      "edge_id": "cfg_e9",
+      "source": "n7",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "PDF 生成后发送税务摘要"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "payroll_data",
+      "condition": null,
+      "rationale": "工资计算基于收入与工资数据"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "payroll_results",
+      "condition": null,
+      "rationale": "代扣应用基于工资计算结果"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "withholding_results",
+      "condition": null,
+      "rationale": "汇总基于代扣结果"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n5",
+      "target": "n6",
+      "variable": "tax_summary",
+      "condition": null,
+      "rationale": "合规校验基于税务摘要"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "compliance_report",
+      "condition": null,
+      "rationale": "文档生成使用合规校验结果"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "tax_summary",
+      "condition": null,
+      "rationale": "报表文档基于税务摘要"
+    },
+    {
+      "edge_id": "dfg_d7",
+      "source": "n5",
+      "target": "n8",
+      "variable": "tax_summary",
+      "condition": null,
+      "rationale": "审计留痕保存税务记录"
+    },
+    {
+      "edge_id": "dfg_d8",
+      "source": "n7",
+      "target": "n9",
+      "variable": "pdf_document",
+      "condition": null,
+      "rationale": "归档使用 PDF 文档"
+    },
+    {
+      "edge_id": "dfg_d9",
+      "source": "n5",
+      "target": "n10",
+      "variable": "tax_summary",
+      "condition": null,
+      "rationale": "发送使用税务摘要"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8",
+    "n9",
+    "n10"
+  ],
+  "confidence": 0.88,
+  "notes": "线性处理链后经 PDF 生成分叉出三条并行最终交付（Sheets 留痕、Drive 归档、发送税务代理人），均按需求声明建模为终止节点。原生 Workflow Configuration 为用户配置，作为契约输入不单独建模；需求声明代扣规则由语言模型应用，故 n4 判 semantic（原生 set 节点为确定性实现，不据此改判）。"
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-071",
+  "source_id": "n8n:18216",
+  "workflow_sha256": "bbfda3c3953ba659cef78387c720db0b2290bcbe8e89ad8c23a77097599dbdf1",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "67a22a2c2569dff8d73964f2b8f76d810762bc542a04850c705588f70a14ccd2",
+  "requirement": {
+    "requirement_text": "系统通过接口接收一条入站线索提交。系统先应用预设的理想客户画像（ICP）信息与阈值，对传入字段做规范化处理，并校验邮箱地址，识别其中的免费邮箱与角色邮箱，同时推导出企业域名。若邮箱是有效的企业邮箱地址，系统则抓取该线索的网站，并从页面内容中提取一小段文本样本以及关键词形式的购买信号。随后，系统将线索信息与网站信号交给语言模型，产出结构化的评估结果，包括理想客户契合度评分、所属细分、评分理由、推荐的下一步动作以及一句个性化的开场白。系统把该契合度评分与一个确定性的数据质量评分相结合，据此将线索划分为热、温、冷三档，并按档位进行分流：对热线索，在 Slack 中发出提醒、通过 Gmail 向该线索发送即时的个性化回复、在 HubSpot 中创建或更新对应联系人并设置相应的生命周期阶段；所有线索都会被追加记录到 Google Sheets；同时，系统向提交方返回包含该线索评分与档位的响应结果。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 309,
+        "text": "This workflow receives inbound lead submissions via a webhook, validates business emails, enriches leads by scraping their website, and uses OpenAI to score ICP fit. It then routes hot leads to Slack, Gmail, and HubSpot, logs all leads to Google Sheets, and responds to the form with the score."
+      },
+      {
+        "start": 324,
+        "end": 381,
+        "text": "Receives an inbound lead as a POST request via a webhook."
+      },
+      {
+        "start": 382,
+        "end": 541,
+        "text": "Applies your ICP details and thresholds, normalizes incoming fields, and validates the email while detecting free/role inboxes and deriving the company domain."
+      },
+      {
+        "start": 542,
+        "end": 694,
+        "text": "If the email is a valid business address, fetches the lead’s website and extracts a short text sample plus keyword buying signals from the page content."
+      },
+      {
+        "start": 695,
+        "end": 876,
+        "text": "Sends the lead details and website signals to OpenAI (gpt-4o-mini) to produce a structured ICP fit score, segment, reasoning, recommended next step, and a personalized opening line."
+      },
+      {
+        "start": 877,
+        "end": 1019,
+        "text": "Combines the AI fit score with a deterministic data-quality score, assigns the lead to hot/warm/cold tiers, and routes the record accordingly."
+      },
+      {
+        "start": 1020,
+        "end": 1280,
+        "text": "Alerts hot leads in Slack, sends the lead an instant personalized Gmail reply, creates/updates the contact in HubSpot with the appropriate lifecycle stage, appends every lead to Google Sheets, and returns a JSON webhook response with the lead’s score and tier."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "通过接口提交的入站线索信息（如姓名、邮箱、公司、网站、职位、电话、留言、来源）",
+        "预设的理想客户画像（ICP）信息与评分阈值",
+        "线索网站页面内容（仅当邮箱为有效企业邮箱时抓取）"
+      ],
+      "conditions": [
+        "邮箱为有效的企业邮箱时才抓取线索网站并提取文本样本与购买信号",
+        "线索按契合度评分与确定性数据质量评分被划分为热、温、冷三档并按档位分流"
+      ],
+      "allowed_actions": [
+        "规范化传入字段并校验邮箱、识别免费邮箱与角色邮箱、推导企业域名",
+        "抓取线索网站并提取文本样本与关键词购买信号",
+        "调用语言模型产出结构化评估结果（契合度评分、细分、理由、推荐下一步、个性化开场白）",
+        "结合数据质量评分划分热/温/冷档位",
+        "热线索：在 Slack 提醒、通过 Gmail 发送即时个性化回复、在 HubSpot 创建或更新联系人并设置生命周期阶段",
+        "将所有线索追加记录到 Google Sheets",
+        "向提交方返回线索评分与档位"
+      ],
+      "visible_outcomes": [
+        "Slack 收到热线索提醒",
+        "热线索收到 Gmail 个性化回复",
+        "HubSpot 中对应联系人被创建或更新并设置生命周期阶段",
+        "Google Sheets 中追加一条线索记录",
+        "提交方收到包含线索评分与档位的响应结果"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-071.packet.json",
+    "packet_sha256": "860475999c3565e84da89036779d9fc8e33d72e73a9e51efa2f169d7f5e7342a",
+    "public_description_sha256": "3cb7a7019d058bfc0b9eb5c29850f3c63b8ce215a6d098299dcc1763ec46b32f"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-071.response.json",
+    "verification_response_sha256": "c2da7ff5becbf2f2d319436dc28820c6cb5149f7eaa84ccfa8833d8b30697357",
+    "decision": "accept"
+  },
+  "formal_index": 82
+}

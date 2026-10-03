@@ -1,0 +1,71 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-051",
+  "source_id": "n8n:18323",
+  "workflow_sha256": "9c339a30d729e5a92c528cfa2422a3e4cc62e5072136d0317fa784a5a028242c",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "ed57b38d4e63ce6edf9b06f3a88b93e0135cc486f920566f4197b2fff5908258",
+  "requirement": {
+    "requirement_text": "系统作为学生咨询助手处理学生的聊天消息。\n\n1）接收学生聊天消息，提取会话 ID、学生姓名与消息正文。\n2）按会话维护并更新对话历史与轮次计数，以在多轮消息之间保持上下文。\n3）从 Google Sheets 知识库中读取问答条目，整理为可直接用于生成回复的文本。\n4）将学生消息、对话历史与知识库内容交给语言模型，生成受限格式的回复，该回复可标记“未解决”或“情绪困扰”情况。\n5）检查模型回复中是否存在“未解决”或“情绪困扰”标记；当学生表现出困扰，或问题在两轮之后仍未解决时，将完整上下文升级上报到 Slack 频道。\n6）将每轮对话追加写入 Google Sheets 的对话日志，并将未解决的问题单独记入“FAQ Gaps”表，用于知识库补充。\n7）每周一 09:00，读取 Google Sheets 中的对话日志，计算本周指标，并通过 Gmail 向管理员发送 HTML 格式的报告邮件。",
+    "source_spans": [
+      {
+        "start": 311,
+        "end": 798,
+        "text": "Receives a student chat message via an n8n Chat trigger and extracts the session ID, student name, and message text.\nBuilds and updates a per-session conversation history and turn count to maintain context across messages.\nReads Q&A entries from a Google Sheets knowledge base and formats them into prompt-ready text.\nSends the student message, conversation history, and knowledge base to OpenAI (gpt-4o-mini) to generate a constrained reply that can flag unresolved or distressed cases."
+      },
+      {
+        "start": 799,
+        "end": 1293,
+        "text": "Checks the AI reply for unresolved and distressed markers and escalates the full context to a Slack channel when the student appears distressed or the query remains unresolved after two turns.\nAppends each exchange to a Google Sheets conversation log and records unresolved questions to a separate “FAQ Gaps” sheet for knowledge base updates.\nRuns every Monday at 9 AM to read the conversation log from Google Sheets, calculate weekly metrics, and email an HTML report to the admin using Gmail."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "学生聊天消息（会话 ID、学生姓名、消息正文）",
+        "Google Sheets 中的问答知识库",
+        "Google Sheets 中的对话日志"
+      ],
+      "conditions": [
+        "按会话维护对话历史与轮次计数以保持上下文",
+        "当学生表现出困扰，或问题在两轮之后仍未解决时，升级上报到 Slack 频道",
+        "每周一 09:00 生成周报"
+      ],
+      "allowed_actions": [
+        "提取消息字段",
+        "读取知识库问答条目",
+        "调用语言模型生成受限格式的回复",
+        "向 Slack 频道升级上报完整上下文",
+        "追加写入对话日志",
+        "将未解决的问题记入“FAQ Gaps”表",
+        "计算每周指标并通过 Gmail 发送 HTML 报告"
+      ],
+      "visible_outcomes": [
+        "学生收到基于知识库生成的回复",
+        "满足升级条件时 Slack 频道收到完整对话上下文",
+        "Google Sheets 对话日志与“FAQ Gaps”表新增记录",
+        "管理员收到每周指标的 HTML 报告邮件"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-051.packet.json",
+    "packet_sha256": "865a202334f72fca74a237de874fefbc7d6ae6e1d72ea4feac48ce13d1277ed9",
+    "public_description_sha256": "605d7453f958a0d57bb59e0db3c92b600672298e48086c62f375bc004717663f"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-051.response.json",
+    "verification_response_sha256": "ff603f1eb19ff6952d927f86a9d83d461cab45af144bf66631b8eaed95e42534",
+    "decision": "accept"
+  },
+  "formal_index": 62
+}

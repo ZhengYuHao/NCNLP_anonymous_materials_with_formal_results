@@ -1,0 +1,403 @@
+{
+  "task_id": "N8F-016",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "c6a751b24d681e139ef84b27a4f1b40564d70a59a5b824001ac9cc8afa9aa893",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定时触发",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "每 2 小时指定分钟触发的调度事件"
+        }
+      ],
+      "native_evidence": [
+        "Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "每 2 小时在指定分钟触发一次"
+      ],
+      "rationale": "需求声明按固定周期定时触发，为确定性调度入口，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "生成话题标签",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "schedule_event",
+          "type": "object",
+          "description": "触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "语言模型生成的真实的 AI/BPA 类话题标签"
+        }
+      ],
+      "native_evidence": [
+        "Generate Random Hashtag"
+      ],
+      "requirement_evidence": [
+        "由语言模型生成一个真实的 AI/BPA 类话题标签"
+      ],
+      "rationale": "需求声明由语言模型生成话题标签，需开放内容生成，判 semantic。"
+    },
+    {
+      "node_id": "n3",
+      "label": "抓取话题标签下的最近帖子",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "hashtag",
+          "type": "string",
+          "description": "话题标签"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "该话题标签下最近的帖子，最多取设定条数"
+        }
+      ],
+      "native_evidence": [
+        "Get Hashtag Agent",
+        "Launch Agent",
+        "Get Posts"
+      ],
+      "requirement_evidence": [
+        "通过抓取服务获取该话题标签下最近的帖子，最多取设定条数"
+      ],
+      "rationale": "需求声明通过抓取服务获取最近帖子并受条数上限约束，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "随机选择一条帖子",
+      "node_type": "code",
+      "operation_family": "selection",
+      "inputs": [
+        {
+          "name": "recent_posts",
+          "type": "array",
+          "description": "最近帖子列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "随机选中的一条帖子"
+        }
+      ],
+      "native_evidence": [
+        "Get Random Post"
+      ],
+      "requirement_evidence": [
+        "从中随机选择一条帖子"
+      ],
+      "rationale": "需求声明从中随机选择一条帖子，为确定性随机选择，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "校验帖子未在已评论记录中",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "selected_post",
+          "type": "object",
+          "description": "随机选中的帖子"
+        },
+        {
+          "name": "reviewed_posts",
+          "type": "object",
+          "description": "已评论记录中的帖子链接集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "valid_post",
+          "type": "object",
+          "description": "通过查重的帖子"
+        }
+      ],
+      "native_evidence": [
+        "Check if in List",
+        "If"
+      ],
+      "requirement_evidence": [
+        "发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论"
+      ],
+      "rationale": "需求声明避免对同一帖子重复评论，故发布前需按已评论记录查重，为确定性过滤，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "撰写评论回复",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "valid_post",
+          "type": "object",
+          "description": "通过查重的帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comment_reply",
+          "type": "string",
+          "description": "以设定语言撰写的不超过 150 字符的回复"
+        }
+      ],
+      "native_evidence": [
+        "Create Comment"
+      ],
+      "requirement_evidence": [
+        "由语言模型以设定语言撰写一条不超过 150 字符的回复"
+      ],
+      "rationale": "需求声明由语言模型以设定语言撰写回复并限长 150 字符，需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n7",
+      "label": "生成待评论清单并上传 SharePoint",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "comment_reply",
+          "type": "string",
+          "description": "撰写的评论回复"
+        },
+        {
+          "name": "valid_post",
+          "type": "object",
+          "description": "目标帖子"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "comment_list",
+          "type": "object",
+          "description": "已上传到 SharePoint 的待评论帖子清单文件"
+        }
+      ],
+      "native_evidence": [
+        "Create CSV Binary",
+        "Upload CSV"
+      ],
+      "requirement_evidence": [
+        "生成待评论帖子清单文件并上传到 SharePoint"
+      ],
+      "rationale": "需求声明生成清单文件并上传至 SharePoint，为确定性文件处理与外部写入，判 code。"
+    },
+    {
+      "node_id": "n8",
+      "label": "发布评论到所选帖子",
+      "node_type": "code",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "comment_list",
+          "type": "object",
+          "description": "待评论清单"
+        },
+        {
+          "name": "comment_reply",
+          "type": "string",
+          "description": "评论回复"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "post_result",
+          "type": "object",
+          "description": "自动评论动作的发布结果"
+        }
+      ],
+      "native_evidence": [
+        "Get Autocomment Agent",
+        "Launch AC Agent",
+        "Get Response"
+      ],
+      "requirement_evidence": [
+        "再发起自动评论动作，将该回复发布到所选帖子下"
+      ],
+      "rationale": "需求声明发起自动评论动作把回复发布到所选帖子，为确定性外部动作，其后仍需写入记录，判 code。"
+    },
+    {
+      "node_id": "n9",
+      "label": "写入已评论记录",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "post_result",
+          "type": "object",
+          "description": "发布结果，含帖子链接"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Prepare Updated Data",
+        "Convert to File",
+        "Update file"
+      ],
+      "requirement_evidence": [
+        "发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论"
+      ],
+      "rationale": "需求声明发布后把帖子链接写入已评论记录，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定时触发后生成话题标签。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "话题标签生成后按标签抓取帖子。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后随机选择帖子。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "选择帖子后按已评论记录查重。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "所选帖子不在已评论记录中",
+      "rationale": "未评论过的帖子才撰写回复；已评论帖子不再处理。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复撰写完成后生成并上传清单。"
+    },
+    {
+      "edge_id": "cfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "清单上传后发起自动评论。"
+    },
+    {
+      "edge_id": "cfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "评论发布后写入已评论记录。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "schedule_event",
+      "condition": null,
+      "rationale": "触发事件传给话题标签生成节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "hashtag",
+      "condition": null,
+      "rationale": "话题标签传给帖子抓取节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "recent_posts",
+      "condition": null,
+      "rationale": "最近帖子列表传给随机选择节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "selected_post",
+      "condition": null,
+      "rationale": "选中的帖子传给查重节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "valid_post",
+      "condition": null,
+      "rationale": "通过查重的帖子传给回复撰写节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "comment_reply",
+      "condition": null,
+      "rationale": "评论回复传给清单生成节点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "comment_list",
+      "condition": null,
+      "rationale": "清单文件传给自动评论节点。"
+    },
+    {
+      "edge_id": "dfg-8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "post_result",
+      "condition": null,
+      "rationale": "发布结果（含帖子链接）传给记录节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n9"
+  ],
+  "confidence": 0.9,
+  "notes": "发布速率节流（约每天 80 条）作为自动评论动作的外部约束，不单列节点；会话 Cookie 获取与选择、等待等原生实现细节未在需求中声明，未纳入。查重分支中已评论帖子不再发布，仅标注条件边。"
+}

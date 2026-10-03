@@ -1,0 +1,537 @@
+{
+  "task_id": "N8F-045",
+  "author_id": "OA-05",
+  "status": "submitted",
+  "requirement_sha256": "3a201d485022001f72a6e6da2e69fabb795bde325eee20dbfcd6b646433846a3",
+  "fixtures": [
+    {
+      "fixture_id": "F-CYCLE-SUBSCRIBE",
+      "purpose": "正常用例：订阅者提交姓名、邮箱、最近一次经期开始日期与平均周期天数，应立即计算全部关键日期、保存订阅者并发送欢迎邮件",
+      "input_data": {
+        "name": "Alice",
+        "email": "alice@example.com",
+        "last_period_start": "2026-08-01",
+        "cycle_length_days": 28,
+        "expected_dates": {
+          "next_period_start": "2026-08-29",
+          "ovulation_day": "2026-08-15",
+          "fertile_window_start": "2026-08-10",
+          "fertile_window_end": "2026-08-16",
+          "pms_window_start": "2026-08-24"
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-DAY-PREP",
+      "purpose": "正常用例：当天为经期开始前 3 天（2026-08-26），应发送经期准备提示邮件，并记入发送日志",
+      "input_data": {
+        "today": "2026-08-26",
+        "subscriber": {
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "last_sent": {}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-DAY-PERIOD",
+      "purpose": "正常用例：当天为经期开始日（2026-08-29），应发送舒适与自我照护提示邮件，并重新计算周期日期以持续跟踪",
+      "input_data": {
+        "today": "2026-08-29",
+        "subscriber": {
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "last_sent": {}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-DAY-OVULATION",
+      "purpose": "正常用例：当天为排卵日（2026-08-15），应发送生育意识与精力提示邮件，并记入发送日志",
+      "input_data": {
+        "today": "2026-08-15",
+        "subscriber": {
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "last_sent": {}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-DAY-PMS",
+      "purpose": "正常用例：当天为 PMS 窗口开始日（2026-08-24），应发送情绪、精力与边界提示邮件",
+      "input_data": {
+        "today": "2026-08-24",
+        "subscriber": {
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "last_sent": {}
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-DUP-SUPPRESS",
+      "purpose": "边界用例：当天为排卵日但该订阅者当前周期已发送过排卵提醒，应被去重逻辑抑制，不重复发送",
+      "input_data": {
+        "today": "2026-08-15",
+        "subscriber": {
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "last_sent": {
+            "cycle_key": "2026-08-01",
+            "email_type": "ovulation"
+          }
+        }
+      }
+    },
+    {
+      "fixture_id": "F-CYCLE-WEEKLY-DIGEST",
+      "purpose": "正常用例：周日早 9 点为活跃订阅者生成每周健康摘要，结合当前阶段由语言模型生成五类建议与每周寄语，组装邮件发送并记入日志",
+      "input_data": {
+        "today": "2026-08-16",
+        "subscriber": {
+          "name": "Alice",
+          "email": "alice@example.com",
+          "last_period_start": "2026-08-01",
+          "cycle_length_days": 28,
+          "active": true,
+          "phase": "ovulation",
+          "cycle_day": 16,
+          "days_until_next_period": 13
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-CYCLE-SHEETS-SAVE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "save_subscriber",
+      "request_contract": {
+        "email": "alice@example.com"
+      },
+      "response_contract": {
+        "saved": true,
+        "subscriber_id": "SUB-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-WELCOME",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_welcome_email",
+      "request_contract": {
+        "to": "alice@example.com",
+        "contains_cycle_overview": true
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "welcome-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-ACTIVE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_active_subscribers",
+      "request_contract": {
+        "active_only": true
+      },
+      "response_contract": {
+        "subscribers": [
+          {
+            "email": "alice@example.com",
+            "last_period_start": "2026-08-01",
+            "cycle_length_days": 28,
+            "last_sent": {}
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-REMINDER",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_phase_reminder",
+      "request_contract": {
+        "to": "alice@example.com",
+        "email_type": "prep"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "reminder-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-UPDATE-LAST",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_last_sent",
+      "request_contract": {
+        "email": "alice@example.com",
+        "email_type": "prep"
+      },
+      "response_contract": {
+        "updated": true,
+        "updated_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_send_log",
+      "request_contract": {
+        "required_fields": [
+          "date",
+          "phase",
+          "cycle_day",
+          "email_type"
+        ],
+        "email_type": "prep",
+        "cycle_day": 26
+      },
+      "response_contract": {
+        "logged": true,
+        "row_number": 210
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-LLM-DIGEST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_contract": {
+        "name": "Alice",
+        "phase": "ovulation",
+        "cycle_day": 16,
+        "days_until_next_period": 13
+      },
+      "response_contract": {
+        "tips": {
+          "energy": "Maintain steady energy with balanced meals.",
+          "nutrition": "Include iron-rich foods.",
+          "movement": "Gentle cardio is ideal.",
+          "mindset": "Stay focused on one priority.",
+          "this_week": "Energy peaks mid-cycle."
+        },
+        "affirmation": "I honor my body's rhythm."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-DIGEST",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_weekly_digest",
+      "request_contract": {
+        "to": "alice@example.com"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "digest-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-SUBSCRIBE-WELCOME",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-SUBSCRIBE"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-SAVE",
+        "M-CYCLE-GMAIL-WELCOME"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-SUB-1",
+          "target": "output.calculated.next_period_start",
+          "operator": "equals",
+          "expected": "2026-08-29",
+          "rationale": "下次经期开始日必须等于最近一次经期开始日期加平均周期天数（2026-08-01 + 28 天）"
+        },
+        {
+          "assertion_id": "A-SUB-2",
+          "target": "output.calculated.ovulation_day",
+          "operator": "equals",
+          "expected": "2026-08-15",
+          "rationale": "排卵日必须为下次经期开始日减 14 天（2026-08-29 减 14 天）"
+        },
+        {
+          "assertion_id": "A-SUB-3",
+          "target": "output.calculated.fertile_window_start",
+          "operator": "equals",
+          "expected": "2026-08-10",
+          "rationale": "易孕窗口必须自排卵日前 5 天开启（2026-08-15 减 5 天）"
+        },
+        {
+          "assertion_id": "A-SUB-4",
+          "target": "output.calculated.fertile_window_end",
+          "operator": "equals",
+          "expected": "2026-08-16",
+          "rationale": "易孕窗口必须于排卵日后 1 天结束（2026-08-15 加 1 天）"
+        },
+        {
+          "assertion_id": "A-SUB-5",
+          "target": "output.calculated.pms_window_start",
+          "operator": "equals",
+          "expected": "2026-08-24",
+          "rationale": "PMS 窗口必须自下次经期开始日前 5 天开启（2026-08-29 减 5 天）"
+        },
+        {
+          "assertion_id": "A-SUB-6",
+          "target": "exec_log.googleSheets.save_subscriber.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "关键日期计算后必须保存订阅者记录"
+        },
+        {
+          "assertion_id": "A-SUB-7",
+          "target": "exec_log.gmail.send_welcome_email.request.contains_cycle_overview",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "欢迎邮件必须包含完整周期概览"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PREP",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PREP"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PREP-1",
+          "target": "exec_log.gmail.send_phase_reminder.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "经期开始前 3 天必须发送准备提示邮件"
+        },
+        {
+          "assertion_id": "A-PREP-2",
+          "target": "exec_log.gmail.send_phase_reminder.request.email_type",
+          "operator": "equals",
+          "expected": "prep",
+          "rationale": "触发类型必须为经期准备提示（prep）"
+        },
+        {
+          "assertion_id": "A-PREP-3",
+          "target": "exec_log.googleSheets.update_last_sent.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "每次发送后必须更新订阅者的最近发送记录"
+        },
+        {
+          "assertion_id": "A-PREP-4",
+          "target": "exec_log.googleSheets.append_send_log.request.email_type",
+          "operator": "equals",
+          "expected": "prep",
+          "rationale": "发送日志必须按邮件类型记录本次投递"
+        },
+        {
+          "assertion_id": "A-PREP-5",
+          "target": "exec_log.googleSheets.append_send_log.request.cycle_day",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "发送日志必须包含周期天数"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PERIOD-RECALC",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PERIOD"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PER-1",
+          "target": "exec_log.gmail.send_phase_reminder.request.email_type",
+          "operator": "equals",
+          "expected": "period_start",
+          "rationale": "经期开始当天必须发送舒适与自我照护提示"
+        },
+        {
+          "assertion_id": "A-PER-2",
+          "target": "output.recalculated.next_period_start",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "经期开始日必须重新计算周期日期以实现持续跟踪"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-OVULATION",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-DAY-OVULATION"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-OVU-1",
+          "target": "exec_log.gmail.send_phase_reminder.request.email_type",
+          "operator": "equals",
+          "expected": "ovulation",
+          "rationale": "排卵日必须发送生育意识与精力提示"
+        },
+        {
+          "assertion_id": "A-OVU-2",
+          "target": "exec_log.gmail.send_phase_reminder.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "排卵日提醒只应发送一次"
+        }
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PMS",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PMS"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-PMS-1",
+          "target": "exec_log.gmail.send_phase_reminder.request.email_type",
+          "operator": "equals",
+          "expected": "pms_start",
+          "rationale": "PMS 窗口开始日必须发送情绪、精力与边界提示"
+        }
+      ]
+    },
+    {
+      "case_id": "C-DUP-SUPPRESSED",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-CYCLE-DUP-SUPPRESS"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-DUP-1",
+          "target": "exec_log.gmail.send_phase_reminder.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "同一周期内同类型邮件已发送时不得重复发送"
+        },
+        {
+          "assertion_id": "A-DUP-2",
+          "target": "exec_log.googleSheets.append_send_log.calls",
+          "operator": "not_exists",
+          "expected": true,
+          "rationale": "未发生发送时不得写入发送日志"
+        }
+      ]
+    },
+    {
+      "case_id": "C-WEEKLY-DIGEST",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-CYCLE-WEEKLY-DIGEST"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-LLM-DIGEST",
+        "M-CYCLE-GMAIL-DIGEST",
+        "M-CYCLE-SHEETS-LOG"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-DIG-1",
+          "target": "exec_log.lmChatOpenAi.generate_weekly_digest.request.phase",
+          "operator": "equals",
+          "expected": "ovulation",
+          "rationale": "摘要提示词必须携带订阅者当前所处阶段"
+        },
+        {
+          "assertion_id": "A-DIG-2",
+          "target": "exec_log.lmChatOpenAi.generate_weekly_digest.request.days_until_next_period",
+          "operator": "equals",
+          "expected": 13,
+          "rationale": "摘要提示词必须携带距下次经期的天数"
+        },
+        {
+          "assertion_id": "A-DIG-3",
+          "target": "exec_log.lmChatOpenAi.generate_weekly_digest.response.tips.energy",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "模型输出必须包含精力管理等五个类别之一的建议"
+        },
+        {
+          "assertion_id": "A-DIG-4",
+          "target": "exec_log.lmChatOpenAi.generate_weekly_digest.response.affirmation",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "模型输出必须包含每周寄语"
+        },
+        {
+          "assertion_id": "A-DIG-5",
+          "target": "exec_log.gmail.send_weekly_digest.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "摘要生成后必须组装为邮件发送给订阅者"
+        },
+        {
+          "assertion_id": "A-DIG-6",
+          "target": "exec_log.googleSheets.append_send_log.calls",
+          "operator": "equals",
+          "expected": 1,
+          "rationale": "摘要邮件的每次发送同样记入发送日志"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖订阅计算（下次经期/排卵/易孕窗口/PMS 窗口日期公式）、欢迎邮件、四类触发日提醒、同一周期同类型去重、经期开始日重算、每周健康摘要（五类建议+寄语）。所有日期以固定输入为准，外部依赖（Sheets 读写、Gmail 发送、LLM 摘要生成）全部固定模拟，deterministic 与 side_effects_disabled 均为 true；断言为日期相等、调用次数、请求字段相等、正则/存在性检查。"
+}

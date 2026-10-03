@@ -1,0 +1,338 @@
+{
+  "pilot_id": "N8C-009",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "ad23729667221cf032ce1bf020aa57a64e8a7d764167ef2975d2c8309974156d",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Hourly schedule trigger",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Hourly run signal that starts the Gmail search"
+        }
+      ],
+      "native_evidence": [
+        "Gmail Trigger1"
+      ],
+      "requirement_evidence": [
+        "The system runs every hour"
+      ],
+      "rationale": "Declared hourly schedule; emits only a start signal."
+    },
+    {
+      "node_id": "n2",
+      "label": "Search Gmail for messages with attachments matching the invoice query",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the Gmail search"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "matched_emails",
+          "type": "array",
+          "description": "Gmail messages that have attachments and match the query 'invoice OR bill OR receipt'"
+        }
+      ],
+      "native_evidence": [
+        "Gmail Trigger1"
+      ],
+      "requirement_evidence": [
+        "searches Gmail for messages that have attachments and match the query 'invoice OR bill OR receipt'"
+      ],
+      "rationale": "Declared external search over Gmail with the specified attachment and keyword filters; deterministic I/O."
+    },
+    {
+      "node_id": "n3",
+      "label": "Skip emails with no attachments",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "matched_emails",
+          "type": "array",
+          "description": "Matched emails to filter"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "emails_with_attachments",
+          "type": "array",
+          "description": "Emails that carry at least one attachment"
+        }
+      ],
+      "native_evidence": [
+        "If"
+      ],
+      "requirement_evidence": [
+        "It skips emails with no attachments"
+      ],
+      "rationale": "Deterministic presence check that drops attachment-less emails; the frozen requirement declares no behavior for the skipped items."
+    },
+    {
+      "node_id": "n4",
+      "label": "Split emails into individual attachment items",
+      "node_type": "code",
+      "operation_family": "splitting",
+      "inputs": [
+        {
+          "name": "emails_with_attachments",
+          "type": "array",
+          "description": "Emails whose attachments are split out"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "attachment_items",
+          "type": "array",
+          "description": "One item per attachment, each carrying the attachment content and its metadata"
+        }
+      ],
+      "native_evidence": [
+        "Code in JavaScript"
+      ],
+      "requirement_evidence": [
+        "splits each email into individual items so each attachment is processed separately"
+      ],
+      "rationale": "Deterministic fan-out of multi-attachment emails so that each attachment is processed separately."
+    },
+    {
+      "node_id": "n5",
+      "label": "Extract text from the PDF attachment",
+      "node_type": "code",
+      "operation_family": "text_extraction",
+      "inputs": [
+        {
+          "name": "attachment_items",
+          "type": "array",
+          "description": "PDF attachments processed one at a time"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pdf_text",
+          "type": "string",
+          "description": "Text extracted from the PDF attachment"
+        }
+      ],
+      "native_evidence": [
+        "Extract from File"
+      ],
+      "requirement_evidence": [
+        "extract the text from the PDF"
+      ],
+      "rationale": "Deterministic PDF text extraction applied to each attachment item."
+    },
+    {
+      "node_id": "n6",
+      "label": "Return invoice data as JSON via AI agent",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "pdf_text",
+          "type": "string",
+          "description": "Extracted PDF text sent to the AI agent"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "invoice_json",
+          "type": "string",
+          "description": "Invoice data returned by the AI agent as JSON"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent",
+        "OpenAI Chat Model"
+      ],
+      "requirement_evidence": [
+        "send the extracted text to an AI agent that returns invoice data as JSON"
+      ],
+      "rationale": "Understanding unstructured invoice text and producing structured fields requires a language model."
+    },
+    {
+      "node_id": "n7",
+      "label": "Parse and normalize the JSON into a consistent schema",
+      "node_type": "code",
+      "operation_family": "parsing_normalization",
+      "inputs": [
+        {
+          "name": "invoice_json",
+          "type": "string",
+          "description": "AI-returned JSON to parse and normalize"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "invoice_record",
+          "type": "object",
+          "description": "Normalized invoice record in a consistent schema (invoice number, dates, vendor details, totals, tax) with numeric values converted"
+        }
+      ],
+      "native_evidence": [
+        "Parse JSON Response"
+      ],
+      "requirement_evidence": [
+        "parse and normalize the JSON into a consistent schema (for example invoice number, dates, vendor details, totals, and tax) and convert numeric values"
+      ],
+      "rationale": "Deterministic parsing, schema normalization and numeric conversion of the AI output."
+    },
+    {
+      "node_id": "n8",
+      "label": "Append normalized invoice record to Google Sheets tracker",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "invoice_record",
+          "type": "object",
+          "description": "Normalized record appended to the tracker, matched on invoice_number"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Append to Invoice Tracker"
+      ],
+      "requirement_evidence": [
+        "append the normalized invoice record to a Google Sheets tracker, using invoice_number as the matching column"
+      ],
+      "rationale": "User-visible completion action delivering the declared outcome; terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "The hourly run starts the Gmail search."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Matched emails are filtered for attachments."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Emails with attachments are split."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": "each attachment item is processed separately",
+      "rationale": "Each split attachment goes through text extraction."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Extracted text is sent to the AI agent."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "The returned JSON is parsed and normalized."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "The normalized record is appended to the tracker."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The schedule signal starts the Gmail search."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "matched_emails",
+      "condition": null,
+      "rationale": "Filtering consumes the matched emails."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "emails_with_attachments",
+      "condition": null,
+      "rationale": "Splitting consumes the emails that carry attachments."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "attachment_items",
+      "condition": null,
+      "rationale": "Text extraction runs over each attachment item."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "pdf_text",
+      "condition": null,
+      "rationale": "The AI agent consumes the extracted text."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "invoice_json",
+      "condition": null,
+      "rationale": "Normalization consumes the AI-returned JSON."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "invoice_record",
+      "condition": null,
+      "rationale": "The tracker append consumes the normalized record."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.88,
+  "notes": "The frozen requirement declares no failure handling, so the following native behaviors were excluded from Gold as undeclared: cross-run deduplication (Check Duplicate), non-PDF routing to a ManualReview sheet (Is PDF? / Flag Unsupported Format / Log Manual Review), error logging to an Errors sheet (Has Error? / Log Errors), and the high-value approval alert (Needs Review? / Send Approval Alert). The native validation of totals inside the parse node also exceeds the declared parse/normalize contract and was not modelled as separate behavior. Per-attachment processing is expressed through the split node's item fan-out rather than an explicit loop node."
+}

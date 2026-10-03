@@ -1,0 +1,225 @@
+{
+  "schema_version": "n8n-s1-private-executor-contract-v1",
+  "task_id": "N8F-045",
+  "side_effects_disabled": true,
+  "mocks": [
+    {
+      "mock_id": "M-CYCLE-SHEETS-SAVE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "save_subscriber",
+      "request_contract": {
+        "email": "alice@example.com"
+      },
+      "response_contract": {
+        "saved": true,
+        "subscriber_id": "SUB-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-WELCOME",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_welcome_email",
+      "request_contract": {
+        "to": "alice@example.com",
+        "contains_cycle_overview": true
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "welcome-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-ACTIVE",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_active_subscribers",
+      "request_contract": {
+        "active_only": true
+      },
+      "response_contract": {
+        "subscribers": [
+          {
+            "email": "alice@example.com",
+            "last_period_start": "2026-08-01",
+            "cycle_length_days": 28,
+            "last_sent": {}
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-REMINDER",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_phase_reminder",
+      "request_contract": {
+        "to": "alice@example.com",
+        "email_type": "prep"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "reminder-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-UPDATE-LAST",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_last_sent",
+      "request_contract": {
+        "email": "alice@example.com",
+        "email_type": "prep"
+      },
+      "response_contract": {
+        "updated": true,
+        "updated_rows": 1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-SHEETS-LOG",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_send_log",
+      "request_contract": {
+        "required_fields": [
+          "date",
+          "phase",
+          "cycle_day",
+          "email_type"
+        ],
+        "email_type": "prep",
+        "cycle_day": 26
+      },
+      "response_contract": {
+        "logged": true,
+        "row_number": 210
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-LLM-DIGEST",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_contract": {
+        "name": "Alice",
+        "phase": "ovulation",
+        "cycle_day": 16,
+        "days_until_next_period": 13
+      },
+      "response_contract": {
+        "tips": {
+          "energy": "Maintain steady energy with balanced meals.",
+          "nutrition": "Include iron-rich foods.",
+          "movement": "Gentle cardio is ideal.",
+          "mindset": "Stay focused on one priority.",
+          "this_week": "Energy peaks mid-cycle."
+        },
+        "affirmation": "I honor my body's rhythm."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-CYCLE-GMAIL-DIGEST",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_weekly_digest",
+      "request_contract": {
+        "to": "alice@example.com"
+      },
+      "response_contract": {
+        "sent": true,
+        "message_id": "digest-0001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "case_bindings": [
+    {
+      "case_id": "C-SUBSCRIBE-WELCOME",
+      "fixture_ids": [
+        "F-CYCLE-SUBSCRIBE"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-SAVE",
+        "M-CYCLE-GMAIL-WELCOME"
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PREP",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PREP"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PERIOD-RECALC",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PERIOD"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-OVULATION",
+      "fixture_ids": [
+        "F-CYCLE-DAY-OVULATION"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-REMINDER-PMS",
+      "fixture_ids": [
+        "F-CYCLE-DAY-PMS"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-GMAIL-REMINDER",
+        "M-CYCLE-SHEETS-UPDATE-LAST",
+        "M-CYCLE-SHEETS-LOG"
+      ]
+    },
+    {
+      "case_id": "C-DUP-SUPPRESSED",
+      "fixture_ids": [
+        "F-CYCLE-DUP-SUPPRESS"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE"
+      ]
+    },
+    {
+      "case_id": "C-WEEKLY-DIGEST",
+      "fixture_ids": [
+        "F-CYCLE-WEEKLY-DIGEST"
+      ],
+      "mock_ids": [
+        "M-CYCLE-SHEETS-ACTIVE",
+        "M-CYCLE-LLM-DIGEST",
+        "M-CYCLE-GMAIL-DIGEST",
+        "M-CYCLE-SHEETS-LOG"
+      ]
+    }
+  ]
+}

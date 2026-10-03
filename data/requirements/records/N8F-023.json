@@ -1,0 +1,101 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-023",
+  "source_id": "n8n:9200",
+  "workflow_sha256": "745473a51c1ab442b581b2bd2f902bdb0973e755850bb01c867af3572ba784bb",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "808e718e48678b6f68703580e1d25498e2a6728aff033e47fa725b51b2a37c57",
+  "requirement": {
+    "requirement_text": "制作视频广告通常涉及编写脚本、设计商品视觉、剪辑视频以及跨平台发布等多个环节，需要多种工具且耗时较长。本需求把从创意到可发布广告成片的整条链路自动化。\n\n具体流程：从 Telegram 输入（文字加商品图片）生成广告创意；使用多种图像生成能力制作商品视觉素材；基于由语言模型生成的脚本，使用视频生成能力制作电影感的广告视频；把多个短片段合成为一支成片广告；自动发布到多个平台（TikTok、Instagram、LinkedIn、X、Threads、Facebook、Pinterest、Bluesky、YouTube）；把元数据与结果存入 Google Sheets 与 Google Drive 以便跟踪；最后通过 Telegram 发送通知，附上视频链接与文案。",
+    "source_spans": [
+      {
+        "start": 453,
+        "end": 620,
+        "text": "Creating video ads usually requires multiple tools and a lot of time: writing scripts, designing product visuals, editing videos, and publishing them across platforms."
+      },
+      {
+        "start": 826,
+        "end": 888,
+        "text": "Generates ad ideas from Telegram input (text + product image)."
+      },
+      {
+        "start": 891,
+        "end": 946,
+        "text": "Creates product visuals using multiple AI image engines"
+      },
+      {
+        "start": 1090,
+        "end": 1160,
+        "text": "Produces cinematic video ads with Veo 3 based on AI-generated scripts."
+      },
+      {
+        "start": 1163,
+        "end": 1216,
+        "text": "Merges multiple short clips into a polished final ad."
+      },
+      {
+        "start": 1219,
+        "end": 1358,
+        "text": "Publishes automatically to multiple platforms (TikTok, Instagram, LinkedIn, X, Threads, Facebook, Pinterest, Bluesky, YouTube) via Blotato."
+      },
+      {
+        "start": 1361,
+        "end": 1439,
+        "text": "Stores metadata and results in Google Sheets & Google Drive for easy tracking."
+      },
+      {
+        "start": 1442,
+        "end": 1497,
+        "text": "Notifies you via Telegram with the video link and copy."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "remove_credentials",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Telegram 输入：文字加商品图片"
+      ],
+      "conditions": [
+        "商品视觉使用多种图像生成能力制作",
+        "广告视频脚本由语言模型生成",
+        "多个短片段需合成为一支成片",
+        "发布目标为多个平台"
+      ],
+      "allowed_actions": [
+        "根据输入生成广告创意",
+        "调用图像生成能力制作商品视觉素材",
+        "调用语言模型生成视频脚本",
+        "调用视频生成能力制作广告视频",
+        "把多个短片段合成为成片",
+        "自动发布到多个平台",
+        "把元数据与结果存入 Google Sheets 与 Google Drive",
+        "通过 Telegram 发送含视频链接与文案的通知"
+      ],
+      "visible_outcomes": [
+        "多个平台上出现已发布的广告视频",
+        "Google Sheets 与 Google Drive 中保存元数据与结果",
+        "Telegram 收到含视频链接与文案的通知"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-023.packet.json",
+    "packet_sha256": "d9bb49e8e64667e52415d421570f323f5ba63170b2d641b3a8d2c3ae35d59c98",
+    "public_description_sha256": "6ef2a2f0955c7ce1bc61ad854ce84387d3b8e826316a38ba9abdcb585e1066ee"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-023.response.json",
+    "verification_response_sha256": "a5cf0495ee6e318f63c8118c0def5167719d6ed6b2d6417478ec8c9bd1117ebe",
+    "decision": "accept"
+  },
+  "formal_index": 34
+}

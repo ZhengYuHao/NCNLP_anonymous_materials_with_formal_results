@@ -1,0 +1,736 @@
+{
+  "task_id": "N8F-034",
+  "author_id": "OA-02",
+  "status": "submitted",
+  "requirement_sha256": "fff929bc124d0c0495a69c576e26196036258342ec64411b851abd3aa76200b9",
+  "fixtures": [
+    {
+      "fixture_id": "F-TOPICS",
+      "purpose": "固定主题清单，每个主题触发一次 Reddit 检索",
+      "input_data": {
+        "topics": [
+          "AI regulation",
+          "quantum computing"
+        ],
+        "engagement_filter": {
+          "min_upvotes": 500
+        }
+      }
+    },
+    {
+      "fixture_id": "F-REDDIT-POSTS",
+      "purpose": "Reddit 检索返回的 3 篇帖子，覆盖达标、未达标两种互动水平",
+      "input_data": {
+        "posts": [
+          {
+            "post_id": "P-001",
+            "title": "New EU AI rules explained",
+            "subreddit": "r/technology",
+            "upvotes": 1500,
+            "url": "https://example.com/eu-ai-rules",
+            "linked_article_url": "https://example.com/eu-ai-rules"
+          },
+          {
+            "post_id": "P-002",
+            "title": "Small quantum update",
+            "subreddit": "r/quantum",
+            "upvotes": 120,
+            "url": "https://example.com/small-quantum"
+          },
+          {
+            "post_id": "P-003",
+            "title": "Quantum error correction milestone",
+            "subreddit": "r/quantum",
+            "upvotes": 820,
+            "url": "https://example.com/qec-milestone",
+            "linked_article_url": "https://example.com/qec-milestone"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-COMMENTS-P1",
+      "purpose": "P-001 的 35 条评论（评分 35 至 1），验证取评分前 30 条",
+      "input_data": {
+        "post_id": "P-001",
+        "comments": [
+          {
+            "comment_id": "P1-C01",
+            "score": 35,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C02",
+            "score": 34,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C03",
+            "score": 33,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C04",
+            "score": 32,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C05",
+            "score": 31,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C06",
+            "score": 30,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C07",
+            "score": 29,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C08",
+            "score": 28,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C09",
+            "score": 27,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C10",
+            "score": 26,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C11",
+            "score": 25,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C12",
+            "score": 24,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C13",
+            "score": 23,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C14",
+            "score": 22,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C15",
+            "score": 21,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C16",
+            "score": 20,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C17",
+            "score": 19,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C18",
+            "score": 18,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C19",
+            "score": 17,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C20",
+            "score": 16,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C21",
+            "score": 15,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C22",
+            "score": 14,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C23",
+            "score": 13,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C24",
+            "score": 12,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C25",
+            "score": 11,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C26",
+            "score": 10,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C27",
+            "score": 9,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C28",
+            "score": 8,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C29",
+            "score": 7,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C30",
+            "score": 6,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C31",
+            "score": 5,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C32",
+            "score": 4,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C33",
+            "score": 3,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C34",
+            "score": 2,
+            "body": "c"
+          },
+          {
+            "comment_id": "P1-C35",
+            "score": 1,
+            "body": "c"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-COMMENTS-P3",
+      "purpose": "P-003 的 25 条评论（不足 30 条），验证边界：不足时取全部",
+      "input_data": {
+        "post_id": "P-003",
+        "comments": [
+          {
+            "comment_id": "P3-C01",
+            "score": 25,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C02",
+            "score": 24,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C03",
+            "score": 23,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C04",
+            "score": 22,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C05",
+            "score": 21,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C06",
+            "score": 20,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C07",
+            "score": 19,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C08",
+            "score": 18,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C09",
+            "score": 17,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C10",
+            "score": 16,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C11",
+            "score": 15,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C12",
+            "score": 14,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C13",
+            "score": 13,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C14",
+            "score": 12,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C15",
+            "score": 11,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C16",
+            "score": 10,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C17",
+            "score": 9,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C18",
+            "score": 8,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C19",
+            "score": 7,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C20",
+            "score": 6,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C21",
+            "score": 5,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C22",
+            "score": 4,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C23",
+            "score": 3,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C24",
+            "score": 2,
+            "body": "c"
+          },
+          {
+            "comment_id": "P3-C25",
+            "score": 1,
+            "body": "c"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-ARTICLE-P1",
+      "purpose": "P-001 所链接文章的正文内容（Jina 抽取结果固定）",
+      "input_data": {
+        "url": "https://example.com/eu-ai-rules",
+        "content": "The European Union has agreed on new rules for artificial intelligence, establishing risk tiers and compliance requirements."
+      }
+    },
+    {
+      "fixture_id": "F-REDDIT-NONE",
+      "purpose": "检索无结果，验证不生成报告",
+      "input_data": {
+        "posts": []
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-REDDIT-SEARCH",
+      "dependency_type": "reddit",
+      "operation": "search_posts",
+      "request_contract": {
+        "one_call_per_topic": true,
+        "query_in_topics": true
+      },
+      "response_contract": {
+        "posts": "see fixture F-REDDIT-POSTS"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-COMMENTS",
+      "dependency_type": "reddit",
+      "operation": "get_comments",
+      "request_contract": {
+        "post_id_in": [
+          "P-001",
+          "P-003"
+        ]
+      },
+      "response_contract": {
+        "comments": "see fixtures F-COMMENTS-P1 / F-COMMENTS-P3"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-JINA-EXTRACT",
+      "dependency_type": "httpRequest",
+      "operation": "extract_article_content",
+      "request_contract": {
+        "url": "https://example.com/eu-ai-rules"
+      },
+      "response_contract": {
+        "content": "The European Union has agreed on new rules for artificial intelligence, establishing risk tiers and compliance requirements."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-COMMENT",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "analyze_comments",
+      "request_contract": {
+        "input_top_comments": true
+      },
+      "response_contract": {
+        "overall_sentiment": "positive",
+        "dominant_narratives": [
+          "innovation vs safety"
+        ],
+        "audience_insights": [
+          "practitioners worried about compliance"
+        ],
+        "pr_implications": [
+          "position EU rules as opportunity"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-CONTENT",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "analyze_article_content",
+      "request_contract": {
+        "input_is_extracted_content": true
+      },
+      "response_contract": {
+        "core_story_elements": [
+          "EU agreement"
+        ],
+        "technical_aspects": [
+          "risk tiers"
+        ],
+        "narrative_opportunities": [
+          "compliance how-to"
+        ],
+        "viral_elements": [
+          "timely topic"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-REPORT",
+      "dependency_type": "lmChatAnthropic",
+      "operation": "generate_pr_report",
+      "request_contract": {
+        "input_combines_comment_and_content_analysis": true
+      },
+      "response_contract": {
+        "first_mover_opportunities": [
+          "Publish compliance checklist first"
+        ],
+        "trend_amplifier_ideas": [
+          "Explain impact on startups"
+        ],
+        "priority_ranking": [
+          1,
+          2,
+          3
+        ],
+        "execution_roadmap": [
+          "week 1: draft",
+          "week 2: publish"
+        ],
+        "strategic_recommendations": [
+          "focus on EU market"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-COMPRESS",
+      "dependency_type": "compression",
+      "operation": "zip_files",
+      "request_contract": {
+        "inputs_are_report_text_files": true
+      },
+      "response_contract": {
+        "archive_name": "pr-reports.zip",
+        "archive_id": "ZIP-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DRIVE-UPLOAD",
+      "dependency_type": "googleDrive",
+      "operation": "upload_file",
+      "request_contract": {
+        "file_is_archive": true
+      },
+      "response_contract": {
+        "file_id": "DRV-ZIP-001",
+        "link": "https://drive.example.com/file/DRV-ZIP-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MATTERMOST",
+      "dependency_type": "httpRequest",
+      "operation": "post_to_mattermost",
+      "request_contract": {
+        "message_must_contain_drive_link": true
+      },
+      "response_contract": {
+        "status": "posted",
+        "message_id": "MM-001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-WEEKLY",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-TOPICS",
+        "F-REDDIT-POSTS",
+        "F-COMMENTS-P1",
+        "F-COMMENTS-P3",
+        "F-ARTICLE-P1"
+      ],
+      "mock_ids": [
+        "M-REDDIT-SEARCH",
+        "M-REDDIT-COMMENTS",
+        "M-JINA-EXTRACT",
+        "M-LLM-COMMENT",
+        "M-LLM-CONTENT",
+        "M-LLM-REPORT",
+        "M-COMPRESS",
+        "M-DRIVE-UPLOAD",
+        "M-MATTERMOST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-POS-01",
+          "target": "output.selected_posts",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "P-002 点赞数 120 低于互动阈值 500 被筛掉，入选 P-001、P-003"
+        },
+        {
+          "assertion_id": "A-POS-02",
+          "target": "output.analysis[0].comments_analyzed",
+          "operator": "equals",
+          "expected": 30,
+          "rationale": "P-001 有 35 条评论，按评分取前 30 条"
+        },
+        {
+          "assertion_id": "A-POS-03",
+          "target": "output.reports",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每篇入选帖子生成一份报告"
+        },
+        {
+          "assertion_id": "A-POS-04",
+          "target": "output.reports[0].first_mover_opportunities",
+          "operator": "exists",
+          "rationale": "报告须包含首发式报道机会",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-05",
+          "target": "output.reports[0].trend_amplifier_ideas",
+          "operator": "exists",
+          "rationale": "报告须包含趋势放大型选题",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-06",
+          "target": "output.reports[0].priority_ranking",
+          "operator": "exists",
+          "rationale": "报告须包含优先级排序",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-07",
+          "target": "output.reports[0].execution_roadmap",
+          "operator": "exists",
+          "rationale": "报告须包含执行路线图",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-08",
+          "target": "output.reports[0].strategic_recommendations",
+          "operator": "exists",
+          "rationale": "报告须包含策略建议，五类内容齐备才满足契约",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-09",
+          "target": "output.reports[0].content_analysis.core_story_elements",
+          "operator": "contains",
+          "expected": "EU agreement",
+          "rationale": "正文分析须来自固定的 Jina/LLM 响应"
+        },
+        {
+          "assertion_id": "A-POS-10",
+          "target": "output.archive.archive_name",
+          "operator": "equals",
+          "expected": "pr-reports.zip",
+          "rationale": "报告须打包为压缩包"
+        },
+        {
+          "assertion_id": "A-POS-11",
+          "target": "output.drive_upload.link",
+          "operator": "exists",
+          "rationale": "压缩包须上传至 Google Drive 并返回链接",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-POS-12",
+          "target": "output.mattermost_message.text",
+          "operator": "contains",
+          "expected": "https://drive.example.com/file/DRV-ZIP-001",
+          "rationale": "Mattermost 分享的消息必须包含压缩包链接"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BND-COMMENTS-UNDER-30",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-TOPICS",
+        "F-REDDIT-POSTS",
+        "F-COMMENTS-P1",
+        "F-COMMENTS-P3",
+        "F-ARTICLE-P1"
+      ],
+      "mock_ids": [
+        "M-REDDIT-SEARCH",
+        "M-REDDIT-COMMENTS",
+        "M-JINA-EXTRACT",
+        "M-LLM-COMMENT",
+        "M-LLM-CONTENT",
+        "M-LLM-REPORT",
+        "M-COMPRESS",
+        "M-DRIVE-UPLOAD",
+        "M-MATTERMOST"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-BND-01",
+          "target": "output.analysis[1].comments_analyzed",
+          "operator": "equals",
+          "expected": 25,
+          "rationale": "P-003 仅 25 条评论，不足 30 条时取全部"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-NO-POSTS",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-REDDIT-NONE",
+        "F-TOPICS"
+      ],
+      "mock_ids": [
+        "M-REDDIT-SEARCH"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-NEG-01",
+          "target": "output.selected_posts",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无帖子时不筛选任何内容"
+        },
+        {
+          "assertion_id": "A-NEG-02",
+          "target": "output.reports",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无入选帖子则不生成报告"
+        },
+        {
+          "assertion_id": "A-NEG-03",
+          "target": "output.archive",
+          "operator": "not_exists",
+          "rationale": "无报告不打包",
+          "expected": null
+        },
+        {
+          "assertion_id": "A-NEG-04",
+          "target": "output.mattermost_message",
+          "operator": "not_exists",
+          "rationale": "无压缩包不发送 Mattermost 分享",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "Reddit 检索/评论、Jina 正文抽取、Anthropic 分析、压缩、Drive 上传、Mattermost 均为固定模拟。互动阈值（500）为固定配置，入选帖数、评论取数（前30/全部）、报告与归档数量均可程序计算。"
+}

@@ -1,0 +1,129 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-023",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "用户的创意输入（文字与商品图片）",
+        "Telegram 文字与商品图片"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "图像生成提示词"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g4",
+      "data_items": [
+        "广告创意（主提示）",
+        "广告创意/主提示词"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "视频脚本（格式化提示词）",
+        "视频脚本"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "各短视频片段",
+        "生成的短视频片段"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "成片广告视频"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "成片结果（视频与链接）",
+        "成片视频链接与结果数据"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g9",
+      "data_items": [
+        "成片视频链接"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-023-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "Telegram 通知附上视频链接，该链接源自成片合成结果（Send Video URL via Telegram），通知步骤真实读取成片链接。",
+      "confidence": 0.7,
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "发布结果与状态"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-023-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "存储步骤把元数据与结果存入 Google Sheets 以便跟踪，发布后的结果与状态（Update Status to DONE）属被存储消费的数据。",
+      "confidence": 0.7,
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "视频链接与文案"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-023-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "需求明示通知附上视频链接与文案，两者取自已存储的元数据与结果，通知步骤读取存储数据构建通知内容。",
+      "confidence": 0.65,
+      "edge_id": "d10"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.823529411764706,
+    "shared_edge_count": 7,
+    "adjudicated_dispute_count": 3,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

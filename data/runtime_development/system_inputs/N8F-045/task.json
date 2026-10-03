@@ -1,0 +1,687 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-045",
+  "dataset_partition": "development_qualification",
+  "domain": "medical",
+  "requirement_sha256": "3a201d485022001f72a6e6da2e69fabb795bde325eee20dbfcd6b646433846a3",
+  "natural_language_requirement": "订阅者通过表单提交姓名、邮箱、最近一次经期开始日期与平均周期天数。系统据此计算全部关键周期日期：下次经期开始日；排卵日为下次经期开始日减 14 天；易孕窗口自排卵日前 5 天开启、排卵日后 1 天结束；经前综合征（PMS）窗口自下次经期开始日前 5 天开启。日期保存后系统立即向订阅者发送一封包含完整周期概览的欢迎邮件。此后系统每天早上 8 点检查全部活跃订阅者，判断每位订阅者当天所处的阶段，并在命中以下四类触发日之一时发送对应的阶段提醒邮件：经期开始前 3 天发送准备提示；经期开始当天发送舒适与自我照护提示；排卵日发送生育意识与精力提示；PMS 窗口开始日发送情绪、精力与边界提示。发送前会检查上次发送记录，确保同一周期内同一类型的邮件只发送一次；发送后更新订阅者的最近发送记录，并将每次投递按日期、阶段、周期天数与邮件类型记入发送日志；在经期开始日会重新计算周期日期以实现持续跟踪。此外，系统每周日早上 9 点为全部活跃订阅者生成本周健康摘要：先判断订阅者当前所处的阶段（经期、卵泡期、易孕期、排卵期或 PMS），再结合姓名、阶段、周期天数与距下次经期的天数，交由语言模型生成涵盖精力管理、营养、运动、心态与本周注意事项五个类别的阶段化建议以及一句每周寄语，组装为邮件发送；每次发送同样记入发送日志。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "cycle_day": {
+            "type": "integer"
+          },
+          "days_until_next_period": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cycle_day",
+          "days_until_next_period",
+          "name",
+          "phase"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "affirmation": {
+            "type": "string"
+          },
+          "tips": {
+            "additionalProperties": false,
+            "properties": {
+              "energy": {
+                "type": "string"
+              },
+              "mindset": {
+                "type": "string"
+              },
+              "movement": {
+                "type": "string"
+              },
+              "nutrition": {
+                "type": "string"
+              },
+              "this_week": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "energy",
+              "mindset",
+              "movement",
+              "nutrition",
+              "this_week"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "affirmation",
+          "tips"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "operation": "send_phase_reminder",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "email_type": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email_type",
+          "to",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "operation": "send_weekly_digest",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "operation": "send_welcome_email",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "cycle_overview": {
+            "type": "object",
+            "properties": {
+              "next_period_start": {
+                "type": "string"
+              },
+              "ovulation_date": {
+                "type": "string"
+              },
+              "fertile_window_start": {
+                "type": "string"
+              },
+              "fertile_window_end": {
+                "type": "string"
+              },
+              "pms_window_start": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "next_period_start",
+              "ovulation_date",
+              "fertile_window_start",
+              "fertile_window_end",
+              "pms_window_start"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "to",
+          "cycle_overview"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "operation": "append_send_log",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "subscriber_email": {
+            "type": "string"
+          },
+          "send_date": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "cycle_day": {
+            "type": "integer"
+          },
+          "email_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subscriber_email",
+          "send_date",
+          "phase",
+          "cycle_day",
+          "email_type"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "logged": {
+            "type": "boolean"
+          },
+          "row_number": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "logged",
+          "row_number"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "read_active_subscribers",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_only": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "active_only"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "subscribers": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "cycle_length_days": {
+                  "type": "integer"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "last_period_start": {
+                  "type": "string"
+                },
+                "last_sent": {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "required": [],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "cycle_length_days",
+                "email",
+                "last_period_start",
+                "last_sent"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "subscribers"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "operation": "save_subscriber",
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "last_period_start": {
+            "type": "string"
+          },
+          "cycle_length_days": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "last_period_start",
+          "cycle_length_days"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "saved": {
+            "type": "boolean"
+          },
+          "subscriber_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "saved",
+          "subscriber_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "update_last_sent",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "email_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "email_type"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "updated": {
+            "type": "boolean"
+          },
+          "updated_rows": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated",
+          "updated_rows"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "cycle_dates",
+        "schema": {
+          "description": "Object containing next_period_start, ovulation_date, fertile_window_start, fertile_window_end, and pms_window_start as date strings",
+          "type": "object",
+          "properties": {
+            "next_period_start": {
+              "type": "string",
+              "description": "Next period start date as a date string"
+            },
+            "ovulation_date": {
+              "type": "string",
+              "description": "Ovulation date as a date string (next period start date minus 14 days)"
+            },
+            "fertile_window_start": {
+              "type": "string",
+              "description": "Fertile window start date as a date string (5 days before ovulation date)"
+            },
+            "fertile_window_end": {
+              "type": "string",
+              "description": "Fertile window end date as a date string (1 day after ovulation date)"
+            },
+            "pms_window_start": {
+              "type": "string",
+              "description": "PMS window start date as a date string (5 days before next period start date)"
+            }
+          },
+          "required": [
+            "next_period_start",
+            "ovulation_date",
+            "fertile_window_start",
+            "fertile_window_end",
+            "pms_window_start"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Object containing next period start date, ovulation date, fertile window start and end dates, and PMS window start date",
+        "requirement_evidence": [
+          "系统据此计算全部关键周期日期：下次经期开始日；排卵日为下次经期开始日减 14 天；易孕窗口自排卵日前 5 天开启、排卵日后 1 天结束；经前综合征（PMS）窗口自下次经期开始日前 5 天开启"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n2.cycle_dates"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sent_phase_reminders",
+        "schema": {
+          "description": "Array of sent reminder records with subscriber email, send date, phase, cycle day, email type, message ID, and sent status",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "subscriber_email": {
+                "type": "string",
+                "description": "Subscriber email address"
+              },
+              "send_date": {
+                "type": "string",
+                "description": "Date of sending the reminder email"
+              },
+              "phase": {
+                "type": "string",
+                "description": "Cycle phase during which the email was sent"
+              },
+              "cycle_day": {
+                "type": "integer",
+                "description": "Cycle day number when the email was sent"
+              },
+              "email_type": {
+                "type": "string",
+                "description": "Type of reminder email sent"
+              },
+              "message_id": {
+                "type": "string",
+                "description": "Message ID of the sent email"
+              },
+              "sent": {
+                "type": "boolean",
+                "description": "Whether the email was successfully sent"
+              }
+            },
+            "required": [
+              "subscriber_email",
+              "send_date",
+              "phase",
+              "cycle_day",
+              "email_type",
+              "message_id",
+              "sent"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "Array of sent reminder records with subscriber info, phase, email type, and send log details",
+        "requirement_evidence": [
+          "此后系统每天早上 8 点检查全部活跃订阅者，判断每位订阅者当天所处的阶段，并在命中以下四类触发日之一时发送对应的阶段提醒邮件",
+          "发送前会检查上次发送记录，确保同一周期内同一类型的邮件只发送一次",
+          "发送后更新订阅者的最近发送记录，并将每次投递按日期、阶段、周期天数与邮件类型记入发送日志"
+        ],
+        "source_operations": [
+          "send_phase_reminder",
+          "append_send_log",
+          "update_last_sent"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "welcome_email_sent",
+        "schema": {
+          "description": "Welcome email send result including message ID, sent status, recipient email, and cycle overview object",
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "string",
+              "description": "Message ID of the welcome email"
+            },
+            "sent": {
+              "type": "boolean",
+              "description": "Whether the welcome email was successfully sent"
+            },
+            "to": {
+              "type": "string",
+              "description": "Recipient email address"
+            },
+            "cycle_overview": {
+              "type": "object",
+              "description": "Object containing the calculated cycle dates overview",
+              "properties": {
+                "next_period_start": {
+                  "type": "string"
+                },
+                "ovulation_date": {
+                  "type": "string"
+                },
+                "fertile_window_start": {
+                  "type": "string"
+                },
+                "fertile_window_end": {
+                  "type": "string"
+                },
+                "pms_window_start": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "next_period_start",
+                "ovulation_date",
+                "fertile_window_start",
+                "fertile_window_end",
+                "pms_window_start"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "message_id",
+            "sent",
+            "to",
+            "cycle_overview"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Result of sending welcome email with message ID, sent status, recipient, and cycle overview content",
+        "requirement_evidence": [
+          "日期保存后系统立即向订阅者发送一封包含完整周期概览的欢迎邮件"
+        ],
+        "source_operations": [
+          "send_welcome_email",
+          "append_send_log"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "weekly_digest_sent",
+        "schema": {
+          "description": "Array of weekly digest send results with recipient, phase, message ID, sent status, and logged flag",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "to": {
+                "type": "string",
+                "description": "Recipient email address"
+              },
+              "phase": {
+                "type": "string",
+                "description": "Cycle phase of the subscriber"
+              },
+              "message_id": {
+                "type": "string",
+                "description": "Message ID of the sent weekly digest email"
+              },
+              "sent": {
+                "type": "boolean",
+                "description": "Whether the weekly digest email was successfully sent"
+              },
+              "logged": {
+                "type": "boolean",
+                "description": "Whether the send was logged successfully"
+              }
+            },
+            "required": [
+              "to",
+              "phase",
+              "message_id",
+              "sent",
+              "logged"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "Array of weekly digest email send results and log update flags per active subscriber",
+        "requirement_evidence": [
+          "系统每周日早上 9 点为全部活跃订阅者生成本周健康摘要",
+          "组装为邮件发送；每次发送同样记入发送日志"
+        ],
+        "source_operations": [
+          "send_weekly_digest",
+          "append_send_log"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "weekly_wellness_advice",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "tips": {
+              "type": "object",
+              "properties": {
+                "energy": {
+                  "type": "string"
+                },
+                "nutrition": {
+                  "type": "string"
+                },
+                "movement": {
+                  "type": "string"
+                },
+                "mindset": {
+                  "type": "string"
+                },
+                "this_week": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "energy",
+                "nutrition",
+                "movement",
+                "mindset",
+                "this_week"
+              ]
+            },
+            "affirmation": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tips",
+            "affirmation"
+          ],
+          "description": "Weekly wellness advice and affirmation generated by language model"
+        },
+        "description": "涵盖精力管理、营养、运动、心态与本周注意事项五类别的阶段化建议及每周寄语",
+        "requirement_evidence": [
+          "交由语言模型生成涵盖精力管理、营养、运动、心态与本周注意事项五个类别的阶段化建议以及一句每周寄语"
+        ],
+        "source_operations": [
+          "generate_weekly_digest"
+        ],
+        "design_sources": [
+          "n11.wellness_advice"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "277DD46ACE89637AA748AEA39AB24C9C77D3E63329F4D9D90FBAEEB3EF077873",
+  "public_interface_sha256": "E9A9065B14E6768E8BF9D19CB7BF1E0371FC69B767AAC7818B68DABC1BE06FE8",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

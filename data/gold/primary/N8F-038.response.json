@@ -1,0 +1,315 @@
+{
+  "task_id": "N8F-038",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "4e606245eb5a44d718d6a5d0ef334214bc3c1a84013cafe1b58b33f28e2a3454",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收输入并记录目标表名",
+      "node_type": "code",
+      "operation_family": "input_capture_and_table_name_setup",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "使用者当前输入的自然语言内容"
+        },
+        {
+          "name": "table_name",
+          "type": "string",
+          "description": "目标数据表名（首次提供时记录，未提供则为空）"
+        },
+        {
+          "name": "table_ready",
+          "type": "boolean",
+          "description": "目标表名是否已配置且本条输入为查询问题而非表名提供/重置"
+        }
+      ],
+      "native_evidence": [
+        "Chat Trigger",
+        "Manage Table Name"
+      ],
+      "requirement_evidence": [
+        "使用者先提供一次目标数据表名，之后即可用自然语言提出问题"
+      ],
+      "rationale": "接收使用者输入并识别/记录目标数据表名，为确定性的输入接收与状态管理操作，判定为 code 节点（流程入口）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "表名配置状态路由",
+      "node_type": "code",
+      "operation_family": "table_readiness_routing",
+      "inputs": [
+        {
+          "name": "chat_input",
+          "type": "string",
+          "description": "使用者输入的自然语言内容"
+        },
+        {
+          "name": "table_name",
+          "type": "string",
+          "description": "目标数据表名"
+        },
+        {
+          "name": "table_ready",
+          "type": "boolean",
+          "description": "表名是否已配置并可直接进入查询"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "query_context",
+          "type": "object",
+          "description": "包含目标表名与自然语言问题的查询上下文"
+        },
+        {
+          "name": "guide_message",
+          "type": "string",
+          "description": "表名未配置时生成的引导提示文本"
+        }
+      ],
+      "native_evidence": [
+        "Need Schema?"
+      ],
+      "requirement_evidence": [
+        "使用者先提供一次目标数据表名，之后即可用自然语言提出问题"
+      ],
+      "rationale": "根据表名是否已配置进行条件路由：已配置则进入查询阶段，未配置/重置则引导使用者先提供表名，为确定性条件分支，判定为 code 节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "自然语言问题转 SQL",
+      "node_type": "semantic",
+      "operation_family": "natural_language_to_sql",
+      "inputs": [
+        {
+          "name": "query_context",
+          "type": "object",
+          "description": "目标表名与自然语言问题上下文"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "由语言模型生成的可执行 SQL 查询语句"
+        }
+      ],
+      "native_evidence": [
+        "Unified Analytics Agent",
+        "OpenAI GPT-4o-mini"
+      ],
+      "requirement_evidence": [
+        "系统由语言模型将问题转换为 SQL"
+      ],
+      "rationale": "需求声明由语言模型将自然语言问题转换为 SQL，需要开放文本理解与生成，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n4",
+      "label": "执行 SQL 查询",
+      "node_type": "code",
+      "operation_family": "sql_execution",
+      "inputs": [
+        {
+          "name": "sql_query",
+          "type": "string",
+          "description": "生成的 SQL 查询语句"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "query_results",
+          "type": "object",
+          "description": "PostgreSQL 数据库返回的原始查询结果"
+        }
+      ],
+      "native_evidence": [
+        "Execute SQL Query"
+      ],
+      "requirement_evidence": [
+        "直接对数据库执行查询，无需使用者导出数据或上传数据文件，也无需使用者编写 SQL"
+      ],
+      "rationale": "在 PostgreSQL 数据库上直接执行查询并取回结果，为确定性的外部执行操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "整理分析结论",
+      "node_type": "semantic",
+      "operation_family": "result_summarization",
+      "inputs": [
+        {
+          "name": "query_results",
+          "type": "object",
+          "description": "数据库返回的原始查询结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_answer",
+          "type": "string",
+          "description": "整理后的分析结论文本"
+        }
+      ],
+      "native_evidence": [
+        "Unified Analytics Agent"
+      ],
+      "requirement_evidence": [
+        "查询结果以整理后的分析结论返回给使用者"
+      ],
+      "rationale": "需求声明查询结果需整理为分析结论后返回，属于对结果数据的开放文本组织与呈现，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "回复使用者",
+      "node_type": "terminal",
+      "operation_family": "user_reply",
+      "inputs": [
+        {
+          "name": "analysis_answer",
+          "type": "string",
+          "description": "整理后的分析结论文本"
+        },
+        {
+          "name": "guide_message",
+          "type": "string",
+          "description": "表名未配置时的引导提示文本"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Chat Trigger"
+      ],
+      "requirement_evidence": [
+        "查询结果以整理后的分析结论返回给使用者"
+      ],
+      "rationale": "将分析结论（或表名引导提示）返回给使用者，为使用者可见的完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收输入并记录表名后进入表名配置状态路由。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "table_ready == true",
+      "rationale": "表名已配置且本条为查询问题时，进入自然语言问题转 SQL 阶段。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n2",
+      "target": "n6",
+      "variable": null,
+      "condition": "table_ready == false",
+      "rationale": "表名未配置或为重置/首次提供时，直接回复引导提示，要求使用者先提供目标表名。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "SQL 生成后直接对数据库执行查询。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "查询完成后整理分析结论。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "结论整理完成后回复使用者。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "chat_input",
+      "condition": null,
+      "rationale": "输入内容送入路由节点供查询上下文构建。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n1",
+      "target": "n2",
+      "variable": "table_name",
+      "condition": null,
+      "rationale": "目标表名送入路由节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n1",
+      "target": "n2",
+      "variable": "table_ready",
+      "condition": null,
+      "rationale": "表名就绪状态送入路由节点供分支判定。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n2",
+      "target": "n3",
+      "variable": "query_context",
+      "condition": null,
+      "rationale": "查询上下文（表名与问题）送入 SQL 转换节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n4",
+      "variable": "sql_query",
+      "condition": null,
+      "rationale": "生成的 SQL 语句送入执行节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "query_results",
+      "condition": null,
+      "rationale": "查询结果送入结论整理节点。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "analysis_answer",
+      "condition": null,
+      "rationale": "整理后的分析结论送入回复节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n2",
+      "target": "n6",
+      "variable": "guide_message",
+      "condition": null,
+      "rationale": "表名未配置时生成的引导提示送入回复节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：输入接收与表名记录（code）、表名配置状态路由（code，未配置时引导使用者先提供表名）、问题转 SQL（semantic）、执行查询（code）、整理分析结论（semantic）、回复使用者（terminal）。需求未声明的实现细节（表结构加载、SQL 自纠错循环、图表生成、Google Sheets 数据同步分支）未纳入。混合任务满足 semantic→code 有类型 DFG 边（sql_query）。"
+}

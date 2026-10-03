@@ -1,0 +1,497 @@
+{
+  "task_id": "N8F-078",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "516fd4125103a24ee57abc183b0846cb9808d010d21932506a758d92d533157a",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收三类来源告警并规范化",
+      "node_type": "code",
+      "operation_family": "alert_ingestion_and_normalization",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "normalized_alerts",
+          "type": "object",
+          "description": "由 SIEM、EDR 与云安全工具三类来源告警规范化后的统一告警结构"
+        }
+      ],
+      "native_evidence": [
+        "When SIEM Alert Received",
+        "When EDR Alert Received",
+        "When Cloud Alert Received",
+        "Normalize SIEM Alert",
+        "Normalize EDR Alert",
+        "Normalize Cloud Alert",
+        "Merge Normalized Alerts"
+      ],
+      "requirement_evidence": [
+        "安全告警来自三类来源：SIEM、EDR 与云安全工具，各自通过独立的回调接口接入",
+        "每条告警被规范化为统一的告警结构"
+      ],
+      "rationale": "接收三类来源告警并规范化为统一结构，为确定性变换操作，判定为 code 节点；三类独立回调接口在方法中立图中归并为单一入口（流程入口之一）。"
+    },
+    {
+      "node_id": "n2",
+      "label": "写入外部告警缓冲服务",
+      "node_type": "terminal",
+      "operation_family": "alert_buffering",
+      "inputs": [
+        {
+          "name": "normalized_alerts",
+          "type": "object",
+          "description": "规范化后的统一告警结构"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Post Alert to Buffer"
+      ],
+      "requirement_evidence": [
+        "并写入外部告警缓冲服务暂存"
+      ],
+      "rationale": "将规范化告警写入外部缓冲服务暂存，为告警接入分支的确定性外部写入操作且无后续出边，判定为 terminal 节点（该分支终点，后续由批量处理分支取回）。"
+    },
+    {
+      "node_id": "n3",
+      "label": "按处理窗口周期触发",
+      "node_type": "code",
+      "operation_family": "scheduled_batch_trigger",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "Every Batch Processing Window"
+      ],
+      "requirement_evidence": [
+        "按计划周期性运行"
+      ],
+      "rationale": "按处理窗口周期定时触发批量处理，为确定性定时触发操作，判定为 code 节点（流程入口之一）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "取回最近处理窗口内的告警",
+      "node_type": "code",
+      "operation_family": "buffered_alert_fetch",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "buffered_alerts",
+          "type": "object",
+          "description": "从告警缓冲服务取回的最近一个处理窗口内的全部告警"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Buffered Alerts"
+      ],
+      "requirement_evidence": [
+        "从告警缓冲服务取回最近一个处理窗口内的全部告警"
+      ],
+      "rationale": "从缓冲服务取回最近处理窗口内的告警，为确定性的外部读取操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "指纹生成与预聚类",
+      "node_type": "code",
+      "operation_family": "alert_fingerprinting_and_preclustering",
+      "inputs": [
+        {
+          "name": "buffered_alerts",
+          "type": "object",
+          "description": "最近处理窗口内的告警"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "clustered_alerts",
+          "type": "object",
+          "description": "按主机、规则标识与严重程度生成指纹并预聚类后的告警簇（含模糊标记）"
+        }
+      ],
+      "native_evidence": [
+        "Pre-Cluster Alerts"
+      ],
+      "requirement_evidence": [
+        "按主机、规则标识与严重程度对告警生成指纹，并把在很短时间内发生的明显重复项预先聚为一簇"
+      ],
+      "rationale": "按主机、规则标识与严重程度生成指纹并预聚类明显重复项，为确定性变换与聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n6",
+      "label": "模糊簇判定路由",
+      "node_type": "code",
+      "operation_family": "ambiguity_routing",
+      "inputs": [
+        {
+          "name": "clustered_alerts",
+          "type": "object",
+          "description": "预聚类后的告警簇"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ambiguous_clusters",
+          "type": "object",
+          "description": "难以判定、需要语言模型裁决的簇"
+        },
+        {
+          "name": "clear_clusters",
+          "type": "object",
+          "description": "明确无疑义的簇"
+        }
+      ],
+      "native_evidence": [
+        "Check for Ambiguous Clusters"
+      ],
+      "requirement_evidence": [
+        "仅把难以判定的簇交给语言模型判断"
+      ],
+      "rationale": "区分难以判定的簇与明确簇并进行条件路由，为确定性条件分支操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "语言模型聚类裁决",
+      "node_type": "semantic",
+      "operation_family": "cluster_resolution",
+      "inputs": [
+        {
+          "name": "ambiguous_clusters",
+          "type": "object",
+          "description": "难以判定的告警簇"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "resolved_clusters",
+          "type": "object",
+          "description": "语言模型裁决后的聚类结果（合并为重复项或保留为独立事件）"
+        }
+      ],
+      "native_evidence": [
+        "AI Semantic Clustering Agent",
+        "Claude Clustering Model"
+      ],
+      "requirement_evidence": [
+        "应作为重复项合并，还是保留为独立事件"
+      ],
+      "rationale": "需求声明由语言模型判断模糊簇应合并为重复项还是保留为独立事件，需要开放文本理解与判断，判定为 semantic 节点。"
+    },
+    {
+      "node_id": "n8",
+      "label": "明确簇直接通过",
+      "node_type": "code",
+      "operation_family": "clear_cluster_pass_through",
+      "inputs": [
+        {
+          "name": "clear_clusters",
+          "type": "object",
+          "description": "明确无疑义的簇"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "passed_clusters",
+          "type": "object",
+          "description": "无需语言模型裁决、直接保留的明确簇"
+        }
+      ],
+      "native_evidence": [
+        "Pass Clear Clusters"
+      ],
+      "requirement_evidence": [
+        "仅把难以判定的簇交给语言模型判断"
+      ],
+      "rationale": "明确簇不交由语言模型而直接保留，为确定性传递操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n9",
+      "label": "合并聚类结果",
+      "node_type": "code",
+      "operation_family": "cluster_result_merge",
+      "inputs": [
+        {
+          "name": "resolved_clusters",
+          "type": "object",
+          "description": "语言模型裁决后的聚类结果"
+        },
+        {
+          "name": "passed_clusters",
+          "type": "object",
+          "description": "直接通过的明确簇"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_clusters",
+          "type": "object",
+          "description": "裁决结果与明确簇合并后的最终聚类结果"
+        }
+      ],
+      "native_evidence": [
+        "Merge Cluster Results"
+      ],
+      "requirement_evidence": [
+        "依据最终聚类结果构建统一的安全事件工单"
+      ],
+      "rationale": "合并语言模型裁决结果与明确簇为最终聚类结果，为确定性聚合操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n10",
+      "label": "构建统一安全事件工单",
+      "node_type": "code",
+      "operation_family": "security_case_building",
+      "inputs": [
+        {
+          "name": "final_clusters",
+          "type": "object",
+          "description": "最终聚类结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cases",
+          "type": "object",
+          "description": "依据最终聚类结果构建的统一安全事件工单"
+        }
+      ],
+      "native_evidence": [
+        "Build Security Cases"
+      ],
+      "requirement_evidence": [
+        "依据最终聚类结果构建统一的安全事件工单"
+      ],
+      "rationale": "依据最终聚类结果构建统一安全事件工单，为确定性的结构化构建操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n11",
+      "label": "批量创建或更新工单到外部系统",
+      "node_type": "code",
+      "operation_family": "ticket_sync",
+      "inputs": [
+        {
+          "name": "cases",
+          "type": "object",
+          "description": "统一安全事件工单"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ticket_summary",
+          "type": "object",
+          "description": "本轮新建或更新工单的汇总结果（含数量）"
+        }
+      ],
+      "native_evidence": [
+        "Post to Ticket System API"
+      ],
+      "requirement_evidence": [
+        "并批量创建或更新到外部工单系统"
+      ],
+      "rationale": "将统一工单批量创建或更新到外部工单系统，为确定性的外部写入操作，判定为 code 节点。"
+    },
+    {
+      "node_id": "n12",
+      "label": "发布 Slack 汇总消息",
+      "node_type": "terminal",
+      "operation_family": "slack_summary_notification",
+      "inputs": [
+        {
+          "name": "ticket_summary",
+          "type": "object",
+          "description": "本轮新建或更新工单的汇总结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Slack Notification"
+      ],
+      "requirement_evidence": [
+        "向 Slack 频道发布一条汇总消息，说明本轮处理新建或更新的统一工单数量"
+      ],
+      "rationale": "向 Slack 发布本轮新建或更新工单数量的汇总消息，为流程最终的用户可见完成动作且无后续出边，判定为 terminal 节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "告警规范化后写入外部缓冲服务，告警接入分支结束。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "周期触发后取回缓冲告警。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "取回告警后生成指纹并预聚类。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "预聚类完成后进行模糊簇判定。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "ambiguous_clusters_exist",
+      "rationale": "存在难以判定的簇时交由语言模型裁决。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n8",
+      "variable": null,
+      "condition": "no_ambiguous_clusters",
+      "rationale": "无模糊簇（或已通过的部分）时明确簇直接通过。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "语言模型裁决完成后合并聚类结果。"
+    },
+    {
+      "edge_id": "c8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "明确簇通过后同样进入结果合并。"
+    },
+    {
+      "edge_id": "c9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "最终聚类结果就绪后构建统一工单。"
+    },
+    {
+      "edge_id": "c10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "工单构建完成后批量创建或更新到外部系统。"
+    },
+    {
+      "edge_id": "c11",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "工单同步完成后发布 Slack 汇总消息。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "normalized_alerts",
+      "condition": null,
+      "rationale": "规范化后的告警送入缓冲写入节点。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "buffered_alerts",
+      "condition": null,
+      "rationale": "取回的缓冲告警送入指纹与预聚类节点。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "clustered_alerts",
+      "condition": null,
+      "rationale": "预聚类结果送入模糊簇判定节点。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n6",
+      "target": "n7",
+      "variable": "ambiguous_clusters",
+      "condition": null,
+      "rationale": "难以判定的簇送入语言模型裁决节点。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n6",
+      "target": "n8",
+      "variable": "clear_clusters",
+      "condition": null,
+      "rationale": "明确簇送入直接通过节点。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n7",
+      "target": "n9",
+      "variable": "resolved_clusters",
+      "condition": null,
+      "rationale": "语言模型裁决结果送入结果合并节点（semantic→code 有类型数据边）。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n8",
+      "target": "n9",
+      "variable": "passed_clusters",
+      "condition": null,
+      "rationale": "直接通过的明确簇送入结果合并节点。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n9",
+      "target": "n10",
+      "variable": "final_clusters",
+      "condition": null,
+      "rationale": "最终聚类结果送入工单构建节点。"
+    },
+    {
+      "edge_id": "d9",
+      "source": "n10",
+      "target": "n11",
+      "variable": "cases",
+      "condition": null,
+      "rationale": "统一工单送入外部系统同步节点。"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n11",
+      "target": "n12",
+      "variable": "ticket_summary",
+      "condition": null,
+      "rationale": "工单同步汇总送入 Slack 通知节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n3"
+  ],
+  "terminal_nodes": [
+    "n2",
+    "n12"
+  ],
+  "confidence": 0.9,
+  "notes": "按需求建模：双入口——告警接入分支（接收三类来源告警并规范化 code → 写入缓冲 terminal）与批量处理分支（周期触发 code → 取回缓冲告警 code → 指纹与预聚类 code → 模糊簇判定路由 code → 语言模型聚类裁决 semantic / 明确簇直接通过 code → 合并聚类结果 code → 构建统一工单 code → 批量同步外部系统 code → Slack 汇总消息 terminal）。需求未声明的实现细节（Claude 模型具体型号）未纳入。混合任务满足 semantic→code 有类型 DFG 边（resolved_clusters）。"
+}

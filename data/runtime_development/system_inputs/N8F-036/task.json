@@ -1,0 +1,545 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-036",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "d78112c8019072dbe0e17440d8a7a7c077e3619f6d595b461e64e8a36dfb683c",
+  "natural_language_requirement": "系统通过外部请求入口接收来自表单、落地页或 CRM 系统的购房意向线索，先由语言模型将新线索与既有客户记录比对，识别并去除重复线索，去重后的线索写入 Google Sheets 用于管线跟踪。随后系统依据买家偏好与房源库进行匹配，从 Google Drive 取出匹配房源的资料文件，并通过 Gmail 将个性化的房源资料发送给买家；与买家的互动记录回写至 Google Sheets。系统还需按周期对买家互动情况做成交分析，由语言模型预测成交概率并给出阶段判断，最后将建议的后续动作与成交优先级通知销售团队。",
+  "public_interfaces": [
+    {
+      "dependency_type": "gmail",
+      "operation": "send_email",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "to",
+          "body"
+        ],
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "google_drive",
+      "operation": "get_file",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "google_sheets",
+      "operation": "append_row",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "row"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "appended",
+          "row_number"
+        ],
+        "properties": {
+          "appended": {
+            "type": "boolean"
+          },
+          "row_number": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "dedup_check",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "new_leads": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "new_leads"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "duplicate_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "duplicate_ids"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "match_properties",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "lead_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lead_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "matches": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "lead_id": {
+                      "type": "string"
+                    },
+                    "listing_id": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "lead_id",
+                    "listing_id",
+                    "score"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "matches"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "matches": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "matches"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "llm",
+      "operation": "score_deal",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "interactions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "days_since": {
+                  "type": "integer"
+                },
+                "lead_id": {
+                  "type": "string"
+                },
+                "listing_id": {
+                  "type": "string"
+                },
+                "viewed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "days_since",
+                "lead_id",
+                "listing_id",
+                "viewed"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "interactions"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "next_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "probability": {
+            "type": "number"
+          },
+          "stage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "next_actions",
+          "priority",
+          "probability",
+          "stage"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "channel",
+          "text"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "matched_properties",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lead_id": {
+                "type": "string"
+              },
+              "listing_id": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lead_id",
+              "listing_id",
+              "score"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "匹配到的房源列表",
+        "requirement_evidence": [
+          "系统依据买家偏好与房源库进行匹配"
+        ],
+        "source_operations": [
+          "match_properties"
+        ],
+        "design_sources": [
+          "n6.matched_properties"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sheet_writes",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "sheet",
+              "appended",
+              "row_number",
+              "row"
+            ],
+            "properties": {
+              "sheet": {
+                "type": "string"
+              },
+              "appended": {
+                "type": "boolean"
+              },
+              "row_number": {
+                "type": "integer"
+              },
+              "row": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "去重后的线索写入 Google Sheets 用于管线跟踪；与买家的互动记录回写至 Google Sheets",
+        "requirement_evidence": [
+          "去重后的线索写入 Google Sheets 用于管线跟踪",
+          "与买家的互动记录回写至 Google Sheets"
+        ],
+        "source_operations": [
+          "append_row"
+        ],
+        "design_sources": [
+          "n3",
+          "n9"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "email_interactions",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "message_id",
+              "sent",
+              "to",
+              "body"
+            ],
+            "properties": {
+              "message_id": {
+                "type": "string"
+              },
+              "sent": {
+                "type": "boolean"
+              },
+              "to": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              },
+              "listing_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "通过 Gmail 将个性化的房源资料发送给买家产生的互动记录",
+        "requirement_evidence": [
+          "通过 Gmail 将个性化的房源资料发送给买家"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [
+          "n8.interaction_record"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "deal_assessment",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "probability": {
+              "type": "number"
+            },
+            "stage": {
+              "type": "string"
+            },
+            "next_actions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "priority": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "probability",
+            "stage",
+            "next_actions",
+            "priority"
+          ],
+          "additionalProperties": false
+        },
+        "description": "成交概率、阶段判断与建议后续动作",
+        "requirement_evidence": [
+          "由语言模型预测成交概率并给出阶段判断"
+        ],
+        "source_operations": [
+          "score_deal"
+        ],
+        "design_sources": [
+          "n11.deal_assessment"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "sales_notifications",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ok",
+              "ts",
+              "channel",
+              "text"
+            ],
+            "properties": {
+              "ok": {
+                "type": "boolean"
+              },
+              "ts": {
+                "type": "string"
+              },
+              "channel": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": "将建议的后续动作与成交优先级通知销售团队",
+        "requirement_evidence": [
+          "最后将建议的后续动作与成交优先级通知销售团队"
+        ],
+        "source_operations": [
+          "post_message"
+        ],
+        "design_sources": [
+          "n12"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "6844E81926A8BAF0F9EBA8147B2D31B057E46C23027000D65C21B3E49B0D5709",
+  "public_interface_sha256": "0A7B2630F346789F104DD926F623FC54FEF7A93E9FADB483781B0EFCC4C63495",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

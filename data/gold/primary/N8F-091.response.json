@@ -1,0 +1,349 @@
+{
+  "task_id": "N8F-091",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "bfc5a0174f2f47a03aab3322797672e7237acc7f2fac5a1468eef5caa756abe4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "读取线索并筛选未处理条目",
+      "node_type": "code",
+      "operation_family": "data_loading",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "当前待处理线索（Research Status 列为空，循环逐个取出）"
+        }
+      ],
+      "native_evidence": [
+        "Start",
+        "Read Leads from Google Sheets",
+        "Filter",
+        "Loop Over Leads"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 读取 B2B 潜在客户线索，并筛选出尚未处理过的联系人（\"Research Status\"列为空的线索）进行处理",
+        "间隔 2 秒后处理下一条线索"
+      ],
+      "rationale": "需求声明从 Google Sheets 读取线索并筛选 Research Status 为空的未处理条目，为外部读取与确定性过滤，判为代码入口节点；顶层逐条循环（含间隔 2 秒）折叠进节点契约，终止条件为全部待处理线索处理完毕，max_iterations=20。"
+    },
+    {
+      "node_id": "n2",
+      "label": "更新线索状态为 Pending",
+      "node_type": "code",
+      "operation_family": "status_update",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "待处理线索"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "处理状态已置为 Pending 的线索"
+        }
+      ],
+      "native_evidence": [
+        "Update Row Status"
+      ],
+      "requirement_evidence": [
+        "先在 Google Sheets 中将该线索的处理状态更新为 \"Pending\""
+      ],
+      "rationale": "需求声明在处理前将线索状态更新为 Pending，为确定性外部写入动作，判为代码节点。"
+    },
+    {
+      "node_id": "n3",
+      "label": "企业信息库检索并匹配最佳企业",
+      "node_type": "code",
+      "operation_family": "company_enrichment",
+      "inputs": [
+        {
+          "name": "lead",
+          "type": "object",
+          "description": "状态为 Pending 的线索（含域名或邮箱）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "company_data",
+          "type": "object",
+          "description": "最佳匹配企业的行业、技术栈、收入、员工规模与社交资料等信息"
+        }
+      ],
+      "native_evidence": [
+        "Sona Company Search",
+        "Code"
+      ],
+      "requirement_evidence": [
+        "再使用域名或邮箱在企业信息库 Sona 中检索，按智能匹配规则选出最佳匹配企业，并获取该企业的行业、技术栈、收入、员工规模与社交资料等企业信息",
+        "若在企业信息库中未找到精确匹配，则回退使用检索结果中的第一条"
+      ],
+      "rationale": "需求声明使用域名或邮箱在企业信息库检索并按智能匹配规则选取最佳企业，为确定性外部查询与匹配逻辑，判为代码节点；多级匹配规则与无精确匹配时回退第一条的失败行为折叠进节点契约。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型分析企业数据生成洞察",
+      "node_type": "semantic",
+      "operation_family": "ai_analysis",
+      "inputs": [
+        {
+          "name": "company_data",
+          "type": "object",
+          "description": "匹配到的企业信息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "research_insights",
+          "type": "object",
+          "description": "3-5 条痛点、2-3 条增长机会、3-4 条个性化切入点、建议沟通语气与行动号召、一句话洞察及 High/Medium/Low 契合度评分"
+        }
+      ],
+      "native_evidence": [
+        "Company Research AI"
+      ],
+      "requirement_evidence": [
+        "随后由语言模型分析这些企业数据，产出 3-5 条痛点、2-3 条增长机会、3-4 条个性化切入点、建议的沟通语气与行动号召，以及可用于邮件开头的一句话洞察，并给出 High/Medium/Low 的契合度评分"
+      ],
+      "rationale": "需求声明由语言模型分析企业数据产出痛点、增长机会、切入点、语气、CTA、洞察与契合度评分，需开放语义分析与结构化生成，判为语义节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型生成个性化开发邮件",
+      "node_type": "semantic",
+      "operation_family": "ai_generation",
+      "inputs": [
+        {
+          "name": "research_insights",
+          "type": "object",
+          "description": "企业研究洞察"
+        },
+        {
+          "name": "company_data",
+          "type": "object",
+          "description": "线索与企业信息（联系人、公司名等）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "email_draft",
+          "type": "object",
+          "description": "主题行（≤8 词、引发好奇）与正文（120-150 词、专业口语化）的个性化开发邮件"
+        }
+      ],
+      "native_evidence": [
+        "Generate Personalized Email"
+      ],
+      "requirement_evidence": [
+        "接着生成一封个性化开发邮件：主题行不超过 8 个词且以引发好奇的方式撰写；正文控制在 120-150 词，语气专业而口语化，以体现已做过调研的个性化切入点开头，只引用一个具体痛点，聚焦可衡量的结果而非产品功能，并以自然的行动号召收尾"
+      ],
+      "rationale": "需求声明由语言模型按严格的字数与语气约束生成个性化开发邮件，需开放文本创作，判为语义节点；主题行与正文约束折叠进节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "组装结果并生成 Gmail 撰写链接",
+      "node_type": "code",
+      "operation_family": "result_formatting",
+      "inputs": [
+        {
+          "name": "email_draft",
+          "type": "object",
+          "description": "生成的邮件主题与正文"
+        },
+        {
+          "name": "research_insights",
+          "type": "object",
+          "description": "痛点、关键洞察等研究结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "formatted_result",
+          "type": "object",
+          "description": "含痛点、关键洞察、邮件主题、邮件正文、一键 Gmail 撰写链接、生成日期与发送状态的完整结果"
+        }
+      ],
+      "native_evidence": [
+        "Format Results"
+      ],
+      "requirement_evidence": [
+        "最后将全部结果写回 Google Sheets（痛点、关键洞察、邮件主题、邮件正文、一键 Gmail 撰写链接、生成日期、发送状态）"
+      ],
+      "rationale": "需求声明组装全部结果并生成一键 Gmail 撰写链接，为确定性组装与链接生成，判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "写回 Google Sheets 并置为 Completed",
+      "node_type": "code",
+      "operation_family": "spreadsheet_write",
+      "inputs": [
+        {
+          "name": "formatted_result",
+          "type": "object",
+          "description": "完整研究结果"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Update Sheet with Results"
+      ],
+      "requirement_evidence": [
+        "并将该线索的处理状态置为 \"Completed\""
+      ],
+      "rationale": "需求声明将全部结果写回 Google Sheets 并将状态置为 Completed，为确定性外部写入动作，判为代码节点；写回后由 n1 的循环契约继续处理下一条线索，全部处理完毕后的流程收尾由独立完成节点（n8）表示。"
+    },
+    {
+      "node_id": "n8",
+      "label": "全部线索处理完成",
+      "node_type": "terminal",
+      "operation_family": "completion",
+      "inputs": [],
+      "outputs": [],
+      "native_evidence": [
+        "NO_DIRECT_NATIVE_NODE: requirement-only terminal abstraction; see notes"
+      ],
+      "requirement_evidence": [
+        "从 Google Sheets 读取 B2B 潜在客户线索，并筛选出尚未处理过的联系人（\"Research Status\"列为空的线索）进行处理"
+      ],
+      "rationale": "所有待处理线索均完成写回后，整个批量处理流程结束，作为整体流程的终止出口（依据冻结需求抽象得到，原生图无对应结束节点；逐条循环已折叠进 n1 契约）。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "取出一条待处理线索后先更新状态为 Pending。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "状态更新后在企业信息库检索匹配。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "企业信息就绪后交由语言模型分析。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "研究洞察就绪后生成个性化邮件。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "邮件生成后组装结果并生成 Gmail 链接。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "结果组装完成后写回 Google Sheets。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "当前线索结果写回后，若仍有未处理线索则按 n1 契约继续循环；全部处理完毕后流程结束。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "当前线索供状态更新。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "lead",
+      "condition": null,
+      "rationale": "带 Pending 状态的线索供企业检索。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "company_data",
+      "condition": null,
+      "rationale": "企业信息供语言模型分析（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "research_insights",
+      "condition": null,
+      "rationale": "研究洞察供邮件生成（semantic→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "company_data",
+      "condition": null,
+      "rationale": "线索与企业信息供邮件个性化（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "email_draft",
+      "condition": null,
+      "rationale": "邮件草稿供结果组装（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d7",
+      "source": "n4",
+      "target": "n6",
+      "variable": "research_insights",
+      "condition": null,
+      "rationale": "痛点与关键洞察供写回组装（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d8",
+      "source": "n6",
+      "target": "n7",
+      "variable": "formatted_result",
+      "condition": null,
+      "rationale": "完整结果供写回 Google Sheets。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n8"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模每条线索的处理流水线：读取并筛选未处理线索（循环入口，间隔 2 秒处理下一条，终止条件为全部处理完毕，max_iterations=20）→状态置 Pending→企业信息库检索并按智能匹配选最佳企业（无精确匹配回退第一条）→LLM 分析产出洞察与契合度评分→LLM 生成个性化开发邮件→组装结果并生成 Gmail 撰写链接→写回 Google Sheets 并置 Completed→全部线索处理完成。顶层 splitInBatches 循环与 2 秒等待折叠进 n1 契约，5 层智能匹配与回退逻辑折叠进 n3 契约；n8 为整体流程的终止出口（依据冻结需求抽象得到，原生图无对应结束节点）。"
+}

@@ -1,0 +1,118 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-024",
+  "source_id": "n8n:18332",
+  "workflow_sha256": "f766a43005b9c2f06fc0ef41f8e3e064b4d5f405ade18b9bd0f70fb337e9285f",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "93f5004b713fdebfd1e5cc98b3633bc9c9a3904768d35db1dd3f75a5a7cea098",
+  "requirement": {
+    "requirement_text": "接收外部预订来源提交的短租预订请求，并校验必填字段与日期先后顺序。\n\n若预订无效：向 Telegram 发送告警，并通过邮件把被跳过的预订内容发送给房东。\n\n若预订有效：规范化预订数据、生成预订编号、把该预订追加到 Google Sheets 的预订工作表，并在 Telegram 通知房东。\n\n每天按计划时间（或通过手动请求）执行一次扫描：读取 Google Sheets 中的预订记录，识别出需要发送入住（明天）、退房（今天）或评价请求（退房后两天）消息的行程。对每个到期的行程，由一个语言模型驱动的助理从 Google Sheets 的手册工作表中查找房源信息，生成一条纯文本消息。每条生成的消息都记录到 Google Sheets 的客人日志工作表，通过邮件发送给客人，并在 Telegram 发布确认。\n\n对于退房当天的预订：在 Google Sheets 的清洁任务工作表中创建一条清洁任务；若已设置清洁人员邮箱，则通过邮件通知清洁人员并在 Telegram 提醒房东，否则提醒房东未设置清洁人员邮箱。\n\n每周一：读取 Google Sheets 中的预订与清洁任务，计算本周统计，由语言模型撰写一份简明的房东周报，并通过邮件与 Telegram 发送给房东；若本周没有任何活动，则改为发送一条“一切正常”的消息。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 319,
+        "text": "This workflow captures short-term rental bookings via webhook, stores them in Google Sheets, drafts guest emails with a Deepseek AI agent using a Google Sheets playbook, sends messages through Gmail, creates checkout-day cleaning tasks, and notifies the host via Telegram with a weekly AI-written digest."
+      },
+      {
+        "start": 334,
+        "end": 420,
+        "text": "Receives a booking via a webhook request and validates required fields and date order."
+      },
+      {
+        "start": 421,
+        "end": 530,
+        "text": "If the booking is invalid, sends an alert to Telegram and emails the host via Gmail with the skipped payload."
+      },
+      {
+        "start": 531,
+        "end": 691,
+        "text": "If the booking is valid, normalizes the booking data, generates a booking ID, appends it to the Google Sheets “Bookings” tab, and notifies the host in Telegram."
+      },
+      {
+        "start": 692,
+        "end": 915,
+        "text": "Runs a daily sweep on a cron schedule (or via a manual webhook) to read bookings from Google Sheets and identify stays that need a check-in (tomorrow), check-out (today), or review request (two days after checkout) message."
+      },
+      {
+        "start": 916,
+        "end": 1069,
+        "text": "Uses a Deepseek-powered AI agent that looks up property details from the Google Sheets “Playbook” tab to generate one plain-text message per due booking."
+      },
+      {
+        "start": 1070,
+        "end": 1206,
+        "text": "Logs each generated message to the Google Sheets “GuestLog” tab, emails it to the guest via Gmail, and posts a confirmation to Telegram."
+      },
+      {
+        "start": 1207,
+        "end": 1430,
+        "text": "For check-out day bookings, creates a cleaning task in the Google Sheets “CleaningTasks” tab and either emails the assigned cleaner via Gmail and alerts the host in Telegram, or alerts the host that no cleaner email is set."
+      },
+      {
+        "start": 1431,
+        "end": 1672,
+        "text": "Every Monday, reads bookings and cleaning tasks from Google Sheets, computes weekly stats, uses Deepseek to write a concise host digest, and sends it to the host via Gmail and Telegram (or posts an all-clear message if there is no activity)."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "外部预订来源提交的预订请求（含客人姓名、客人邮箱、房源、入住日期、退房日期）",
+        "Google Sheets 中的预订记录",
+        "Google Sheets 手册工作表中的房源信息",
+        "Google Sheets 中的清洁任务记录",
+        "清洁人员邮箱（如已设置）"
+      ],
+      "conditions": [
+        "校验必填字段与日期先后顺序",
+        "无效预订被跳过",
+        "只有有效预订才写入预订工作表",
+        "每日扫描识别入住（明天）、退房（今天）与评价请求（退房后两天）三类消息",
+        "退房当天创建清洁任务",
+        "已设置清洁人员邮箱时通知清洁人员，否则提醒房东未设置",
+        "每周一生成周报；本周无任何活动时改为发送“一切正常”消息"
+      ],
+      "allowed_actions": [
+        "校验并规范化预订数据",
+        "生成预订编号并追加到 Google Sheets",
+        "向 Telegram 发送告警、通知与确认",
+        "通过邮件发送房东通知、客人消息、清洁人员通知与周报",
+        "调用语言模型生成客人消息",
+        "调用语言模型撰写房东周报",
+        "在 Google Sheets 中创建清洁任务并记录已发送的消息",
+        "计算每周统计"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 预订工作表中新增一条规范化预订记录",
+        "客人收到入住、退房或评价请求的邮件消息",
+        "Google Sheets 客人日志工作表中记录每条已发送消息",
+        "Google Sheets 清洁任务工作表中新增退房当天的清洁任务",
+        "房东每周收到一份周报邮件与 Telegram 消息",
+        "无效预订时房东收到 Telegram 告警与含被跳过预订内容的邮件"
+      ],
+      "failure_behavior": [
+        "预订无效时，向 Telegram 发送告警，并通过邮件把被跳过的预订内容发送给房东"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-024.packet.json",
+    "packet_sha256": "b12de9b3150b908a9a27c60f7cc66dd815bed8266f067faa7d4b34ad02e2117e",
+    "public_description_sha256": "92bf78e0eaf543fcf7b3a46e63410a7b3146eec22f7aecb775b162c18111129d"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-024.response.json",
+    "verification_response_sha256": "8a22506057f7f3630325d9d48d7a515ee16ff56c15ec0f46462ef2a8be149d1c",
+    "decision": "accept"
+  },
+  "formal_index": 35
+}

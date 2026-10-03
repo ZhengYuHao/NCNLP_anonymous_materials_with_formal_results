@@ -1,0 +1,55 @@
+{
+  "schema_version": "rq2-system-registry-v1",
+  "protocol": "formal_experiment/protocol/experiment_protocol_v2.md",
+  "systems": [
+    {
+      "system_id": "direct_llm",
+      "display_name": "Direct LLM",
+      "implementation": "baselines/b0_direct.py",
+      "framework_requirement": null,
+      "optimization_split": null
+    },
+    {
+      "system_id": "dspy",
+      "display_name": "DSPy",
+      "implementation": "formal_experiment/systems/dspy/system.py",
+      "framework_requirement": "dspy",
+      "optimization_split": "train_dev_only"
+    },
+    {
+      "system_id": "lmql",
+      "display_name": "LMQL",
+      "implementation": "formal_experiment/systems/lmql/system.py",
+      "framework_requirement": "lmql",
+      "optimization_split": null
+    },
+    {
+      "system_id": "pal",
+      "display_name": "PAL",
+      "implementation": "baselines/b3_pal.py",
+      "framework_requirement": null,
+      "optimization_split": null
+    },
+    {
+      "system_id": "ncnlp",
+      "display_name": "NCNLP",
+      "implementation": "pipeline_runner.py",
+      "framework_requirement": null,
+      "optimization_split": null
+    }
+  ],
+  "supplementary_systems": [
+    {
+      "system_id": "few_shot_icl",
+      "legacy_id": "B4",
+      "implementation": "baselines/b4_dspy.py",
+      "must_not_be_named": "DSPy"
+    },
+    {
+      "system_id": "provider_structured_output",
+      "legacy_id": "B5",
+      "implementation": "baselines/b5_structured.py",
+      "must_not_be_named": "LMQL"
+    }
+  ]
+}

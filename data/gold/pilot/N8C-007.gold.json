@@ -1,0 +1,223 @@
+{
+  "pilot_id": "N8C-007",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "b519d0c7bc38f4a9731185e263e002f17ae33c5df6f1ef6a9575807faa02d92b",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Fetch news articles from the BBC website",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "articles",
+          "type": "array",
+          "description": "News article listings fetched from the BBC website, each with title, description and link"
+        }
+      ],
+      "native_evidence": [
+        "Fetch BBC News Page",
+        "Extract News Block",
+        "Split Out",
+        "Extract News Content"
+      ],
+      "requirement_evidence": [
+        "The system fetches news articles from the BBC website."
+      ],
+      "rationale": "Declared entry behavior: fetching the BBC article listings. The native manual 'Test workflow' trigger is a testing mechanism not declared in the frozen requirement, so the fetch itself is the entry node."
+    },
+    {
+      "node_id": "n2",
+      "label": "Filter and categorize articles by podcast suitability with an LLM",
+      "node_type": "semantic",
+      "operation_family": "llm_classification",
+      "inputs": [
+        {
+          "name": "articles",
+          "type": "array",
+          "description": "Fetched article listings to assess"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "selected_articles",
+          "type": "array",
+          "description": "Articles categorized as suitable for a podcast"
+        }
+      ],
+      "native_evidence": [
+        "News Classifier",
+        "Gemini"
+      ],
+      "requirement_evidence": [
+        "It filters articles based on their suitability for a podcast, categorizing them with an LLM"
+      ],
+      "rationale": "Suitability judgement over headline and description text requires LLM classification; deterministic rules cannot replace it."
+    },
+    {
+      "node_id": "n3",
+      "label": "Extract the full content of the selected articles",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "selected_articles",
+          "type": "array",
+          "description": "Suitable articles whose full content is extracted, one by one"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "article_content",
+          "type": "array",
+          "description": "Full extracted content of each selected article"
+        }
+      ],
+      "native_evidence": [
+        "Fetch BBC News Detail",
+        "Extract Detail",
+        "Filter Empty Detail"
+      ],
+      "requirement_evidence": [
+        "extract the full content of the article"
+      ],
+      "rationale": "Deterministic retrieval and extraction applied to each selected article; empty extraction results are dropped as part of the extraction contract."
+    },
+    {
+      "node_id": "n4",
+      "label": "Create a podcast script with a language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "article_content",
+          "type": "array",
+          "description": "Full article content turned into the script"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "podcast_script",
+          "type": "object",
+          "description": "Structured language-model output containing the podcast script text"
+        }
+      ],
+      "native_evidence": [
+        "Basic Podcast LLM Chain",
+        "Gemini",
+        "Output Parser"
+      ],
+      "requirement_evidence": [
+        "use a language model to create a podcast script"
+      ],
+      "rationale": "Narrative rewriting of the articles into a spoken-word script; requires language-model generation with a structured output contract."
+    },
+    {
+      "node_id": "n5",
+      "label": "Convert the script to speech via text-to-speech service",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "podcast_script",
+          "type": "object",
+          "description": "Script text sent to the text-to-speech service"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "podcast_audio",
+          "type": "binary",
+          "description": "The final podcast audio, ready for use"
+        }
+      ],
+      "native_evidence": [
+        "Hugging Face Text-to-Speech."
+      ],
+      "requirement_evidence": [
+        "convert the script to speech using a text-to-speech service",
+        "the final podcast audio is ready for use."
+      ],
+      "rationale": "The declared completion action: the text-to-speech service call that yields the final podcast audio (the visible outcome); terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "Fetched articles are filtered and categorized."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Full content is extracted for the articles categorized as suitable."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "The extracted content is turned into a podcast script."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "The script is converted to speech."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "articles",
+      "condition": null,
+      "rationale": "Classification consumes the fetched article listings."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "selected_articles",
+      "condition": null,
+      "rationale": "Content extraction runs over the suitable articles."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "article_content",
+      "condition": null,
+      "rationale": "Script generation consumes the extracted article content."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "podcast_script",
+      "condition": null,
+      "rationale": "The text-to-speech service consumes the script."
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5"
+  ],
+  "confidence": 0.87,
+  "notes": "Linear pipeline ending at the text-to-speech call, which produces the declared visible outcome (the final podcast audio) and is therefore the terminal node. The frozen requirement's 'for each selected article' phrasing is modelled at collection level: extraction is applied to each selected article and the results jointly feed one podcast script and one final audio, matching the singular visible outcome. Native-only details excluded as undeclared: the 'Limit 10 Items' cap and the 'If script exists' guard (no failure handling is declared). The native manual 'Test workflow' trigger is a testing mechanism not declared in the frozen requirement, so no trigger node was modelled."
+}

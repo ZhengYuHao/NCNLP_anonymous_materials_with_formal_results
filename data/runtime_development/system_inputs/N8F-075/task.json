@@ -1,0 +1,442 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-075",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "044c35a6501445e6b8f1135e7ced3f035a6b40a07ab82bd45a9db7d103796a97",
+  "natural_language_requirement": "系统每天上午 9:00 运行。首先进行选题：系统对照 Google Sheets 中记录的历史选题以避免重复，然后由语言模型生成一个新的问答式内容方案。接着进行视频制作：系统调用视频渲染服务，基于模板生成视频，并把生成好的文案与图片动态填入。生成的视频被发送到 Slack，供人工审核。只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram。发布成功后，系统将本次的新选题保存回 Google Sheets，并在 Slack 中发出发布成功通知。",
+  "public_interfaces": [
+    {
+      "dependency_type": "facebookGraphApi",
+      "operation": "upload_reel",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "caption": {
+            "type": "string"
+          },
+          "video_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "caption",
+          "video_url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "media_id": {
+            "type": "string"
+          },
+          "permalink": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "media_id",
+          "permalink"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "append_topic",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "googleSheets",
+      "operation": "read_past_topics",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "sheet": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sheet"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "topics"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "httpRequest",
+      "operation": "render_video_from_template",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "image_prompt": {
+            "type": "string"
+          },
+          "script": {
+            "type": "string"
+          },
+          "template_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image_prompt",
+          "script",
+          "template_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "render_id": {
+            "type": "string"
+          },
+          "video_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "render_id",
+          "video_url"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_quiz_topic",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "past_topics": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "past_topics"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "image_prompt": {
+            "type": "string"
+          },
+          "script": {
+            "type": "string"
+          },
+          "topic": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "image_prompt",
+          "script",
+          "topic"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_for_approval",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "topic": {
+            "type": "string"
+          },
+          "video_url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "video_url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_ts": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_ts",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "slack",
+      "operation": "post_publish_success",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "message_ts": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_ts",
+          "status"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "content_plan",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "topic": {
+              "type": "string",
+              "description": "新生成的选题"
+            },
+            "script": {
+              "type": "string",
+              "description": "视频文案脚本"
+            },
+            "image_prompt": {
+              "type": "string",
+              "description": "用于视频渲染的图片描述"
+            }
+          },
+          "required": [
+            "topic",
+            "script",
+            "image_prompt"
+          ],
+          "additionalProperties": true
+        },
+        "description": "新生成的问答式内容方案（含文案与图片描述等模板字段）",
+        "requirement_evidence": [
+          "然后由语言模型生成一个新的问答式内容方案"
+        ],
+        "source_operations": [
+          "generate_quiz_topic"
+        ],
+        "design_sources": [
+          "n3.content_plan"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "publish_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "media_id": {
+              "type": "string",
+              "description": "Instagram 媒体 ID"
+            },
+            "permalink": {
+              "type": "string",
+              "description": "Instagram 发布链接"
+            },
+            "topic": {
+              "type": "string",
+              "description": "本次发布的选题"
+            }
+          },
+          "required": [
+            "media_id",
+            "permalink",
+            "topic"
+          ],
+          "additionalProperties": true
+        },
+        "description": "Instagram 发布结果（含本次选题信息）",
+        "requirement_evidence": [
+          "只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram"
+        ],
+        "source_operations": [
+          "upload_reel"
+        ],
+        "design_sources": [
+          "n6.publish_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "append_topic_result",
+        "schema": {
+          "type": "object",
+          "required": [
+            "status",
+            "topic"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Google Sheets 写入状态"
+            },
+            "topic": {
+              "type": "string",
+              "description": "实际保存的选题内容"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "发布结果（保存后续用于通知，含写入状态及实际保存的选题内容，便于核验）",
+        "requirement_evidence": [
+          "发布成功后，系统将本次的新选题保存回 Google Sheets"
+        ],
+        "source_operations": [
+          "append_topic"
+        ],
+        "design_sources": [
+          "n7.publish_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "approval_result",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "审核状态，可能值包括通过或未通过"
+            },
+            "message_ts": {
+              "type": "string",
+              "description": "Slack 消息时间戳"
+            },
+            "video_url": {
+              "type": "string",
+              "description": "视频地址"
+            },
+            "topic": {
+              "type": "string",
+              "description": "视频对应的选题"
+            }
+          },
+          "required": [
+            "status",
+            "message_ts",
+            "video_url",
+            "topic"
+          ],
+          "additionalProperties": true
+        },
+        "description": "人工审核结果（通过/未通过）及视频信息",
+        "requirement_evidence": [
+          "生成的视频被发送到 Slack，供人工审核",
+          "只有在 Slack 中审核通过后，系统才自动把该视频作为 Reel 上传到 Instagram"
+        ],
+        "source_operations": [
+          "post_for_approval"
+        ],
+        "design_sources": [
+          "n5.approval_result"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_publish_notification",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "Slack 通知发送状态"
+            },
+            "message_ts": {
+              "type": "string",
+              "description": "Slack 通知消息时间戳"
+            },
+            "text": {
+              "type": "string",
+              "description": "通知文本内容"
+            }
+          },
+          "required": [
+            "status",
+            "message_ts",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Slack 发布成功通知",
+        "requirement_evidence": [
+          "并在 Slack 中发出发布成功通知"
+        ],
+        "source_operations": [
+          "post_publish_success"
+        ],
+        "design_sources": [
+          "n8"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "131EA30A884CD259D742BA92F1F0794E7E57EFC45CFFD23F2D87A4498D026CB0",
+  "public_interface_sha256": "3F6567DDEDDB8308B896E64EC523942A6A28C90192AEB11CEE5D178B2ADF027C",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

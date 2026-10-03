@@ -1,0 +1,279 @@
+{
+  "task_id": "N8F-072",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "f415c02058cb4cfcbc2caf2c2daf32c93fe47ba9a25927b50d31c2eb2edfc636",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收待检测网址",
+      "node_type": "code",
+      "operation_family": "input_ingestion",
+      "inputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "业务用户提交的待检查网址"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "待检测网址"
+        }
+      ],
+      "native_evidence": [
+        "Telegram Trigger"
+      ],
+      "requirement_evidence": [
+        "业务用户提交一个需要检查的网址"
+      ],
+      "rationale": "需求声明接收业务用户提交的网址，为确定性入站接收，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "向 VirusTotal 发起检测",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "待检测网址"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "vt_result",
+          "type": "object",
+          "description": "VirusTotal 返回的信誉、恶意/安全标记与扫描元数据"
+        }
+      ],
+      "native_evidence": [
+        "VirusTotal HTTP Request"
+      ],
+      "requirement_evidence": [
+        "系统同时向 VirusTotal 与 urlscan.io 发起检测请求"
+      ],
+      "rationale": "需求声明向 VirusTotal 发起检测请求获取信誉与标记结果，为确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "向 urlscan.io 发起检测",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "url",
+          "type": "string",
+          "description": "待检测网址"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "urlscan_result",
+          "type": "object",
+          "description": "urlscan.io 返回的网址加载行为细节（域名、请求、资源等），可能失败"
+        }
+      ],
+      "native_evidence": [
+        "urlscan Perform Scan"
+      ],
+      "requirement_evidence": [
+        "系统同时向 VirusTotal 与 urlscan.io 发起检测请求"
+      ],
+      "rationale": "需求声明向 urlscan.io 发起检测请求获取加载行为细节，为确定性外部调用（其结果可能失败），判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "合并检测结果并检查 urlscan 状态",
+      "node_type": "code",
+      "operation_family": "data_processing",
+      "inputs": [
+        {
+          "name": "vt_result",
+          "type": "object",
+          "description": "VirusTotal 结果"
+        },
+        {
+          "name": "urlscan_result",
+          "type": "object",
+          "description": "urlscan.io 结果"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "merged_findings",
+          "type": "object",
+          "description": "合并后的检测结果，含 urlscan 是否成功的状态"
+        }
+      ],
+      "native_evidence": [
+        "Merge Scans",
+        "Prepare Summary Data"
+      ],
+      "requirement_evidence": [
+        "系统会检查 urlscan.io 是否成功响应，并据此分两种情况生成一份汇总结论"
+      ],
+      "rationale": "需求声明检查 urlscan 是否成功响应并合并结果，为确定性合并与状态判断，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "生成安全检测汇总",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "merged_findings",
+          "type": "object",
+          "description": "合并后的检测结果与 urlscan 状态"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "完整、结构化且便于阅读的安全检测汇总；urlscan 失败时明确标注仅依据 VirusTotal 结果"
+        }
+      ],
+      "native_evidence": [
+        "Malicious URL Summary Agent"
+      ],
+      "requirement_evidence": [
+        "若两次检测都成功，则汇总 VirusTotal 与 urlscan.io 的综合发现；若 urlscan.io 失败，则在汇总中明确写明“urlscan.io 检测被阻断/失败，结论仅依据 VirusTotal 的结果”"
+      ],
+      "rationale": "需求声明生成汇总结论并按 urlscan 成功与否调整内容，需开放语义综合与生成，判 semantic。"
+    },
+    {
+      "node_id": "n6",
+      "label": "通过 Telegram 发送汇总",
+      "node_type": "terminal",
+      "operation_family": "external_action",
+      "inputs": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "安全检测汇总"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send a text message"
+      ],
+      "requirement_evidence": [
+        "并通过 Telegram 机器人发送到指定的 Telegram 会话"
+      ],
+      "rationale": "需求声明通过 Telegram 机器人把汇总发送到指定会话，为流程末尾的完成动作且无后继，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收网址后向 VirusTotal 发起检测。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n1",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "接收网址后同时向 urlscan.io 发起检测。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "VirusTotal 结果汇入合并节点。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "urlscan 结果汇入合并节点。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "合并后生成汇总结论。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "汇总生成后发送到 Telegram。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "url",
+      "condition": null,
+      "rationale": "网址传给 VirusTotal 检测节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "url",
+      "condition": null,
+      "rationale": "网址传给 urlscan 检测节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": "vt_result",
+      "condition": null,
+      "rationale": "VirusTotal 结果传给合并节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n3",
+      "target": "n4",
+      "variable": "urlscan_result",
+      "condition": null,
+      "rationale": "urlscan 结果传给合并节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": "merged_findings",
+      "condition": null,
+      "rationale": "合并结果（含 urlscan 状态）传给汇总生成节点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": "summary",
+      "condition": null,
+      "rationale": "汇总文本传给发送节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.93,
+  "notes": "两个检测请求并行发起；需求要求无论 urlscan 成功与否都产出完整汇总，故 urlscan 状态由合并节点携带并在语义汇总节点中标注，不拆为两个生成分支；URL 记录到 Google Sheets、记忆与限流等原生细节未在需求中声明，未纳入。"
+}

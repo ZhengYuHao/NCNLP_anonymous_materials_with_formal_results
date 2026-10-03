@@ -1,0 +1,669 @@
+{
+  "task_id": "N8F-004",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "0c351e88b1c19ca602965f32463f7ed77858616e6c61df8116c632c5e7affe18",
+  "fixtures": [
+    {
+      "fixture_id": "F-scan-config",
+      "purpose": "竞品频道地址与扫描配置：冷却窗口 7 天、每轮上限 3 条、shorts 单独处理，固定运行日 2026-09-04",
+      "input_data": {
+        "channel_urls": [
+          "https://youtube.com/@chanA",
+          "https://youtube.com/@chanB"
+        ],
+        "cooldown_days": 7,
+        "per_run_limit": 3,
+        "shorts_separate": true,
+        "run_date": "2026-09-04"
+      }
+    },
+    {
+      "fixture_id": "F-sheet-history",
+      "purpose": "Google Sheets 历史结果：A6 已于 2026-08-28（运行日前 7 天整）输出过简报，位于冷却窗口内应被剔除",
+      "input_data": {
+        "rows": [
+          {
+            "video_id": "A6",
+            "title": "A6 previous brief",
+            "briefed_at": "2026-08-28T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-videos",
+      "purpose": "抓取到的视频数据：chanA 六个常规视频、chanB 六个常规视频、三个 shorts，views 与发布日期固定以支持日均播放量计算",
+      "input_data": {
+        "videos": [
+          {
+            "video_id": "A1",
+            "channel": "chanA",
+            "views": 2000000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A2",
+            "channel": "chanA",
+            "views": 1000000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A3",
+            "channel": "chanA",
+            "views": 600000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A4",
+            "channel": "chanA",
+            "views": 400000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A5",
+            "channel": "chanA",
+            "views": 200000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A6",
+            "channel": "chanA",
+            "views": 1600000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B1",
+            "channel": "chanB",
+            "views": 1500000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B2",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B3",
+            "channel": "chanB",
+            "views": 200000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B4",
+            "channel": "chanB",
+            "views": 100000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B5",
+            "channel": "chanB",
+            "views": 600000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B6",
+            "channel": "chanB",
+            "views": 50000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "S1",
+            "channel": "chanA",
+            "views": 5000000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          },
+          {
+            "video_id": "S2",
+            "channel": "chanA",
+            "views": 1000000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          },
+          {
+            "video_id": "S3",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-hist-boundary",
+      "purpose": "冷却窗口边界历史：B5 于 7 天前整（窗口内，应剔除），B2 于 8 天前（窗口外，应保留）",
+      "input_data": {
+        "rows": [
+          {
+            "video_id": "B5",
+            "title": "B5 briefed",
+            "briefed_at": "2026-08-28T00:00:00Z"
+          },
+          {
+            "video_id": "B2",
+            "title": "B2 briefed",
+            "briefed_at": "2026-08-27T00:00:00Z"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-videos-bnd",
+      "purpose": "边界用例的视频数据：仅 chanB 六个常规视频（B1/B2/B5 为异常候选）",
+      "input_data": {
+        "videos": [
+          {
+            "video_id": "B1",
+            "channel": "chanB",
+            "views": 1500000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B2",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B3",
+            "channel": "chanB",
+            "views": 200000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B4",
+            "channel": "chanB",
+            "views": 100000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B5",
+            "channel": "chanB",
+            "views": 600000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B6",
+            "channel": "chanB",
+            "views": 50000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          }
+        ]
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-brightdata-scrape",
+      "dependency_type": "bright_data",
+      "operation": "create_youtube_discovery_snapshot",
+      "request_contract": {
+        "channel_urls": [
+          "https://youtube.com/@chanA",
+          "https://youtube.com/@chanB"
+        ]
+      },
+      "response_contract": {
+        "snapshot_id": "snap_004",
+        "status": "created",
+        "dataset_id": null
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-brightdata-poll",
+      "dependency_type": "bright_data",
+      "operation": "poll_snapshot_status",
+      "request_contract": {
+        "snapshot_id": "snap_004"
+      },
+      "response_contract": {
+        "snapshot_id": "snap_004",
+        "status": "ready",
+        "dataset_id": "ds_004"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-brightdata-download",
+      "dependency_type": "bright_data",
+      "operation": "download_dataset",
+      "request_contract": {
+        "dataset_id": "ds_004"
+      },
+      "response_contract": {
+        "videos": [
+          {
+            "video_id": "A1",
+            "channel": "chanA",
+            "views": 2000000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A2",
+            "channel": "chanA",
+            "views": 1000000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A3",
+            "channel": "chanA",
+            "views": 600000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A4",
+            "channel": "chanA",
+            "views": 400000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A5",
+            "channel": "chanA",
+            "views": 200000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "A6",
+            "channel": "chanA",
+            "views": 1600000,
+            "published_at": "2026-08-25T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B1",
+            "channel": "chanB",
+            "views": 1500000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B2",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B3",
+            "channel": "chanB",
+            "views": 200000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B4",
+            "channel": "chanB",
+            "views": 100000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B5",
+            "channel": "chanB",
+            "views": 600000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B6",
+            "channel": "chanB",
+            "views": 50000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "S1",
+            "channel": "chanA",
+            "views": 5000000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          },
+          {
+            "video_id": "S2",
+            "channel": "chanA",
+            "views": 1000000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          },
+          {
+            "video_id": "S3",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-09-02T00:00:00Z",
+            "shorts": true
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-brightdata-download-bnd",
+      "dependency_type": "bright_data",
+      "operation": "download_dataset",
+      "request_contract": {
+        "dataset_id": "ds_004_bnd"
+      },
+      "response_contract": {
+        "videos": [
+          {
+            "video_id": "B1",
+            "channel": "chanB",
+            "views": 1500000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B2",
+            "channel": "chanB",
+            "views": 800000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B3",
+            "channel": "chanB",
+            "views": 200000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B4",
+            "channel": "chanB",
+            "views": 100000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B5",
+            "channel": "chanB",
+            "views": 600000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          },
+          {
+            "video_id": "B6",
+            "channel": "chanB",
+            "views": 50000,
+            "published_at": "2026-08-30T00:00:00Z",
+            "shorts": false
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-read",
+      "dependency_type": "google_sheets",
+      "operation": "read_history_rows",
+      "request_contract": {
+        "sheet_name": "history"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "video_id": "A6",
+            "title": "A6 previous brief",
+            "briefed_at": "2026-08-28T00:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-read-bnd",
+      "dependency_type": "google_sheets",
+      "operation": "read_history_rows",
+      "request_contract": {
+        "sheet_name": "history_bnd"
+      },
+      "response_contract": {
+        "rows": [
+          {
+            "video_id": "B5",
+            "title": "B5 briefed",
+            "briefed_at": "2026-08-28T00:00:00Z"
+          },
+          {
+            "video_id": "B2",
+            "title": "B2 briefed",
+            "briefed_at": "2026-08-27T00:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-brief",
+      "dependency_type": "llm",
+      "operation": "extract_and_compose_brief",
+      "request_contract": {
+        "outlier_videos": [
+          {
+            "video_id": "S1"
+          },
+          {
+            "video_id": "B1"
+          },
+          {
+            "video_id": "A1"
+          }
+        ]
+      },
+      "response_contract": {
+        "brief": "Hook-heavy viral angles: strong promise and trending topic.",
+        "per_video": {
+          "S1": {
+            "hook": "before-after",
+            "promise": "quick glow up",
+            "topic": "makeup routine"
+          },
+          "B1": {
+            "hook": "shocking stat",
+            "promise": "save money",
+            "topic": "budget tips"
+          },
+          "A1": {
+            "hook": "story",
+            "promise": "learn skill",
+            "topic": "productivity"
+          }
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-sheets-append",
+      "dependency_type": "google_sheets",
+      "operation": "append_outlier_row",
+      "request_contract": {
+        "sheet_name": "outliers"
+      },
+      "response_contract": {
+        "appended": true,
+        "row_number": 201
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-slack-send",
+      "dependency_type": "slack",
+      "operation": "post_message",
+      "request_contract": {
+        "channel": "#youtube-outliers"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1234.5678"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-main",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-scan-config",
+        "F-sheet-history",
+        "F-videos"
+      ],
+      "mock_ids": [
+        "M-brightdata-scrape",
+        "M-brightdata-poll",
+        "M-brightdata-download",
+        "M-sheets-read",
+        "M-llm-brief",
+        "M-sheets-append",
+        "M-slack-send"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.outliers[].video_id",
+          "operator": "contains",
+          "expected": "A1",
+          "rationale": "A1 日均播放量 200000（2000000/10 天）高于 chanA 中位数 80000，应标记为异常"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.outliers[].video_id",
+          "operator": "contains",
+          "expected": "B1",
+          "rationale": "B1 日均播放量 300000（1500000/5 天）高于 chanB 中位数 80000，应标记为异常"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.outliers[].video_id",
+          "operator": "contains",
+          "expected": "S1",
+          "rationale": "S1 为 shorts，按 shorts 子集单独比较，日均播放量 2500000 高于 shorts 中位数 500000，应标记为异常"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.outliers[0].video_id",
+          "operator": "equals",
+          "expected": "S1",
+          "rationale": "按日均播放量降序取前 3 条，第 1 位应为 S1（日均 2500000）"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.outliers[2].video_id",
+          "operator": "equals",
+          "expected": "A1",
+          "rationale": "第 3 位应为 A1（日均 200000）；结合 A-2（含 B1）与 A-6（总数 3），输出集合被唯一确定为 {S1,B1,A1}，从而可验证 A6（冷却窗口内剔除）与 A2（排名第 4 及以后，被上限截断）均不在结果中"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.outliers",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "每轮最多输出 per_run_limit=3 条异常突出视频"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.slack_message.text",
+          "operator": "contains",
+          "expected": "Hook-heavy viral angles: strong promise and trending topic.",
+          "rationale": "Slack 摘要须包含语言模型生成的跨视频内容简报文本"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.sheets_appended_rows[].video_id",
+          "operator": "contains",
+          "expected": "S1",
+          "rationale": "每个异常突出视频须在 Google Sheets 中追加一行，S1 为最终入选视频之一"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.sheets_appended_rows",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "Google Sheets 追加行数须与最终异常视频数一致（每视频一行）"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-cooldown",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-scan-config",
+        "F-hist-boundary",
+        "F-videos-bnd"
+      ],
+      "mock_ids": [
+        "M-brightdata-scrape",
+        "M-brightdata-poll",
+        "M-brightdata-download-bnd",
+        "M-sheets-read-bnd",
+        "M-llm-brief",
+        "M-sheets-append",
+        "M-slack-send"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-cooldown",
+          "target": "output.outliers",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "边界用例的异常候选共 3 条（B1/B2/B5），B5 简报时间恰为运行日前 7 天整、处于冷却窗口边界内（含）应被剔除，过滤后仅剩 2 条"
+        },
+        {
+          "assertion_id": "A-2-bnd-cooldown",
+          "target": "output.outliers[].video_id",
+          "operator": "contains",
+          "expected": "B2",
+          "rationale": "B2 简报时间为运行日前 8 天，超出冷却窗口，应被保留并输出"
+        },
+        {
+          "assertion_id": "A-3-bnd-cooldown",
+          "target": "output.outliers[].video_id",
+          "operator": "contains",
+          "expected": "B1",
+          "rationale": "B1 无历史简报记录，作为异常视频正常输出"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "排名按日均播放量降序，shorts 与常规视频在同一排名池中比较（需求未要求分池排名）；日均播放量=播放量/距发布天数（以固定 run_date 计算）；冷却窗口按 briefed_at 与 run_date 的日期差判断，差小于等于 cooldown_days 视为窗口内。"
+}

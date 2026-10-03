@@ -1,0 +1,428 @@
+{
+  "task_id": "N8F-026",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "af2fdd0d50d54d7b8d86e1558f4c0f315b809051a807f2d7e4f33f082fb8add7",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每周定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "weekly_trigger",
+          "type": "trigger_event",
+          "description": "每周一次的计划触发事件"
+        }
+      ],
+      "native_evidence": ["Weekly Prospect Scan (scheduleTrigger)"],
+      "requirement_evidence": ["每周按计划运行一次", "每周一次的定时触发"],
+      "rationale": "周期调度为确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "读取检索配置",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "weekly_trigger",
+          "type": "trigger_event",
+          "description": "每周一次的计划触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "search_config",
+          "type": "object",
+          "description": "设定的城市、品类、阈值与投递目标"
+        }
+      ],
+      "native_evidence": ["Set Search Config (set)"],
+      "requirement_evidence": ["读取设定的城市、品类、阈值与投递目标", "设定的城市、品类、阈值与投递目标"],
+      "rationale": "读取静态配置为确定性变换，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "触发并轮询商家发现检索",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "search_config",
+          "type": "object",
+          "description": "设定的城市、品类、阈值与投递目标"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "discovery_result",
+          "type": "object",
+          "description": "就绪的商家发现检索快照（每个品类一次检索）"
+        }
+      ],
+      "native_evidence": ["Build Discovery Input (code)", "Discover Businesses With Bright Data (httpRequest)", "Check Discovery Accepted (code)", "Wait For Snapshot (wait)", "Check Snapshot Progress (httpRequest)", "Evaluate Scrape Progress (code)", "Profiles Ready? (if)"],
+      "requirement_evidence": ["对每个品类分别触发一次 Google Maps 商家发现检索，并轮询检索进度直到结果就绪", "触发并轮询 Google Maps 商家发现检索"],
+      "rationale": "异步检索触发与进度轮询在需求中声明为一个动作（触发并轮询），轮询循环折叠进本节点契约；终止条件为快照就绪，轮询上限 7 分钟（max_iterations<=20）。确定性外部调用，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "下载商家档案",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "discovery_result",
+          "type": "object",
+          "description": "就绪的商家发现检索快照（每个品类一次检索）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "business_profiles",
+          "type": "array",
+          "description": "检索到的商家档案（含评分、评论及同类商家集合）"
+        }
+      ],
+      "native_evidence": ["Download Business Profiles (httpRequest)"],
+      "requirement_evidence": ["随后下载检索到的商家档案", "Google Maps 商家发现检索返回的商家档案"],
+      "rationale": "确定性外部下载，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "按完整度缺口打分",
+      "node_type": "code",
+      "operation_family": "deterministic_calculation",
+      "inputs": [
+        {
+          "name": "business_profiles",
+          "type": "array",
+          "description": "检索到的商家档案（含评分、评论及同类商家集合）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "scored_prospects",
+          "type": "array",
+          "description": "按资料完整度缺口（以同类商家集合为基准）打分后的候选商家"
+        }
+      ],
+      "native_evidence": ["Score Profile Gaps (code)"],
+      "requirement_evidence": ["并按可度量的商家资料完整度缺口、以“用户还搜索过”的同类商家集合为基准，对每个商家打分", "按可度量的商家资料完整度缺口、以同类商家集合为基准打分"],
+      "rationale": "基于档案字段的可度量缺口加权计算为确定性规则，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "读取已记录候选商家",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "scored_prospects",
+          "type": "array",
+          "description": "按资料完整度缺口打分后的候选商家"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "logged_prospects",
+          "type": "array",
+          "description": "Google Sheets 中已记录的候选商家（含最近联系时间）"
+        }
+      ],
+      "native_evidence": ["Read Reported Businesses (googleSheets)"],
+      "requirement_evidence": ["读取 Google Sheets 中已记录的候选商家", "Google Sheets 中已记录的候选商家"],
+      "rationale": "确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n7",
+      "label": "过滤近期已联系商家",
+      "node_type": "code",
+      "operation_family": "filter_validation",
+      "inputs": [
+        {
+          "name": "scored_prospects",
+          "type": "array",
+          "description": "按资料完整度缺口打分后的候选商家"
+        },
+        {
+          "name": "logged_prospects",
+          "type": "array",
+          "description": "Google Sheets 中已记录的候选商家（含最近联系时间）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "new_prospects",
+          "type": "array",
+          "description": "过滤掉最近 90 天内已联系者后剩余的候选商家（可为空）"
+        }
+      ],
+      "native_evidence": ["Select New Prospects (code)", "Any New Prospects? (if)", "Nothing New This Week (noOp)"],
+      "requirement_evidence": ["过滤掉最近 90 天内已经联系过的商家"],
+      "rationale": "按 90 天窗口去重过滤为确定性规则，判 code。无新候选时流程以空列表自然收敛（原生 noOp 停止分支折叠进本节点契约，需求未声明该情形的可见产物）。"
+    },
+    {
+      "node_id": "n8",
+      "label": "抽取抱怨主题",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "new_prospects",
+          "type": "array",
+          "description": "过滤后剩余的候选商家（含评论数据）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "complaint_themes",
+          "type": "array",
+          "description": "从三星及以下评分评论中抽取的抱怨主题（逐候选商家）"
+        }
+      ],
+      "native_evidence": ["Read Complaint Themes (informationExtractor)", "OpenAI Review Reader (lmChatOpenAi)"],
+      "requirement_evidence": ["对其余候选商家，由语言模型从三星及以下评分的评论中抽取抱怨主题", "调用语言模型从低分评论中抽取抱怨主题", "仅从三星及以下评分的评论中抽取抱怨主题"],
+      "rationale": "从评论中抽取抱怨主题需开放文本理解，判 semantic。"
+    },
+    {
+      "node_id": "n9",
+      "label": "生成排名报告",
+      "node_type": "code",
+      "operation_family": "aggregation",
+      "inputs": [
+        {
+          "name": "complaint_themes",
+          "type": "array",
+          "description": "从三星及以下评分评论中抽取的抱怨主题（逐候选商家）"
+        },
+        {
+          "name": "scored_prospects",
+          "type": "array",
+          "description": "按资料完整度缺口打分后的候选商家"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ranked_report",
+          "type": "array",
+          "description": "按得分排名的报告（逐候选商家一行，含缺口与抱怨主题）"
+        }
+      ],
+      "native_evidence": ["Rank Prospects (code)", "Build Report (code)", "Split Out Prospect Rows (splitOut)"],
+      "requirement_evidence": ["最后生成一份排名报告"],
+      "rationale": "按得分排序并组装报告行为确定性聚合变换，判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "逐行追加候选商家到 Sheets",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "ranked_report",
+          "type": "array",
+          "description": "按得分排名的报告（逐候选商家一行）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sheet_append_result",
+          "type": "object",
+          "description": "Google Sheets 追加写入结果"
+        }
+      ],
+      "native_evidence": ["Log Prospects To Sheet (googleSheets)"],
+      "requirement_evidence": ["把每个候选商家逐行追加到 Google Sheets", "向 Google Sheets 逐行追加候选商家", "Google Sheets 中每个候选商家新增一行"],
+      "rationale": "按报告逐行写入 Sheets 为确定性外部动作；其后仍有 Slack 摘要发送，故非终止节点，判 code。"
+    },
+    {
+      "node_id": "n11",
+      "label": "向 Slack 发送格式化摘要",
+      "node_type": "terminal",
+      "operation_family": "notification_delivery",
+      "inputs": [
+        {
+          "name": "ranked_report",
+          "type": "array",
+          "description": "按得分排名的报告（用于生成带排名的格式化摘要）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Post Digest To Slack (slack)"],
+      "requirement_evidence": ["并向指定的 Slack 频道发送一份格式化的摘要", "Slack 频道收到一份带排名的格式化摘要"],
+      "rationale": "向指定频道发送格式化摘要是用户可见完成动作，为本链路终点，无 CFG 出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每周触发后读取检索配置。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "配置就绪后按品类触发并轮询检索。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "快照就绪后下载商家档案。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "档案下载后按缺口打分。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "打分后读取已记录候选商家。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "已记录名单用于过滤近期已联系者。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "剩余候选商家进入抱怨主题抽取。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "抱怨主题汇入排名报告。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "报告生成后逐行追加到 Sheets。"
+    },
+    {
+      "edge_id": "e_cfg_10",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "记录写入后向 Slack 发送格式化摘要。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "search_config",
+      "condition": null,
+      "rationale": "检索触发消费城市、品类等配置。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "discovery_result",
+      "condition": null,
+      "rationale": "档案下载消费就绪的检索快照。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "business_profiles",
+      "condition": null,
+      "rationale": "打分消费商家档案。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n5",
+      "target": "n7",
+      "variable": "scored_prospects",
+      "condition": null,
+      "rationale": "过滤消费打分后的候选商家。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n6",
+      "target": "n7",
+      "variable": "logged_prospects",
+      "condition": null,
+      "rationale": "过滤消费已记录候选商家。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n7",
+      "target": "n8",
+      "variable": "new_prospects",
+      "condition": null,
+      "rationale": "抱怨主题抽取消费过滤后的候选商家及其评论（code 到 semantic 的有类型数据边）。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n8",
+      "target": "n9",
+      "variable": "complaint_themes",
+      "condition": null,
+      "rationale": "报告组装消费抱怨主题。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n5",
+      "target": "n9",
+      "variable": "scored_prospects",
+      "condition": null,
+      "rationale": "排名依据打分结果。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n9",
+      "target": "n10",
+      "variable": "ranked_report",
+      "condition": null,
+      "rationale": "逐行追加消费排名报告。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n9",
+      "target": "n11",
+      "variable": "ranked_report",
+      "condition": null,
+      "rationale": "Slack 摘要消费排名报告。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n11"],
+  "confidence": 0.85,
+  "notes": "关键取舍：1) 需求将触发与轮询声明为一个动作，轮询循环折叠进检索节点契约（终止条件：快照就绪，上限 7 分钟）。2) 原生的 Write Prospect Brief（语言模型逐商家撰写推介语，chainLlm）未在冻结需求中声明，不纳入 Gold；需求唯一声明的语言模型行为是抽取抱怨主题。3) 原生 Any New Prospects? 的无新候选停止分支（noOp）折叠进过滤节点契约，需求未声明该情形的可见产物。4) Sheets 追加与 Slack 摘要为两个并列声明的可见结果，因 Slack 摘要在最后发送， Sheets 追加为 code、Slack 摘要为唯一 terminal。"
+}

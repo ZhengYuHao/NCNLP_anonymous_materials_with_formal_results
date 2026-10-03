@@ -1,0 +1,243 @@
+{
+  "task_id": "N8F-039",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "fb7c63d0b82e1c3379fd95b7fb1e6719f3d3406d1415f4374fdb84c243c0d182",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "定期调度启动",
+      "node_type": "code",
+      "operation_family": "scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "定期执行的调度触发事件"
+        }
+      ],
+      "native_evidence": [
+        "Daily Analysis Schedule"
+      ],
+      "requirement_evidence": [
+        "系统定期执行房地产细分市场投资分析"
+      ],
+      "rationale": "需求声明系统定期执行分析任务，为流程入口的确定性调度动作，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "并行采集四类数据",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "trigger",
+          "type": "event",
+          "description": "调度触发事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_datasets",
+          "type": "array",
+          "description": "房源挂牌数据、公共记录、人口统计信息与宏观经济指标四类数据"
+        }
+      ],
+      "native_evidence": [
+        "Fetch MLS Data",
+        "Fetch Public Records",
+        "Fetch Demographic Data",
+        "Fetch Macroeconomic Data"
+      ],
+      "requirement_evidence": [
+        "并行采集四类数据，即房源挂牌数据、公共记录、人口统计信息与宏观经济指标"
+      ],
+      "rationale": "需求声明并行采集四类数据，为确定性外部 API 调用，判 code；四类采集的并行执行作为该节点内部行为。"
+    },
+    {
+      "node_id": "n3",
+      "label": "整合为统一数据集",
+      "node_type": "code",
+      "operation_family": "data_integration",
+      "inputs": [
+        {
+          "name": "raw_datasets",
+          "type": "array",
+          "description": "四类原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unified_dataset",
+          "type": "object",
+          "description": "四类数据整合后的统一数据集"
+        }
+      ],
+      "native_evidence": [
+        "Combine All Data Sources"
+      ],
+      "requirement_evidence": [
+        "四类数据整合为统一数据集后"
+      ],
+      "rationale": "需求声明将四类数据整合为统一数据集，为确定性数据整合变换，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成结构化投资分析洞察",
+      "node_type": "semantic",
+      "operation_family": "llm_analysis",
+      "inputs": [
+        {
+          "name": "unified_dataset",
+          "type": "object",
+          "description": "统一数据集"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "analysis_insights",
+          "type": "object",
+          "description": "结构化、可用于投资决策的分析洞察"
+        }
+      ],
+      "native_evidence": [
+        "Investment Opportunity Analyzer",
+        "OpenAI GPT-4",
+        "Calculator Tool"
+      ],
+      "requirement_evidence": [
+        "交由语言模型结合必要的量化计算完成分析，形成结构化、可用于投资决策的洞察"
+      ],
+      "rationale": "需求声明由语言模型结合量化计算完成分析并形成结构化洞察，需开放推理与计算，判 semantic；量化计算作为该节点内部工具使用。"
+    },
+    {
+      "node_id": "n5",
+      "label": "通过 Gmail 发送给收购团队",
+      "node_type": "terminal",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "analysis_insights",
+          "type": "object",
+          "description": "投资分析洞察"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Email Acquisition Team"
+      ],
+      "requirement_evidence": [
+        "分析结果通过 Gmail 发送给收购团队"
+      ],
+      "rationale": "需求声明通过 Gmail 将分析结果发送给收购团队，为确定性外部通知动作且无后续依赖，判 terminal。"
+    },
+    {
+      "node_id": "n6",
+      "label": "通过 Slack 发送给投资人",
+      "node_type": "terminal",
+      "operation_family": "external_notify",
+      "inputs": [
+        {
+          "name": "analysis_insights",
+          "type": "object",
+          "description": "投资分析洞察"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Notify Investors on Slack"
+      ],
+      "requirement_evidence": [
+        "并通过 Slack 发送给投资人"
+      ],
+      "rationale": "需求声明通过 Slack 将分析结果发送给投资人，为确定性外部通知动作且无后续依赖，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "定期调度触发后并行采集数据。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "四类数据采集完成后整合。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "统一数据集就绪后进入分析。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后通过 Gmail 通知收购团队。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "分析完成后通过 Slack 通知投资人，与 Gmail 通知并行。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "raw_datasets",
+      "condition": null,
+      "rationale": "四类原始数据传给整合节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n3",
+      "target": "n4",
+      "variable": "unified_dataset",
+      "condition": null,
+      "rationale": "统一数据集传给分析节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n4",
+      "target": "n5",
+      "variable": "analysis_insights",
+      "condition": null,
+      "rationale": "分析洞察传给 Gmail 通知节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n4",
+      "target": "n6",
+      "variable": "analysis_insights",
+      "condition": null,
+      "rationale": "分析洞察传给 Slack 通知节点。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n5",
+    "n6"
+  ],
+  "confidence": 0.95,
+  "notes": "按冻结需求建模：定期调度为入口；四类数据并行采集合并为一个外部采集节点，整合为统一数据集，分析由语言模型完成判 semantic；Gmail 与 Slack 两条通知链并行输出且均无后续依赖，判 terminal。原生中的 Workflow Configuration、高优先级筛选（Filter High-Priority Opportunities）等为需求未声明的实现细节，未纳入。"
+}

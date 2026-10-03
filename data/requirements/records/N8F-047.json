@@ -1,0 +1,109 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-047",
+  "source_id": "n8n:18302",
+  "workflow_sha256": "2d2411d50eee2e43d4979faafadd7641478df52e44cc3eaaed32da8dd50bb85a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "revised_and_confirmed",
+  "requirement_sha256": "e52821d6ef7c9f777a3cc2d3d59172bb2fa30916f79e9332937658ee5f5a8ea1",
+  "requirement": {
+    "requirement_text": "学生门户通过一个统一入口接收 POST 请求，并依据请求中的动作字段将请求路由到注册、登录、意见反馈提交、CGPA 计算或资料更新五类处理。\n\n1）注册：提取并校验学生的姓名、邮箱、学号与密码，将记录写入学生数据表，通过 Gmail 发送确认邮件，并返回 JSON 格式的成功或失败响应。\n2）登录：使用提交的邮箱与密码在学生数据表中查询该学生并校验凭据，返回 JSON 格式的成功响应或凭据无效响应。\n3）意见反馈提交：规范化提交的学生字段与反馈字段，将反馈存入反馈数据表，使用语言模型生成一封个性化的感谢回复邮件，通过 Gmail 发送该回复，并返回包含邮件预览的 JSON 响应。\n4）CGPA 计算：将提交的各学期绩点与学分数据交由语言模型计算 CGPA，解析并校验返回结果，返回 CGPA、总学分以及所计入的学期。\n5）资料更新：校验必填的资料字段，按学号确认该学生在学生数据表中存在，更新学生资料表，并返回更新后的数据或错误信息。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 262,
+        "text": "This workflow exposes a single webhook for a student portal and routes requests to Supabase-backed registration, login, feedback tracking with AI-generated reply emails via Groq and Gmail, CGPA calculation via Mistral, and student profile updates."
+      },
+      {
+        "start": 277,
+        "end": 442,
+        "text": "Receives a POST request on a webhook and reads an action value to route the request to registration, login, feedback submission, CGPA calculation, or profile update."
+      },
+      {
+        "start": 443,
+        "end": 668,
+        "text": "For registration, it extracts and validates the student’s name, email, register number, and password, inserts the record into a Supabase table, sends a Gmail confirmation email, and returns a JSON success or failure response."
+      },
+      {
+        "start": 669,
+        "end": 839,
+        "text": "For login, it looks up the student in Supabase using the submitted email and password, checks the credentials, and returns a JSON success or invalid-credentials response."
+      },
+      {
+        "start": 840,
+        "end": 1100,
+        "text": "For feedback submission, it normalizes the submitted student and feedback fields, stores the feedback in a Supabase table, uses Groq (Llama) to generate a personalized thank-you email, sends the reply via Gmail, and returns a JSON response including a preview."
+      },
+      {
+        "start": 1101,
+        "end": 1305,
+        "text": "For CGPA calculation, it sends the submitted semester GPA/credit data to a Mistral AI agent, parses and validates the returned JSON, and responds with the computed CGPA, total credits, and semesters used."
+      },
+      {
+        "start": 1306,
+        "end": 1518,
+        "text": "For profile updates, it validates required profile fields, verifies the student exists in Supabase by register number, updates a Supabase “Student Details” table, and returns the updated data or an error message."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "学生门户提交的 POST 请求及其动作字段",
+        "注册提交的姓名、邮箱、学号、密码",
+        "登录提交的邮箱与密码",
+        "意见反馈提交的学生字段与反馈字段",
+        "CGPA 计算提交的各学期绩点与学分数据",
+        "资料更新提交的资料字段"
+      ],
+      "conditions": [
+        "依据请求中的动作字段路由到注册、登录、意见反馈提交、CGPA 计算或资料更新",
+        "注册与资料更新需校验必填字段",
+        "登录需校验提交的邮箱与密码是否与记录匹配",
+        "资料更新需按学号确认该学生已存在"
+      ],
+      "allowed_actions": [
+        "写入学生数据表",
+        "查询学生数据表",
+        "通过 Gmail 发送确认邮件与反馈回复邮件",
+        "使用语言模型生成个性化感谢回复邮件",
+        "将各学期绩点与学分交由语言模型计算 CGPA，并解析、校验返回结果",
+        "更新学生资料表",
+        "返回 JSON 响应"
+      ],
+      "visible_outcomes": [
+        "注册返回 JSON 成功或失败响应，并向学生发送 Gmail 确认邮件",
+        "登录返回 JSON 成功响应或凭据无效响应",
+        "意见反馈返回包含邮件预览的 JSON 响应",
+        "CGPA 计算返回 CGPA、总学分与所计入的学期",
+        "资料更新返回更新后的数据或错误信息"
+      ],
+      "failure_behavior": [
+        "注册处理失败时返回 JSON 失败响应",
+        "登录凭据不匹配时返回 JSON 凭据无效响应",
+        "资料更新中学生不存在时返回错误信息"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/packets/N8F-047.packet.json",
+    "packet_sha256": "cfa1f4409b87646572bf3b6f30d106fe608f79d377c1dfa589a6d7e21be958d0",
+    "public_description_sha256": "48d10adfa152bfc6201dabd9374fb5cc4ce272795f88528db3926f5073ae4798"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_04/responses/N8F-047.response.json",
+    "revision_record_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/revision_records/N8F-047.revision.json",
+    "revision_record_sha256": "20949f1f9c01fc576beca5b5b43e6b9baadf584d7301a16bab04bb89b9a0caba",
+    "final_confirmation_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/revisions/remaining_revision_01/confirmations/RV-05/responses/N8F-047.response.json",
+    "final_confirmation_sha256": "a04f135d42f125d052881d23d391150e5023d53a9b62405559b991d105b5099c",
+    "decision": "accept"
+  },
+  "formal_index": 58
+}

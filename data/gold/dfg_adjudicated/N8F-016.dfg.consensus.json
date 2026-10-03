@@ -1,0 +1,131 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-016",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "生成的话题标签"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g3",
+      "target_group": "g4",
+      "data_items": [
+        "话题标签下最近的帖子列表",
+        "抓取到的最近帖子列表"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "选定帖子的内容",
+        "随机选中的帖子"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g6",
+      "data_items": [
+        "待评论帖子的信息"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-016-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "待评论清单文件 instagram_post_to_comment.csv 记录所选待评论帖子，清单生成真实读取 g4 选出的帖子信息。",
+      "confidence": 0.8,
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g7",
+      "data_items": [
+        "所选帖子（评论目标）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-016-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求『将该回复发布到所选帖子下』，发布目标即 g4 随机选出并经校验的帖子，发布步骤消费该帖子信息。",
+      "confidence": 0.75,
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "评论回复与待评论帖子信息",
+        "生成的评论回复内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "生成的评论回复内容"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-016-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "冻结需求明示发布的内容即语言模型撰写的回复，发布步骤真实消费该评论内容。",
+      "confidence": 0.85,
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g7",
+      "data_items": [
+        "待评论帖子清单文件",
+        "上传到 SharePoint 的待评论清单文件"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g7",
+      "target_group": "g8",
+      "data_items": [
+        "已发布评论的帖子链接"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g4",
+      "data_items": [
+        "已评论记录（帖子链接列表）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-016-D04",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "校验步骤读取已评论记录以避免对同一帖子重复评论（需求：避免对同一帖子重复评论），该记录由 g8 写入维护，属跨运行的写入-读取数据依赖。",
+      "confidence": 0.7,
+      "edge_id": "d10"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.7499999999999999,
+    "shared_edge_count": 6,
+    "adjudicated_dispute_count": 4,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-033",
+  "source_id": "n8n:6729",
+  "workflow_sha256": "f013fef043ed1cd370ec518753462e160371f01deb897870c1040d6bff7cd2be",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "1dde265c853a22b92937e6962b6835d918850d0c7dbe0a00cfcbf169fb2bbdfe",
+  "requirement": {
+    "requirement_text": "用户通过 Telegram 发送一条 Instagram Reel 链接即可启动处理。系统自动下载该 Reel，将视频转换为音频，再把语音转写为文本；随后结合转写文本与该 Reel 的描述，使用语言模型进行分析，产出：内容领域定位、核心信息、3 条具有传播潜力的内容切入点，以及 3 条可直接使用的短视频脚本。上述全部结果保存到 Google Sheets，便于创作者或团队后续复用。",
+    "source_spans": [
+      {
+        "start": 255,
+        "end": 543,
+        "text": "🧰 What It Does\nTriggered simply by sending an Instagram Reel URL via Telegram.\nDownloads the Reel automatically.\nConverts video to audio using FreeConvert API.\nTranscribes speech to text using AssemblyAI.\nAnalyzes both transcript and description using a connected LLM (OpenAI or Mistral)."
+      },
+      {
+        "start": 556,
+        "end": 708,
+        "text": "Niche\nCore message\n3 viral content hooks\n3 ready-to-use short-form video scripts\nSaves all data to a Google Sheet for easy reuse by the creator or team."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户通过 Telegram 提交的 Instagram Reel 链接",
+        "Reel 视频内容与 Reel 描述文本"
+      ],
+      "conditions": [],
+      "allowed_actions": [
+        "下载 Reel 视频",
+        "将视频转换为音频",
+        "将语音转写为文本",
+        "结合转写文本与描述分析内容",
+        "产出内容领域定位、核心信息、3 条传播切入点与 3 条短视频脚本",
+        "将结果写入 Google Sheets"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中新增一条包含内容领域定位、核心信息、传播切入点与短视频脚本的记录"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/packets/N8F-033.packet.json",
+    "packet_sha256": "c5f36d3b70534a8d78288dac060c98aad884e34d38966539bfa4e04325d8acb1",
+    "public_description_sha256": "1cf2fdf9ce9cbe1b34adb4e20a8904ce5c75ab6910d3073f4ec32a4448792aa3"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_03/responses/N8F-033.response.json",
+    "verification_response_sha256": "8f5b91fc2182094ffa676e9ac8ac86df976e117bb34463b94c1a2753b8914ce8",
+    "decision": "accept"
+  },
+  "formal_index": 44
+}

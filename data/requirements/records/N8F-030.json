@@ -1,0 +1,165 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-030",
+  "source_id": "n8n:14311",
+  "workflow_sha256": "8912bd0184e8514e58c3931c723e126d4204696291e9849b483a6f36897bb91c",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_after_full_description_reconsideration",
+  "requirement_sha256": "6cd504c4a44fa1d7abc4f9ace89de206be8224f9ac043a71e66c918794ff47b5",
+  "requirement": {
+    "requirement_text": "按计划时间自动监控 Google Sheets 中记录的竞品商品价格：抓取商品页面、由语言模型抽取价格与优惠信息、与历史值比较，据此更新记录并生成市场情报报告，最后通过邮件发送报告并重置数据以进入下一轮执行。\n\n读取与抓取：运行时读取竞品数据与商品链接，逐条处理每个竞品条目：抓取商品页面原始内容，并清洗整理出供模型处理的文本。\n\n价格抽取与记录：由语言模型抽取商品名称、价格与优惠信息，并转换为结构化数据。随后判断该商品是否为首次记录：若是，则保存初始值；否则将当前价格与优惠同历史值比较，检测到变化时更新记录。即使未检测到变化，也会更新记录，因此价格变化与无变化两种情形都会被处理。\n\n分析与汇总：全部条目处理完毕后，取回更新后的数据集，汇总为结构化的市场对比数据，由语言模型生成战略洞察与建议，并把生成的分析摘要保存回 Google Sheets。\n\n报告与重置：把报告排版为 HTML 邮件格式，通过 Gmail 发送最终报告。最后取回本轮处理后的数据，把当前数据转入历史记录并清空相应字段，为下一轮执行做准备。",
+    "source_spans": [
+      {
+        "start": 15,
+        "end": 373,
+        "text": "This workflow automatically monitors competitor product prices stored in Google Sheets. It scrapes product pages, extracts pricing and offer data using AI, and compares it with historical values. Based on changes, it updates records and generates a market intelligence report. The workflow then emails the report and resets data for the next execution cycle."
+      },
+      {
+        "start": 419,
+        "end": 476,
+        "text": "Schedule Trigger – Runs the workflow at a scheduled time."
+      },
+      {
+        "start": 481,
+        "end": 544,
+        "text": "Get row(s) in sheet – Fetches competitor data and product URLs."
+      },
+      {
+        "start": 571,
+        "end": 621,
+        "text": "Loop Over Items – Processes each competitor entry."
+      },
+      {
+        "start": 626,
+        "end": 678,
+        "text": "HTTP Request3 – Retrieves raw HTML using ScraperAPI."
+      },
+      {
+        "start": 683,
+        "end": 742,
+        "text": "Clean Content – Cleans and prepares text for AI processing."
+      },
+      {
+        "start": 777,
+        "end": 830,
+        "text": "AI Agent1 – Extracts product name, price, and offers."
+      },
+      {
+        "start": 893,
+        "end": 959,
+        "text": "current Price and offer – Converts AI output into structured data."
+      },
+      {
+        "start": 964,
+        "end": 1010,
+        "text": "If2 – Checks if it's the first recorded entry."
+      },
+      {
+        "start": 1015,
+        "end": 1072,
+        "text": "First time price and offer added – Stores initial values."
+      },
+      {
+        "start": 1077,
+        "end": 1129,
+        "text": "If1 – Compares current vs previous price and offers."
+      },
+      {
+        "start": 1134,
+        "end": 1205,
+        "text": "Updated current price and offer in sheet – Updates if changes detected."
+      },
+      {
+        "start": 1210,
+        "end": 1281,
+        "text": "If No changes then update – Updates sheet even when no change is found."
+      },
+      {
+        "start": 1362,
+        "end": 1421,
+        "text": "Data Aggregator – Builds structured market comparison data."
+      },
+      {
+        "start": 1426,
+        "end": 1486,
+        "text": "AI Agent – Generates strategic insights and recommendations."
+      },
+      {
+        "start": 1543,
+        "end": 1601,
+        "text": "Update row in sheet – Saves AI-generated summary in sheet."
+      },
+      {
+        "start": 1629,
+        "end": 1686,
+        "text": "Edit Fields1 – Formats the report into HTML email layout."
+      },
+      {
+        "start": 1691,
+        "end": 1741,
+        "text": "Send a message – Sends the final report via Gmail."
+      },
+      {
+        "start": 1824,
+        "end": 1895,
+        "text": "Update row in sheet1 – Moves current data to history and clears fields."
+      },
+      {
+        "start": 1915,
+        "end": 1985,
+        "text": "Ensures all price scenarios (change or no change) are handled properly"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "按计划时间触发",
+        "Google Sheets 中的竞品数据与商品链接",
+        "抓取得到的商品页面原始内容",
+        "商品的历史价格与历史优惠记录"
+      ],
+      "conditions": [
+        "逐条处理每个竞品条目",
+        "首次记录的商品直接保存初始值",
+        "非首次记录的商品需比较当前与历史的价格和优惠",
+        "检测到变化时更新记录；未检测到变化时同样更新记录",
+        "每轮结束后把当前数据转入历史并清空相应字段"
+      ],
+      "allowed_actions": [
+        "读取竞品数据与商品链接",
+        "抓取并清洗商品页面内容",
+        "调用语言模型抽取商品名称、价格与优惠并转为结构化数据",
+        "比较当前值与历史值并更新记录",
+        "汇总为结构化的市场对比数据",
+        "调用语言模型生成战略洞察与建议",
+        "把分析摘要保存回 Google Sheets",
+        "把报告排版为 HTML 并通过 Gmail 发送",
+        "把当前数据转入历史记录并清空字段"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中记录各竞品的当前与历史价格、优惠以及分析摘要",
+        "收件人收到一份 HTML 格式的市场情报报告邮件",
+        "每轮结束后历史字段被更新、当前字段被清空"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-030.packet.json",
+    "packet_sha256": "bcc0bd2d671c0d47433d0f7c38ff92541c0fa4339ed1c799d17526eab9963945",
+    "public_description_sha256": "a92deca54caa41632cb363d1943a3a5bf9484ab7e28d6d94dd7873791e36c258"
+  },
+  "decision_provenance": {
+    "original_verification_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-030.response.json",
+    "reconsideration_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/reconsiderations/full_description_01/RV-03/responses/N8F-030.response.json",
+    "reconsideration_response_sha256": "06ca78cabedb953730140db4db38c4c0b5ce49ac581a913a69fc1f68e564afe0",
+    "decision": "accept"
+  },
+  "formal_index": 41
+}

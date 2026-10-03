@@ -1,0 +1,174 @@
+{
+  "task_id": "N8F-084",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "2825c5780117d5ee02bffc09933168ffa85d238586378992f3bca7f1b5c3381a",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收用户发送的 LINE 文本消息并解析消息事件",
+      "node_type": "code",
+      "operation_family": "webhook_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "解析出的用户文本消息"
+        }
+      ],
+      "native_evidence": [
+        "Receive LINE message (webhook)",
+        "Parse LINE event (code)"
+      ],
+      "requirement_evidence": [
+        "用户向 LINE 机器人发送一条文本消息，系统解析传入的消息事件"
+      ],
+      "rationale": "需求声明的消息接收与解析入口，为确定性触发与解析，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "语言模型在一次结构化回复中以三个角色分别给出建议",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户文本消息"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "persona_advice",
+          "type": "object",
+          "description": "三角色建议（算命先生、商业教练、挚友）"
+        }
+      ],
+      "native_evidence": [
+        "Generate advice with Gemini (chainLlm)",
+        "Google Gemini Chat Model (lmChatGoogleGemini)"
+      ],
+      "requirement_evidence": [
+        "把消息交给语言模型，要求其在一次结构化回复中以三个不同角色分别给出建议"
+      ],
+      "rationale": "需求声明由语言模型以三角色生成建议，判 semantic；三角色固定风格（神秘命运/逻辑行动/轻松共情）为契约约束。"
+    },
+    {
+      "node_id": "n3",
+      "label": "把本次建议写入 Google Sheets 留存历史记录",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户消息原文"
+        },
+        {
+          "name": "persona_advice",
+          "type": "object",
+          "description": "三角色建议"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Save advice to Sheets (googleSheets, append)"
+      ],
+      "requirement_evidence": [
+        "把本次建议写入 Google Sheets，用于留存历史记录"
+      ],
+      "rationale": "需求声明的历史留存写入，为确定性外部操作，判 code。"
+    },
+    {
+      "node_id": "n4",
+      "label": "向用户返回卡片轮播消息（每个角色一张卡片，不同颜色区分）",
+      "node_type": "terminal",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "persona_advice",
+          "type": "object",
+          "description": "三角色建议"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Flex Message to LINE (httpRequest, LINE reply)"
+      ],
+      "requirement_evidence": [
+        "向用户返回一条卡片轮播消息，每个角色一张卡片，各卡片以不同颜色区分"
+      ],
+      "rationale": "需求声明的卡片轮播消息发送，为最终交付，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "解析消息后交给语言模型"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成建议后写入 Sheets"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "留存后向用户发送轮播消息"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "建议生成基于用户消息"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "persona_advice",
+      "condition": null,
+      "rationale": "历史留存写入三角色建议"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n1",
+      "target": "n3",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "留存记录包含用户消息原文"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "persona_advice",
+      "condition": null,
+      "rationale": "轮播消息使用三角色建议"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n4"
+  ],
+  "confidence": 0.92,
+  "notes": "线性流程建模。原生 Skip if no text event 空分支、Respond OK、Set config、Build context、Parse Gemini response 为实现细节，需求未声明，未纳入；三角色固定风格与一次结构化回复作为契约约束固化在 n2。"
+}

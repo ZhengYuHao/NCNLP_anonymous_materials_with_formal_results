@@ -1,0 +1,266 @@
+{
+  "task_id": "N8F-019",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "b1b02f26e6317fa9c6381a35e9f01571c1ba89ce29a925d8aee2569df50f27ef",
+  "fixtures": [
+    {
+      "fixture_id": "F-JOBS-MIXED",
+      "purpose": "正常用例：5 个职位中 2 个已看过、3 个新职位，新职位评分分别为 40、60、85，验证去重与 60 分阈值",
+      "input_data": {
+        "jobs": [
+          {
+            "job_id": "J001",
+            "title": "Full-stack developer",
+            "budget": 3000
+          },
+          {
+            "job_id": "J002",
+            "title": "Data analyst",
+            "budget": 1500
+          },
+          {
+            "job_id": "J003",
+            "title": "DevOps engineer",
+            "budget": 5000
+          },
+          {
+            "job_id": "J004",
+            "title": "QA tester",
+            "budget": 800
+          },
+          {
+            "job_id": "J005",
+            "title": "Product manager",
+            "budget": 6000
+          }
+        ],
+        "already_seen": ["J001", "J003"],
+        "mock_scores": {
+          "J002": 40,
+          "J004": 60,
+          "J005": 85
+        }
+      }
+    },
+    {
+      "fixture_id": "F-JOBS-ALL-LOW",
+      "purpose": "边界用例：3 个新职位评分均低于 60，验证无职位通过筛选时的行为",
+      "input_data": {
+        "jobs": [
+          {
+            "job_id": "J011",
+            "title": "Junior writer",
+            "budget": 200
+          },
+          {
+            "job_id": "J012",
+            "title": "Virtual assistant",
+            "budget": 150
+          },
+          {
+            "job_id": "J013",
+            "title": "Data entry",
+            "budget": 100
+          }
+        ],
+        "already_seen": [],
+        "mock_scores": {
+          "J011": 30,
+          "J012": 45,
+          "J013": 55
+        }
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-APIFY-SCRAPE",
+      "dependency_type": "httpRequest",
+      "operation": "fetch_upwork_jobs",
+      "request_contract": {
+        "criteria": "string"
+      },
+      "response_contract": {
+        "jobs": [
+          {
+            "job_id": "J001",
+            "title": "Full-stack developer",
+            "budget": 3000
+          },
+          {
+            "job_id": "J002",
+            "title": "Data analyst",
+            "budget": 1500
+          },
+          {
+            "job_id": "J003",
+            "title": "DevOps engineer",
+            "budget": 5000
+          },
+          {
+            "job_id": "J004",
+            "title": "QA tester",
+            "budget": 800
+          },
+          {
+            "job_id": "J005",
+            "title": "Product manager",
+            "budget": 6000
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SCORE",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "score_job",
+      "request_contract": {
+        "job_id": "string",
+        "title": "string",
+        "budget": "number"
+      },
+      "response_contract": {
+        "score_map": {
+          "J002": 40,
+          "J004": 60,
+          "J005": 85
+        },
+        "dimensions": ["fit", "client_quality", "budget"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-PROPOSAL",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_proposal",
+      "request_contract": {
+        "job_id": "string",
+        "score": "number"
+      },
+      "response_contract": {
+        "proposal": "I would be excited to bring my experience to this role."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SHEETS-LOG",
+      "dependency_type": "googleSheets",
+      "operation": "append_rows",
+      "request_contract": {
+        "rows": "array"
+      },
+      "response_contract": {
+        "updated_rows": 2,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-TELEGRAM-NOTIFY",
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_contract": {
+        "text": "string"
+      },
+      "response_contract": {
+        "message_id": "tg-fixed-001",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-FILTER-AND-LOG",
+      "kind": "positive",
+      "fixture_ids": ["F-JOBS-MIXED"],
+      "mock_ids": ["M-APIFY-SCRAPE", "M-LLM-SCORE", "M-LLM-PROPOSAL", "M-SHEETS-LOG", "M-TELEGRAM-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-SHEETS-ROW-COUNT",
+          "target": "sheets_log.append_rows.calls[0].rows",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "3 个新职位中仅 60 分与 85 分通过阈值，Google Sheets 应只记录 2 条结果"
+        },
+        {
+          "assertion_id": "A-SHEETS-KEEP-IDS",
+          "target": "sheets_log.append_rows.calls[0].rows[0].job_id",
+          "operator": "matches",
+          "expected": "J00[45]",
+          "rationale": "记录中只能包含 J004（60 分）或 J005（85 分）两个通过阈值的职位"
+        },
+        {
+          "assertion_id": "A-SEEN-DEDUPED",
+          "target": "sheets_log.append_rows.calls[0].rows[0].job_id",
+          "operator": "not_equals",
+          "expected": "J001",
+          "rationale": "已看过的职位 J001 必须被去重，不得写入结果记录"
+        },
+        {
+          "assertion_id": "A-PROPOSAL-NONEMPTY",
+          "target": "proposals.generated",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "每个保留职位都应生成个性化提案，共 2 份"
+        },
+        {
+          "assertion_id": "A-TELEGRAM-ONE",
+          "target": "telegram.send_message.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "需求要求通过 Telegram 发送一条汇总通知"
+        },
+        {
+          "assertion_id": "A-TELEGRAM-CONTENT",
+          "target": "telegram.send_message.calls[0].text",
+          "operator": "contains",
+          "expected": "2",
+          "rationale": "汇总通知应包含通过筛选的职位数量 2"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-ALL-LOW",
+      "kind": "boundary",
+      "fixture_ids": ["F-JOBS-ALL-LOW"],
+      "mock_ids": ["M-APIFY-SCRAPE", "M-LLM-SCORE", "M-LLM-PROPOSAL", "M-SHEETS-LOG", "M-TELEGRAM-NOTIFY"],
+      "assertions": [
+        {
+          "assertion_id": "A-LOW-NO-SHEETS",
+          "target": "sheets_log.append_rows.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "全部职位得分低于 60 时，不得有任何结果写入 Google Sheets"
+        },
+        {
+          "assertion_id": "A-LOW-NO-PROPOSAL",
+          "target": "proposals.generated",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "无职位通过筛选时不得生成提案"
+        },
+        {
+          "assertion_id": "A-LOW-TELEGRAM-EMPTY-NOTE",
+          "target": "telegram.send_message.calls[0].text",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "即使没有职位通过，仍应发送一条汇总通知说明本次运行结果为空"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。用固定职位集与固定评分模拟覆盖：已看过去重、60 分阈值（含恰好 60 分保留）、全低分空结果三种情形。语言模型评分、提案、Google Sheets 与 Telegram 全部确定性模拟。断言均为程序可判定（行数、保留职位 ID、提案数量、通知条数与内容）。"
+}

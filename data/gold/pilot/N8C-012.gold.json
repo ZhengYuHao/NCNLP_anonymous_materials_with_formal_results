@@ -1,0 +1,824 @@
+{
+  "pilot_id": "N8C-012",
+  "annotator_id": "GM-A-01",
+  "status": "submitted",
+  "requirement_sha256": "381eb652a2c31696156e915e47f7aa9e2a1a235b77708b24b9b9053645539f61",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "Daily schedule trigger for event reminders",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Daily run signal that starts the event-reminder lane"
+        }
+      ],
+      "native_evidence": [
+        "Daily Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "it runs daily on a schedule"
+      ],
+      "rationale": "Declared daily schedule entry for lane (A)."
+    },
+    {
+      "node_id": "n2",
+      "label": "Retrieve event records from Supabase",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the event retrieval"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "event_records",
+          "type": "array",
+          "description": "Event records retrieved from Supabase"
+        }
+      ],
+      "native_evidence": [
+        "Retrieve Rows from Supabase"
+      ],
+      "requirement_evidence": [
+        "retrieves event records from Supabase"
+      ],
+      "rationale": "Declared external read of the events table."
+    },
+    {
+      "node_id": "n3",
+      "label": "Filter to upcoming, non-low-priority events",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "event_records",
+          "type": "array",
+          "description": "Events to filter by status and priority"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "candidate_events",
+          "type": "array",
+          "description": "Upcoming events whose priority is not low"
+        }
+      ],
+      "native_evidence": [
+        "Filter by Conditions"
+      ],
+      "requirement_evidence": [
+        "filters to upcoming, non-low-priority events"
+      ],
+      "rationale": "Deterministic status and priority filter."
+    },
+    {
+      "node_id": "n4",
+      "label": "Calculate days remaining for each event",
+      "node_type": "code",
+      "operation_family": "date_calculation",
+      "inputs": [
+        {
+          "name": "candidate_events",
+          "type": "array",
+          "description": "Events whose remaining days are calculated"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "events_with_days",
+          "type": "array",
+          "description": "Events annotated with the days remaining until each event date"
+        }
+      ],
+      "native_evidence": [
+        "Set Remaining Days"
+      ],
+      "requirement_evidence": [
+        "it calculates the days remaining for each event"
+      ],
+      "rationale": "Deterministic date arithmetic producing the days-remaining value."
+    },
+    {
+      "node_id": "n5",
+      "label": "Keep only events occurring within the next 0–7 days",
+      "node_type": "code",
+      "operation_family": "filtering",
+      "inputs": [
+        {
+          "name": "events_with_days",
+          "type": "array",
+          "description": "Events with calculated days remaining"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "due_events",
+          "type": "array",
+          "description": "Events occurring within the next 0–7 days"
+        }
+      ],
+      "native_evidence": [
+        "Check Days Remaining Condition",
+        "Analyze Notification Timing",
+        "Route by Notification Stage"
+      ],
+      "requirement_evidence": [
+        "keeps only events occurring within the next 0–7 days"
+      ],
+      "rationale": "Deterministic window filter keeping the 0–7 day events. The native realizes the same window through a condition, a stage computation and a stage router; Gold models the declared behavior as one window filter. The native's event-date resolution branch (preserve original date vs set next event date, then merge) is an implementation detail not declared in the frozen requirement and is not modelled."
+    },
+    {
+      "node_id": "n6",
+      "label": "Loop over due events",
+      "node_type": "code",
+      "operation_family": "loop",
+      "inputs": [
+        {
+          "name": "due_events",
+          "type": "array",
+          "description": "Due events iterated one at a time"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "due_event",
+          "type": "object",
+          "description": "The current due event being processed"
+        }
+      ],
+      "native_evidence": [
+        "Loop Over 10 Items"
+      ],
+      "requirement_evidence": [
+        "for each due event it uses a language model to generate a concise reminder email subject and body"
+      ],
+      "rationale": "Explicit iteration over the due events so that each one is processed separately."
+    },
+    {
+      "node_id": "n7",
+      "label": "Generate reminder email subject and body with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "due_event",
+          "type": "object",
+          "description": "Event name, date, days remaining and details the reminder is based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "reminder_email",
+          "type": "object",
+          "description": "Concise reminder email subject and body for the due event"
+        }
+      ],
+      "native_evidence": [
+        "Define AI Content Agent",
+        "Mistral AI Chat Model",
+        "Process Notification Email"
+      ],
+      "requirement_evidence": [
+        "for each due event it uses a language model to generate a concise reminder email subject and body"
+      ],
+      "rationale": "Open-text drafting of the reminder requires a language model; parsing the output into subject and body is part of this step's outputs."
+    },
+    {
+      "node_id": "n8",
+      "label": "Send reminder email through Gmail",
+      "node_type": "code",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "reminder_email",
+          "type": "object",
+          "description": "Subject and body sent as the reminder email"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "sent_reminder",
+          "type": "object",
+          "description": "The sent reminder email details"
+        }
+      ],
+      "native_evidence": [
+        "Send Email via Gmail"
+      ],
+      "requirement_evidence": [
+        "sends the reminder email through Gmail"
+      ],
+      "rationale": "External delivery action; not terminal because the notification is still logged afterwards."
+    },
+    {
+      "node_id": "n9",
+      "label": "Log sent notification to Supabase notifications table",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "sent_reminder",
+          "type": "object",
+          "description": "Sent notification details logged to the table"
+        },
+        {
+          "name": "due_event",
+          "type": "object",
+          "description": "Event context recorded with the notification"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Add Row to Supabase"
+      ],
+      "requirement_evidence": [
+        "logs the sent notification to a Supabase notifications table"
+      ],
+      "rationale": "User-visible completion of lane (A): the sent notification is logged. Terminal node with no outgoing CFG edge; the next due event re-enters through the loop node n6."
+    },
+    {
+      "node_id": "n10",
+      "label": "Second daily schedule trigger for important days",
+      "node_type": "code",
+      "operation_family": "trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Daily run signal that starts the important-days lane"
+        }
+      ],
+      "native_evidence": [
+        "Morning Schedule Trigger"
+      ],
+      "requirement_evidence": [
+        "on a second daily schedule it retrieves 'important days' from Supabase"
+      ],
+      "rationale": "Declared second daily schedule entry for lane (B)."
+    },
+    {
+      "node_id": "n11",
+      "label": "Retrieve 'important days' from Supabase",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [
+        {
+          "name": "run_signal",
+          "type": "object",
+          "description": "Starts the important-days retrieval"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "important_days",
+          "type": "array",
+          "description": "Important-day records retrieved from Supabase"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Important Dates from DB"
+      ],
+      "requirement_evidence": [
+        "retrieves 'important days' from Supabase"
+      ],
+      "rationale": "Declared external read of the important-days table."
+    },
+    {
+      "node_id": "n12",
+      "label": "Calculate the next occurrence date",
+      "node_type": "code",
+      "operation_family": "date_calculation",
+      "inputs": [
+        {
+          "name": "important_days",
+          "type": "array",
+          "description": "Important days whose next occurrence is calculated"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "days_with_occurrence",
+          "type": "array",
+          "description": "Important days annotated with the next occurrence date and days remaining"
+        }
+      ],
+      "native_evidence": [
+        "Compute Next Important Date"
+      ],
+      "requirement_evidence": [
+        "calculates the next occurrence date"
+      ],
+      "rationale": "Deterministic computation of the next occurrence date (rolling to the next year for recurring days)."
+    },
+    {
+      "node_id": "n13",
+      "label": "Check whether the day matches the configured 'notify days before' value",
+      "node_type": "code",
+      "operation_family": "condition_check",
+      "inputs": [
+        {
+          "name": "days_with_occurrence",
+          "type": "array",
+          "description": "Important days with computed days remaining"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "matching_days",
+          "type": "array",
+          "description": "Important days whose remaining days equal the configured notify-days-before value"
+        }
+      ],
+      "native_evidence": [
+        "Check Date Conditions"
+      ],
+      "requirement_evidence": [
+        "checks whether the day matches the configured 'notify days before' value"
+      ],
+      "rationale": "Deterministic comparison of days remaining against the configured value."
+    },
+    {
+      "node_id": "n14",
+      "label": "Prevent duplicate notifications by checking Supabase",
+      "node_type": "code",
+      "operation_family": "dedup_check",
+      "inputs": [
+        {
+          "name": "matching_days",
+          "type": "array",
+          "description": "Matching important days checked for existing notifications"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unique_days",
+          "type": "array",
+          "description": "Important days with no existing notification for the upcoming occurrence"
+        }
+      ],
+      "native_evidence": [
+        "Verify Important Day Notification",
+        "Confirm Existing Notifications",
+        "Validate ID Availability"
+      ],
+      "requirement_evidence": [
+        "it prevents duplicate 'important day' notifications by checking Supabase"
+      ],
+      "rationale": "External lookup in the notifications table plus deterministic gating that keeps only non-duplicate days. The native additionally writes a pending notification record between the check and email generation; that write is not declared in the frozen requirement for lane (B) and is therefore excluded from Gold (see notes)."
+    },
+    {
+      "node_id": "n15",
+      "label": "Generate important-day reminder email with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "unique_days",
+          "type": "array",
+          "description": "Important day name, description, date and stage the reminder is based on"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "important_reminder_email",
+          "type": "object",
+          "description": "Reminder email subject and body for the important day"
+        }
+      ],
+      "native_evidence": [
+        "Create Important Day Email",
+        "Auxiliary Mistral AI Chat",
+        "Process Important Day Email"
+      ],
+      "requirement_evidence": [
+        "generates a reminder email with a language model"
+      ],
+      "rationale": "Open-text drafting of the reminder requires a language model; parsing the output into subject and body is part of this step's outputs."
+    },
+    {
+      "node_id": "n16",
+      "label": "Send important-day reminder via Gmail",
+      "node_type": "terminal",
+      "operation_family": "email_send",
+      "inputs": [
+        {
+          "name": "important_reminder_email",
+          "type": "object",
+          "description": "Subject and body sent as the important-day reminder"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send Important Day Email"
+      ],
+      "requirement_evidence": [
+        "and sends it via Gmail"
+      ],
+      "rationale": "User-visible completion of lane (B): the reminder is delivered. Terminal node with no outgoing CFG edge."
+    },
+    {
+      "node_id": "n17",
+      "label": "POST webhook trigger for content generation",
+      "node_type": "code",
+      "operation_family": "webhook_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "content_request",
+          "type": "object",
+          "description": "POST request carrying the platform, topic, and audience inputs"
+        }
+      ],
+      "native_evidence": [
+        "POST Webhook to Generate AI"
+      ],
+      "requirement_evidence": [
+        "it receives a POST webhook request with platform/topic/audience inputs"
+      ],
+      "rationale": "Declared webhook entry for lane (C). The frozen requirement declares platform/topic/audience as the inputs; a source span additionally lists tone and length, noted but not elevated above the frozen text."
+    },
+    {
+      "node_id": "n18",
+      "label": "Generate structured content JSON with language model",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "content_request",
+          "type": "object",
+          "description": "Platform, topic and audience inputs guiding the content"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_json",
+          "type": "object",
+          "description": "Structured content JSON (title, description, script, scores, keywords, hashtags, ideas, etc.)"
+        }
+      ],
+      "native_evidence": [
+        "Secondary AI Content Agent",
+        "Secondary Mistral AI Chat",
+        "Handle Secondary AI Output"
+      ],
+      "requirement_evidence": [
+        "generates structured content JSON using a language model"
+      ],
+      "rationale": "Open-text content strategy generation requires a language model; cleaning the output into valid JSON is part of this step's outputs."
+    },
+    {
+      "node_id": "n19",
+      "label": "Store content JSON in Supabase",
+      "node_type": "code",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "content_json",
+          "type": "object",
+          "description": "Generated content stored in the database"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stored_content",
+          "type": "object",
+          "description": "Content JSON persisted in Supabase"
+        }
+      ],
+      "native_evidence": [
+        "Log to Supabase Database"
+      ],
+      "requirement_evidence": [
+        "stores it in Supabase"
+      ],
+      "rationale": "External deterministic write persisting the content. Not terminal because the JSON is still returned to the caller."
+    },
+    {
+      "node_id": "n20",
+      "label": "Return the JSON in the webhook response",
+      "node_type": "terminal",
+      "operation_family": "result_response",
+      "inputs": [
+        {
+          "name": "stored_content",
+          "type": "object",
+          "description": "Stored content JSON returned to the caller"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Respond with Webhook Message"
+      ],
+      "requirement_evidence": [
+        "and returns the JSON in the webhook response"
+      ],
+      "rationale": "User-visible completion of lane (C): the JSON is returned. Terminal node with no outgoing CFG edge."
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "The daily run retrieves the event records."
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "Retrieved events are filtered."
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "Days remaining are calculated for the filtered events."
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "The window filter keeps the 0–7 day events."
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "Due events enter the loop."
+    },
+    {
+      "edge_id": "c6",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "for each due event",
+      "rationale": "Each due event gets a generated reminder."
+    },
+    {
+      "edge_id": "c7",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "The generated reminder is sent."
+    },
+    {
+      "edge_id": "c8",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "The sent notification is logged."
+    },
+    {
+      "edge_id": "c9",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "The second daily run retrieves the important days."
+    },
+    {
+      "edge_id": "c10",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "Next occurrence dates are calculated."
+    },
+    {
+      "edge_id": "c11",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": null,
+      "rationale": "Each day is checked against the configured value."
+    },
+    {
+      "edge_id": "c12",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": "days remaining equals the configured notify-days-before value",
+      "rationale": "Matching days are checked for duplicates."
+    },
+    {
+      "edge_id": "c13",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": "no existing notification for the upcoming occurrence",
+      "rationale": "Non-duplicate days receive a generated reminder."
+    },
+    {
+      "edge_id": "c14",
+      "source": "n15",
+      "target": "n16",
+      "variable": null,
+      "condition": null,
+      "rationale": "The important-day reminder is sent."
+    },
+    {
+      "edge_id": "c15",
+      "source": "n17",
+      "target": "n18",
+      "variable": null,
+      "condition": null,
+      "rationale": "The webhook request feeds content generation."
+    },
+    {
+      "edge_id": "c16",
+      "source": "n18",
+      "target": "n19",
+      "variable": null,
+      "condition": null,
+      "rationale": "The generated JSON is stored."
+    },
+    {
+      "edge_id": "c17",
+      "source": "n19",
+      "target": "n20",
+      "variable": null,
+      "condition": null,
+      "rationale": "The JSON is returned in the response."
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The schedule signal starts the retrieval."
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "event_records",
+      "condition": null,
+      "rationale": "Filtering consumes the retrieved events."
+    },
+    {
+      "edge_id": "d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "candidate_events",
+      "condition": null,
+      "rationale": "Days are calculated for the filtered events."
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "events_with_days",
+      "condition": null,
+      "rationale": "The window filter consumes the computed days."
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "due_events",
+      "condition": null,
+      "rationale": "The loop iterates over the due events."
+    },
+    {
+      "edge_id": "d6",
+      "source": "n6",
+      "target": "n7",
+      "variable": "due_event",
+      "condition": null,
+      "rationale": "Generation uses the current event's details."
+    },
+    {
+      "edge_id": "d7",
+      "source": "n7",
+      "target": "n8",
+      "variable": "reminder_email",
+      "condition": null,
+      "rationale": "The send consumes the generated subject and body."
+    },
+    {
+      "edge_id": "d8",
+      "source": "n8",
+      "target": "n9",
+      "variable": "sent_reminder",
+      "condition": null,
+      "rationale": "The log records the sent notification."
+    },
+    {
+      "edge_id": "d9",
+      "source": "n6",
+      "target": "n9",
+      "variable": "due_event",
+      "condition": null,
+      "rationale": "The log records the event context."
+    },
+    {
+      "edge_id": "d10",
+      "source": "n10",
+      "target": "n11",
+      "variable": "run_signal",
+      "condition": null,
+      "rationale": "The schedule signal starts the important-days retrieval."
+    },
+    {
+      "edge_id": "d11",
+      "source": "n11",
+      "target": "n12",
+      "variable": "important_days",
+      "condition": null,
+      "rationale": "Occurrence calculation consumes the important days."
+    },
+    {
+      "edge_id": "d12",
+      "source": "n12",
+      "target": "n13",
+      "variable": "days_with_occurrence",
+      "condition": null,
+      "rationale": "The match check consumes the computed occurrences."
+    },
+    {
+      "edge_id": "d13",
+      "source": "n13",
+      "target": "n14",
+      "variable": "matching_days",
+      "condition": null,
+      "rationale": "Duplicate checking consumes the matching days."
+    },
+    {
+      "edge_id": "d14",
+      "source": "n14",
+      "target": "n15",
+      "variable": "unique_days",
+      "condition": null,
+      "rationale": "Generation consumes the non-duplicate days."
+    },
+    {
+      "edge_id": "d15",
+      "source": "n15",
+      "target": "n16",
+      "variable": "important_reminder_email",
+      "condition": null,
+      "rationale": "The send consumes the generated subject and body."
+    },
+    {
+      "edge_id": "d16",
+      "source": "n17",
+      "target": "n18",
+      "variable": "content_request",
+      "condition": null,
+      "rationale": "Generation uses the platform, topic and audience inputs."
+    },
+    {
+      "edge_id": "d17",
+      "source": "n18",
+      "target": "n19",
+      "variable": "content_json",
+      "condition": null,
+      "rationale": "Storage persists the generated JSON."
+    },
+    {
+      "edge_id": "d18",
+      "source": "n19",
+      "target": "n20",
+      "variable": "stored_content",
+      "condition": null,
+      "rationale": "The response returns the stored content JSON."
+    }
+  ],
+  "entry_nodes": [
+    "n1",
+    "n10",
+    "n17"
+  ],
+  "terminal_nodes": [
+    "n9",
+    "n16",
+    "n20"
+  ],
+  "confidence": 0.85,
+  "notes": "Three independent lanes share one system: (A) daily event reminders with a Supabase notifications log, (B) daily important-day reminders with duplicate prevention, and (C) webhook-driven content generation. Two native behaviors were excluded as undeclared implementation details and disclosed here: (1) the event-date resolution branch in lane (A) (preserve original date vs set next event date, then merge) — the frozen requirement declares only the 0–7 day window, which Gold models as a single window filter; (2) the pending 'Important Day' notification record written in lane (B) between the duplicate check and email generation — the frozen requirement declares only the duplicate check for lane (B), not a record write. Ordering note: the native computes days remaining inside the per-event loop, whereas Gold places the window filter before the loop; the two are behaviorally equivalent for the declared behavior. The webhook inputs are declared as platform/topic/audience; a source span additionally lists tone and length, which was noted but not elevated above the frozen requirement text. Failure handling is not specified in the frozen requirement."
+}

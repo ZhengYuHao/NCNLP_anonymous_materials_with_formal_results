@@ -1,0 +1,65 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-090",
+  "source_id": "n8n:9943",
+  "workflow_sha256": "a80152140a094b32298a69a56cf55872f174268ea9079ad75b56d65a0339a6bb",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "dc325ca7610f117abb47a02042635345eef3fb8721bfb6ad88e8d7cf1027b5de",
+  "requirement": {
+    "requirement_text": "一、输入\n用户在 Slack 中输入 /trans 命令并跟随待翻译的文本；也支持以 en: 或 ja: 作为前缀显式指定目标语言。\n\n二、主要处理\n1. 自动检测输入文本的语言。\n2. 由语言模型在日本语与英语之间进行翻译。\n\n三、最终结果\n1. 先向会话发送一条“正在翻译”的即时提示。\n2. 随后把译文回传到 Slack；回复的可见范围可选公开或私密。",
+    "source_spans": [
+      {
+        "start": 0,
+        "end": 210,
+        "text": "🧠 How it works\nThis workflow enables automatic translation in Slack using n8n and OpenAI.  \nWhen a user types /trans followed by text, n8n detects the language and replies with the translated version via Slack."
+      },
+      {
+        "start": 212,
+        "end": 555,
+        "text": "⚙️ Features\nDetects the input language automatically  \nTranslates between Japanese ↔ English using GPT-4o-mini (temperature 0.2 for stability)  \nSends a quick “Translating...” acknowledgement to avoid Slack’s 3s timeout  \nPosts the translated text back to Slack (public or private selectable)  \nSupports overrides like en: こんにちは or ja: hello  "
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_marketing",
+      "remove_setup",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "用户在 Slack 中输入的 /trans 命令及待翻译文本",
+        "以 en: 或 ja: 前缀显式指定的目标语言（可选）"
+      ],
+      "conditions": [
+        "自动检测输入文本的语言",
+        "可用前缀覆盖自动检测，显式指定目标语言",
+        "回复的可见范围可选公开或私密"
+      ],
+      "allowed_actions": [
+        "检测输入文本的语言",
+        "由语言模型在日本语与英语之间翻译",
+        "先发送“正在翻译”的即时提示",
+        "把译文回传到 Slack"
+      ],
+      "visible_outcomes": [
+        "用户先在 Slack 中收到“正在翻译”的即时提示",
+        "用户随后在 Slack 中收到译文，回复可见范围为公开或私密"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/packets/N8F-090.packet.json",
+    "packet_sha256": "c966bc5f0624617186a4bd63ac8db34e47ad315e012d671e46e699406168eb08",
+    "public_description_sha256": "bfb385899dfbfb134456fe80a5156633ab51b152f97f254ae292e81e7ab61b2a"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_06/responses/N8F-090.response.json",
+    "verification_response_sha256": "c3919e777cf1042436d1af2ae18908fe6f1d2e79b301964bfc383eaf4944724a",
+    "decision": "accept"
+  },
+  "formal_index": 101
+}

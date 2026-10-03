@@ -1,0 +1,11 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-063",
+  "case_id": "C-SCHEDULE-NEXT-MEETUP",
+  "kind": "positive",
+  "input_data": {
+    "chat_id": "chat-events-001",
+    "message_text": "When is the next meetup?"
+  },
+  "input_sha256": "DFF3F50D5BC04D738F5C22EA3C532BAC7D4DE80EBB50EF71CAFA4390551609FD"
+}

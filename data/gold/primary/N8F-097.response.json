@@ -1,0 +1,262 @@
+{
+  "task_id": "N8F-097",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "09b114592de6f6b1dc54665f21ce0d29acbf6d659b39ff3140207f1d9e073eff",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收手动执行请求与查询参数",
+      "node_type": "code",
+      "operation_family": "manual_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "company_url",
+          "type": "string",
+          "description": "用户指定的 Glassdoor 公司主页链接"
+        },
+        {
+          "name": "geo",
+          "type": "string",
+          "description": "用户指定的公司所在国家/地区"
+        }
+      ],
+      "native_evidence": ["When clicking ‘Execute workflow’", "Set the Input Fields"],
+      "requirement_evidence": ["手动执行启动，用户需指定一家公司在 Glassdoor 的公司主页链接以及所在国家/地区"],
+      "rationale": "需求声明手动执行启动且由用户指定 company_url 与 geo 两个查询参数，为确定性的参数接收动作，判 code，作为入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "获取公司原始数据",
+      "node_type": "code",
+      "operation_family": "external_api_call",
+      "inputs": [
+        {
+          "name": "company_url",
+          "type": "string",
+          "description": "用户指定的 Glassdoor 公司主页链接"
+        },
+        {
+          "name": "geo",
+          "type": "string",
+          "description": "用户指定的公司所在国家/地区"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "经网页抓取服务获取的该公司原始数据，含公司概览、评分、评论与常见问题"
+        }
+      ],
+      "native_evidence": ["Decodo"],
+      "requirement_evidence": ["系统通过网页抓取服务获取该公司的原始数据，包括公司概览、评分、评论与常见问题"],
+      "rationale": "需求声明通过网页抓取服务获取公司原始数据，为确定性的外部数据读取动作，判 code。"
+    },
+    {
+      "node_id": "n3",
+      "label": "整理为结构化字段",
+      "node_type": "semantic",
+      "operation_family": "llm_extraction",
+      "inputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "网页抓取服务获取的该公司原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "结构化字段：公司概览（名称、规模、网站、类型）、评分明细、评论摘要（优点、缺点、职位）、常见问题与关键要点"
+        }
+      ],
+      "native_evidence": ["Structured Data Extractor", "Structured Output Parser"],
+      "requirement_evidence": ["由语言模型将原始数据整理为定义好的结构化字段：公司概览（名称、规模、网站、类型）、评分明细、评论摘要（优点、缺点、职位）、常见问题与关键要点"],
+      "rationale": "需求声明由语言模型将原始数据整理为预定义结构化字段，需开放文本理解与结构化输出，判 semantic。"
+    },
+    {
+      "node_id": "n4",
+      "label": "生成详细摘要",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "raw_company_data",
+          "type": "object",
+          "description": "网页抓取服务获取的该公司原始数据"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "detailed_summary",
+          "type": "string",
+          "description": "详细摘要，涵盖公司声誉、工作文化、员工情绪趋势、优势与劣势以及招聘建议"
+        }
+      ],
+      "native_evidence": ["Summarizer", "Google Gemini Chat Model for Summarization"],
+      "requirement_evidence": ["再由语言模型生成一份详细摘要，突出公司声誉、工作文化、员工情绪趋势、优势与劣势以及招聘建议"],
+      "rationale": "需求声明由语言模型生成涵盖声誉、文化、情绪趋势等多维度的详细摘要，需开放文本生成与综合，判 semantic；与结构化提取并行消费同一份原始数据。"
+    },
+    {
+      "node_id": "n5",
+      "label": "合并为统一输出对象",
+      "node_type": "code",
+      "operation_family": "data_merging",
+      "inputs": [
+        {
+          "name": "structured_data",
+          "type": "object",
+          "description": "语言模型整理的结构化字段"
+        },
+        {
+          "name": "detailed_summary",
+          "type": "string",
+          "description": "语言模型生成的详细摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "unified_report",
+          "type": "object",
+          "description": "结构化数据与详细摘要合并后的统一输出对象，含公司名称等完整报告内容"
+        }
+      ],
+      "native_evidence": ["Merge"],
+      "requirement_evidence": ["将结构化数据与摘要合并为统一的输出对象"],
+      "rationale": "需求声明的合并动作，为两个并行通道（结构化字段与详细摘要）汇入的确定性汇合变换，判 code；承担 semantic 到 code 的数据传递。"
+    },
+    {
+      "node_id": "n6",
+      "label": "导出结构化数据文件",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "unified_report",
+          "type": "object",
+          "description": "合并后的统一输出对象"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Read/Write Files from Disk"],
+      "requirement_evidence": ["最终将报告转换为结构化数据文件导出，文件名使用公司名称"],
+      "rationale": "需求声明的将最终报告转换为结构化数据文件导出的动作（文件名取公司名称），为流程终点的用户可见完成动作，判 terminal 且无出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到手动执行请求与查询参数后调用抓取服务。"
+    },
+    {
+      "edge_id": "cfg-2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始数据获取完成后交由语言模型整理结构化字段。"
+    },
+    {
+      "edge_id": "cfg-3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "原始数据获取完成后并行交由语言模型生成详细摘要。"
+    },
+    {
+      "edge_id": "cfg-4",
+      "source": "n3",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "结构化字段整理完成后汇入合并点。"
+    },
+    {
+      "edge_id": "cfg-5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "详细摘要生成完成后汇入合并点。"
+    },
+    {
+      "edge_id": "cfg-6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "统一输出对象合并完成后导出文件。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg-1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "company_url",
+      "condition": null,
+      "rationale": "用户指定的公司主页链接传给抓取节点。"
+    },
+    {
+      "edge_id": "dfg-2",
+      "source": "n1",
+      "target": "n2",
+      "variable": "geo",
+      "condition": null,
+      "rationale": "用户指定的国家/地区传给抓取节点。"
+    },
+    {
+      "edge_id": "dfg-3",
+      "source": "n2",
+      "target": "n3",
+      "variable": "raw_company_data",
+      "condition": null,
+      "rationale": "抓取到的原始数据传给结构化提取节点。"
+    },
+    {
+      "edge_id": "dfg-4",
+      "source": "n2",
+      "target": "n4",
+      "variable": "raw_company_data",
+      "condition": null,
+      "rationale": "同一份原始数据扇出给摘要生成节点。"
+    },
+    {
+      "edge_id": "dfg-5",
+      "source": "n3",
+      "target": "n5",
+      "variable": "structured_data",
+      "condition": null,
+      "rationale": "结构化字段汇入合并点。"
+    },
+    {
+      "edge_id": "dfg-6",
+      "source": "n4",
+      "target": "n5",
+      "variable": "detailed_summary",
+      "condition": null,
+      "rationale": "详细摘要汇入合并点。"
+    },
+    {
+      "edge_id": "dfg-7",
+      "source": "n5",
+      "target": "n6",
+      "variable": "unified_report",
+      "condition": null,
+      "rationale": "统一输出对象传给文件导出节点。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n6"],
+  "confidence": 0.93,
+  "notes": "需求为手动执行的 Glassdoor 公司情报整理：用户指定公司主页链接与所在国家/地区，经网页抓取服务获取公司概览、评分、评论与常见问题等原始数据；语言模型将其整理为结构化字段（公司概览、评分明细、评论摘要、常见问题、关键要点），另一语言模型并行生成涵盖声誉、工作文化、情绪趋势、优势劣势与招聘建议的详细摘要；两者在合并点汇合为统一输出对象，最终导出以公司名称命名的结构化数据文件。两个语义通道（结构化提取、摘要生成）并行消费同一份原始数据并在合并点汇合，形成 branch_join 拓扑；n3/n4→n5 承担 semantic 到 code 的数据传递。原生的 Format the Response、Create a Binary Response（base64 编码）与具体写入路径等实现细节未在需求中声明，未单独建模；需求未声明失败行为，未建模失败分支。"
+}

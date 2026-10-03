@@ -1,0 +1,264 @@
+{
+  "task_id": "N8F-108",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "52346e18fb2fe308d9a3f58cbbed18996d5e29152ebe3cd2efa53f34c90f8b22",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收用户通过 WhatsApp Business 发送的自由文本问题",
+      "node_type": "code",
+      "operation_family": "whatsapp_trigger",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户的自由文本问题"
+        }
+      ],
+      "native_evidence": [
+        "when message received (whatsAppTrigger)"
+      ],
+      "requirement_evidence": [
+        "用户以自由文本形式向企业的 WhatsApp Business 号码提出问题"
+      ],
+      "rationale": "需求声明的 WhatsApp 消息接收入口，为确定性触发，判 code。"
+    },
+    {
+      "node_id": "n2",
+      "label": "实时读取企业内部的 Google Docs 文档",
+      "node_type": "code",
+      "operation_family": "external_read",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "doc_content",
+          "type": "string",
+          "description": "政策、排期、常见问题或服务说明等文档内容"
+        }
+      ],
+      "native_evidence": [
+        "company's knowledge (googleDocs, get)"
+      ],
+      "requirement_evidence": [
+        "服务实时读取企业内部的 Google Docs 文档（政策、排期、常见问题或服务说明等）"
+      ],
+      "rationale": "需求声明的实时文档读取，为确定性外部操作，判 code；每次问答均实时读取为契约约束。"
+    },
+    {
+      "node_id": "n3",
+      "label": "将文档内容与当日日期及用户问题合并，形成定制请求",
+      "node_type": "code",
+      "operation_family": "prompt_build",
+      "inputs": [
+        {
+          "name": "doc_content",
+          "type": "string",
+          "description": "文档内容"
+        },
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户问题"
+        },
+        {
+          "name": "current_date",
+          "type": "string",
+          "description": "当日日期"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "custom_prompt",
+          "type": "string",
+          "description": "供语言模型使用的定制请求"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Prompt (aiTransform)"
+      ],
+      "requirement_evidence": [
+        "将文档内容与当日日期以及用户的问题合并，形成供语言模型使用的定制请求"
+      ],
+      "rationale": "文档、当日日期与问题的合并为确定性组装，判 code；当日日期为契约输入。"
+    },
+    {
+      "node_id": "n4",
+      "label": "语言模型生成自然、有帮助的回答并理解文档日期与当日日期比较",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "custom_prompt",
+          "type": "string",
+          "description": "定制请求"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "自然、有帮助的回答"
+        }
+      ],
+      "native_evidence": [
+        "AI Agent (agent)",
+        "Google Gemini Chat Model (lmChatGoogleGemini)"
+      ],
+      "requirement_evidence": [
+        "随后由语言模型用自然、有帮助的语言生成回答，并通过 WhatsApp 回复给用户。",
+        "语言模型还需理解文档中出现的日期，并将其与当日日期比较后再作答：例如文档中写明某日起停业三十天时，回答应说明当前停业至哪一个具体日期。"
+      ],
+      "rationale": "需求声明由语言模型生成回答，判 semantic；理解文档日期并与当日日期比较后再作答为契约约束（如说明停业至具体日期）。"
+    },
+    {
+      "node_id": "n5",
+      "label": "通过 WhatsApp 把回答回复给用户",
+      "node_type": "code",
+      "operation_family": "external_send",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "生成的回答"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Send AI Agent's Answer (whatsApp, send)"
+      ],
+      "requirement_evidence": [
+        "并通过 WhatsApp 回复给用户"
+      ],
+      "rationale": "需求声明的 WhatsApp 回复，为确定性外部操作，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "将所有对话内容记录到 Google Sheets",
+      "node_type": "terminal",
+      "operation_family": "external_write",
+      "inputs": [
+        {
+          "name": "user_question",
+          "type": "string",
+          "description": "用户问题"
+        },
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "回答内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Google Sheets (googleSheets, appendOrUpdate)"
+      ],
+      "requirement_evidence": [
+        "所有对话内容都会被记录到 Google Sheets，用于报表或审计"
+      ],
+      "rationale": "需求声明的对话记录写入，为最终交付，判 terminal，无 CFG 出边。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "cfg_e1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到问题后实时读取文档"
+    },
+    {
+      "edge_id": "cfg_e2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "读取文档后组装定制请求"
+    },
+    {
+      "edge_id": "cfg_e3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "请求就绪后生成回答"
+    },
+    {
+      "edge_id": "cfg_e4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成回答后回复用户"
+    },
+    {
+      "edge_id": "cfg_e5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "回复后记录对话内容"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "dfg_d1",
+      "source": "n2",
+      "target": "n3",
+      "variable": "doc_content",
+      "condition": null,
+      "rationale": "定制请求合并文档内容"
+    },
+    {
+      "edge_id": "dfg_d2",
+      "source": "n1",
+      "target": "n3",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "定制请求合并用户问题"
+    },
+    {
+      "edge_id": "dfg_d3",
+      "source": "n3",
+      "target": "n4",
+      "variable": "custom_prompt",
+      "condition": null,
+      "rationale": "回答生成基于定制请求"
+    },
+    {
+      "edge_id": "dfg_d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "回复使用生成的回答"
+    },
+    {
+      "edge_id": "dfg_d5",
+      "source": "n1",
+      "target": "n6",
+      "variable": "user_question",
+      "condition": null,
+      "rationale": "对话记录包含用户问题"
+    },
+    {
+      "edge_id": "dfg_d6",
+      "source": "n4",
+      "target": "n6",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "对话记录包含回答内容"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6"
+  ],
+  "confidence": 0.9,
+  "notes": "线性流程建模。原生 24-hour window check、If 分支与 Send Pre-approved Template Message（WhatsApp 24 小时发送窗口规则及模板消息）为需求未声明的实现细节，未纳入；Date & Time、cleanAnswer、Simple Memory 为实现细节，未纳入；“理解文档日期并与当日日期比较后再作答”作为契约约束固化在 n4。"
+}

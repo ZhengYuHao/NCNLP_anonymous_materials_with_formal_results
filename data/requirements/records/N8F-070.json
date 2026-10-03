@@ -1,0 +1,64 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-070",
+  "source_id": "n8n:14332",
+  "workflow_sha256": "56cea4db8406baa333bdb99ab1be7bfdf0a60e776495cf0b849532efca58e2b5",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "35d8aee243d2daa5f7903b434182f62c135eed4481223b8e11be7613d6267a8b",
+  "requirement": {
+    "requirement_text": "系统每周一早上 8 点运行，从 Google Sheets 中读取最近 14 天的业务指标数据。系统对这些数据计算周环比，覆盖收入、销售线索、转化数、广告支出与客服工单，并计算转化率、广告支出回报率等派生指标。计算结果被交给语言模型，由其生成一份简洁的业绩摘要，包含五个板块：头条摘要、亮点、需要关注的方面、本周建议优先级以及简要展望。该摘要被分别排版为两种形式——适合 Slack 的纯文本形式（含表情符号）与适合邮件的 HTML 形式（含指标表格），然后同时投递到 Slack 与邮件两个渠道。",
+    "source_spans": [
+      {
+        "start": 349,
+        "end": 616,
+        "text": "Every Monday at 8am, the workflow pulls the last 14 days of business metrics from your Google Sheet. A code node calculates week-over-week comparisons for revenue, leads, conversions, ad spend, and support tickets — plus derived metrics like conversion rate and ROAS."
+      },
+      {
+        "start": 618,
+        "end": 976,
+        "text": "The calculated data is sent to OpenAI, which generates a concise performance digest with five sections: headline summary, wins, areas to watch, recommended priorities for the week, and a brief outlook. The digest is formatted for both Slack (plain text with emoji) and email (styled HTML with a metrics table), then delivered to both channels simultaneously."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "replace_product_name_with_role",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Google Sheets 中记录的业务指标数据（日期、收入、销售线索、转化数、广告支出、客服工单）"
+      ],
+      "conditions": [
+        "每周一 08:00 触发",
+        "取最近 14 天的数据进行周环比计算"
+      ],
+      "allowed_actions": [
+        "计算收入、销售线索、转化数、广告支出、客服工单的周环比",
+        "计算转化率与广告支出回报率等派生指标",
+        "调用语言模型生成含五个板块的业绩摘要",
+        "生成适合 Slack 的纯文本版本与适合邮件的 HTML 版本",
+        "同时投递到 Slack 与邮件两个渠道"
+      ],
+      "visible_outcomes": [
+        "Slack 收到纯文本版业绩摘要",
+        "邮件收到含指标表格的 HTML 版业绩摘要"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/packets/N8F-070.packet.json",
+    "packet_sha256": "287e1f914dcbab439153a005bc86121faeb05e3a2dc40c7e18777ea920b54d65",
+    "public_description_sha256": "d103f531590c81a191e89967dc1627b8820e07228174ef9062dea24320154263"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_05/responses/N8F-070.response.json",
+    "verification_response_sha256": "f42784dbf0ad9d954bcf6686bb13c5ace057295f489fb84f88f995c5f2158d23",
+    "decision": "accept"
+  },
+  "formal_index": 81
+}

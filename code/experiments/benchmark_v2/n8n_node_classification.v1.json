@@ -1,0 +1,96 @@
+{
+  "version": "n8n-node-classification-v1",
+  "status": "candidate_discovery_only",
+  "purpose": "High-recall discovery labels for native n8n workflow screening. These labels are not Gold and require independent human review.",
+  "priority": [
+    "ignored_annotation",
+    "structural_passthrough",
+    "model_dependency",
+    "tool_dependency",
+    "trigger",
+    "semantic_operation",
+    "code_operation",
+    "control_operation",
+    "deterministic_transform",
+    "external_action_or_io"
+  ],
+  "classes": {
+    "ignored_annotation": {
+      "exact": ["n8n-nodes-base.stickyNote"],
+      "contains": []
+    },
+    "structural_passthrough": {
+      "exact": ["n8n-nodes-base.noOp"],
+      "contains": []
+    },
+    "model_dependency": {
+      "exact": [],
+      "contains": [
+        ".lmChat", ".lmOpen", ".memory", ".embeddings", ".vectorStore",
+        ".outputParser", ".retriever", ".textSplitter", ".documentDefaultDataLoader",
+        ".documentBinaryInputLoader", ".documentJsonInputLoader"
+      ]
+    },
+    "tool_dependency": {
+      "exact": [],
+      "contains": [".tool", ".mcpClientTool"]
+    },
+    "trigger": {
+      "exact": [
+        "n8n-nodes-base.manualTrigger", "n8n-nodes-base.webhook",
+        "n8n-nodes-base.scheduleTrigger", "n8n-nodes-base.cron",
+        "n8n-nodes-base.executeWorkflowTrigger", "n8n-nodes-base.formTrigger",
+        "@n8n/n8n-nodes-langchain.chatTrigger", "@n8n/n8n-nodes-langchain.manualChatTrigger"
+      ],
+      "contains": ["Trigger"]
+    },
+    "semantic_operation": {
+      "exact": [
+        "@n8n/n8n-nodes-langchain.agent",
+        "@n8n/n8n-nodes-langchain.openAi",
+        "@n8n/n8n-nodes-langchain.openAiAssistant",
+        "@n8n/n8n-nodes-langchain.chainLlm",
+        "@n8n/n8n-nodes-langchain.chainSummarization",
+        "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+        "@n8n/n8n-nodes-langchain.informationExtractor",
+        "@n8n/n8n-nodes-langchain.textClassifier",
+        "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+        "n8n-nodes-base.openAi"
+      ],
+      "contains": []
+    },
+    "code_operation": {
+      "exact": [
+        "n8n-nodes-base.code", "n8n-nodes-base.function",
+        "n8n-nodes-base.functionItem", "@n8n/n8n-nodes-langchain.code"
+      ],
+      "contains": []
+    },
+    "control_operation": {
+      "exact": [
+        "n8n-nodes-base.if", "n8n-nodes-base.switch", "n8n-nodes-base.merge",
+        "n8n-nodes-base.splitInBatches", "n8n-nodes-base.filter",
+        "n8n-nodes-base.wait"
+      ],
+      "contains": []
+    },
+    "deterministic_transform": {
+      "exact": [
+        "n8n-nodes-base.set", "n8n-nodes-base.splitOut", "n8n-nodes-base.aggregate",
+        "n8n-nodes-base.summarize", "n8n-nodes-base.sort",
+        "n8n-nodes-base.removeDuplicates", "n8n-nodes-base.limit",
+        "n8n-nodes-base.itemLists", "n8n-nodes-base.dateTime",
+        "n8n-nodes-base.html", "n8n-nodes-base.markdown",
+        "n8n-nodes-base.xml", "n8n-nodes-base.crypto",
+        "n8n-nodes-base.compareDatasets", "n8n-nodes-base.convertToFile",
+        "n8n-nodes-base.extractFromFile"
+      ],
+      "contains": []
+    },
+    "external_action_or_io": {
+      "exact": [],
+      "contains": []
+    }
+  },
+  "formal_warning": "A node type is only a discovery clue. Human annotators decide method-neutral node boundaries and operation families from the public description, node parameters, graph position, and frozen K-v2.1 capability boundary."
+}

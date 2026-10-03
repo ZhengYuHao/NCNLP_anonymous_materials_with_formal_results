@@ -1,0 +1,691 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-029",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "5ae844aec8f80c6fc0e88f2eeb9abb61a87a8c1ae64efc0c89970cf39c1cc560",
+  "natural_language_requirement": "该需求面向基于自有文档的客户问答：客户消息可来自邮件、在线聊天、WhatsApp、Slack 或 Discord，答复依据自有文档检索得到；无依据的答复、负面情绪以及明确的转人工请求会升级为人工处理并生成工单；每次会话都会被分类、记录，并每周汇总上报。\n\n消息接入：客户消息从上述任一渠道到达后被归一化为统一结构，并按渠道分别走独立分支。\n\n五项前置检查在任何一次模型调用之前执行：自动回复与退信、空内容、重复投递、超长消息，以及以六种语言（英语、罗马尼亚语、德语、法语、西班牙语、意大利语）匹配的明确转人工请求。在线聊天渠道在这些路径上都会立即返回响应，使调用方不会停留在未关闭的连接上等待。置信度阈值与最大消息长度可配置。\n\n答复生成：助理依据自有文档作答，文档通过向量知识库以工具方式检索；会话记忆持久化保存，重启后历史仍然可用（保留期默认为 30 天）。\n\n置信度评估：置信度按答复是否有据可依来评估，而不是按答复长度，即助理是否检索了知识库、知识库是否返回了内容；冗长流畅但没有检索依据的答复得分很低。问候与致谢会短路该判定，而不是被判为失败，因此普通的礼貌用语不会触发工单。\n\n回复与升级：置信度达到或超过阈值且无负面情绪时，答复通过原始渠道返回，邮件沿用客户原始主题（加 Re: 前缀），Slack 在会话线程内回复。其余情况升级为人工处理：升级原因直接取自已发生的判断而不再重新判定；由语言模型为人工客服在工单正文中写一段简短说明；工单系统按情绪推导优先级。该链路中某一步失败时仍继续执行，因此单点故障不会导致整条升级失效。\n\n记录与维护：无论自动答复还是升级处理，每次会话都被分类并记录到 Google Sheets，字段包括用户标识、渠道、消息、分类、情绪、时间戳、答复内容、置信度、是否升级与升级原因。每周任务把真实数据发布到 Slack，随后归档这些数据并清理旧的会话记忆。另有手动分支用于导入自有文档，导入前先清除上次结果，因此重复运行不会产生重复内容。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_answer",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "prompt_contains": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt_contains"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "type": "string"
+          },
+          "retrieved_documents": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "answer",
+          "retrieved_documents"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "operation": "load_history",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "user_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "history": {
+            "items": {},
+            "type": "array"
+          }
+        },
+        "required": [
+          "history"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.emailSend",
+      "operation": "send_reply",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "subject_prefix",
+          "to",
+          "body"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "subject_prefix": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_log_row",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "escalated",
+          "required_fields",
+          "row"
+        ],
+        "properties": {
+          "escalated": {
+            "type": "boolean"
+          },
+          "required_fields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "row": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row_appended",
+          "row_number"
+        ],
+        "properties": {
+          "row_appended": {
+            "type": "boolean"
+          },
+          "row_number": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.respondToWebhook",
+      "operation": "respond_live_chat",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "respond_immediately",
+          "body"
+        ],
+        "properties": {
+          "respond_immediately": {
+            "type": "boolean"
+          },
+          "body": {
+            "type": "string"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status_code"
+        ],
+        "properties": {
+          "status_code": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_thread_reply",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "thread_ts",
+          "text"
+        ],
+        "properties": {
+          "thread_ts": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.supabase",
+      "operation": "vector_search",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "results": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "content": {
+                      "type": "string"
+                    },
+                    "score": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "content",
+                    "score"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "returned_any": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "results",
+              "returned_any"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "results": {
+                "items": {},
+                "type": "array"
+              },
+              "returned_any": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "results",
+              "returned_any"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.zendesk",
+      "operation": "create_ticket",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "type": "string"
+          },
+          "escalation_reason": {
+            "type": "string"
+          },
+          "escalation_reason_exists": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "priority_from_sentiment": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "body",
+          "escalation_reason",
+          "escalation_reason_exists",
+          "priority",
+          "priority_from_sentiment"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "ticket_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "ticket_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.whatsApp",
+      "operation": "send_whatsapp_reply",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.discord",
+      "operation": "send_discord_reply",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sent": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "sent"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "post_weekly_summary",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "channel_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "channel_id",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "answer_evaluation",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "answer",
+            "retrieval_evidence",
+            "sentiment",
+            "confidence",
+            "decision",
+            "escalation_reason"
+          ],
+          "properties": {
+            "answer": {
+              "type": "string"
+            },
+            "retrieval_evidence": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "retrieved_kb",
+                "kb_returned_content"
+              ],
+              "properties": {
+                "retrieved_kb": {
+                  "type": "boolean"
+                },
+                "kb_returned_content": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "sentiment": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "decision": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "escalate"
+              ],
+              "properties": {
+                "escalate": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "escalation_reason": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "基于文档检索生成的答复，以及情绪、置信度和升级判断",
+        "requirement_evidence": [
+          "答复生成：助理依据自有文档作答，文档通过向量知识库以工具方式检索",
+          "置信度按答复是否有据可依来评估，而不是按答复长度",
+          "其余情况升级为人工处理：升级原因直接取自已发生的判断而不再重新判定"
+        ],
+        "source_operations": [
+          "generate_answer"
+        ],
+        "design_sources": [],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "reply_deliveries",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operation": {
+                "type": "string"
+              },
+              "request": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              },
+              "response": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              }
+            },
+            "required": [
+              "operation",
+              "request",
+              "response"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "通过邮件或Slack原始会话发送答复时可观察到的调用记录",
+        "requirement_evidence": [
+          "答复通过原始渠道返回，邮件沿用客户原始主题（加 Re: 前缀），Slack 在会话线程内回复"
+        ],
+        "source_operations": [
+          "send_reply",
+          "post_thread_reply"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "escalation_tickets",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              },
+              "response": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              }
+            },
+            "required": [
+              "request",
+              "response"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "升级人工处理时生成的工单说明和工单创建记录",
+        "requirement_evidence": [
+          "由语言模型为人工客服在工单正文中写一段简短说明",
+          "工单系统按情绪推导优先级"
+        ],
+        "source_operations": [
+          "create_ticket"
+        ],
+        "design_sources": [
+          "n11.ticket_note"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "conversation_log_writes",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "request": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              },
+              "response": {
+                "type": "object",
+                "properties": {},
+                "required": []
+              }
+            },
+            "required": [
+              "request",
+              "response"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "description": "写入Google Sheets的会话记录及写入结果",
+        "requirement_evidence": [
+          "每次会话都被分类并记录到 Google Sheets，字段包括用户标识、渠道、消息、分类、情绪、时间戳、答复内容、置信度、是否升级与升级原因"
+        ],
+        "source_operations": [
+          "append_log_row"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "weekly_metrics",
+        "schema": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": true
+        },
+        "description": "每周聚合并发布的真实统计数据，承载实际发布到 Slack 的汇总内容",
+        "requirement_evidence": [
+          "每周任务把真实数据发布到 Slack"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n15.weekly_metrics"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "weekly_summary_publication",
+        "schema": {
+          "type": "object",
+          "required": [
+            "ok",
+            "ts"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean"
+            },
+            "ts": {
+              "type": "string"
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "每周任务把聚合统计发布到 Slack 的可观察发布记录，含实际发布的汇总内容与 Slack 返回结果（ok/ts）",
+        "requirement_evidence": [
+          "每周任务把真实数据发布到 Slack，随后归档这些数据并清理旧的会话记忆。"
+        ],
+        "source_operations": [
+          "post_weekly_summary"
+        ],
+        "design_sources": [],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "7E6B15B37E5A04ED02DD4A35BB2F0003558260C5FED3B16893D7BB359A7989F0",
+  "public_interface_sha256": "E22ED072EA4021A8010074CE6E069D8690C2FC47BCF34090DA844CA3FFD43930",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

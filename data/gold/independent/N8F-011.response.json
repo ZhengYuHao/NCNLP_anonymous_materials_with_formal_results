@@ -1,0 +1,391 @@
+{
+  "task_id": "N8F-011",
+  "annotator_id": "GM-B-04",
+  "status": "submitted",
+  "requirement_sha256": "4db09e5b16b441dbcdb8b105b8f903ba8d9793aba214e8169045d7b69aadb6c4",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "对话入口接收用户消息",
+      "node_type": "code",
+      "operation_family": "对话触发",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户在对话中提交的链接或问题"
+        }
+      ],
+      "native_evidence": [
+        "Chat (chatTrigger)"
+      ],
+      "requirement_evidence": [
+        "用户提供一个 YouTube 播放列表或单个视频的链接",
+        "用户可就播放列表或视频内容向 AI 助手提问"
+      ],
+      "rationale": "对话入口为确定性消息接收事件源，属代码处理；链接提交与内容提问共享同一入口，按消息内容分流。"
+    },
+    {
+      "node_id": "n2",
+      "label": "抓取视频详情与字幕文本",
+      "node_type": "code",
+      "operation_family": "外部数据采集",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户在对话中提交的链接或问题"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "video_metadata",
+          "type": "list",
+          "description": "视频标题与描述等详情"
+        },
+        {
+          "name": "transcript_texts",
+          "type": "list",
+          "description": "字幕文本集合"
+        }
+      ],
+      "native_evidence": [
+        "Playlist or Video (switch)",
+        "Playlist HTTP Request (httpRequest)",
+        "Video HTTP Request (httpRequest)",
+        "Get Playlist Videos Data (code)",
+        "YouTube Transcript (youtubeTranscripter)",
+        "YouTube Transcript1 (youtubeTranscripter)"
+      ],
+      "requirement_evidence": [
+        "自动抓取该链接对应的视频详情与字幕文本",
+        "若为播放列表，可一次处理其中的多个视频"
+      ],
+      "rationale": "对确定性抓取服务的调用；播放列表多视频处理折叠进本节点契约（按链接解析出的视频数量迭代，处理完即终止）。属代码处理。"
+    },
+    {
+      "node_id": "n3",
+      "label": "生成内容摘要",
+      "node_type": "semantic",
+      "operation_family": "语言模型摘要",
+      "inputs": [
+        {
+          "name": "transcript_texts",
+          "type": "list",
+          "description": "字幕文本集合"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "content_summary",
+          "type": "string",
+          "description": "内容摘要"
+        }
+      ],
+      "native_evidence": [
+        "Summarize & Analyze Transcript (chainLlm)",
+        "Google Gemini Chat Model1 (lmChatGoogleGemini)"
+      ],
+      "requirement_evidence": [
+        "由语言模型阅读字幕文本、理解内容并生成摘要"
+      ],
+      "rationale": "阅读字幕并理解内容生成摘要是开放式文本理解与生成，属语义处理。"
+    },
+    {
+      "node_id": "n4",
+      "label": "写入向量数据库",
+      "node_type": "code",
+      "operation_family": "向量存储写入",
+      "inputs": [
+        {
+          "name": "transcript_texts",
+          "type": "list",
+          "description": "字幕文本集合"
+        },
+        {
+          "name": "content_summary",
+          "type": "string",
+          "description": "内容摘要"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "indexed_content",
+          "type": "list",
+          "description": "向量库中可供检索的内容索引"
+        }
+      ],
+      "native_evidence": [
+        "Qdrant Vector Store (vectorStoreQdrant)",
+        "Qdrant Vector Store3 (vectorStoreQdrant)"
+      ],
+      "requirement_evidence": [
+        "将处理后的信息与摘要存入向量数据库，以便进行对话检索"
+      ],
+      "rationale": "向向量库写入已处理信息与摘要为确定性外部动作，属代码处理。"
+    },
+    {
+      "node_id": "n5",
+      "label": "更新上下文存储",
+      "node_type": "code",
+      "operation_family": "状态存储",
+      "inputs": [
+        {
+          "name": "video_metadata",
+          "type": "list",
+          "description": "视频标题与描述等详情"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "current_context",
+          "type": "object",
+          "description": "当前正在讨论的视频或播放列表上下文"
+        }
+      ],
+      "native_evidence": [
+        "Update Context Process Done1 (redis)",
+        "Update Context Intent (redis)"
+      ],
+      "requirement_evidence": [
+        "使用上下文存储记住当前正在讨论的视频或播放列表"
+      ],
+      "rationale": "上下文记录为确定性状态写入，属代码处理。"
+    },
+    {
+      "node_id": "n6",
+      "label": "向用户返回摘要",
+      "node_type": "terminal",
+      "operation_family": "对话回复",
+      "inputs": [
+        {
+          "name": "content_summary",
+          "type": "string",
+          "description": "内容摘要"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "AI Agent (agent) 汇总输出"
+      ],
+      "requirement_evidence": [
+        "单个视频或整个播放列表的快速摘要"
+      ],
+      "rationale": "摘要在对话中返回给用户，是内容获取链路的用户可见完成动作，其后无动作，判为终止节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "回答用户内容提问",
+      "node_type": "semantic",
+      "operation_family": "语言模型问答",
+      "inputs": [
+        {
+          "name": "user_message",
+          "type": "string",
+          "description": "用户在对话中提交的链接或问题"
+        },
+        {
+          "name": "current_context",
+          "type": "object",
+          "description": "当前正在讨论的视频或播放列表上下文"
+        },
+        {
+          "name": "indexed_content",
+          "type": "list",
+          "description": "向量库中可供检索的内容索引"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "基于真实内容的回答"
+        }
+      ],
+      "native_evidence": [
+        "Handle Queries (agent)",
+        "Answer questions with a vector store (toolVectorStore)",
+        "Chat Buffer Memory (memoryBufferWindow)"
+      ],
+      "requirement_evidence": [
+        "用户可就播放列表或视频内容向 AI 助手提问",
+        "由于上下文被保持，用户可以就同一视频或播放列表连续追问，而无需再次提供链接"
+      ],
+      "rationale": "基于向量库检索与保持的上下文理解并回答问题是开放式语义任务；对话记忆与上下文衔接折叠进本节点契约。属语义处理。"
+    },
+    {
+      "node_id": "n8",
+      "label": "在对话中返回答案",
+      "node_type": "terminal",
+      "operation_family": "对话回复",
+      "inputs": [
+        {
+          "name": "answer",
+          "type": "string",
+          "description": "基于真实内容的回答"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Handle Queries (agent) 输出"
+      ],
+      "requirement_evidence": [
+        "视频要点与讨论过的主要话题",
+        "视频中特定信息的查询结果",
+        "对之前提及内容的展开说明"
+      ],
+      "rationale": "答案在对话中返回是问答链路的用户可见完成动作，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e01",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": "消息包含 YouTube 链接",
+      "rationale": "提交链接时进入内容获取与入库链路"
+    },
+    {
+      "edge_id": "e02",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "抓取完成后由语言模型生成摘要"
+    },
+    {
+      "edge_id": "e03",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "摘要生成后写入向量库"
+    },
+    {
+      "edge_id": "e04",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "入库后更新上下文存储"
+    },
+    {
+      "edge_id": "e05",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "上下文更新后向用户返回摘要"
+    },
+    {
+      "edge_id": "e06",
+      "source": "n1",
+      "target": "n7",
+      "variable": null,
+      "condition": "消息为内容提问",
+      "rationale": "用户提问时进入问答链路"
+    },
+    {
+      "edge_id": "e07",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成答案后在对话中返回"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d01",
+      "source": "n1",
+      "target": "n2",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "抓取目标由用户提交的链接决定"
+    },
+    {
+      "edge_id": "d02",
+      "source": "n2",
+      "target": "n3",
+      "variable": "transcript_texts",
+      "condition": null,
+      "rationale": "摘要基于字幕文本"
+    },
+    {
+      "edge_id": "d03",
+      "source": "n3",
+      "target": "n4",
+      "variable": "content_summary",
+      "condition": null,
+      "rationale": "摘要随处理信息一并写入向量库"
+    },
+    {
+      "edge_id": "d04",
+      "source": "n2",
+      "target": "n4",
+      "variable": "transcript_texts",
+      "condition": null,
+      "rationale": "字幕文本写入向量库以支持检索"
+    },
+    {
+      "edge_id": "d05",
+      "source": "n2",
+      "target": "n5",
+      "variable": "video_metadata",
+      "condition": null,
+      "rationale": "上下文存储记录当前视频/播放列表详情"
+    },
+    {
+      "edge_id": "d06",
+      "source": "n3",
+      "target": "n6",
+      "variable": "content_summary",
+      "condition": null,
+      "rationale": "返回给用户的即生成的摘要"
+    },
+    {
+      "edge_id": "d07",
+      "source": "n1",
+      "target": "n7",
+      "variable": "user_message",
+      "condition": null,
+      "rationale": "回答针对用户提出的问题"
+    },
+    {
+      "edge_id": "d08",
+      "source": "n5",
+      "target": "n7",
+      "variable": "current_context",
+      "condition": null,
+      "rationale": "连续追问依赖保持的上下文"
+    },
+    {
+      "edge_id": "d09",
+      "source": "n4",
+      "target": "n7",
+      "variable": "indexed_content",
+      "condition": null,
+      "rationale": "回答基于向量库检索到的内容"
+    },
+    {
+      "edge_id": "d10",
+      "source": "n7",
+      "target": "n8",
+      "variable": "answer",
+      "condition": null,
+      "rationale": "返回的即生成的答案"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n6",
+    "n8"
+  ],
+  "confidence": 0.7,
+  "notes": "冻结需求为交互式知识库的行为边界：链接获取→摘要→向量库/上下文存储→问答。原生图中意图分类、Redis 意图路由、集合删除重建、播放列表数量询问等实现细节超出需求声明，未纳入 Gold；'可能会询问需要处理的数量'作为可选澄清交互折叠进抓取节点契约并在 notes 说明。问答与链接提交共享同一对话入口，以消息内容区分分支。"
+}

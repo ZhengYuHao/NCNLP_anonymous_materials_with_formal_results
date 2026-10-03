@@ -1,0 +1,105 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-012",
+  "source_id": "n8n:18252",
+  "workflow_sha256": "75232062339a1c4211ab11e799d5662580067a8bd1b9fb3ed229f768adef0b9a",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "5ca8bb5867261260ff9d8e866fe4b8d930f085201e2fec5ff11340354fb683f1",
+  "requirement": {
+    "requirement_text": "系统每天定时从多个 AI 资讯 RSS 源选题，自动生成并发布 LinkedIn 组织主页帖子。\n触发与输入：系统每天按计划触发一次，并按发布日节奏执行；设有安全闸门，在手动或测试执行时阻止实际发布。系统从 Airtable 加载最近的发布历史，并从 TechCrunch AI、The Verge AI 等多个 AI 资讯 RSS 源拉取最新文章。\n处理过程：\n1. 对 RSS 文章进行清洗、去重与均衡处理，然后将候选文章连同最近发布历史提交给语言模型，从中选出一条可发布的编辑选题；\n2. 若选中的选题达到质量阈值：由语言模型撰写 LinkedIn 帖子初稿，再由语言模型进行第二遍精简，随后自动追加 2–3 个相关话题标签；\n3. 在 Airtable 中创建一条编辑记录，保存最终文案、来源链接与元数据；\n4. 生成一张方形的编辑配图，可选使用 HTML 截图服务或图像生成能力；随后由语言模型对配图做质量检查，若不通过则重新生成。\n输出：在生产模式下，将配图注册并上传到 LinkedIn，并把帖子发布到 LinkedIn 组织主页；最后将发布结果写回 Airtable。",
+    "source_spans": [
+      {
+        "start": 321,
+        "end": 464,
+        "text": "Runs each day on a scheduled trigger and applies a posting-day cadence plus a safety gate that blocks publishing during manual/test executions."
+      },
+      {
+        "start": 465,
+        "end": 600,
+        "text": "Loads recent publishing history from Airtable and pulls fresh articles from TechCrunch AI, The Verge AI, and the OpenAI Blog RSS feeds."
+      },
+      {
+        "start": 601,
+        "end": 753,
+        "text": "Cleans, deduplicates, and balances the RSS articles, then sends the candidates plus recent history to OpenAI to select one publishable editorial signal."
+      },
+      {
+        "start": 754,
+        "end": 920,
+        "text": "If the selected signal meets the quality threshold, OpenAI drafts the LinkedIn post, a second OpenAI pass tightens it, and the workflow appends 2–3 relevant hashtags."
+      },
+      {
+        "start": 921,
+        "end": 1007,
+        "text": "Creates an editorial record in Airtable with the final copy, source URL, and metadata."
+      },
+      {
+        "start": 1008,
+        "end": 1188,
+        "text": "Generates a square editorial image using either an optional HTML screenshot service or OpenAI image generation, then uses OpenAI to QA the image and retries generation if it fails."
+      },
+      {
+        "start": 1189,
+        "end": 1357,
+        "text": "In production mode, registers and uploads the image to LinkedIn and publishes the post to a LinkedIn organization page, then writes the posting result back to Airtable."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "Airtable 中最近的发布历史",
+        "TechCrunch AI、The Verge AI 等多个 AI 资讯源的 RSS 最新文章",
+        "发布日节奏、时区与历史条数等发布配置"
+      ],
+      "conditions": [
+        "每天按计划触发一次",
+        "按发布日节奏执行",
+        "安全闸门在手动或测试执行时阻止实际发布",
+        "选中的选题须达到质量阈值才继续撰写与发布",
+        "配图须通过语言模型的质量检查",
+        "仅在生产模式下实际发布到 LinkedIn"
+      ],
+      "allowed_actions": [
+        "加载最近发布历史并拉取 RSS 最新文章",
+        "清洗、去重与均衡 RSS 文章",
+        "使用语言模型选出一条可发布的编辑选题",
+        "撰写 LinkedIn 帖子初稿并进行第二遍精简",
+        "追加 2–3 个相关话题标签",
+        "在 Airtable 创建编辑记录（最终文案、来源链接、元数据）",
+        "生成方形编辑配图（HTML 截图服务或图像生成能力）",
+        "使用语言模型对配图做质量检查并在不通过时重新生成",
+        "注册并上传配图、发布帖子到 LinkedIn 组织主页",
+        "将发布结果写回 Airtable"
+      ],
+      "visible_outcomes": [
+        "Airtable 中的编辑记录，含最终文案、来源链接与元数据",
+        "LinkedIn 组织主页上已发布的带图帖子",
+        "Airtable 中回写的发布结果"
+      ],
+      "failure_behavior": [
+        "配图未通过语言模型质量检查时重新生成",
+        "手动或测试执行时被安全闸门阻止发布"
+      ]
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/packets/N8F-012.packet.json",
+    "packet_sha256": "5cd3dd3accb26d2922b0947641d3c963b1da6b9a906e835ca27f7fe7292861fa",
+    "public_description_sha256": "52d09b76b4e4dac898268de624b2713948b5db7b706d20b41f1b06700e3836a2"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_01/responses/N8F-012.response.json",
+    "verification_response_sha256": "111cd75fa32aef39e3ccefbd4056c354d179f3e31c313645ff088aab681e39ef",
+    "decision": "accept"
+  },
+  "formal_index": 23
+}

@@ -1,0 +1,568 @@
+{
+  "task_id": "N8F-076",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "b0075c2d0a6d2611a99df763c535a76aabe8cc296eba10ee2bf3929806755189",
+  "fixtures": [
+    {
+      "fixture_id": "F-video-vertical",
+      "purpose": "竖屏长视频输入，时长 120 秒",
+      "input_data": {
+        "video_url": "input_v.mp4",
+        "orientation": "vertical",
+        "duration_sec": 120,
+        "width": 1080,
+        "height": 1920
+      }
+    },
+    {
+      "fixture_id": "F-video-horizontal",
+      "purpose": "横屏长视频输入，用于验证保留原始分辨率不做无谓放大",
+      "input_data": {
+        "video_url": "input_h.mp4",
+        "orientation": "horizontal",
+        "duration_sec": 300,
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "fixture_id": "F-run-date",
+      "purpose": "固定运行日 2026-09-02，排期自次日起",
+      "input_data": {
+        "run_date": "2026-09-02"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-ffmpeg-audio",
+      "dependency_type": "ffmpeg",
+      "operation": "extract_audio",
+      "request_contract": {
+        "video_url": "input_v.mp4"
+      },
+      "response_contract": {
+        "audio_url": "audio.wav"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-whisper",
+      "dependency_type": "asr",
+      "operation": "transcribe_word_timestamps",
+      "request_contract": {
+        "audio_url": "audio.wav"
+      },
+      "response_contract": {
+        "words": [
+          {
+            "word": "hello",
+            "start": 0.0,
+            "end": 0.4
+          },
+          {
+            "word": "world",
+            "start": 0.4,
+            "end": 0.9
+          },
+          {
+            "word": "today",
+            "start": 9.6,
+            "end": 10.4
+          },
+          {
+            "word": "next",
+            "start": 39.6,
+            "end": 40.4
+          },
+          {
+            "word": "great",
+            "start": 44.6,
+            "end": 45.4
+          },
+          {
+            "word": "story",
+            "start": 59.6,
+            "end": 60.4
+          },
+          {
+            "word": "clip",
+            "start": 64.6,
+            "end": 65.4
+          },
+          {
+            "word": "end",
+            "start": 94.6,
+            "end": 95.4
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-clips-3",
+      "dependency_type": "llm",
+      "operation": "mine_clips",
+      "request_contract": {
+        "transcript": "word_timestamps"
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "start": 10,
+            "end": 40,
+            "title": "Opening hook",
+            "description": "First engaging moment"
+          },
+          {
+            "start": 45,
+            "end": 60,
+            "title": "Key insight",
+            "description": "Most valuable point"
+          },
+          {
+            "start": 65,
+            "end": 95,
+            "title": "Final takeaway",
+            "description": "Closing call to action"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-clips-6",
+      "dependency_type": "llm",
+      "operation": "mine_clips",
+      "request_contract": {
+        "clip_count": 6
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "start": 5,
+            "end": 25,
+            "title": "C1",
+            "description": "d1"
+          },
+          {
+            "start": 30,
+            "end": 50,
+            "title": "C2",
+            "description": "d2"
+          },
+          {
+            "start": 55,
+            "end": 75,
+            "title": "C3",
+            "description": "d3"
+          },
+          {
+            "start": 80,
+            "end": 100,
+            "title": "C4",
+            "description": "d4"
+          },
+          {
+            "start": 105,
+            "end": 125,
+            "title": "C5",
+            "description": "d5"
+          },
+          {
+            "start": 130,
+            "end": 150,
+            "title": "C6",
+            "description": "d6"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-ffmpeg-cut",
+      "dependency_type": "ffmpeg",
+      "operation": "cut_clip",
+      "request_contract": {
+        "timecode_seconds": [
+          10,
+          40,
+          45,
+          60,
+          65,
+          95
+        ]
+      },
+      "response_contract": {
+        "clip_files": [
+          "clip1.mp4",
+          "clip2.mp4",
+          "clip3.mp4"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-task-poll",
+      "dependency_type": "video_processing",
+      "operation": "poll_status",
+      "request_contract": {
+        "task_id": "task_v_001"
+      },
+      "response_contract": {
+        "status": "ready"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-task-download",
+      "dependency_type": "video_processing",
+      "operation": "download_clips",
+      "request_contract": {
+        "task_id": "task_v_001"
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "url": "clip1.mp4",
+            "width": 1080,
+            "height": 1920,
+            "duration_sec": 30
+          },
+          {
+            "url": "clip2.mp4",
+            "width": 1080,
+            "height": 1920,
+            "duration_sec": 15
+          },
+          {
+            "url": "clip3.mp4",
+            "width": 1080,
+            "height": 1920,
+            "duration_sec": 30
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-task-download-h",
+      "dependency_type": "video_processing",
+      "operation": "download_clips",
+      "request_contract": {
+        "task_id": "task_h_001"
+      },
+      "response_contract": {
+        "clips": [
+          {
+            "url": "hclip1.mp4",
+            "width": 1920,
+            "height": 1080,
+            "duration_sec": 30
+          },
+          {
+            "url": "hclip2.mp4",
+            "width": 1920,
+            "height": 1080,
+            "duration_sec": 25
+          },
+          {
+            "url": "hclip3.mp4",
+            "width": 1920,
+            "height": 1080,
+            "duration_sec": 20
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-schedule-post",
+      "dependency_type": "social_scheduler",
+      "operation": "schedule_posts",
+      "request_contract": {
+        "clip_count": 3,
+        "start_date": "2026-09-03",
+        "time": "20:00"
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "date": "2026-09-03",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "tiktok"
+          },
+          {
+            "date": "2026-09-04",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "instagram_reels"
+          },
+          {
+            "date": "2026-09-05",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "youtube_shorts"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-schedule-post-6",
+      "dependency_type": "social_scheduler",
+      "operation": "schedule_posts",
+      "request_contract": {
+        "clip_count": 6,
+        "start_date": "2026-09-03",
+        "time": "20:00"
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "date": "2026-09-03",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "tiktok"
+          },
+          {
+            "date": "2026-09-04",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "instagram_reels"
+          },
+          {
+            "date": "2026-09-05",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "youtube_shorts"
+          },
+          {
+            "date": "2026-09-06",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "tiktok"
+          },
+          {
+            "date": "2026-09-07",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "instagram_reels"
+          },
+          {
+            "date": "2026-09-08",
+            "time": "20:00",
+            "timezone": "Europe/Madrid",
+            "platform": "youtube_shorts"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-3",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-video-vertical",
+        "F-run-date"
+      ],
+      "mock_ids": [
+        "M-ffmpeg-audio",
+        "M-whisper",
+        "M-llm-clips-3",
+        "M-ffmpeg-cut",
+        "M-task-poll",
+        "M-task-download",
+        "M-schedule-post"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.clips",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "语言模型挑选 3 段片段（3-6 条范围内）"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.clips[0].duration_sec",
+          "operator": "equals",
+          "expected": 30,
+          "rationale": "片段 0 时长 40-10=30 秒，位于 15-60 秒区间"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.clips[1].duration_sec",
+          "operator": "equals",
+          "expected": 15,
+          "rationale": "片段 1 时长 60-45=15 秒，达到下限 15 秒"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.clips[0].start",
+          "operator": "matches",
+          "expected": "^\\d+$",
+          "rationale": "剪切时间码须为精确到秒的整数，避免切在词语中间"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.clips[].title",
+          "operator": "exists",
+          "rationale": "每段片段应生成标题",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.clips[].description",
+          "operator": "exists",
+          "rationale": "每段片段应生成描述",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.posts",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "发布天数等于本轮生成的片段数（3 条片段排 3 天）"
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.posts[].date",
+          "operator": "equals",
+          "expected": [
+            "2026-09-03",
+            "2026-09-04",
+            "2026-09-05"
+          ],
+          "rationale": "自次日起每个连续自然日发布一条，即 9-03、9-04、9-05"
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.posts[0].time",
+          "operator": "equals",
+          "expected": "20:00",
+          "rationale": "发布时间默认为 20:00"
+        },
+        {
+          "assertion_id": "A-10",
+          "target": "output.posts[0].timezone",
+          "operator": "equals",
+          "expected": "Europe/Madrid",
+          "rationale": "默认时区为欧洲/马德里"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-6",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-video-vertical",
+        "F-run-date"
+      ],
+      "mock_ids": [
+        "M-ffmpeg-audio",
+        "M-whisper",
+        "M-llm-clips-6",
+        "M-ffmpeg-cut",
+        "M-task-poll",
+        "M-task-download",
+        "M-schedule-post-6"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-6",
+          "target": "output.clips",
+          "operator": "length_equals",
+          "expected": 6,
+          "rationale": "片段数量上限为 6 条"
+        },
+        {
+          "assertion_id": "A-2-bnd-6",
+          "target": "output.posts",
+          "operator": "length_equals",
+          "expected": 6,
+          "rationale": "生成 6 条片段即排期 6 天（9-03 至 9-08）"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-horizontal",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-video-horizontal",
+        "F-run-date"
+      ],
+      "mock_ids": [
+        "M-ffmpeg-audio",
+        "M-whisper",
+        "M-llm-clips-3",
+        "M-ffmpeg-cut",
+        "M-task-poll",
+        "M-task-download-h",
+        "M-schedule-post"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-horizontal",
+          "target": "output.clips[0].width",
+          "operator": "equals",
+          "expected": 1920,
+          "rationale": "横屏输入应保留原始分辨率 1920，不做无谓放大"
+        },
+        {
+          "assertion_id": "A-2-bnd-horizontal",
+          "target": "output.clips[0].height",
+          "operator": "equals",
+          "expected": 1080,
+          "rationale": "横屏输入高度应保持 1080"
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-duration-range",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-video-vertical",
+        "F-run-date"
+      ],
+      "mock_ids": [
+        "M-ffmpeg-audio",
+        "M-whisper",
+        "M-llm-clips-3",
+        "M-ffmpeg-cut",
+        "M-task-poll",
+        "M-task-download",
+        "M-schedule-post"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-duration-range",
+          "target": "output.clips[].duration_sec",
+          "operator": "matches",
+          "expected": "^(1[5-9]|[2-5][0-9]|60)$",
+          "rationale": "每个片段时长须位于 15-60 秒区间"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "排期规则：自次日起连续自然日每天一条，天数等于片段数；时间与时区固定为 20:00 Europe/Madrid；片段时长由 start/end 差计算，须落在 15-60 秒且时间码为整数秒。处理任务状态轮询固定返回 ready。"
+}

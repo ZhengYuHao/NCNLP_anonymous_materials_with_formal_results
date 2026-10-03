@@ -1,0 +1,318 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-072",
+  "dataset_partition": "development_qualification",
+  "domain": "governance",
+  "requirement_sha256": "f415c02058cb4cfcbc2caf2c2daf32c93fe47ba9a25927b50d31c2eb2edfc636",
+  "natural_language_requirement": "业务用户提交一个需要检查的网址，系统同时向 VirusTotal 与 urlscan.io 发起检测请求。VirusTotal 在网址可达时总会返回结果，提供该网址的信誉、恶意/安全标记以及扫描元数据；urlscan.io 则返回该网址在加载时的行为细节（涉及的域名、请求与资源等），但有时会因被拦截或受限制而失败。系统会检查 urlscan.io 是否成功响应，并据此分两种情况生成一份汇总结论：若两次检测都成功，则汇总 VirusTotal 与 urlscan.io 的综合发现；若 urlscan.io 失败，则在汇总中明确写明“urlscan.io 检测被阻断/失败，结论仅依据 VirusTotal 的结果”。无论走哪种情况，系统都会产出一份完整、结构化且便于阅读的安全检测汇总，并通过 Telegram 机器人发送到指定的 Telegram 会话。",
+  "public_interfaces": [
+    {
+      "dependency_type": "httpRequest",
+      "operation": "virus_total_scan",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "clean_votes": {
+            "type": "integer"
+          },
+          "malicious_votes": {
+            "type": "integer"
+          },
+          "reputation": {
+            "type": "string"
+          },
+          "scan_metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "engine_count": {
+                "type": "integer"
+              },
+              "scan_date": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "engine_count",
+              "scan_date"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "clean_votes",
+          "malicious_votes",
+          "reputation",
+          "scan_metadata"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "telegram",
+      "operation": "send_message",
+      "request_schema": {
+        "type": "object",
+        "properties": {
+          "chat_id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chat_id",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "ok"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "urlScanIo",
+      "operation": "urlscan_scan",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "domains": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "requests": {
+                "type": "integer"
+              },
+              "resources": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "success": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "domains",
+              "requests",
+              "resources",
+              "success"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "error": {
+                "type": "string"
+              },
+              "success": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "error",
+              "success"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "merged_findings",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "urlscan_success": {
+              "type": "boolean",
+              "description": "urlscan.io 是否成功响应"
+            },
+            "virustotal": {
+              "type": "object",
+              "description": "VirusTotal 发现",
+              "properties": {
+                "reputation": {
+                  "type": "string",
+                  "description": "信誉"
+                },
+                "clean_votes": {
+                  "type": "integer",
+                  "description": "安全标记数"
+                },
+                "malicious_votes": {
+                  "type": "integer",
+                  "description": "恶意标记数"
+                },
+                "scan_metadata": {
+                  "type": "object",
+                  "description": "扫描元数据",
+                  "properties": {
+                    "engine_count": {
+                      "type": "integer",
+                      "description": "扫描引擎数量"
+                    },
+                    "scan_date": {
+                      "type": "string",
+                      "description": "扫描日期"
+                    }
+                  },
+                  "required": [
+                    "engine_count",
+                    "scan_date"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "reputation",
+                "clean_votes",
+                "malicious_votes",
+                "scan_metadata"
+              ],
+              "additionalProperties": false
+            },
+            "urlscan": {
+              "type": "object",
+              "description": "urlscan 成功时的发现",
+              "properties": {
+                "domains": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "涉及的域名"
+                },
+                "requests": {
+                  "type": "integer",
+                  "description": "请求数量"
+                },
+                "resources": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "资源列表"
+                }
+              },
+              "required": [
+                "domains",
+                "requests",
+                "resources"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "urlscan_success",
+            "virustotal"
+          ],
+          "additionalProperties": false
+        },
+        "description": "合并后的检测结果，含 urlscan 是否成功的状态",
+        "requirement_evidence": [
+          "系统会检查 urlscan.io 是否成功响应，并据此分两种情况生成一份汇总结论"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n4.merged_findings"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "summary",
+        "schema": {
+          "type": "string"
+        },
+        "description": "完整、结构化且便于阅读的安全检测汇总；urlscan 失败时明确标注仅依据 VirusTotal 结果",
+        "requirement_evidence": [
+          "若两次检测都成功，则汇总 VirusTotal 与 urlscan.io 的综合发现；若 urlscan.io 失败，则在汇总中明确写明“urlscan.io 检测被阻断/失败，结论仅依据 VirusTotal 的结果”",
+          "无论走哪种情况，系统都会产出一份完整、结构化且便于阅读的安全检测汇总"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n5.summary"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "telegram_send_message_response",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "message_id": {
+              "type": "integer"
+            },
+            "ok": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "message_id",
+            "ok"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Telegram 机器人发送安全检测汇总到指定会话的响应，包含消息ID和发送状态",
+        "requirement_evidence": [
+          "并通过 Telegram 机器人发送到指定的 Telegram 会话"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [
+          "n6"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "37D7C2645E8BDCF6CB89A73DCFCC2AC1D91191A87857F313EDDD440F76C0FA2A",
+  "public_interface_sha256": "DBDBB9326738F5B3DAA382CD3C17C464C5C264CB9B1F90DA7FA2CD65E60FC79D",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

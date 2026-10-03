@@ -1,0 +1,219 @@
+{
+  "schema_version": "n8n-s1-d15-dfg-consensus-v1",
+  "task_id": "N8F-082",
+  "status": "frozen",
+  "metric_unit": "directed endpoint between frozen shared business-step groups",
+  "dfg_edges": [
+    {
+      "source_group": "g1",
+      "target_group": "g2",
+      "data_items": [
+        "规范化后的项目需求申请字段",
+        "规范化后的申请字段"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d1"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g4",
+      "data_items": [
+        "规范化后的需求申请内容",
+        "规范化后的完整申请内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d2"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g5",
+      "data_items": [
+        "申请元信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d3"
+    },
+    {
+      "source_group": "g1",
+      "target_group": "g6",
+      "data_items": [
+        "申请信息"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d4"
+    },
+    {
+      "source_group": "g10",
+      "target_group": "g11",
+      "data_items": [
+        "分诊结果与交付交接内容",
+        "分诊结果与交接内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d5"
+    },
+    {
+      "source_group": "g12",
+      "target_group": "g13",
+      "data_items": [
+        "加载的未结分诊记录",
+        "未结分诊记录"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d6"
+    },
+    {
+      "source_group": "g13",
+      "target_group": "g14",
+      "data_items": [
+        "运营汇总内容"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d7"
+    },
+    {
+      "source_group": "g15",
+      "target_group": "g8",
+      "data_items": [
+        "审批决策（批准或拒绝）"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-082-D01",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "g8 记录审批结论所需的决策数据来自 g15 审批决策回调接收的内容；回调机制由原生证据（When Approval Decision Received）佐证，且『记录审批结论』为冻结需求已声明行为。",
+      "confidence": 0.6,
+      "edge_id": "d8"
+    },
+    {
+      "source_group": "g2",
+      "target_group": "g3",
+      "data_items": [
+        "缺失字段清单",
+        "澄清问题",
+        "缺失字段清单与澄清问题"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d9"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g5",
+      "data_items": [
+        "分诊摘要",
+        "申请类型与风险/依赖/待决策事项等抽取结果",
+        "语言模型分诊输出（摘要、类型、风险、依赖、待决策事项、建议负责人类型）"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d10"
+    },
+    {
+      "source_group": "g4",
+      "target_group": "g6",
+      "data_items": [
+        "分诊摘要与类型判定",
+        "分诊摘要"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d11"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g6",
+      "data_items": [
+        "风险与紧急度评分",
+        "分诊去向",
+        "风险与紧急度评分及分诊去向"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d12"
+    },
+    {
+      "source_group": "g5",
+      "target_group": "g7",
+      "data_items": [
+        "风险与紧急度评分"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d13"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g10",
+      "data_items": [
+        "分诊记录标识（更新目标）",
+        "待更新的分诊记录标识"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d14"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g12",
+      "data_items": [
+        "Airtable 中的未结分诊记录"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-082-D02",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "按周加载的未结分诊记录即 g6 创建并写入 Airtable 的分诊记录，属跨运行写入-读取数据依赖。",
+      "confidence": 0.8,
+      "edge_id": "d15"
+    },
+    {
+      "source_group": "g6",
+      "target_group": "g8",
+      "data_items": [
+        "已创建的分诊记录"
+      ],
+      "decision_source": "third_party_adjudication",
+      "dispute_id": "N8F-082-D03",
+      "adjudicator_id": "ADJ-B-01",
+      "decision_rationale": "记录审批结论前需查找并定位 g6 创建的待审批分诊记录（native 证据含 Find Pending Airtable Request），真实消费该记录标识。",
+      "confidence": 0.7,
+      "edge_id": "d16"
+    },
+    {
+      "source_group": "g8",
+      "target_group": "g9",
+      "data_items": [
+        "审批结论（批准/拒绝）",
+        "审批结论"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d17"
+    },
+    {
+      "source_group": "g9",
+      "target_group": "g10",
+      "data_items": [
+        "指派的负责人",
+        "审批处理结果",
+        "负责人与审批结果"
+      ],
+      "decision_source": "independent_annotation_agreement",
+      "decision_rationale": "A/B两路独立标注均确认该端点存在数据消费关系。",
+      "edge_id": "d18"
+    }
+  ],
+  "provenance": {
+    "pre_adjudication_f1": 0.9090909090909091,
+    "shared_edge_count": 15,
+    "adjudicated_dispute_count": 3,
+    "adjudicator_id": "ADJ-B-01",
+    "system_outputs_used": false
+  }
+}

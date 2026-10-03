@@ -1,0 +1,589 @@
+{
+  "task_id": "N8F-012",
+  "annotator_id": "GM-B-01",
+  "status": "submitted",
+  "requirement_sha256": "5ca8bb5867261260ff9d8e866fe4b8d930f085201e2fec5ff11340354fb683f1",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "每日定时触发",
+      "node_type": "code",
+      "operation_family": "trigger_scheduling",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "daily_trigger",
+          "type": "trigger_event",
+          "description": "每日计划触发的运行事件"
+        }
+      ],
+      "native_evidence": ["Run Daily Editorial Check (scheduleTrigger)"],
+      "requirement_evidence": ["系统每天定时从多个 AI 资讯 RSS 源选题", "每天按计划触发一次"],
+      "rationale": "需求声明每天计划触发一次，周期调度为确定性契约，判 code。唯一入口。"
+    },
+    {
+      "node_id": "n2",
+      "label": "应用发布节奏与安全闸门",
+      "node_type": "code",
+      "operation_family": "routing_gate",
+      "inputs": [
+        {
+          "name": "daily_trigger",
+          "type": "trigger_event",
+          "description": "每日计划触发的运行事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "run_config",
+          "type": "object",
+          "description": "本次运行的节奏判定与执行模式（发布日判定结果及 production/test 运行模式）"
+        }
+      ],
+      "native_evidence": ["Set Publishing Config (set)", "Apply Editorial Cadence and Safety Gate (code)"],
+      "requirement_evidence": ["按发布日节奏执行", "安全闸门在手动或测试执行时阻止实际发布", "发布日节奏、时区与历史条数等发布配置"],
+      "rationale": "发布日节奏判定与运行模式（生产/手动测试）判定为确定性路由规则，判 code。非发布日不执行、手动/测试运行标记为 test 的门控折叠进本节点契约，run_mode 供发布环节作分支条件。"
+    },
+    {
+      "node_id": "n3",
+      "label": "加载最近发布历史",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "run_config",
+          "type": "object",
+          "description": "本次运行的节奏判定与执行模式（含历史条数配置）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "recent_history",
+          "type": "array",
+          "description": "Airtable 中最近的发布历史"
+        }
+      ],
+      "native_evidence": ["Load Recent Publishing History (httpRequest)"],
+      "requirement_evidence": ["系统从 Airtable 加载最近的发布历史", "Airtable 中最近的发布历史"],
+      "rationale": "确定性外部读取，判 code。与 RSS 拉取相互独立，可并行执行。"
+    },
+    {
+      "node_id": "n4",
+      "label": "拉取多源 RSS 文章",
+      "node_type": "code",
+      "operation_family": "external_data_fetch",
+      "inputs": [
+        {
+          "name": "run_config",
+          "type": "object",
+          "description": "本次运行的节奏判定与执行模式"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "rss_articles",
+          "type": "array",
+          "description": "多个 AI 资讯 RSS 源的最新文章列表"
+        }
+      ],
+      "native_evidence": ["RSS TechCrunch AI (rssFeedRead)", "RSS The Verge AI (rssFeedRead)", "RSS OpenAI Blog (rssFeedRead)", "Merge (merge)"],
+      "requirement_evidence": ["从 TechCrunch AI、The Verge AI 等多个 AI 资讯 RSS 源拉取最新文章", "TechCrunch AI、The Verge AI 等多个 AI 资讯源的 RSS 最新文章"],
+      "rationale": "多个同构 RSS 拉取动作合并为一个采集节点契约（含合并），不按原生三节点一对一展开。确定性外部读取，判 code。"
+    },
+    {
+      "node_id": "n5",
+      "label": "清洗去重并均衡候选文章",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "rss_articles",
+          "type": "array",
+          "description": "多个 AI 资讯 RSS 源的最新文章列表"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "candidate_articles",
+          "type": "array",
+          "description": "清洗、去重与均衡处理后的候选文章列表"
+        }
+      ],
+      "native_evidence": ["Prepare RSS Signals (code)"],
+      "requirement_evidence": ["对 RSS 文章进行清洗、去重与均衡处理"],
+      "rationale": "清洗、去重与均衡是基于类型化数据的确定性变换，判 code。"
+    },
+    {
+      "node_id": "n6",
+      "label": "选出可发布编辑选题",
+      "node_type": "semantic",
+      "operation_family": "llm_selection",
+      "inputs": [
+        {
+          "name": "candidate_articles",
+          "type": "array",
+          "description": "清洗、去重与均衡处理后的候选文章列表"
+        },
+        {
+          "name": "recent_history",
+          "type": "array",
+          "description": "Airtable 中最近的发布历史"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "editorial_signal",
+          "type": "object",
+          "description": "选定的编辑选题及其质量阈值判定标记"
+        }
+      ],
+      "native_evidence": ["Select Best Editorial Signal With OpenAI (openAi)", "Parse Editorial Signal (code)", "If Signal Is Publishable (if)"],
+      "requirement_evidence": ["将候选文章连同最近发布历史提交给语言模型，从中选出一条可发布的编辑选题", "使用语言模型选出一条可发布的编辑选题", "选中的选题须达到质量阈值才继续撰写与发布"],
+      "rationale": "从候选中挑选编辑选题需开放文本理解与编辑判断，判 semantic。质量阈值判定为确定性比较，折叠进本节点输出契约（质量标记随选题输出），分支条件体现在 CFG 出边。"
+    },
+    {
+      "node_id": "n7",
+      "label": "撰写 LinkedIn 帖子初稿",
+      "node_type": "semantic",
+      "operation_family": "llm_generation",
+      "inputs": [
+        {
+          "name": "editorial_signal",
+          "type": "object",
+          "description": "选定的编辑选题及其质量阈值判定标记"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "draft_post",
+          "type": "string",
+          "description": "LinkedIn 帖子初稿文案"
+        }
+      ],
+      "native_evidence": ["Draft LinkedIn Post With OpenAI (openAi)", "Normalise Draft Post (code)"],
+      "requirement_evidence": ["由语言模型撰写 LinkedIn 帖子初稿", "撰写 LinkedIn 帖子初稿并进行第二遍精简"],
+      "rationale": "帖子撰写需开放文本生成，判 semantic。"
+    },
+    {
+      "node_id": "n8",
+      "label": "第二遍精简帖子",
+      "node_type": "semantic",
+      "operation_family": "llm_refinement",
+      "inputs": [
+        {
+          "name": "draft_post",
+          "type": "string",
+          "description": "LinkedIn 帖子初稿文案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "refined_post",
+          "type": "string",
+          "description": "精简后的帖子文案"
+        }
+      ],
+      "native_evidence": ["QA and Tighten Post With OpenAI (openAi)", "Parse Final Post (code)"],
+      "requirement_evidence": ["再由语言模型进行第二遍精简"],
+      "rationale": "需求明确声明由语言模型做第二遍精简，属开放文本改写，判 semantic，与初稿撰写分开单列。"
+    },
+    {
+      "node_id": "n9",
+      "label": "追加话题标签",
+      "node_type": "code",
+      "operation_family": "deterministic_transform",
+      "inputs": [
+        {
+          "name": "refined_post",
+          "type": "string",
+          "description": "精简后的帖子文案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "附有 2-3 个话题标签的最终帖子文案"
+        }
+      ],
+      "native_evidence": ["Add Relevant Hashtags (code)"],
+      "requirement_evidence": ["随后自动追加 2–3 个相关话题标签", "追加 2–3 个相关话题标签"],
+      "rationale": "按规则自动追加固定数量标签为确定性变换（原生实现为 code），判 code。"
+    },
+    {
+      "node_id": "n10",
+      "label": "创建 Airtable 编辑记录",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "附有 2-3 个话题标签的最终帖子文案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "editorial_context",
+          "type": "object",
+          "description": "编辑记录内容（最终文案、来源链接与元数据）"
+        }
+      ],
+      "native_evidence": ["Create Airtable Editorial Record (airtable)", "Preserve Editorial Context (code)", "Restore Editorial Context (code)", "If Test Mode Skip Audit Write (if)"],
+      "requirement_evidence": ["在 Airtable 中创建一条编辑记录，保存最终文案、来源链接与元数据", "Airtable 中的编辑记录，含最终文案、来源链接与元数据"],
+      "rationale": "按声明字段写入 Airtable 记录为确定性外部动作，判 code。对应需求处理步骤 3 的可见结果之一。"
+    },
+    {
+      "node_id": "n11",
+      "label": "生成方形编辑配图",
+      "node_type": "code",
+      "operation_family": "image_generation",
+      "inputs": [
+        {
+          "name": "editorial_context",
+          "type": "object",
+          "description": "编辑记录内容（最终文案、来源链接与元数据），用于配图概念构造"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "editorial_image",
+          "type": "object",
+          "description": "生成的方形编辑配图"
+        }
+      ],
+      "native_evidence": ["Build Editorial Card (code)", "Check Screenshot Capability (code)", "IF Screenshot Service Available (if)", "Render HTML to PNG (httpRequest)", "Generate Editorial Image With OpenAI (httpRequest)", "Normalize Rendered Image (code)"],
+      "requirement_evidence": ["生成一张方形的编辑配图，可选使用 HTML 截图服务或图像生成能力", "生成方形编辑配图（HTML 截图服务或图像生成能力）"],
+      "rationale": "配图概念构造与两种可选生成路径（HTML 截图 / 图像生成服务）均为确定性外部服务调用，折叠进一个生成节点契约；按判定规则图像生成类外部调用判 code。"
+    },
+    {
+      "node_id": "n12",
+      "label": "配图质量检查",
+      "node_type": "semantic",
+      "operation_family": "llm_qa",
+      "inputs": [
+        {
+          "name": "editorial_image",
+          "type": "object",
+          "description": "生成的方形编辑配图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "qa_result",
+          "type": "object",
+          "description": "配图质量检查结果（是否通过及原因）"
+        },
+        {
+          "name": "approved_image",
+          "type": "object",
+          "description": "通过质量检查的方形编辑配图（未通过时为空）"
+        }
+      ],
+      "native_evidence": ["QA Editorial Image With OpenAI (httpRequest)", "Parse Image QA (code)", "If Image Passes QA (if)", "Record Image QA Failure (code)"],
+      "requirement_evidence": ["随后由语言模型对配图做质量检查，若不通过则重新生成", "配图须通过语言模型的质量检查", "配图未通过语言模型质量检查时重新生成"],
+      "rationale": "对配图做质量评判需开放视觉/文本理解，判 semantic。不通过时经回边回到生成节点重新生成，重新生成循环上限 max_iterations=3（<=20），终止条件为质检通过或达到上限。"
+    },
+    {
+      "node_id": "n13",
+      "label": "注册并上传配图到 LinkedIn",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "approved_image",
+          "type": "object",
+          "description": "通过质量检查的方形编辑配图"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "uploaded_asset",
+          "type": "object",
+          "description": "已在 LinkedIn 注册并上传的配图资产引用"
+        }
+      ],
+      "native_evidence": ["Convert to File (convertToFile)", "LinkedIn Register Image Upload (httpRequest)", "Prepare LinkedIn Asset (code)", "LinkedIn Upload Image Binary (httpRequest)"],
+      "requirement_evidence": ["将配图注册并上传到 LinkedIn", "在生产模式下，将配图注册并上传到 LinkedIn"],
+      "rationale": "按确定性契约注册并上传图片资产（含一次运行仅一帖的前置检查折叠），判 code。仅生产模式执行，进入条件见 CFG 出边条件。"
+    },
+    {
+      "node_id": "n14",
+      "label": "发布帖子到 LinkedIn 组织主页",
+      "node_type": "code",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "uploaded_asset",
+          "type": "object",
+          "description": "已在 LinkedIn 注册并上传的配图资产引用"
+        },
+        {
+          "name": "final_post",
+          "type": "string",
+          "description": "附有 2-3 个话题标签的最终帖子文案"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "LinkedIn 发布结果（成功状态与帖子引用）"
+        }
+      ],
+      "native_evidence": ["Enforce One Post Per Run (code)", "Publish Company Post to LinkedIn (httpRequest)"],
+      "requirement_evidence": ["把帖子发布到 LinkedIn 组织主页", "LinkedIn 组织主页上已发布的带图帖子", "仅在生产模式下实际发布到 LinkedIn"],
+      "rationale": "以确定性契约调用 LinkedIn 发布接口发出带图帖子，判 code。后续还有写回发布结果的动作，故非终止节点。"
+    },
+    {
+      "node_id": "n15",
+      "label": "写回发布结果到 Airtable",
+      "node_type": "terminal",
+      "operation_family": "external_action_or_io",
+      "inputs": [
+        {
+          "name": "publish_result",
+          "type": "object",
+          "description": "LinkedIn 发布结果（成功状态与帖子引用）"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": ["Prepare Publishing Audit (code)", "If Airtable Record Exists (if)", "Update Existing Airtable Record (httpRequest)", "Create Airtable Publish Record (httpRequest)"],
+      "requirement_evidence": ["最后将发布结果写回 Airtable", "Airtable 中回写的发布结果"],
+      "rationale": "发布结果写回是需求声明的最终可见结果，为本链路终点，无 CFG 出边，判 terminal。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "e_cfg_1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "每日触发后进入节奏与安全闸门判定。"
+    },
+    {
+      "edge_id": "e_cfg_2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": null,
+      "rationale": "闸门判定后并行分支：加载发布历史。"
+    },
+    {
+      "edge_id": "e_cfg_3",
+      "source": "n2",
+      "target": "n4",
+      "variable": null,
+      "condition": null,
+      "rationale": "闸门判定后并行分支：拉取 RSS 文章。"
+    },
+    {
+      "edge_id": "e_cfg_4",
+      "source": "n3",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布历史汇入选题选择（连接节点）。"
+    },
+    {
+      "edge_id": "e_cfg_5",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "文章拉取后做清洗去重均衡。"
+    },
+    {
+      "edge_id": "e_cfg_6",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": null,
+      "rationale": "候选文章汇入选题选择。"
+    },
+    {
+      "edge_id": "e_cfg_7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": "quality_threshold_met == true",
+      "rationale": "仅当选中选题达到质量阈值才继续撰写与发布；未达标时需求未声明后续行为，流程在此停止。"
+    },
+    {
+      "edge_id": "e_cfg_8",
+      "source": "n7",
+      "target": "n8",
+      "variable": null,
+      "condition": null,
+      "rationale": "初稿完成后第二遍精简。"
+    },
+    {
+      "edge_id": "e_cfg_9",
+      "source": "n8",
+      "target": "n9",
+      "variable": null,
+      "condition": null,
+      "rationale": "精简后追加话题标签。"
+    },
+    {
+      "edge_id": "e_cfg_10",
+      "source": "n9",
+      "target": "n10",
+      "variable": null,
+      "condition": null,
+      "rationale": "最终文案就绪后创建编辑记录。"
+    },
+    {
+      "edge_id": "e_cfg_11",
+      "source": "n10",
+      "target": "n11",
+      "variable": null,
+      "condition": null,
+      "rationale": "编辑记录完成后进入配图生成。"
+    },
+    {
+      "edge_id": "e_cfg_12",
+      "source": "n11",
+      "target": "n12",
+      "variable": null,
+      "condition": null,
+      "rationale": "生成的配图送质量检查。"
+    },
+    {
+      "edge_id": "e_cfg_13",
+      "source": "n12",
+      "target": "n11",
+      "variable": null,
+      "condition": "image_qa_passed == false",
+      "rationale": "质检不通过回边重新生成配图；循环终止条件为质检通过或达到重新生成上限 max_iterations=3（<=20）。"
+    },
+    {
+      "edge_id": "e_cfg_14",
+      "source": "n12",
+      "target": "n13",
+      "variable": null,
+      "condition": "image_qa_passed == true && run_mode == production",
+      "rationale": "质检通过且为生产模式才进入注册上传；手动/测试执行被安全闸门阻止，不会到达发布环节。"
+    },
+    {
+      "edge_id": "e_cfg_15",
+      "source": "n13",
+      "target": "n14",
+      "variable": null,
+      "condition": null,
+      "rationale": "配图上传后发布帖子。"
+    },
+    {
+      "edge_id": "e_cfg_16",
+      "source": "n14",
+      "target": "n15",
+      "variable": null,
+      "condition": null,
+      "rationale": "发布完成后写回发布结果。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "e_dfg_1",
+      "source": "n3",
+      "target": "n6",
+      "variable": "recent_history",
+      "condition": null,
+      "rationale": "选题选择需连同最近发布历史。"
+    },
+    {
+      "edge_id": "e_dfg_2",
+      "source": "n4",
+      "target": "n5",
+      "variable": "rss_articles",
+      "condition": null,
+      "rationale": "清洗去重均衡消费原始文章列表。"
+    },
+    {
+      "edge_id": "e_dfg_3",
+      "source": "n5",
+      "target": "n6",
+      "variable": "candidate_articles",
+      "condition": null,
+      "rationale": "选题选择消费候选文章。"
+    },
+    {
+      "edge_id": "e_dfg_4",
+      "source": "n6",
+      "target": "n7",
+      "variable": "editorial_signal",
+      "condition": null,
+      "rationale": "初稿撰写消费选定选题。"
+    },
+    {
+      "edge_id": "e_dfg_5",
+      "source": "n7",
+      "target": "n8",
+      "variable": "draft_post",
+      "condition": null,
+      "rationale": "第二遍精简消费初稿文案。"
+    },
+    {
+      "edge_id": "e_dfg_6",
+      "source": "n8",
+      "target": "n9",
+      "variable": "refined_post",
+      "condition": null,
+      "rationale": "追加标签消费精简后文案。"
+    },
+    {
+      "edge_id": "e_dfg_7",
+      "source": "n9",
+      "target": "n10",
+      "variable": "final_post",
+      "condition": null,
+      "rationale": "编辑记录保存最终文案。"
+    },
+    {
+      "edge_id": "e_dfg_8",
+      "source": "n10",
+      "target": "n11",
+      "variable": "editorial_context",
+      "condition": null,
+      "rationale": "配图概念构造消费编辑上下文。"
+    },
+    {
+      "edge_id": "e_dfg_9",
+      "source": "n11",
+      "target": "n12",
+      "variable": "editorial_image",
+      "condition": null,
+      "rationale": "质量检查消费生成的配图。"
+    },
+    {
+      "edge_id": "e_dfg_10",
+      "source": "n12",
+      "target": "n13",
+      "variable": "approved_image",
+      "condition": null,
+      "rationale": "上传消费通过质检的配图（semantic 到 code 的有类型数据边）。"
+    },
+    {
+      "edge_id": "e_dfg_11",
+      "source": "n13",
+      "target": "n14",
+      "variable": "uploaded_asset",
+      "condition": null,
+      "rationale": "发布消费已上传的配图资产。"
+    },
+    {
+      "edge_id": "e_dfg_12",
+      "source": "n14",
+      "target": "n15",
+      "variable": "publish_result",
+      "condition": null,
+      "rationale": "写回消费发布结果。"
+    }
+  ],
+  "entry_nodes": ["n1"],
+  "terminal_nodes": ["n15"],
+  "confidence": 0.82,
+  "notes": "关键取舍：1) 安全闸门与发布日节奏折叠为单一门控节点，测试模式下流程止于配图质检环节、不进入发布（需求仅声明阻止实际发布，未声明测试执行的可见产物，原生 Build Test Preview/Manual Test Complete 不纳入 Gold）。2) 选题质量阈值判定折叠进选题节点的输出契约，分支以 CFG 条件表达；未达标分支需求未声明行为，不建模额外节点。3) 配图质检不通过->重新生成建模为回边循环，上限 max_iterations=3。4) 两种可选配图生成路径（HTML 截图/图像生成）折叠进同一生成节点契约。5) 原生可选邮件日志（Build Optional Email Log/Send Email Log）未在需求中声明，不纳入 Gold。6) 需求声明初稿与第二遍精简为两次语言模型行为，故单列两个 semantic 节点。"
+}

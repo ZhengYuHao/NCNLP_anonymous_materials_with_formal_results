@@ -1,0 +1,776 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-071",
+  "dataset_partition": "development_qualification",
+  "domain": "customer_service",
+  "requirement_sha256": "67a22a2c2569dff8d73964f2b8f76d810762bc542a04850c705588f70a14ccd2",
+  "natural_language_requirement": "系统通过接口接收一条入站线索提交。系统先应用预设的理想客户画像（ICP）信息与阈值，对传入字段做规范化处理，并校验邮箱地址，识别其中的免费邮箱与角色邮箱，同时推导出企业域名。若邮箱是有效的企业邮箱地址，系统则抓取该线索的网站，并从页面内容中提取一小段文本样本以及关键词形式的购买信号。随后，系统将线索信息与网站信号交给语言模型，产出结构化的评估结果，包括理想客户契合度评分、所属细分、评分理由、推荐的下一步动作以及一句个性化的开场白。系统把该契合度评分与一个确定性的数据质量评分相结合，据此将线索划分为热、温、冷三档，并按档位进行分流：对热线索，在 Slack 中发出提醒、通过 Gmail 向该线索发送即时的个性化回复、在 HubSpot 中创建或更新对应联系人并设置相应的生命周期阶段；所有线索都会被追加记录到 Google Sheets；同时，系统向提交方返回包含该线索评分与档位的响应结果。",
+  "public_interfaces": [
+    {
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "score_icp_fit",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "lead": {
+                "additionalProperties": false,
+                "properties": {
+                  "company": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "job_title": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "company",
+                  "email",
+                  "job_title",
+                  "message",
+                  "name"
+                ],
+                "type": "object"
+              },
+              "site_signals": {
+                "additionalProperties": false,
+                "properties": {
+                  "buying_signals": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "text_sample": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "buying_signals",
+                  "text_sample"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "lead",
+              "site_signals"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "lead": {
+                "additionalProperties": false,
+                "properties": {
+                  "company": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "job_title": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "company",
+                  "email",
+                  "job_title",
+                  "message",
+                  "name"
+                ],
+                "type": "object"
+              },
+              "site_signals": {
+                "additionalProperties": false,
+                "properties": {
+                  "buying_signals": {
+                    "items": {},
+                    "type": "array"
+                  },
+                  "text_sample": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "buying_signals",
+                  "text_sample"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "lead",
+              "site_signals"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "fit_score": {
+            "type": "integer"
+          },
+          "next_step": {
+            "type": "string"
+          },
+          "opening_line": {
+            "type": "string"
+          },
+          "reasoning": {
+            "type": "string"
+          },
+          "segment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fit_score",
+          "next_step",
+          "opening_line",
+          "reasoning",
+          "segment"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "to",
+          "body"
+        ],
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "message_id",
+          "status"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.googleSheets",
+      "operation": "append_row",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "sheet",
+          "row"
+        ],
+        "properties": {
+          "sheet": {
+            "type": "string"
+          },
+          "row": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "appended_rows",
+          "status"
+        ],
+        "properties": {
+          "appended_rows": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "compute_data_quality_score",
+      "request_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "lead": {
+                "additionalProperties": false,
+                "properties": {
+                  "company": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "job_title": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "company",
+                  "email",
+                  "job_title",
+                  "name",
+                  "phone",
+                  "website"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "lead"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "lead": {
+                "additionalProperties": false,
+                "properties": {
+                  "company": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "job_title": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "website": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "company",
+                  "email",
+                  "job_title",
+                  "name",
+                  "website"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "lead"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "quality_score": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quality_score"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_website_content",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "buying_signals": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "text_sample": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "buying_signals",
+              "text_sample"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "buying_signals": {
+                "items": {},
+                "type": "array"
+              },
+              "text_sample": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "buying_signals",
+              "text_sample"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "validate_email_and_derive_domain",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "domain": {
+            "type": "string"
+          },
+          "is_free": {
+            "type": "boolean"
+          },
+          "is_role": {
+            "type": "boolean"
+          },
+          "is_valid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "domain",
+          "is_free",
+          "is_role",
+          "is_valid"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.hubspot",
+      "operation": "upsert_contact",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "lifecycle_stage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "lifecycle_stage"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "contact_id": {
+            "type": "string"
+          },
+          "lifecycle_stage": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "contact_id",
+          "lifecycle_stage",
+          "status"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_schema": {
+        "type": "object",
+        "required": [
+          "channel",
+          "text"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "response_schema": {
+        "type": "object",
+        "required": [
+          "ok",
+          "ts"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "ts": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "website_signals",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "text_sample": {
+              "type": "string",
+              "description": "一小段文本样本"
+            },
+            "buying_signals": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "关键词形式的购买信号"
+            }
+          },
+          "required": [
+            "text_sample",
+            "buying_signals"
+          ],
+          "additionalProperties": false
+        },
+        "description": "一小段文本样本以及关键词形式的购买信号",
+        "requirement_evidence": [
+          "并从页面内容中提取一小段文本样本以及关键词形式的购买信号"
+        ],
+        "source_operations": [
+          "fetch_website_content"
+        ],
+        "design_sources": [
+          "n6.website_signals"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "ai_verdict",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "fit_score": {
+              "type": "integer",
+              "description": "理想客户契合度评分"
+            },
+            "segment": {
+              "type": "string",
+              "description": "所属细分"
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "评分理由"
+            },
+            "next_step": {
+              "type": "string",
+              "description": "推荐的下一步动作"
+            },
+            "opening_line": {
+              "type": "string",
+              "description": "个性化开场白"
+            }
+          },
+          "required": [
+            "fit_score",
+            "segment",
+            "reasoning",
+            "next_step",
+            "opening_line"
+          ],
+          "additionalProperties": false
+        },
+        "description": "结构化评估：理想客户契合度评分、所属细分、评分理由、推荐下一步、个性化开场白",
+        "requirement_evidence": [
+          "随后，系统将线索信息与网站信号交给语言模型，产出结构化的评估结果，包括理想客户契合度评分、所属细分、评分理由、推荐的下一步动作以及一句个性化的开场白"
+        ],
+        "source_operations": [
+          "score_icp_fit"
+        ],
+        "design_sources": [
+          "n7.ai_verdict"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "lead_with_tier",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "tier": {
+              "type": "string",
+              "description": "线索档位，热、温、冷三档之一"
+            },
+            "quality_score": {
+              "type": "integer",
+              "description": "确定性的数据质量评分"
+            },
+            "fit_score": {
+              "type": "integer",
+              "description": "理想客户契合度评分"
+            }
+          },
+          "required": [
+            "tier",
+            "quality_score",
+            "fit_score"
+          ],
+          "additionalProperties": true
+        },
+        "description": "结合确定性数据质量评分后划分为热、温、冷三档的线索",
+        "requirement_evidence": [
+          "系统把该契合度评分与一个确定性的数据质量评分相结合，据此将线索划分为热、温、冷三档，并按档位进行分流"
+        ],
+        "source_operations": [
+          "compute_data_quality_score"
+        ],
+        "design_sources": [
+          "n8.lead_with_tier"
+        ],
+        "observable_basis": "final_result"
+      },
+      {
+        "name": "slack_alert",
+        "schema": {
+          "type": "object",
+          "required": [
+            "ok",
+            "ts",
+            "text"
+          ],
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "description": "Slack 消息发送是否成功"
+            },
+            "ts": {
+              "type": "string",
+              "description": "Slack 消息时间戳"
+            },
+            "text": {
+              "type": "string",
+              "description": "Slack 消息正文"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "Slack 提醒发送结果",
+        "requirement_evidence": [
+          "对热线索，在 Slack 中发出提醒"
+        ],
+        "source_operations": [
+          "send_message"
+        ],
+        "design_sources": [
+          "n9.slack_alert"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "personalized_reply",
+        "schema": {
+          "type": "object",
+          "required": [
+            "message_id",
+            "status",
+            "body"
+          ],
+          "properties": {
+            "message_id": {
+              "type": "string",
+              "description": "发送邮件的消息ID"
+            },
+            "status": {
+              "type": "string",
+              "description": "发送状态"
+            },
+            "body": {
+              "type": "string",
+              "description": "邮件正文内容"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "Gmail 个性化回复发送结果",
+        "requirement_evidence": [
+          "通过 Gmail 向该线索发送即时的个性化回复"
+        ],
+        "source_operations": [
+          "send_email"
+        ],
+        "design_sources": [
+          "n10.personalized_reply"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "hubspot_contact_upsert",
+        "schema": {
+          "type": "object",
+          "required": [
+            "contact_id",
+            "lifecycle_stage",
+            "status"
+          ],
+          "properties": {
+            "contact_id": {
+              "type": "string",
+              "description": "HubSpot 联系人ID"
+            },
+            "lifecycle_stage": {
+              "type": "string",
+              "description": "联系人生命周期阶段"
+            },
+            "status": {
+              "type": "string",
+              "description": "操作状态"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "HubSpot 中创建或更新的联系人及生命周期阶段",
+        "requirement_evidence": [
+          "在 HubSpot 中创建或更新对应联系人并设置相应的生命周期阶段"
+        ],
+        "source_operations": [
+          "upsert_contact"
+        ],
+        "design_sources": [
+          "n11.contact_record"
+        ],
+        "observable_basis": "side_effect_trace"
+      },
+      {
+        "name": "logged_lead",
+        "schema": {
+          "type": "object",
+          "required": [
+            "appended_rows",
+            "status",
+            "row"
+          ],
+          "properties": {
+            "appended_rows": {
+              "type": "integer",
+              "description": "追加的行数"
+            },
+            "status": {
+              "type": "string",
+              "description": "追加操作状态"
+            },
+            "row": {
+              "type": "object",
+              "description": "写入的业务数据行，含线索信息、评分与档位",
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "追加到 Google Sheets 的线索记录",
+        "requirement_evidence": [
+          "所有线索都会被追加记录到 Google Sheets"
+        ],
+        "source_operations": [
+          "append_row"
+        ],
+        "design_sources": [
+          "n12.logged_lead"
+        ],
+        "observable_basis": "side_effect_trace"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "39CD4506D96BCB12B794A19F56BDD70B736BDEEDBAF29156074FEFDB82687781",
+  "public_interface_sha256": "973580765A4FF0FEF7488E49D1AF2859248B2D9815A91EE204AE7158E132E1E1",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

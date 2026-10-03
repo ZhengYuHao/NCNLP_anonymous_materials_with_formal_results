@@ -1,0 +1,20 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-029",
+  "case_id": "C-EMAIL-ANSWERED",
+  "kind": "positive",
+  "input_data": {
+    "channel": "email",
+    "normalized_message": {
+      "user_id": "cust-1001",
+      "body": "How do I reset my password?",
+      "subject": "Password reset help",
+      "from": "cust-1001@example.com"
+    },
+    "config": {
+      "confidence_threshold": 0.7,
+      "max_message_length": 4000
+    }
+  },
+  "input_sha256": "59A555CF17C51AA8B5B795F2BD35C624B48CDFF9098980604ACA9EE769B169A4"
+}

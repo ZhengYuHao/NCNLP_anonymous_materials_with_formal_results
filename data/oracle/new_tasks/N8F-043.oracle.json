@@ -1,0 +1,233 @@
+{
+  "task_id": "N8F-043",
+  "author_id": "OA-03",
+  "status": "submitted",
+  "requirement_sha256": "37c9ffb87dc52edaa6cb694aa6a42f2d5b4ed34ccbfdd72d2463f8d7faa025b4",
+  "fixtures": [
+    {
+      "fixture_id": "F-MONITOR-EMAIL-ON",
+      "purpose": "正常用例：关键词 AI agents、subreddit machinelearning、开启每日汇总邮件",
+      "input_data": {
+        "keywords": "AI agents",
+        "subreddit": "machinelearning",
+        "relevance_criteria": "posts about agentic workflows and LLM tool use",
+        "custom_prompt": "Score relevance for lead generation",
+        "email_enabled": true
+      }
+    },
+    {
+      "fixture_id": "F-MONITOR-EMAIL-OFF",
+      "purpose": "边界用例：关闭每日汇总邮件，验证 Notion 照常写入而邮件不发送",
+      "input_data": {
+        "keywords": "AI agents",
+        "subreddit": "machinelearning",
+        "relevance_criteria": "posts about agentic workflows",
+        "email_enabled": false
+      }
+    },
+    {
+      "fixture_id": "F-MONITOR-EMPTY",
+      "purpose": "负例：检索无新帖子，验证不写 Notion 且不发送邮件",
+      "input_data": {
+        "keywords": "rare keyword",
+        "subreddit": "all",
+        "relevance_criteria": "any",
+        "email_enabled": true
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-REDDIT-SEARCH",
+      "dependency_type": "httpRequest",
+      "operation": "search_posts",
+      "request_contract": {
+        "keywords": "string",
+        "subreddit": "string"
+      },
+      "response_contract": {
+        "posts": [
+          {
+            "id": "P1",
+            "title": "Agentic workflows with LLMs",
+            "url": "https://reddit.com/r/machinelearning/P1",
+            "created_utc": "2026-09-01T08:00:00Z"
+          },
+          {
+            "id": "P2",
+            "title": "Tool use in modern agents",
+            "url": "https://reddit.com/r/machinelearning/P2",
+            "created_utc": "2026-09-01T09:00:00Z"
+          },
+          {
+            "id": "P3",
+            "title": "Fine-tuning for agent tasks",
+            "url": "https://reddit.com/r/machinelearning/P3",
+            "created_utc": "2026-09-01T10:00:00Z"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-REDDIT-SEARCH-EMPTY",
+      "dependency_type": "httpRequest",
+      "operation": "search_posts",
+      "request_contract": {
+        "keywords": "rare keyword",
+        "subreddit": "all"
+      },
+      "response_contract": {
+        "posts": []
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "lmChatOpenAi",
+      "operation": "analyze_post",
+      "request_contract": {
+        "post_id": "string",
+        "criteria": "string",
+        "custom_prompt": "string"
+      },
+      "response_contract": {
+        "analyses": {
+          "P1": {"relevance_score": 8, "suggested_comment": "Great point about agent reliability."},
+          "P2": {"relevance_score": 6, "suggested_comment": "Tool use is indeed the bottleneck."},
+          "P3": {"relevance_score": 3, "suggested_comment": "Interesting take on fine-tuning."}
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-NOTION-APPEND",
+      "dependency_type": "notion",
+      "operation": "append_database_page",
+      "request_contract": {
+        "post": "object",
+        "score": "number",
+        "comment": "string"
+      },
+      "response_contract": {
+        "page_id": "page-fixed",
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SUMMARY",
+      "dependency_type": "gmail",
+      "operation": "send_summary",
+      "request_contract": {
+        "to": "string",
+        "html": "string"
+      },
+      "response_contract": {
+        "message_id": "msg-fixed-003",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-MONITOR-EMAIL",
+      "kind": "positive",
+      "fixture_ids": ["F-MONITOR-EMAIL-ON"],
+      "mock_ids": ["M-REDDIT-SEARCH", "M-LLM-ANALYSIS", "M-NOTION-APPEND", "M-GMAIL-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-NOTION-APPEND-COUNT",
+          "target": "notion.append_database_page.calls",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "检索到 3 篇新帖子，每篇都应写入 Notion 数据库，共 3 条记录"
+        },
+        {
+          "assertion_id": "A-NOTION-SCORE-FIELD",
+          "target": "notion.append_database_page.calls[0].score",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "Notion 记录必须包含相关性评分"
+        },
+        {
+          "assertion_id": "A-NOTION-COMMENT-FIELD",
+          "target": "notion.append_database_page.calls[0].comment",
+          "operator": "not_equals",
+          "expected": "",
+          "rationale": "Notion 记录必须包含非空的建议评论"
+        },
+        {
+          "assertion_id": "A-NOTION-URL-FIELD",
+          "target": "notion.append_database_page.calls[0].post.url",
+          "operator": "matches",
+          "expected": "^https?://\\S+",
+          "rationale": "Notion 记录应包含帖子的原始链接以便跟踪"
+        },
+        {
+          "assertion_id": "A-SUMMARY-EMAIL-ONE",
+          "target": "gmail.send_summary.calls",
+          "operator": "length_equals",
+          "expected": 1,
+          "rationale": "开启邮件选项时应每天发送一封汇总邮件"
+        }
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-EMAIL-OFF",
+      "kind": "boundary",
+      "fixture_ids": ["F-MONITOR-EMAIL-OFF"],
+      "mock_ids": ["M-REDDIT-SEARCH", "M-LLM-ANALYSIS", "M-NOTION-APPEND", "M-GMAIL-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-OFF-NOTION-STILL",
+          "target": "notion.append_database_page.calls",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "关闭邮件选项不影响 Notion 写入，3 篇帖子仍应入库"
+        },
+        {
+          "assertion_id": "A-OFF-NO-EMAIL",
+          "target": "gmail.send_summary.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "邮件汇总为可选功能，关闭后不得发送"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NEG-EMPTY-RESULTS",
+      "kind": "negative",
+      "fixture_ids": ["F-MONITOR-EMPTY"],
+      "mock_ids": ["M-REDDIT-SEARCH-EMPTY", "M-LLM-ANALYSIS", "M-NOTION-APPEND", "M-GMAIL-SUMMARY"],
+      "assertions": [
+        {
+          "assertion_id": "A-EMPTY-NO-NOTION",
+          "target": "notion.append_database_page.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "没有检索到新帖子时不得写入 Notion"
+        },
+        {
+          "assertion_id": "A-EMPTY-NO-EMAIL",
+          "target": "gmail.send_summary.calls",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "没有新讨论时不应发送汇总邮件"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "基于冻结需求与业务契约设计。覆盖：正常检索 3 帖（含评分与建议评论写入 Notion + 邮件开启）、邮件关闭（Notion 照常写入）、检索为空（无写入无邮件）。Reddit 检索、语言模型分析、Notion 与 Gmail 全部确定性模拟。"
+}

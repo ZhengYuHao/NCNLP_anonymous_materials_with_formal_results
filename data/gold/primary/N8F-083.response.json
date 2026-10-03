@@ -1,0 +1,294 @@
+{
+  "task_id": "N8F-083",
+  "annotator_id": "GP-01",
+  "status": "submitted",
+  "requirement_sha256": "cd6ad0b61888c9ca2666081316453d3658df8f9ac593b55537fe14bb17539cc0",
+  "guideline_version": "K-v2.1+n8n-conversion-v1",
+  "nodes": [
+    {
+      "node_id": "n1",
+      "label": "接收 Chatwoot 会话新消息回调",
+      "node_type": "code",
+      "operation_family": "webhook_input",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "Chatwoot 回调接收到的原始消息事件（支持网页组件、WhatsApp、Telegram 等任意收件箱）"
+        }
+      ],
+      "native_evidence": [
+        "Incoming Chat Webhook"
+      ],
+      "requirement_evidence": [
+        "当 Chatwoot 会话中产生新消息时，通过回调接口接收该消息；支持任意 Chatwoot 收件箱，包括网页组件、WhatsApp、Telegram 等"
+      ],
+      "rationale": "需求声明通过回调接口接收 Chatwoot 会话新消息，为确定性事件接收入口，判为代码入口节点。"
+    },
+    {
+      "node_id": "n2",
+      "label": "提取字段并忽略外发消息",
+      "node_type": "code",
+      "operation_family": "input_normalization",
+      "inputs": [
+        {
+          "name": "raw_message",
+          "type": "object",
+          "description": "原始消息事件"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "normalized_message",
+          "type": "object",
+          "description": "提取消息与发送方字段后整理的统一结构（外发消息被忽略）"
+        }
+      ],
+      "native_evidence": [
+        "Prepare Field Edits",
+        "Route by Chat Message Type"
+      ],
+      "requirement_evidence": [
+        "提取消息与发送方字段，整理为统一结构；随后忽略外发消息，避免自动回复自身消息而陷入循环"
+      ],
+      "rationale": "需求声明提取消息与发送方字段并整理为统一结构，为确定性字段处理，判为代码节点；忽略外发消息作为后续分支条件。"
+    },
+    {
+      "node_id": "n3",
+      "label": "检查会话是否已指派人工客服",
+      "node_type": "code",
+      "operation_family": "condition_branch",
+      "inputs": [
+        {
+          "name": "normalized_message",
+          "type": "object",
+          "description": "统一结构化的消息与发送方信息"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Check Live Agent Assignment"
+      ],
+      "requirement_evidence": [
+        "若该 Chatwoot 会话已指派人工客服（或在对话过程中转人工），则停止自动处理，以免打断人工服务"
+      ],
+      "rationale": "需求声明判断会话是否已指派人工客服，为确定性条件判断，判为代码节点；已指派时停止自动处理（无后续行为）。"
+    },
+    {
+      "node_id": "n4",
+      "label": "获取客服列表并随机选取在线客服",
+      "node_type": "code",
+      "operation_family": "agent_selection",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "agent_info",
+          "type": "object",
+          "description": "随机选取的在线客服及其在线状态（无在线客服时标记无可用客服）"
+        }
+      ],
+      "native_evidence": [
+        "Fetch Live Agent Data",
+        "Generate Assignee Agent ID"
+      ],
+      "requirement_evidence": [
+        "获取可用的客服列表，若有在线客服则随机选取一位，并把客服在线状态传给智能助手"
+      ],
+      "rationale": "需求声明获取客服列表并随机选取在线客服，为确定性外部查询与随机选择逻辑，判为代码节点。"
+    },
+    {
+      "node_id": "n5",
+      "label": "语言模型结合会话历史生成回复",
+      "node_type": "semantic",
+      "operation_family": "ai_generation",
+      "inputs": [
+        {
+          "name": "normalized_message",
+          "type": "object",
+          "description": "当前客户消息"
+        },
+        {
+          "name": "agent_info",
+          "type": "object",
+          "description": "客服在线状态（传给智能助手）"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "ai_reply",
+          "type": "object",
+          "description": "生成的回复内容及是否转人工的决定"
+        }
+      ],
+      "native_evidence": [
+        "AI Customer Support Agent",
+        "Store Chat Memory in Postgres",
+        "Access Knowledge Base"
+      ],
+      "requirement_evidence": [
+        "由语言模型结合会话历史生成回复，并可从向量知识库中检索常见问题的答案"
+      ],
+      "rationale": "需求声明由语言模型结合会话历史生成回复并可检索知识库，需开放文本生成与语义理解，判为语义节点；会话历史与知识库检索折叠进节点契约。"
+    },
+    {
+      "node_id": "n6",
+      "label": "转人工：指派客服或发送内部摘要邮件",
+      "node_type": "code",
+      "operation_family": "escalation",
+      "inputs": [
+        {
+          "name": "ai_reply",
+          "type": "object",
+          "description": "AI 回复及其转人工决定"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Escalate Chat via HTTP",
+        "Send Internal Team Email"
+      ],
+      "requirement_evidence": [
+        "需要转人工时，把选定的客服指派到该会话，或通过 Gmail 发送内部摘要邮件"
+      ],
+      "rationale": "需求声明需要转人工时将选定客服指派到会话或通过 Gmail 发送内部摘要邮件，为外部动作，判为代码节点。"
+    },
+    {
+      "node_id": "n7",
+      "label": "拆分回复并依次发回会话",
+      "node_type": "terminal",
+      "operation_family": "reply_delivery",
+      "inputs": [
+        {
+          "name": "ai_reply",
+          "type": "object",
+          "description": "AI 生成的回复内容"
+        }
+      ],
+      "outputs": [],
+      "native_evidence": [
+        "Split AI Messages"
+      ],
+      "requirement_evidence": [
+        "把生成的回复拆分为较短的片段依次发回该 Chatwoot 会话，使回复节奏更接近人工对话"
+      ],
+      "rationale": "需求声明将回复拆分为较短片段依次发回会话，为流程最终的用户可见完成动作（最终发送给客户），无后续环节，判为终止节点。"
+    }
+  ],
+  "cfg_edges": [
+    {
+      "edge_id": "c1",
+      "source": "n1",
+      "target": "n2",
+      "variable": null,
+      "condition": null,
+      "rationale": "收到回调后提取字段。"
+    },
+    {
+      "edge_id": "c2",
+      "source": "n2",
+      "target": "n3",
+      "variable": null,
+      "condition": "消息类型为进站消息（非外发消息）",
+      "rationale": "仅进站消息继续处理，外发消息被忽略以免疫自回复循环。"
+    },
+    {
+      "edge_id": "c3",
+      "source": "n3",
+      "target": "n4",
+      "variable": null,
+      "condition": "会话未指派人工客服",
+      "rationale": "未指派人工客服时才继续自动处理，避免打断人工服务。"
+    },
+    {
+      "edge_id": "c4",
+      "source": "n4",
+      "target": "n5",
+      "variable": null,
+      "condition": null,
+      "rationale": "客服在线状态就绪后交由语言模型生成回复。"
+    },
+    {
+      "edge_id": "c5",
+      "source": "n5",
+      "target": "n6",
+      "variable": null,
+      "condition": "需要转人工",
+      "rationale": "AI 判定需要转人工时指派客服或发送内部邮件。"
+    },
+    {
+      "edge_id": "c6",
+      "source": "n5",
+      "target": "n7",
+      "variable": null,
+      "condition": "无需转人工",
+      "rationale": "无需转人工时直接将回复拆分发送。"
+    },
+    {
+      "edge_id": "c7",
+      "source": "n6",
+      "target": "n7",
+      "variable": null,
+      "condition": null,
+      "rationale": "转人工处理后回复同样发回会话。"
+    }
+  ],
+  "dfg_edges": [
+    {
+      "edge_id": "d1",
+      "source": "n1",
+      "target": "n2",
+      "variable": "raw_message",
+      "condition": null,
+      "rationale": "原始消息事件供字段提取。"
+    },
+    {
+      "edge_id": "d2",
+      "source": "n2",
+      "target": "n3",
+      "variable": "normalized_message",
+      "condition": null,
+      "rationale": "统一结构供人工客服指派检查。"
+    },
+    {
+      "edge_id": "d3",
+      "source": "n2",
+      "target": "n5",
+      "variable": "normalized_message",
+      "condition": null,
+      "rationale": "客户消息供语言模型生成回复（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d4",
+      "source": "n4",
+      "target": "n5",
+      "variable": "agent_info",
+      "condition": null,
+      "rationale": "客服在线状态传给智能助手（code→semantic 数据边）。"
+    },
+    {
+      "edge_id": "d5",
+      "source": "n5",
+      "target": "n6",
+      "variable": "ai_reply",
+      "condition": null,
+      "rationale": "AI 回复及其转人工决定供转人工处理（semantic→code 数据边）。"
+    },
+    {
+      "edge_id": "d6",
+      "source": "n5",
+      "target": "n7",
+      "variable": "ai_reply",
+      "condition": null,
+      "rationale": "回复内容供拆分发送（semantic→terminal 数据边）。"
+    }
+  ],
+  "entry_nodes": [
+    "n1"
+  ],
+  "terminal_nodes": [
+    "n7"
+  ],
+  "confidence": 0.9,
+  "notes": "按冻结需求建模：Chatwoot 回调接收→提取字段并忽略外发消息→检查是否已指派人工客服（已指派则停止）→获取客服列表随机选取在线客服→LLM 结合会话历史生成回复（可从知识库检索）→（需要转人工时指派客服或发内部摘要邮件）→拆分回复依次发回会话。外发消息与已指派客服两个停止分支需求未声明可见行为，故不设终止节点；会话历史存储与知识库检索折叠进 n5 契约。"
+}

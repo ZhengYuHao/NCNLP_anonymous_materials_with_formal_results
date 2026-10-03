@@ -1,0 +1,198 @@
+{
+  "pilot_id": "N8C-003",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "276f4b7d2d4afd27954d22ccd62de95d9760e34508c5bb193dc6469262672012",
+  "fixtures": [
+    {
+      "fixture_id": "F-BOL-EMAIL-VALID",
+      "purpose": "来自配置发件人的有效提单邮件（含附件），用于正常用例",
+      "input_data": {
+        "message_id": "msg-1001",
+        "from": "shipping@carrier-demo.com",
+        "to": "ops@company-demo.com",
+        "subject": "Bill of Lading BOL-2026-0441",
+        "has_attachment": true,
+        "attachment": {"filename": "BOL-2026-0441.pdf", "mime_type": "application/pdf", "attachment_id": "att-0441"},
+        "attachment_text": "BILL OF LADING BOL-2026-0441\nSHIPPER: Acme Exports\nCONSIGNEE: Beta Imports\nCUSTOMER ORDER: packages=4, weight_kg=120\nCARRIER LINE ITEMS: packages=4, weight_kg=120"
+      }
+    },
+    {
+      "fixture_id": "F-BOL-EMAIL-MISMATCH",
+      "purpose": "客户订单（120kg）与承运商行项目（105kg）不一致的边界数据，验证校验输入进入处理流",
+      "input_data": {
+        "message_id": "msg-1002",
+        "from": "shipping@carrier-demo.com",
+        "to": "ops@company-demo.com",
+        "subject": "Bill of Lading BOL-2026-0442",
+        "has_attachment": true,
+        "attachment": {"filename": "BOL-2026-0442.pdf", "mime_type": "application/pdf", "attachment_id": "att-0442"},
+        "attachment_text": "BILL OF LADING BOL-2026-0442\nSHIPPER: Acme Exports\nCONSIGNEE: Beta Imports\nCUSTOMER ORDER: packages=4, weight_kg=120\nCARRIER LINE ITEMS: packages=4, weight_kg=105"
+      }
+    },
+    {
+      "fixture_id": "F-EMAIL-FOREIGN-SENDER",
+      "purpose": "非配置发件人的邮件，验证触发条件（安全拒绝）",
+      "input_data": {
+        "message_id": "msg-1003",
+        "from": "spam@unknown-company.com",
+        "to": "ops@company-demo.com",
+        "subject": "RE: BOL please",
+        "has_attachment": true,
+        "attachment": {"filename": "scan.pdf", "mime_type": "application/pdf", "attachment_id": "att-1003"},
+        "attachment_text": "random content"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-GMAIL-FETCH",
+      "dependency_type": "n8n-nodes-base.gmailTrigger",
+      "operation": "fetch_message_with_attachment",
+      "request_contract": {"message_id": "msg-1001"},
+      "response_contract": {
+        "message_id": "msg-1001",
+        "from": "shipping@carrier-demo.com",
+        "subject": "Bill of Lading BOL-2026-0441",
+        "attachment": {"attachment_id": "att-0441", "filename": "BOL-2026-0441.pdf", "text": "BILL OF LADING BOL-2026-0441\nSHIPPER: Acme Exports\nCONSIGNEE: Beta Imports\nCUSTOMER ORDER: packages=4, weight_kg=120\nCARRIER LINE ITEMS: packages=4, weight_kg=120"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-FETCH-MISMATCH",
+      "dependency_type": "n8n-nodes-base.gmailTrigger",
+      "operation": "fetch_message_with_attachment",
+      "request_contract": {"message_id": "msg-1002"},
+      "response_contract": {
+        "message_id": "msg-1002",
+        "from": "shipping@carrier-demo.com",
+        "subject": "Bill of Lading BOL-2026-0442",
+        "attachment": {"attachment_id": "att-0442", "filename": "BOL-2026-0442.pdf", "text": "BILL OF LADING BOL-2026-0442\nSHIPPER: Acme Exports\nCONSIGNEE: Beta Imports\nCUSTOMER ORDER: packages=4, weight_kg=120\nCARRIER LINE ITEMS: packages=4, weight_kg=105"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-FETCH-FOREIGN",
+      "dependency_type": "n8n-nodes-base.gmailTrigger",
+      "operation": "fetch_message_with_attachment",
+      "request_contract": {"message_id": "msg-1003"},
+      "response_contract": {
+        "message_id": "msg-1003",
+        "from": "spam@unknown-company.com",
+        "subject": "RE: BOL please",
+        "attachment": {"attachment_id": "att-1003", "filename": "scan.pdf", "text": "random content"}
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-MARKDOWN",
+      "dependency_type": "language_model",
+      "operation": "rewrite_bill_of_lading_to_markdown",
+      "request_contract": {"attachment_text": "raw bill of lading text"},
+      "response_contract": {
+        "markdown": "## Bill of Lading BOL-2026-0441\n\n| Field | Value |\n| --- | --- |\n| Shipper | Acme Exports |\n| Consignee | Beta Imports |"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STRUCTURED",
+      "dependency_type": "language_model",
+      "operation": "extract_structured_json",
+      "request_contract": {"markdown": "structured markdown"},
+      "response_contract": {
+        "shipper": "Acme Exports",
+        "consignee": "Beta Imports",
+        "shipment_details": {"bill_of_lading": "BOL-2026-0441", "port_of_loading": "Shanghai", "port_of_discharge": "Rotterdam"},
+        "customer_order": {"packages": 4, "weight_kg": 120},
+        "line_items": [{"sku": "LT-1", "packages": 4, "weight_kg": 120}]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STRUCTURED-MISMATCH",
+      "dependency_type": "language_model",
+      "operation": "extract_structured_json",
+      "request_contract": {"markdown": "structured markdown"},
+      "response_contract": {
+        "shipper": "Acme Exports",
+        "consignee": "Beta Imports",
+        "shipment_details": {"bill_of_lading": "BOL-2026-0442", "port_of_loading": "Shanghai", "port_of_discharge": "Rotterdam"},
+        "customer_order": {"packages": 4, "weight_kg": 120},
+        "line_items": [{"sku": "LT-1", "packages": 4, "weight_kg": 105}]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-WEBHOOK-POST",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "post_json_payload",
+      "request_contract": {"method": "POST", "url": "https://webhook.example.com/bol", "body": "validated BOL JSON (customer_order + line_items) with appended validation result"},
+      "response_contract": {"accepted": true, "http_code": 200},
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND-REPLY",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_html_acceptance_reply",
+      "request_contract": {"to": "original sender", "subject": "acceptance", "body_html": "HTML reply"},
+      "response_contract": {"message_id": "sent-0441", "sent": true},
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-POS-VALIDATED",
+      "kind": "positive",
+      "fixture_ids": ["F-BOL-EMAIL-VALID"],
+      "mock_ids": ["M-GMAIL-FETCH", "M-LLM-MARKDOWN", "M-LLM-STRUCTURED", "M-WEBHOOK-POST", "M-GMAIL-SEND-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-MARKDOWN-REWRITE", "target": "mock.M-LLM-MARKDOWN.call_count", "operator": "equals", "expected": 1, "rationale": "需求(1)声明将提单内容重写为结构化 Markdown"},
+        {"assertion_id": "A-STRUCTURED-EXTRACT", "target": "mock.M-LLM-STRUCTURED.call_count", "operator": "equals", "expected": 1, "rationale": "需求(2)声明将 Markdown 转换为结构化 JSON 字段"},
+        {"assertion_id": "A-SHIPPER", "target": "mock.M-WEBHOOK-POST.requests[0].body.shipper", "operator": "equals", "expected": "Acme Exports", "rationale": "需求(2)声明的 JSON 字段 shipper（取值来自确定性 mock）"},
+        {"assertion_id": "A-LINE-ITEMS", "target": "mock.M-WEBHOOK-POST.requests[0].body.line_items", "operator": "length_equals", "expected": 1, "rationale": "需求(2)声明的 JSON 字段 line items（数量来自确定性 mock 固定响应）"},
+        {"assertion_id": "A-VALIDATION-APPENDED", "target": "mock.M-WEBHOOK-POST.requests[0].body.validation_result", "operator": "exists", "expected": true, "rationale": "需求(3)声明'将校验结果追加到 JSON'；validation_result 为需求概念'校验结果'的字段化命名（本 Oracle 输出契约），不规定其内部子字段"},
+        {"assertion_id": "A-VALIDATION-MATCHED", "target": "mock.M-WEBHOOK-POST.requests[0].body.validation_result.mismatch_detected", "operator": "equals", "expected": false, "rationale": "客户订单（120kg）与承运商行项目（120kg）一致时，校验应判定未检测到不匹配；mismatch_detected 为本 Oracle 对'检测到不匹配'的规范化观察结果（需求(3)比较行为），不强制系统内部字段名"},
+        {"assertion_id": "A-WEBHOOK-DELIVERED", "target": "mock.M-WEBHOOK-POST.call_count", "operator": "equals", "expected": 1, "rationale": "需求(4)声明将结果 JSON 载荷发送到外部 HTTP webhook"},
+        {"assertion_id": "A-REPLY-TO-SENDER", "target": "mock.M-GMAIL-SEND-REPLY.requests[0].to", "operator": "equals", "expected": "shipping@carrier-demo.com", "rationale": "需求(5)声明回复发回原发件人（来自 fixture）"},
+        {"assertion_id": "A-REPLY-HTML", "target": "mock.M-GMAIL-SEND-REPLY.requests[0].body_html", "operator": "contains", "expected": "<html", "rationale": "需求(5)声明 HTML 接受回复邮件"}
+      ]
+    },
+    {
+      "case_id": "C-BOUNDARY-MISMATCH",
+      "kind": "boundary",
+      "fixture_ids": ["F-BOL-EMAIL-MISMATCH"],
+      "mock_ids": ["M-GMAIL-FETCH-MISMATCH", "M-LLM-MARKDOWN", "M-LLM-STRUCTURED-MISMATCH", "M-WEBHOOK-POST", "M-GMAIL-SEND-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-CUSTOMER-ORDER", "target": "mock.M-WEBHOOK-POST.requests[0].body.customer_order.weight_kg", "operator": "equals", "expected": 120, "rationale": "结构化提取同时提供客户订单（附件 CUSTOMER ORDER 段，120kg），供程序化校验与承运商行项目比较（需求(3)）"},
+        {"assertion_id": "A-CARRIER-LINE-ITEM", "target": "mock.M-WEBHOOK-POST.requests[0].body.line_items[0].weight_kg", "operator": "equals", "expected": 105, "rationale": "结构化提取同时提供承运商行项目（附件 CARRIER LINE ITEMS 段，105kg）"},
+        {"assertion_id": "A-MISMATCH-DETECTED", "target": "mock.M-WEBHOOK-POST.requests[0].body.validation_result.mismatch_detected", "operator": "equals", "expected": true, "rationale": "程序化校验比较 120kg 与 105kg 后必须识别出重量不匹配；mismatch_detected 为本 Oracle 对'检测到不匹配'的规范化观察结果（需求(3)），不强制系统内部字段名"},
+        {"assertion_id": "A-STILL-POSTED", "target": "mock.M-WEBHOOK-POST.call_count", "operator": "equals", "expected": 1, "rationale": "需求(4)声明追加校验结果后仍发送 JSON 到 webhook（校验结果不是门禁）"}
+      ]
+    },
+    {
+      "case_id": "C-SAFE-REJECT-FOREIGN-SENDER",
+      "kind": "safe_rejection",
+      "fixture_ids": ["F-EMAIL-FOREIGN-SENDER"],
+      "mock_ids": ["M-GMAIL-FETCH-FOREIGN", "M-LLM-MARKDOWN", "M-WEBHOOK-POST", "M-GMAIL-SEND-REPLY"],
+      "assertions": [
+        {"assertion_id": "A-NO-MARKDOWN", "target": "mock.M-LLM-MARKDOWN.call_count", "operator": "equals", "expected": 0, "rationale": "业务契约条件'仅当新邮件来自配置发件人时处理'，非配置发件人不进入流水线"},
+        {"assertion_id": "A-NO-WEBHOOK", "target": "mock.M-WEBHOOK-POST.call_count", "operator": "equals", "expected": 0, "rationale": "不发送任何 webhook 载荷"},
+        {"assertion_id": "A-NO-REPLY", "target": "mock.M-GMAIL-SEND-REPLY.call_count", "operator": "equals", "expected": 0, "rationale": "不发送回复邮件"}
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "目标路径约定：mock.<id>.call_count=调用次数；mock.<id>.requests[i].body=第 i 次请求载荷。\n核验记录（2026-08-26 需求对齐审查）：\n- 保留：A-MARKDOWN-REWRITE/A-STRUCTURED-EXTRACT（需求(1)(2)）、A-SHIPPER/A-LINE-ITEMS（需求(2)声明的 JSON 字段名 shipper/line items）、A-WEBHOOK-DELIVERED（需求(4)）、A-REPLY-TO-SENDER/A-REPLY-HTML（需求(5)+可见产出）、A-NO-*（业务契约触发条件）。\n- 修改：A-VALIDATION-STATUS/A-VALIDATION-PACKAGES/A-VALIDATION-WEIGHT-DIFF → A-VALIDATION-APPENDED（冻结需求仅声明'追加校验结果'，未规定 validation_result.status/package_count_match/weight_kg_diff 等字段，改为校验结果存在性这一可观察行为）；A-VALIDATION-FAIL/A-DIFF-CAPTURED → A-MISMATCH-DATA-FLOWS（不匹配场景改为验证输入数据（105kg vs 120kg）完整进入载荷，不规定校验内部判定值）。\n- 删除：validation_result 全部子字段断言（status/package_count_match/weight_kg_diff），因其字段名与精确值为需求未声明。\n- 终审补充（2026-08-26 16:10）：M-LLM-STRUCTURED 与 M-LLM-STRUCTURED-MISMATCH 的响应补充 customer_order（120kg），使程序化校验可同时比较客户订单与承运商行项目（需求(3)比较行为）；新增规范化观察断言 A-VALIDATION-MATCHED（一致→mismatch_detected=false）与 A-MISMATCH-DETECTED（不一致→mismatch_detected=true），mismatch_detected 为本 Oracle 对'检测到不匹配'的规范化观察结果，不强制系统内部字段名；删除仅验证'输入数据进入载荷/校验结果存在'的弱断言（A-MISMATCH-DATA-FLOWS、A-VALIDATION-APPENDED-MISMATCH）。"
+}

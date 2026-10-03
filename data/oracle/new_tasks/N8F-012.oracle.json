@@ -1,0 +1,517 @@
+{
+  "task_id": "N8F-012",
+  "author_id": "SR-B-01",
+  "status": "submitted",
+  "requirement_sha256": "5ca8bb5867261260ff9d8e866fe4b8d930f085201e2fec5ff11340354fb683f1",
+  "fixtures": [
+    {
+      "fixture_id": "F-rss-articles",
+      "purpose": "两个 AI 资讯 RSS 源的固定文章，其中 tc1 与 vg1 标题完全相同用于验证跨源去重",
+      "input_data": {
+        "feeds": [
+          {
+            "name": "TechCrunch AI",
+            "items": [
+              {
+                "id": "tc1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://techcrunch.example/ai-chip"
+              },
+              {
+                "id": "tc2",
+                "title": "New open source model released",
+                "url": "https://techcrunch.example/oss-model"
+              }
+            ]
+          },
+          {
+            "name": "The Verge AI",
+            "items": [
+              {
+                "id": "vg1",
+                "title": "AI chip startup raises $200M",
+                "url": "https://verge.example/ai-chip"
+              },
+              {
+                "id": "vg2",
+                "title": "Robotics roundup this week",
+                "url": "https://verge.example/robotics"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-airtable-history",
+      "purpose": "Airtable 中最近的发布历史，vg2 已发布过",
+      "input_data": {
+        "records": [
+          {
+            "id": "rec1",
+            "title": "Robotics roundup this week",
+            "published_at": "2026-09-01"
+          }
+        ]
+      }
+    },
+    {
+      "fixture_id": "F-publish-config",
+      "purpose": "生产模式配置：质量阈值 0.8、话题标签 2-3 个、默认时区",
+      "input_data": {
+        "mode": "production",
+        "quality_threshold": 0.8,
+        "hashtag_count_min": 2,
+        "hashtag_count_max": 3,
+        "timezone": "Europe/Madrid",
+        "posting_hour": 9
+      }
+    },
+    {
+      "fixture_id": "F-test-config",
+      "purpose": "测试/手动执行配置，用于验证安全闸门阻止实际发布",
+      "input_data": {
+        "mode": "test"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-rss-read",
+      "dependency_type": "rss",
+      "operation": "read_feed",
+      "request_contract": {
+        "feeds": [
+          "TechCrunch AI",
+          "The Verge AI"
+        ]
+      },
+      "response_contract": {
+        "items": [
+          {
+            "id": "tc1",
+            "title": "AI chip startup raises $200M",
+            "url": "https://techcrunch.example/ai-chip"
+          },
+          {
+            "id": "tc2",
+            "title": "New open source model released",
+            "url": "https://techcrunch.example/oss-model"
+          },
+          {
+            "id": "vg1",
+            "title": "AI chip startup raises $200M",
+            "url": "https://verge.example/ai-chip"
+          },
+          {
+            "id": "vg2",
+            "title": "Robotics roundup this week",
+            "url": "https://verge.example/robotics"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-list",
+      "dependency_type": "airtable",
+      "operation": "list_records",
+      "request_contract": {
+        "table": "publishing_history"
+      },
+      "response_contract": {
+        "records": [
+          {
+            "id": "rec1",
+            "title": "Robotics roundup this week",
+            "published_at": "2026-09-01"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-select",
+      "dependency_type": "llm",
+      "operation": "select_editorial_signal",
+      "request_contract": {
+        "candidates": [
+          {
+            "id": "tc1"
+          },
+          {
+            "id": "tc2"
+          },
+          {
+            "id": "vg2"
+          }
+        ]
+      },
+      "response_contract": {
+        "selected_article_id": "tc1",
+        "quality_score": 0.9
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-select-low",
+      "dependency_type": "llm",
+      "operation": "select_editorial_signal",
+      "request_contract": {
+        "quality_threshold": 0.8
+      },
+      "response_contract": {
+        "selected_article_id": "tc1",
+        "quality_score": 0.4
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-draft",
+      "dependency_type": "llm",
+      "operation": "draft_post",
+      "request_contract": {
+        "article_id": "tc1"
+      },
+      "response_contract": {
+        "draft": "Exciting news: AI chip startup raises $200M to accelerate model training. This is a big deal for the industry."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-polish",
+      "dependency_type": "llm",
+      "operation": "polish_post",
+      "request_contract": {
+        "draft": "Exciting news: AI chip startup raises $200M to accelerate model training. This is a big deal for the industry."
+      },
+      "response_contract": {
+        "final_copy": "Exciting news: AI chip startup raises $200M to accelerate model training."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-hashtags",
+      "dependency_type": "llm",
+      "operation": "add_hashtags",
+      "request_contract": {
+        "final_copy": "Exciting news: AI chip startup raises $200M to accelerate model training."
+      },
+      "response_contract": {
+        "hashtags": [
+          "#AI",
+          "#Startup",
+          "#TechNews"
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-image-gen",
+      "dependency_type": "image_generation",
+      "operation": "generate_square_image",
+      "request_contract": {
+        "aspect": "1:1"
+      },
+      "response_contract": {
+        "image_url": "https://img.example/gen.png",
+        "width": 1024,
+        "height": 1024,
+        "aspect": "1:1"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-qa-fail-once",
+      "dependency_type": "llm",
+      "operation": "qa_image",
+      "request_contract": {
+        "attempt": 1
+      },
+      "response_contract": {
+        "passed": false,
+        "reason": "blurry text"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-llm-qa-pass",
+      "dependency_type": "llm",
+      "operation": "qa_image",
+      "request_contract": {
+        "attempt": 2
+      },
+      "response_contract": {
+        "passed": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-create",
+      "dependency_type": "airtable",
+      "operation": "create_editorial_record",
+      "request_contract": {
+        "table": "editorial"
+      },
+      "response_contract": {
+        "record_id": "rec_edit_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-linkedin-upload",
+      "dependency_type": "linkedin",
+      "operation": "register_upload",
+      "request_contract": {
+        "image_url": "https://img.example/gen.png"
+      },
+      "response_contract": {
+        "upload_token": "up_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-linkedin-publish",
+      "dependency_type": "linkedin",
+      "operation": "publish_org_post",
+      "request_contract": {
+        "upload_token": "up_001"
+      },
+      "response_contract": {
+        "post_id": "post_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-airtable-update",
+      "dependency_type": "airtable",
+      "operation": "update_record",
+      "request_contract": {
+        "record_id": "rec_edit_001"
+      },
+      "response_contract": {
+        "record_id": "rec_edit_001",
+        "posted": true,
+        "post_id": "post_001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-pos-full",
+      "kind": "positive",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-linkedin-upload",
+        "M-linkedin-publish",
+        "M-airtable-update"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1",
+          "target": "output.candidates",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "跨源重复文章 tc1/vg1 去重后合并为一条，候选应为 tc1、tc2、vg2 共 3 条"
+        },
+        {
+          "assertion_id": "A-2",
+          "target": "output.post.final_copy",
+          "operator": "contains",
+          "expected": "AI chip startup raises $200M",
+          "rationale": "语言模型选定 tc1 后，最终帖子文案应基于该选题内容"
+        },
+        {
+          "assertion_id": "A-3",
+          "target": "output.post.hashtags",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "须追加 2-3 个相关话题标签，固定模拟输出为 3 个"
+        },
+        {
+          "assertion_id": "A-4",
+          "target": "output.image.width",
+          "operator": "equals",
+          "expected": 1024,
+          "rationale": "配图为方形，宽须等于固定模拟输出的 1024"
+        },
+        {
+          "assertion_id": "A-5",
+          "target": "output.image.height",
+          "operator": "equals",
+          "expected": 1024,
+          "rationale": "方形配图高须等于宽（固定模拟输出 1024）"
+        },
+        {
+          "assertion_id": "A-6",
+          "target": "output.image.qa.passed",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "配图须通过语言模型质量检查后才进入发布流程"
+        },
+        {
+          "assertion_id": "A-7",
+          "target": "output.airtable.record_id",
+          "operator": "exists",
+          "rationale": "须在 Airtable 中创建编辑记录，保存最终文案、来源链接与元数据",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-8",
+          "target": "output.linkedin.post_id",
+          "operator": "exists",
+          "rationale": "生产模式下须将帖子发布到 LinkedIn 组织主页并返回发布标识",
+          "expected": true
+        },
+        {
+          "assertion_id": "A-9",
+          "target": "output.airtable.posted",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "发布结果须写回 Airtable，posted 标记为 true"
+        }
+      ]
+    },
+    {
+      "case_id": "C-sft-gate",
+      "kind": "safe_rejection",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-test-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-airtable-update"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-sft-gate",
+          "target": "output.linkedin.post_id",
+          "operator": "not_exists",
+          "rationale": "测试/手动执行时安全闸门须阻止实际发布，不得调用 LinkedIn 发布接口",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-2-sft-gate",
+          "target": "output.airtable.record_id",
+          "operator": "exists",
+          "rationale": "闸门仅阻止对外发布，编辑记录等内部处理仍应完成",
+          "expected": true
+        }
+      ]
+    },
+    {
+      "case_id": "C-neg-low-quality",
+      "kind": "negative",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select-low"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-neg-low-quality",
+          "target": "output.post.draft",
+          "operator": "not_exists",
+          "rationale": "选题质量分数 0.4 低于阈值 0.8，不得进入撰写与发布环节",
+          "expected": false
+        },
+        {
+          "assertion_id": "A-2-neg-low-quality",
+          "target": "output.linkedin.post_id",
+          "operator": "not_exists",
+          "rationale": "质量未达阈值时不得发布到 LinkedIn",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "case_id": "C-bnd-qa-retry",
+      "kind": "boundary",
+      "fixture_ids": [
+        "F-rss-articles",
+        "F-airtable-history",
+        "F-publish-config"
+      ],
+      "mock_ids": [
+        "M-rss-read",
+        "M-airtable-list",
+        "M-llm-select",
+        "M-llm-draft",
+        "M-llm-polish",
+        "M-llm-hashtags",
+        "M-image-gen",
+        "M-llm-qa-fail-once",
+        "M-llm-qa-pass",
+        "M-airtable-create",
+        "M-linkedin-upload",
+        "M-linkedin-publish",
+        "M-airtable-update"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-1-bnd-qa-retry",
+          "target": "output.image.attempts",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "首次质量检查不通过须重新生成配图，共生成 2 次"
+        },
+        {
+          "assertion_id": "A-2-bnd-qa-retry",
+          "target": "output.image.qa.passed",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "重新生成的配图须通过第二次质量检查"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "外部依赖包括 RSS 读取、Airtable、LinkedIn、图像生成与语言模型，全部使用固定模拟响应，不产生真实发布副作用；质量阈值与安全闸门行为按冻结需求 conditions 判定。"
+}

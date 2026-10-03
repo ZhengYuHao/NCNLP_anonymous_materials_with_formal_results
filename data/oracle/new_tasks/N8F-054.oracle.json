@@ -1,0 +1,290 @@
+{
+  "task_id": "N8F-054",
+  "author_id": "OA-06",
+  "status": "submitted",
+  "requirement_sha256": "49660e8eb2926b788de6369d213136397bb07777176b29e8dfd1c87ba7ab1352",
+  "fixtures": [
+    {
+      "fixture_id": "F-DOCS-THREE",
+      "purpose": "正常用例：受监控清单含 3 个文档，其中 2 个在过去 7 天内更新、1 个超出区间，验证仅汇总更新过的文档",
+      "input_data": {
+        "docs_list": [
+          {
+            "doc_id": "doc-a1",
+            "name": "Q3 Product Roadmap",
+            "category": "Projects",
+            "last_modified": "2026-08-29T10:00:00Z"
+          },
+          {
+            "doc_id": "doc-b2",
+            "name": "Weekly Engineering Meeting",
+            "category": "Meetings",
+            "last_modified": "2026-08-28T15:30:00Z"
+          },
+          {
+            "doc_id": "doc-c3",
+            "name": "Old Release Notes",
+            "category": "Updates",
+            "last_modified": "2026-07-10T08:00:00Z"
+          }
+        ],
+        "window_days": 7,
+        "run_date": "2026-09-02"
+      }
+    },
+    {
+      "fixture_id": "F-DOCS-NO-UPDATES",
+      "purpose": "边界用例：受监控清单中没有任何文档在过去 7 天内更新，验证不生成周报内容且不发送邮件",
+      "input_data": {
+        "docs_list": [
+          {
+            "doc_id": "doc-x1",
+            "name": "Archived Policy",
+            "category": "Updates",
+            "last_modified": "2026-05-01T09:00:00Z"
+          }
+        ],
+        "window_days": 7,
+        "run_date": "2026-09-02"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DRIVE-METADATA",
+      "dependency_type": "n8n-nodes-base.googleDrive",
+      "operation": "get_document_metadata",
+      "request_contract": {
+        "doc_ids": ["doc-a1", "doc-b2", "doc-c3"]
+      },
+      "response_contract": {
+        "documents": [
+          {
+            "doc_id": "doc-a1",
+            "last_modified": "2026-08-29T10:00:00Z",
+            "modified_by": "alice@example.com",
+            "version": "v3"
+          },
+          {
+            "doc_id": "doc-b2",
+            "last_modified": "2026-08-28T15:30:00Z",
+            "modified_by": "bob@example.com",
+            "version": "v7"
+          },
+          {
+            "doc_id": "doc-c3",
+            "last_modified": "2026-07-10T08:00:00Z",
+            "modified_by": "carol@example.com",
+            "version": "v1"
+          }
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DOCS-CONTENT-A1",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "get_document_content",
+      "request_contract": {
+        "doc_id": "doc-a1"
+      },
+      "response_contract": {
+        "plain_text": "Q3 roadmap focuses on the new compiler and evaluation harness."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DOCS-CONTENT-B2",
+      "dependency_type": "n8n-nodes-base.googleDocs",
+      "operation": "get_document_content",
+      "request_contract": {
+        "doc_id": "doc-b2"
+      },
+      "response_contract": {
+        "plain_text": "Weekly engineering sync reviewed agent evaluation results."
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "generate_weekly_digest",
+      "request_contract": {
+        "combined_content": "combined_updated_docs"
+      },
+      "response_contract": {
+        "executive_summary": "Two documents were updated this week.",
+        "key_updates": {
+          "doc-a1": "Roadmap finalized with new compiler milestone.",
+          "doc-b2": "Meeting covered evaluation results."
+        },
+        "important_changes": ["Compiler milestone added to Q3 roadmap"],
+        "action_items": ["Review compiler evaluation harness"],
+        "next_week_focus": "Finalize experiment results section"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-SEND",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_weekly_email",
+      "request_contract": {
+        "to": ["team@example.com"],
+        "subject": "Weekly Digest 2026-08-26 to 2026-09-02"
+      },
+      "response_contract": {
+        "message_id": "gmail-msg-054",
+        "sent": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-TWO-UPDATED-DOCS",
+      "kind": "positive",
+      "fixture_ids": ["F-DOCS-THREE"],
+      "mock_ids": ["M-DRIVE-METADATA", "M-DOCS-CONTENT-A1", "M-DOCS-CONTENT-B2", "M-LLM-SUMMARY", "M-GMAIL-SEND"],
+      "assertions": [
+        {
+          "assertion_id": "A-UD-1",
+          "target": "exec_log.updated_docs",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "需求要求仅保留过去一周内更新过的文档，3 个文档中只有 2 个在 7 天区间内"
+        },
+        {
+          "assertion_id": "A-UD-2",
+          "target": "exec_log.updated_docs[1].doc_id",
+          "operator": "equals",
+          "expected": "doc-b2",
+          "rationale": "纳入的 2 个文档必须依次为区间内的 doc-a1 与 doc-b2，超出 7 天区间的 doc-c3 不得出现在清单中"
+        },
+        {
+          "assertion_id": "A-UD-3",
+          "target": "exec_log.doc_meta.doc-a1.word_count",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "需求要求收集字数等关键信息，每个纳入文档必须计算字数"
+        },
+        {
+          "assertion_id": "A-UD-4",
+          "target": "exec_log.doc_meta.doc-a1.modified_by",
+          "operator": "equals",
+          "expected": "alice@example.com",
+          "rationale": "关键信息必须包含文档最后修改人"
+        },
+        {
+          "assertion_id": "A-UD-5",
+          "target": "final_output.digest.executive_summary",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周报必须包含执行摘要板块"
+        },
+        {
+          "assertion_id": "A-UD-6",
+          "target": "final_output.digest.key_updates",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周报必须包含按文档划分的关键更新板块"
+        },
+        {
+          "assertion_id": "A-UD-7",
+          "target": "final_output.digest.important_changes",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周报必须包含重要变更板块"
+        },
+        {
+          "assertion_id": "A-UD-8",
+          "target": "final_output.digest.action_items",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周报必须包含行动事项板块"
+        },
+        {
+          "assertion_id": "A-UD-9",
+          "target": "final_output.digest.next_week_focus",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "周报必须包含下周重点板块"
+        },
+        {
+          "assertion_id": "A-UD-10",
+          "target": "final_output.email.body_plain",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "邮件必须包含纯文本格式正文"
+        },
+        {
+          "assertion_id": "A-UD-11",
+          "target": "final_output.email.body_html",
+          "operator": "contains",
+          "expected": "<html",
+          "rationale": "邮件必须包含 HTML 格式正文"
+        },
+        {
+          "assertion_id": "A-UD-12",
+          "target": "final_output.email.subject",
+          "operator": "contains",
+          "expected": "2026-08-26 to 2026-09-02",
+          "rationale": "需求要求邮件主题包含本次统计的日期区间"
+        },
+        {
+          "assertion_id": "A-UD-13",
+          "target": "final_output.email.updated_doc_list",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "邮件必须附带更新文档清单，清单数量与更新文档数一致"
+        },
+        {
+          "assertion_id": "A-UD-14",
+          "target": "final_output.email.sent",
+          "operator": "equals",
+          "expected": true,
+          "rationale": "周报必须通过 Gmail 发送成功"
+        }
+      ]
+    },
+    {
+      "case_id": "C-NO-UPDATES-NO-EMAIL",
+      "kind": "boundary",
+      "fixture_ids": ["F-DOCS-NO-UPDATES"],
+      "mock_ids": ["M-DRIVE-METADATA"],
+      "assertions": [
+        {
+          "assertion_id": "A-NU-1",
+          "target": "exec_log.updated_docs",
+          "operator": "length_equals",
+          "expected": 0,
+          "rationale": "没有任何文档在 7 天区间内更新，纳入文档数必须为 0"
+        },
+        {
+          "assertion_id": "A-NU-2",
+          "target": "exec_log.summary_generated",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "无更新文档时不应调用语言模型生成周报"
+        },
+        {
+          "assertion_id": "A-NU-3",
+          "target": "exec_log.email_sent",
+          "operator": "equals",
+          "expected": false,
+          "rationale": "无更新内容时不应发送周报邮件"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖 3 文档中 2 个在 7 天区间内更新的正常路径（元数据过滤、字数/修改人采集、五板块周报、双格式邮件、主题含日期区间、文档清单附件）与无更新边界路径（不生成摘要、不发送邮件）。Drive 元数据、Docs 内容、LLM 摘要、Gmail 全部使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言均为数组长度、字段存在、内容包含与布尔值相等。"
+}

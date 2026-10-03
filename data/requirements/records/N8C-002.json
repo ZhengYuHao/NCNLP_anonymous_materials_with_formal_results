@@ -1,0 +1,106 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8C-002",
+  "source_id": "n8n:13685",
+  "workflow_sha256": "7bd2f55fabe792f4647b981d3e4b57d30e764e3033fd153e7047174d5c5f48e3",
+  "dataset_role": "train_dev_only",
+  "version_origin": "accepted_pilot_requirement",
+  "requirement_sha256": "1a632d6022839d1a60138e798410a18df31d4964b3a4c522dd371935aa25b9a6",
+  "requirement": {
+    "pilot_id": "N8C-002",
+    "requirement_text": "The system runs daily on a schedule. Input: a Google Sheet configuration listing monitoring targets of two types — topic keywords (search terms) and competitor subreddits. For each target, the system shall: (1) route the task into one of two paths (Competitor vs. Keyword) based on the input type; (2) use a cloud browser automation service to navigate to the target Reddit pages and extract the latest posts without getting blocked; (3) clean the scraped data and combine the top 3 posts for the target; (4) use an AI agent to analyze the data and generate an executive summary for each topic, summarizing the top 3 trending posts into a single concise daily report and filtering out noise; (5) automatically clean, format, and archive the intelligence with source links into Google Sheets, appending the final reports to the Report sheet. Visible outcome: a daily intelligence digest, archived in the Report Google Sheet with columns Date, Competitor/Keyword, Summary, and Link. Failure handling: not specified in the public description.",
+    "source_spans": [
+      {
+        "start": 172,
+        "end": 373,
+        "text": "It monitors Reddit for specific keywords and competitor subreddits, uses BrowserAct for stealth scraping, analyzes the sentiment with AI, and delivers a daily intelligence digest to your Google Sheets."
+      },
+      {
+        "start": 642,
+        "end": 734,
+        "text": "Summarizes the top 3 trending posts into a single concise daily report, filtering out noise."
+      },
+      {
+        "start": 757,
+        "end": 851,
+        "text": "Automatically cleans, formats, and archives intelligence with source links into Google Sheets."
+      },
+      {
+        "start": 882,
+        "end": 937,
+        "text": "Reads a list of monitoring targets from a Google Sheet."
+      },
+      {
+        "start": 945,
+        "end": 1021,
+        "text": "Splits the task into two paths (Competitor vs. Keyword) based on input type."
+      },
+      {
+        "start": 1030,
+        "end": 1108,
+        "text": "BrowserAct navigates to the target Reddit pages and extracts the latest posts."
+      },
+      {
+        "start": 1136,
+        "end": 1193,
+        "text": "clean the data and merge top 3 posts into a single prompt"
+      },
+      {
+        "start": 1213,
+        "end": 1258,
+        "text": "generates an executive summary for each topic"
+      },
+      {
+        "start": 1390,
+        "end": 1471,
+        "text": "Config: Columns keywords (for search terms) and competitor (for subreddit names)."
+      },
+      {
+        "start": 1475,
+        "end": 1531,
+        "text": "Report: Columns Date, Competitor/Keyword, Summary, Link."
+      },
+      {
+        "start": 1722,
+        "end": 1775,
+        "text": "Enable the Schedule Trigger for daily automated runs."
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "A Google Sheet configuration listing monitoring targets: keywords (for search terms) and competitor (for subreddit names)",
+        "Daily schedule trigger"
+      ],
+      "conditions": [
+        "Runs daily on a schedule",
+        "Each monitoring target is routed to one of two paths (Competitor vs. Keyword) based on its input type"
+      ],
+      "allowed_actions": [
+        "Read the list of monitoring targets from the Google Sheet",
+        "Navigate to the target Reddit pages via a cloud browser automation service and extract the latest posts without getting blocked",
+        "Clean the scraped data and combine the top 3 posts into a single prompt",
+        "Use an AI agent to generate an executive summary for each topic, summarizing the top 3 trending posts into a single concise daily report and filtering out noise",
+        "Automatically clean, format, and archive intelligence with source links into Google Sheets, appending final reports to the Report sheet"
+      ],
+      "visible_outcomes": [
+        "A daily intelligence digest archived in the Report Google Sheet with columns Date, Competitor/Keyword, Summary, Link"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "decision_provenance": {
+    "final_gate_path": "n8n_conversion_pilot/h1_execution/runtime/reports/requirement_final_gate_result_v1_2.json",
+    "final_gate_sha256": "7046232191a766690211a11843f34c0626c226a1977cc61c6f49e8a0baf5d4f0",
+    "decision": "accept"
+  },
+  "formal_index": 2
+}

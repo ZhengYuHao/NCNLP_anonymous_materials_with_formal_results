@@ -1,0 +1,21 @@
+{
+  "schema_version": "n8n-s1-system-instance-v1",
+  "task_id": "N8F-016",
+  "case_id": "C-NEG-EMPTY-POOL",
+  "kind": "negative",
+  "input_data": {
+    "fixtures": {
+      "F-SCHEDULE": {
+        "interval_hours": 2,
+        "at_minute": 15,
+        "language": "en",
+        "max_posts_per_hashtag": 5,
+        "daily_comment_cap": 80
+      },
+      "F-EMPTY-POOL": {
+        "posts": []
+      }
+    }
+  },
+  "input_sha256": "6FC2A4EC9CC3E8E95B318481C1B50076EE4D199608B0B1A8D78A217742E1B945"
+}

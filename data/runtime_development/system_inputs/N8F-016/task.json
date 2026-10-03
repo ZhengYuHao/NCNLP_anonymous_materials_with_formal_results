@@ -1,0 +1,397 @@
+{
+  "schema_version": "n8n-s1-system-task-v1",
+  "task_id": "N8F-016",
+  "dataset_partition": "development_qualification",
+  "domain": "general",
+  "requirement_sha256": "c6a751b24d681e139ef84b27a4f1b40564d70a59a5b824001ac9cc8afa9aa893",
+  "natural_language_requirement": "在 Instagram 上，围绕轮换的话题标签，对其下的新帖子自动发布简短、相关的评论，并始终保持在平台限制之内。\n\n每 2 小时在指定分钟触发一次。每次触发时按以下顺序处理：由语言模型生成一个真实的 AI/BPA 类话题标签；通过抓取服务获取该话题标签下最近的帖子，最多取设定条数；从中随机选择一条帖子；由语言模型以设定语言撰写一条不超过 150 字符的回复。\n\n随后生成待评论帖子清单文件并上传到 SharePoint，再发起自动评论动作，将该回复发布到所选帖子下。发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论。整体发布速率被节流到约每天 80 条评论。",
+  "public_interfaces": [
+    {
+      "dependency_type": "instagram",
+      "operation": "post_comment",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "comment_reply",
+          "selected_post_url"
+        ],
+        "properties": {
+          "comment_reply": {
+            "type": "string",
+            "description": "The comment reply text to post, not exceeding 150 characters"
+          },
+          "selected_post_url": {
+            "type": "string",
+            "description": "The URL of the selected Instagram post to comment on"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "comment_id"
+        ],
+        "properties": {
+          "comment_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "generate_hashtag",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hashtag": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hashtag"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "lmChatOpenAi",
+      "operation": "write_comment",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "comment"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "append_already_commented",
+      "request_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "file",
+          "url"
+        ],
+        "properties": {
+          "file": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL of the Instagram post to append to the already commented record"
+          }
+        }
+      },
+      "response_schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ok",
+          "total_rows"
+        ],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "total_rows": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "read_already_commented",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "rows": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "rows"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    },
+    {
+      "dependency_type": "microsoftSharePoint",
+      "operation": "upload_file",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_name"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "dependency_type": "phantombuster",
+      "operation": "scrape_hashtag_posts",
+      "request_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "hashtag": {
+            "type": "string"
+          },
+          "max_posts": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hashtag",
+          "max_posts"
+        ],
+        "type": "object"
+      },
+      "response_schema": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "posts": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "caption": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "caption",
+                    "url"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "posts"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "posts": {
+                "items": {},
+                "type": "array"
+              }
+            },
+            "required": [
+              "posts"
+            ],
+            "type": "object"
+          }
+        ]
+      }
+    }
+  ],
+  "public_output_contract": {
+    "fields": [
+      {
+        "name": "comment_execution_report",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "hashtag",
+            "selected_post",
+            "valid_post",
+            "comment_reply",
+            "comment_list_file_id",
+            "post_result",
+            "append_result"
+          ],
+          "properties": {
+            "hashtag": {
+              "type": "string",
+              "description": "The AI/BPA class hashtag generated by the language model"
+            },
+            "selected_post": {
+              "type": "object",
+              "description": "The randomly selected post object from the recent posts",
+              "required": [
+                "caption",
+                "url"
+              ],
+              "properties": {
+                "caption": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "valid_post": {
+              "type": "object",
+              "description": "The post object after filtering to ensure it is not already commented",
+              "required": [
+                "caption",
+                "url"
+              ],
+              "properties": {
+                "caption": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "comment_reply": {
+              "type": "string",
+              "description": "The comment reply text generated by the language model, not exceeding 150 characters"
+            },
+            "comment_list_file_id": {
+              "type": "string",
+              "description": "Identifier of the uploaded comment list file on SharePoint"
+            },
+            "post_result": {
+              "type": "object",
+              "description": "Result object from posting the comment to Instagram",
+              "required": [
+                "comment_id"
+              ],
+              "properties": {
+                "comment_id": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            },
+            "append_result": {
+              "type": "object",
+              "description": "Result of appending the post URL to the already commented record on SharePoint",
+              "required": [
+                "ok",
+                "total_rows"
+              ],
+              "properties": {
+                "ok": {
+                  "type": "boolean"
+                },
+                "total_rows": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "description": "Report preserving the key generated and selected data for the comment posting workflow",
+        "requirement_evidence": [
+          "由语言模型生成一个真实的 AI/BPA 类话题标签",
+          "从中随机选择一条帖子",
+          "发布后把该帖子的链接写入已评论记录，以避免对同一帖子重复评论",
+          "由语言模型以设定语言撰写一条不超过 150 字符的回复"
+        ],
+        "source_operations": [],
+        "design_sources": [
+          "n2.hashtag",
+          "n4.selected_post",
+          "n5.valid_post",
+          "n6.comment_reply"
+        ],
+        "observable_basis": "final_result"
+      }
+    ]
+  },
+  "public_output_contract_sha256": "451A98D90B77F62E89C15B917EE61B26F3925C2F6B73AF1917ADBB62D4DE0EE8",
+  "public_interface_sha256": "AD7EFC715F71D499BD1BCA25FE1CE8803B94133E3DA0D9F3A6BC406A3BE04F1D",
+  "contract_status": "REVIEWED_DEVELOPMENT_CANDIDATE"
+}

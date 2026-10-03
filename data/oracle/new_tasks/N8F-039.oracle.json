@@ -1,0 +1,220 @@
+{
+  "task_id": "N8F-039",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "fb7c63d0b82e1c3379fd95b7fb1e6719f3d3406d1415f4374fdb84c243c0d182",
+  "fixtures": [
+    {
+      "fixture_id": "F-MARKET-ANALYSIS",
+      "purpose": "正常用例：触发一次房地产细分市场分析，配置分析区域与通知对象",
+      "input_data": {
+        "market_area": "Austin, TX",
+        "gmail_recipient": "acquisition@example.com",
+        "slack_channel": "#investors",
+        "schedule": "monthly"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-MLS-LISTINGS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_mls_listings",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "listings": [
+          {"id": "L-1", "price": 450000, "beds": 3, "baths": 2, "sqft": 1800, "zip": "78701"},
+          {"id": "L-2", "price": 520000, "beds": 4, "baths": 3, "sqft": 2200, "zip": "78702"},
+          {"id": "L-3", "price": 380000, "beds": 3, "baths": 2, "sqft": 1600, "zip": "78703"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-PUBLIC-RECORDS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_public_records",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "records": [
+          {"id": "PR-1", "type": "sale", "amount": 430000, "date": "2026-08-01"},
+          {"id": "PR-2", "type": "sale", "amount": 510000, "date": "2026-08-15"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-DEMOGRAPHICS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_demographics",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "population": 1000000,
+        "median_age": 33,
+        "population_growth_pct": 3.1
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-MACRO-INDICATORS",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_macro_indicators",
+      "request_contract": {
+        "market_area": "Austin, TX"
+      },
+      "response_contract": {
+        "mortgage_rate_pct": 6.5,
+        "unemployment_pct": 4.2,
+        "gdp_growth_pct": 2.8
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-ANALYSIS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_market_with_calculator",
+      "request_contract": {
+        "listings": [{"id": "L-1", "price": 450000, "beds": 3, "baths": 2, "sqft": 1800, "zip": "78701"}, {"id": "L-2", "price": 520000, "beds": 4, "baths": 3, "sqft": 2200, "zip": "78702"}, {"id": "L-3", "price": 380000, "beds": 3, "baths": 2, "sqft": 1600, "zip": "78703"}],
+        "public_records": [{"id": "PR-1", "type": "sale", "amount": 430000, "date": "2026-08-01"}, {"id": "PR-2", "type": "sale", "amount": 510000, "date": "2026-08-15"}],
+        "demographics": {"population": 1000000, "median_age": 33, "population_growth_pct": 3.1},
+        "macro": {"mortgage_rate_pct": 6.5, "unemployment_pct": 4.2, "gdp_growth_pct": 2.8}
+      },
+      "response_contract": {
+        "insight": {
+          "median_list_price": 450000,
+          "avg_price_per_sqft": 252.14,
+          "market_verdict": "buy",
+          "opportunity_score": 78,
+          "risk_factors": ["rising mortgage rates"],
+          "recommendation": "Focus acquisitions on 78703 submarket."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-TO-ACQUISITION",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "acquisition@example.com"
+      },
+      "response_contract": {
+        "message_id": "mail-039-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-SLACK-TO-INVESTORS",
+      "dependency_type": "n8n-nodes-base.slack",
+      "operation": "send_message",
+      "request_contract": {
+        "channel": "#investors"
+      },
+      "response_contract": {
+        "ok": true,
+        "ts": "1767300000.000001"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-MARKET-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-MARKET-ANALYSIS"],
+      "mock_ids": ["M-MLS-LISTINGS", "M-PUBLIC-RECORDS", "M-DEMOGRAPHICS", "M-MACRO-INDICATORS", "M-LLM-ANALYSIS", "M-GMAIL-TO-ACQUISITION", "M-SLACK-TO-INVESTORS"],
+      "assertions": [
+        {
+          "assertion_id": "A-039-1",
+          "target": "exec_log.data_streams",
+          "operator": "length_equals",
+          "expected": 4,
+          "rationale": "需求要求并行采集四类数据（房源挂牌、公共记录、人口统计、宏观经济指标），必须全部发起采集"
+        },
+        {
+          "assertion_id": "A-039-2",
+          "target": "exec_log.data_streams",
+          "operator": "contains",
+          "expected": "mls",
+          "rationale": "四类数据流必须包含房源挂牌数据"
+        },
+        {
+          "assertion_id": "A-039-3",
+          "target": "exec_log.data_streams",
+          "operator": "contains",
+          "expected": "macro",
+          "rationale": "四类数据流必须包含宏观经济指标"
+        },
+        {
+          "assertion_id": "A-039-4",
+          "target": "exec_log.unified_dataset.listings",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "四类数据必须整合为统一数据集，挂牌数据条目数必须与固定模拟一致"
+        },
+        {
+          "assertion_id": "A-039-5",
+          "target": "exec_log.llm.insight.median_list_price",
+          "operator": "equals",
+          "expected": 450000,
+          "rationale": "语言模型必须结合量化计算产出分析，中位挂牌价必须与固定模拟的计算结果一致"
+        },
+        {
+          "assertion_id": "A-039-6",
+          "target": "exec_log.llm.insight.opportunity_score",
+          "operator": "equals",
+          "expected": 78,
+          "rationale": "结构化洞察必须包含可量化的机会评分，评分必须与固定模拟输出一致"
+        },
+        {
+          "assertion_id": "A-039-7",
+          "target": "exec_log.gmail.send.to",
+          "operator": "equals",
+          "expected": "acquisition@example.com",
+          "rationale": "分析结果必须通过 Gmail 发送给收购团队，收件人必须与配置一致"
+        },
+        {
+          "assertion_id": "A-039-8",
+          "target": "exec_log.gmail.send.body",
+          "operator": "contains",
+          "expected": "450000",
+          "rationale": "邮件正文必须包含分析结果中的量化指标（中位挂牌价）"
+        },
+        {
+          "assertion_id": "A-039-9",
+          "target": "exec_log.slack.send.channel",
+          "operator": "equals",
+          "expected": "#investors",
+          "rationale": "分析结果必须通过 Slack 发送给投资人，频道必须与配置一致"
+        },
+        {
+          "assertion_id": "A-039-10",
+          "target": "exec_log.slack.send.message",
+          "operator": "contains",
+          "expected": "buy",
+          "rationale": "Slack 消息必须包含分析结论（市场判断），结论必须与固定模拟输出一致"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常流程：四类数据并行采集（MLS、公共记录、人口统计、宏观指标）→整合为统一数据集→LLM 结合计算产出结构化洞察→Gmail 通知收购团队→Slack 通知投资人。所有外部依赖（四个数据源 HTTP、OpenAI、Gmail、Slack）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、内容包含与收件目标检查。"
+}

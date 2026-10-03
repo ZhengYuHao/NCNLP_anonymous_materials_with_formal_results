@@ -1,0 +1,66 @@
+{
+  "schema_version": "n8n-s1-frozen-requirement-record-v1",
+  "record_id": "N8F-019",
+  "source_id": "n8n:12179",
+  "workflow_sha256": "491669520846c738d2e1c9b530a135ae8bd3885f6b7d5245daf3a913f0b96031",
+  "dataset_role": "formal_evaluation_pool",
+  "version_origin": "accepted_unchanged",
+  "requirement_sha256": "b1b02f26e6317fa9c6381a35e9f01571c1ba89ce29a925d8aee2569df50f27ef",
+  "requirement": {
+    "requirement_text": "每 6 小时运行一次（频率可调整）。每次运行时：通过抓取服务获取符合设定筛选条件的 Upwork 职位；先过滤掉此前已经看过的职位；再由语言模型对每个职位按契合度、客户质量与预算进行评分，分制为 0–100 分；随后只保留得分在 60 分及以上的职位；为保留下来的职位生成个性化投标提案；把所有结果记录到 Google Sheets；最后通过 Telegram 发送一条汇总通知。",
+    "source_spans": [
+      {
+        "start": 13,
+        "end": 394,
+        "text": "Schedule Trigger runs every 6 hours (customizable)\nApify Scraper fetches Upwork jobs matching your criteria\nDeduplication filters out jobs you've already seen\nAI Scoring (GPT-4) evaluates fit, client quality, budget (0-100 score)\nFilter keeps only jobs scoring 60+\nProposal Generator creates personalized proposals\nGoogle Sheets logs all results\nTelegram sends summary notification"
+      }
+    ],
+    "transformation_operations": [
+      "select_behavior_span",
+      "remove_setup",
+      "remove_credentials",
+      "remove_marketing",
+      "join_adjacent_behavior_items",
+      "normalize_whitespace",
+      "replace_product_name_with_role"
+    ],
+    "business_contract": {
+      "inputs": [
+        "每 6 小时一次的定时触发（频率可调整）",
+        "符合设定筛选条件的 Upwork 职位数据",
+        "此前已看过的职位记录"
+      ],
+      "conditions": [
+        "已看过的职位被过滤掉",
+        "评分采用 0–100 分制，评价维度为契合度、客户质量与预算",
+        "仅保留得分 60 分及以上的职位"
+      ],
+      "allowed_actions": [
+        "抓取符合筛选条件的 Upwork 职位",
+        "按已看过记录去重",
+        "调用语言模型对职位评分",
+        "过滤低于阈值的职位",
+        "为保留职位生成个性化提案",
+        "将结果记录到 Google Sheets",
+        "通过 Telegram 发送汇总通知"
+      ],
+      "visible_outcomes": [
+        "Google Sheets 中记录全部结果",
+        "得分 60 分及以上的职位生成了个性化提案",
+        "Telegram 收到一条汇总通知"
+      ],
+      "failure_behavior": []
+    }
+  },
+  "source_evidence": {
+    "packet_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/packets/N8F-019.packet.json",
+    "packet_sha256": "d5707bd9542b386db00c6d67f7072d48ca08ecf89d11b6fd27daf154973d8011",
+    "public_description_sha256": "496ab672bf75bf58c56888fde7d949c74e74c311121029f3b83140109b45521b"
+  },
+  "decision_provenance": {
+    "verification_response_path": "n8n_native_s1/source_review_round_v2/d9_requirement_verification_v1/verifier_B/batch_02/responses/N8F-019.response.json",
+    "verification_response_sha256": "16b12556dbd6e9f15d26c5778512299230eb073deae31edfd670e320bfb82559",
+    "decision": "accept"
+  },
+  "formal_index": 30
+}

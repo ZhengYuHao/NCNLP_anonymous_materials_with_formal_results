@@ -1,0 +1,230 @@
+{
+  "task_id": "N8F-103",
+  "author_id": "OA-07",
+  "status": "submitted",
+  "requirement_sha256": "cc1e695af4b66c1a73a2c139e5da181f3986679c107db1a4420c5aa50f3e9e9b",
+  "fixtures": [
+    {
+      "fixture_id": "F-SCHEDULE-DAILY",
+      "purpose": "正常用例：每日 8:00 定时触发，配置市场负责人邮箱",
+      "input_data": {
+        "trigger": "schedule",
+        "schedule_time": "08:00",
+        "marketing_manager_email": "marketing@example.com"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-PINTEREST-PERFORMANCE",
+      "dependency_type": "n8n-nodes-base.httpRequest",
+      "operation": "fetch_pin_performance",
+      "request_contract": {
+        "time_range": "recent"
+      },
+      "response_contract": {
+        "pins": [
+          {"id": "pin-1", "title": "Spring Home Decor Ideas", "impressions": 12000, "clicks": 900, "saves": 300, "engagement_rate": 0.1, "source": "organic"},
+          {"id": "pin-2", "title": "Budget Kitchen Makeover", "impressions": 8000, "clicks": 640, "saves": 200, "engagement_rate": 0.105, "source": "organic"},
+          {"id": "pin-3", "title": "Sponsored Decor Promo", "impressions": 15000, "clicks": 1500, "saves": 450, "engagement_rate": 0.13, "source": "paid"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AIRTABLE-LOG",
+      "dependency_type": "n8n-nodes-base.airtable",
+      "operation": "log_pins",
+      "request_contract": {
+        "table": "Pins"
+      },
+      "response_contract": {
+        "records_created": 3,
+        "status": "ok"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-TREND-ANALYSIS",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "analyze_pinterest_trends",
+      "request_contract": {
+        "pins": [
+          {"id": "pin-1", "title": "Spring Home Decor Ideas", "impressions": 12000, "clicks": 900, "saves": 300, "engagement_rate": 0.1, "source": "organic"},
+          {"id": "pin-2", "title": "Budget Kitchen Makeover", "impressions": 8000, "clicks": 640, "saves": 200, "engagement_rate": 0.105, "source": "organic"},
+          {"id": "pin-3", "title": "Sponsored Decor Promo", "impressions": 15000, "clicks": 1500, "saves": 450, "engagement_rate": 0.13, "source": "paid"}
+        ]
+      },
+      "response_contract": {
+        "trending_topics": ["home decor", "budget makeover"],
+        "engagement_patterns": "Video pins outperform static images by 20%",
+        "audience_changes": "Saves spike on weekends",
+        "optimal_times": ["18:00-21:00"],
+        "best_formats": ["video", "carousel"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-AGENT-IDEA-RECOMMEND",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "operation": "recommend_pin_ideas",
+      "request_contract": {
+        "trending_topics": ["home decor", "budget makeover"],
+        "best_formats": ["video", "carousel"]
+      },
+      "response_contract": {
+        "recommendations": [
+          {"format": "video", "topic": "Budget Kitchen Makeover", "hashtags": ["#budgetkitchen", "#homedecor"], "timing_adjustment": "post at 18:30"},
+          {"format": "carousel", "topic": "Spring Home Decor", "hashtags": ["#springdecor"], "timing_adjustment": "post at 20:00"}
+        ]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-GMAIL-REPORT",
+      "dependency_type": "n8n-nodes-base.gmail",
+      "operation": "send_email",
+      "request_contract": {
+        "to": "marketing@example.com"
+      },
+      "response_contract": {
+        "message_id": "mail-103-1",
+        "status": "sent"
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-PINTEREST-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-SCHEDULE-DAILY"],
+      "mock_ids": ["M-PINTEREST-PERFORMANCE", "M-AIRTABLE-LOG", "M-LLM-TREND-ANALYSIS", "M-AGENT-IDEA-RECOMMEND", "M-GMAIL-REPORT"],
+      "assertions": [
+        {
+          "assertion_id": "A-103-1",
+          "target": "exec_log.trigger",
+          "operator": "equals",
+          "expected": "schedule",
+          "rationale": "需求要求按计划（每日 8:00）启动，触发方式必须为定时计划"
+        },
+        {
+          "assertion_id": "A-103-2",
+          "target": "exec_log.pinterest.pins",
+          "operator": "length_equals",
+          "expected": 3,
+          "rationale": "必须从 Pinterest API 获取近期的 Pin 表现数据，固定模拟返回 3 个 Pin"
+        },
+        {
+          "assertion_id": "A-103-3",
+          "target": "exec_log.pinterest.pins[0].impressions",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "Pin 表现数据必须包含展示量字段"
+        },
+        {
+          "assertion_id": "A-103-4",
+          "target": "exec_log.pinterest.pins[0].engagement_rate",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "Pin 表现数据必须包含互动率字段"
+        },
+        {
+          "assertion_id": "A-103-5",
+          "target": "exec_log.pinterest.pins[0].source",
+          "operator": "equals",
+          "expected": "organic",
+          "rationale": "自然流量数据必须被正确标注为 organic"
+        },
+        {
+          "assertion_id": "A-103-6",
+          "target": "exec_log.pinterest.pins[2].source",
+          "operator": "equals",
+          "expected": "paid",
+          "rationale": "付费广告数据必须被正确标注为 paid，与自然流量区分"
+        },
+        {
+          "assertion_id": "A-103-7",
+          "target": "exec_log.airtable.records_created",
+          "operator": "equals",
+          "expected": 3,
+          "rationale": "所有 Pin 必须记录并归类存入 Airtable，记录数必须与 Pin 数一致"
+        },
+        {
+          "assertion_id": "A-103-8",
+          "target": "exec_log.llm.trending_topics",
+          "operator": "contains",
+          "expected": "home decor",
+          "rationale": "语言模型必须识别热门话题与关键词，固定模拟输出中必须包含 home decor"
+        },
+        {
+          "assertion_id": "A-103-9",
+          "target": "exec_log.llm.best_formats",
+          "operator": "contains",
+          "expected": "video",
+          "rationale": "语言模型必须识别最佳发布时段与内容形式，固定模拟输出必须包含 video 形式"
+        },
+        {
+          "assertion_id": "A-103-10",
+          "target": "exec_log.agent.recommendations",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "智能体必须给出新的 Pin 创意与内容日历更新建议，固定模拟返回 2 条建议"
+        },
+        {
+          "assertion_id": "A-103-11",
+          "target": "exec_log.agent.recommendations[0].hashtags",
+          "operator": "contains",
+          "expected": "#budgetkitchen",
+          "rationale": "建议必须包含话题标签，固定模拟建议中的标签必须保留"
+        },
+        {
+          "assertion_id": "A-103-12",
+          "target": "exec_log.report",
+          "operator": "contains",
+          "expected": "Performance Overview",
+          "rationale": "报告必须包含近期 Pin 表现概览章节"
+        },
+        {
+          "assertion_id": "A-103-13",
+          "target": "exec_log.report",
+          "operator": "contains",
+          "expected": "Trending Content Ideas",
+          "rationale": "报告必须包含热门内容创意章节"
+        },
+        {
+          "assertion_id": "A-103-14",
+          "target": "exec_log.report",
+          "operator": "contains",
+          "expected": "Best Performing Pin Formats",
+          "rationale": "报告必须包含表现最佳的 Pin 形式章节"
+        },
+        {
+          "assertion_id": "A-103-15",
+          "target": "exec_log.report",
+          "operator": "contains",
+          "expected": "AI-Generated Recommendations",
+          "rationale": "报告必须包含智能体建议章节"
+        },
+        {
+          "assertion_id": "A-103-16",
+          "target": "exec_log.gmail.send.to",
+          "operator": "equals",
+          "expected": "marketing@example.com",
+          "rationale": "报告必须通过邮件发送给市场负责人，收件人必须与配置一致"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖正常流程：定时触发→获取 3 个 Pin 表现数据（含展示/点击/收藏/互动率，organic 与 paid 正确标注）→Airtable 记录归类→LLM 识别趋势（话题/互动规律/受众/最佳时段与形式）→智能体给出 Pin 创意与日历建议（含形式、标签、时机调整）→生成含四部分内容的简明报告→邮件发送给市场负责人。所有外部依赖（Pinterest API、Airtable、OpenAI、Gmail）均使用固定模拟响应，deterministic 与 side_effects_disabled 均为 true；断言全部为可计算的字段存在性、数量相等、内容包含与标注正确性检查。"
+}

@@ -1,0 +1,267 @@
+{
+  "task_id": "N8F-097",
+  "author_id": "OA-01",
+  "status": "submitted",
+  "requirement_sha256": "09b114592de6f6b1dc54665f21ce0d29acbf6d659b39ff3140207f1d9e073eff",
+  "fixtures": [
+    {
+      "fixture_id": "F-COMPANY-ACME",
+      "purpose": "正常用例：手动执行并指定 Glassdoor 公司主页链接与国家/地区",
+      "input_data": {
+        "company_url": "https://www.glassdoor.com/Overview/Working-at-Acme-Corp-EI_IE12345.htm",
+        "geo": "US"
+      }
+    }
+  ],
+  "mocks": [
+    {
+      "mock_id": "M-DECODO-FETCH",
+      "dependency_type": "@decodo/n8n-nodes-decodo.decodo",
+      "operation": "fetch_company_data",
+      "request_contract": {
+        "company_url": "https://www.glassdoor.com/Overview/Working-at-Acme-Corp-EI_IE12345.htm",
+        "geo": "US"
+      },
+      "response_contract": {
+        "raw": {
+          "overview": {
+            "name": "Acme Corp",
+            "size": "10,000+ employees",
+            "website": "https://acme.example.com",
+            "type": "Public Company"
+          },
+          "ratings": {
+            "overall": 4.1,
+            "ceo_approval": 78,
+            "recommend": 82,
+            "categories": {"culture": 4.0, "work_life_balance": 3.8}
+          },
+          "reviews": [
+            {"pros": "Great engineering culture", "cons": "Slow decision making", "role": "Software Engineer"},
+            {"pros": "Flexible remote policy", "cons": "Outdated tooling", "role": "Product Manager"}
+          ],
+          "faqs": [
+            {"question": "What is the interview process like?", "answer": "Three rounds including a system design interview."}
+          ]
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-STRUCTURE",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "structure_company_data",
+      "request_contract": {
+        "raw": {
+          "overview": {
+            "name": "Acme Corp",
+            "size": "10,000+ employees",
+            "website": "https://acme.example.com",
+            "type": "Public Company"
+          },
+          "ratings": {
+            "overall": 4.1,
+            "ceo_approval": 78,
+            "recommend": 82,
+            "categories": {"culture": 4.0, "work_life_balance": 3.8}
+          },
+          "reviews": [
+            {"pros": "Great engineering culture", "cons": "Slow decision making", "role": "Software Engineer"},
+            {"pros": "Flexible remote policy", "cons": "Outdated tooling", "role": "Product Manager"}
+          ],
+          "faqs": [
+            {"question": "What is the interview process like?", "answer": "Three rounds including a system design interview."}
+          ]
+        }
+      },
+      "response_contract": {
+        "company_overview": {
+          "name": "Acme Corp",
+          "size": "10,000+ employees",
+          "website": "https://acme.example.com",
+          "type": "Public Company"
+        },
+        "ratings_breakdown": {
+          "overall": 4.1,
+          "ceo_approval": 78,
+          "recommend_pct": 82,
+          "culture": 4.0,
+          "work_life_balance": 3.8
+        },
+        "review_snippets": {
+          "pros": ["Great engineering culture", "Flexible remote policy"],
+          "cons": ["Slow decision making", "Outdated tooling"],
+          "roles": ["Software Engineer", "Product Manager"]
+        },
+        "faqs": [
+          {"question": "What is the interview process like?", "answer": "Three rounds including a system design interview."}
+        ],
+        "key_takeaways": ["Strong culture scores", "Process improvements needed"]
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-LLM-SUMMARY",
+      "dependency_type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "operation": "generate_detailed_summary",
+      "request_contract": {
+        "structured": {
+          "company_overview": {
+            "name": "Acme Corp",
+            "size": "10,000+ employees",
+            "website": "https://acme.example.com",
+            "type": "Public Company"
+          },
+          "ratings_breakdown": {
+            "overall": 4.1,
+            "ceo_approval": 78,
+            "recommend_pct": 82,
+            "culture": 4.0,
+            "work_life_balance": 3.8
+          }
+        }
+      },
+      "response_contract": {
+        "summary": {
+          "reputation": "Acme Corp maintains a strong market reputation as an innovation leader.",
+          "work_culture": "Employees report a collaborative culture with flexible remote options.",
+          "sentiment_trends": "Sentiment is stable and slightly positive over the past year.",
+          "strengths": ["Engineering culture", "Remote flexibility"],
+          "weaknesses": ["Slow decision making", "Outdated tooling"],
+          "hiring_recommendation": "Recommended for engineers seeking culture and flexibility; verify team-level fit."
+        }
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    },
+    {
+      "mock_id": "M-FILE-WRITE",
+      "dependency_type": "n8n-nodes-base.readWriteFile",
+      "operation": "write_report_file",
+      "request_contract": {
+        "file_name": "Acme Corp.json",
+        "content": {}
+      },
+      "response_contract": {
+        "path": "C:\\Acme Corp.json",
+        "ok": true
+      },
+      "deterministic": true,
+      "side_effects_disabled": true
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "C-REPORT-POSITIVE",
+      "kind": "positive",
+      "fixture_ids": ["F-COMPANY-ACME"],
+      "mock_ids": [
+        "M-DECODO-FETCH",
+        "M-LLM-STRUCTURE",
+        "M-LLM-SUMMARY",
+        "M-FILE-WRITE"
+      ],
+      "assertions": [
+        {
+          "assertion_id": "A-RPT-1",
+          "target": "exec_log.mock_calls.M-DECODO-FETCH.request_contract.company_url",
+          "operator": "equals",
+          "expected": "https://www.glassdoor.com/Overview/Working-at-Acme-Corp-EI_IE12345.htm",
+          "rationale": "抓取请求必须使用用户指定的公司主页链接"
+        },
+        {
+          "assertion_id": "A-RPT-2",
+          "target": "exec_log.mock_calls.M-DECODO-FETCH.request_contract.geo",
+          "operator": "equals",
+          "expected": "US",
+          "rationale": "抓取请求必须携带用户指定的国家/地区参数"
+        },
+        {
+          "assertion_id": "A-RPT-3",
+          "target": "result.structured.company_overview.name",
+          "operator": "equals",
+          "expected": "Acme Corp",
+          "rationale": "公司概览必须包含名称字段"
+        },
+        {
+          "assertion_id": "A-RPT-4",
+          "target": "result.structured.company_overview.size",
+          "operator": "equals",
+          "expected": "10,000+ employees",
+          "rationale": "公司概览必须包含规模字段"
+        },
+        {
+          "assertion_id": "A-RPT-5",
+          "target": "result.structured.company_overview.website",
+          "operator": "equals",
+          "expected": "https://acme.example.com",
+          "rationale": "公司概览必须包含网站字段"
+        },
+        {
+          "assertion_id": "A-RPT-6",
+          "target": "result.structured.company_overview.type",
+          "operator": "equals",
+          "expected": "Public Company",
+          "rationale": "公司概览必须包含公司类型字段"
+        },
+        {
+          "assertion_id": "A-RPT-7",
+          "target": "result.structured.ratings_breakdown.overall",
+          "operator": "equals",
+          "expected": 4.1,
+          "rationale": "评分明细必须保留原始抓取的整体评分"
+        },
+        {
+          "assertion_id": "A-RPT-8",
+          "target": "result.structured.review_snippets.pros",
+          "operator": "length_equals",
+          "expected": 2,
+          "rationale": "评论摘要的优点列表必须包含两条评论的优点"
+        },
+        {
+          "assertion_id": "A-RPT-9",
+          "target": "result.structured.faqs",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "结构化字段必须包含常见问题"
+        },
+        {
+          "assertion_id": "A-RPT-10",
+          "target": "result.structured.key_takeaways",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "结构化字段必须包含关键要点"
+        },
+        {
+          "assertion_id": "A-RPT-11",
+          "target": "result.summary.hiring_recommendation",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "详细摘要必须包含招聘建议"
+        },
+        {
+          "assertion_id": "A-RPT-12",
+          "target": "result.merged",
+          "operator": "exists",
+          "expected": true,
+          "rationale": "结构化数据与摘要必须合并为统一的输出对象"
+        },
+        {
+          "assertion_id": "A-RPT-13",
+          "target": "exec_log.mock_calls.M-FILE-WRITE.request_contract.file_name",
+          "operator": "equals",
+          "expected": "Acme Corp.json",
+          "rationale": "导出文件名必须使用公司名称"
+        }
+      ]
+    }
+  ],
+  "replay_plan": {
+    "repeat_count": 3,
+    "identical_inputs": true,
+    "evidence_generated_after_execution": true
+  },
+  "notes": "覆盖手动触发的单条完整链路：指定 company_url 与 geo → Decodo 抓取 → Gemini 结构化（概览四字段、评分明细、评论摘要、FAQ、关键要点）→ 详细摘要（声誉/文化/情绪/优劣势/招聘建议）→ 合并统一输出 → 以公司名称导出文件。Decodo、Gemini 与文件写入全部固定模拟；断言逐一校验结构化字段存在性与相等性、摘要字段、合并对象及文件名。"
+}
